@@ -1,12 +1,30 @@
 """FastAPI application for the CNG Sandbox ingestion service."""
 
+import asyncio
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone, timedelta
 
 import boto3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.config import get_settings
+from src.state import scan_store, scan_store_lock
+
+
+async def _cleanup_scans():
+    """Remove expired scan entries every 5 minutes."""
+    while True:
+        await asyncio.sleep(300)
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+        async with scan_store_lock:
+            expired = [
+                sid for sid, entry in scan_store.items()
+                if entry.get("state") == "waiting"
+                and entry.get("created_at", datetime.now(timezone.utc)) < cutoff
+            ]
+            for sid in expired:
+                del scan_store[sid]
 
 
 @asynccontextmanager
@@ -28,7 +46,9 @@ async def lifespan(app: FastAPI):
                 raise
             time.sleep(2)
     app.state.s3 = s3
+    cleanup_task = asyncio.create_task(_cleanup_scans())
     yield
+    cleanup_task.cancel()
 
 
 def create_app(settings=None) -> FastAPI:

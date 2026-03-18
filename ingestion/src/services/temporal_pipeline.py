@@ -140,7 +140,6 @@ async def run_temporal_pipeline(
                 cog_paths=cog_paths,
                 s3_hrefs=s3_hrefs,
                 filename=display_name,
-                bbox=bounds,
                 datetimes=datetimes,
             )
 

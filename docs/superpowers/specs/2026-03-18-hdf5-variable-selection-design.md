@@ -98,7 +98,9 @@ The pipeline is an `async def` running in a `BackgroundTask`. To pause it mid-ex
 
 **SSE transport for `scan_result`:** The existing SSE generator in `jobs.py` polls `job.status` every 0.5s. Add a check: if `job.scan_result is not None` and hasn't been emitted yet, yield `{"event": "scan_result", "data": json.dumps(job.scan_result)}`. After emitting, set a flag so it's not re-emitted. The SSE connection stays open — subsequent status changes (CONVERTING, READY) flow through the same stream.
 
-**File lifecycle:** When the scan flow is active, the temp file is managed by `scan_store`, not by `_run_and_cleanup`. The pipeline should not delete the input file — instead, `_run_and_cleanup` checks whether a scan is in progress and skips deletion if so. The file is cleaned up either when conversion completes normally, or when the scan_store TTL expires.
+**File lifecycle:** Because `run_pipeline` awaits the `scan_event` before returning, `_run_and_cleanup`'s `finally` block naturally runs only after conversion completes (or fails/times out). No special file lifecycle handling is needed — the existing cleanup pattern works as-is.
+
+**`scan_id` vs `job_id`:** The frontend receives `job_id` from the upload response and opens an SSE connection on that `job_id`. When `scan_result` arrives over SSE, it contains a `scan_id` used only for the `POST /api/scan/{scan_id}/convert` call. The SSE stream remains on the original `job_id` — no reconnection or new stream is needed.
 
 ### Scan Storage
 
@@ -189,7 +191,7 @@ hdf5-to-cog/
 - `_import_and_convert`: add `FormatPair.HDF5_TO_COG` branch → `from hdf5_to_cog import convert`
 - `_import_and_validate`: add `FormatPair.HDF5_TO_COG` branch → `from hdf5_to_cog import run_checks`
 - `get_credits`: add `HDF5_TO_COG` entry with h5py + rasterio credits
-- Change `_import_and_convert` to accept and forward `**kwargs` from the Job's `variable` and `group` fields. The existing NetCDF converter already accepts `variable` as a kwarg — this just threads it through.
+- Change `_import_and_convert` to forward `variable` and `group` kwargs **only for HDF5 and NetCDF branches** (not all converters). The GeoTIFF, Shapefile, and GeoJSON converters don't accept these kwargs and shouldn't need to change.
 
 **`upload.py`:**
 - Upload response shape unchanged (`{job_id, dataset_id}`) for all formats

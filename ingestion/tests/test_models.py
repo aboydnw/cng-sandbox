@@ -103,3 +103,28 @@ def test_dataset_temporal_fields_populated():
     assert d.is_temporal is True
     assert len(d.timesteps) == 2
     assert d.raster_min == -2.5
+
+
+def test_dataset_cog_url_default_none():
+    d = Dataset(
+        id="x",
+        filename="x.tif",
+        dataset_type=DatasetType.RASTER,
+        format_pair=FormatPair.GEOTIFF_TO_COG,
+        tile_url="/raster/x",
+        created_at=datetime.now(timezone.utc),
+    )
+    assert d.cog_url is None
+
+
+def test_dataset_cog_url_populated():
+    d = Dataset(
+        id="x",
+        filename="x.tif",
+        dataset_type=DatasetType.RASTER,
+        format_pair=FormatPair.GEOTIFF_TO_COG,
+        tile_url="/raster/x",
+        created_at=datetime.now(timezone.utc),
+        cog_url="/storage/datasets/x/converted/data.tif",
+    )
+    assert d.cog_url == "/storage/datasets/x/converted/data.tif"

@@ -97,6 +97,7 @@ class Dataset(BaseModel):
     stac_collection_id: str | None = None
     pg_table: str | None = None
     parquet_url: str | None = None
+    cog_url: str | None = None
     validation_results: list[ValidationCheck] = []
     credits: list[dict] = []
     is_temporal: bool = False

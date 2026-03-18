@@ -20,6 +20,20 @@ from src.services.storage import StorageService
 from src.services import stac_ingest, vector_ingest, pmtiles_ingest
 
 
+def validate_geojson_structure(raw_bytes: bytes) -> None:
+    """Validate that raw bytes are a well-formed GeoJSON FeatureCollection.
+
+    Raises ValueError with a descriptive message if validation fails.
+    """
+    from geojson_pydantic import FeatureCollection
+    from pydantic import ValidationError
+
+    try:
+        FeatureCollection.model_validate_json(raw_bytes)
+    except ValidationError as e:
+        raise ValueError(f"Invalid GeoJSON structure: {e}") from e
+
+
 def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict]:
     """Return the credits list for a given conversion path."""
     credits = []
@@ -179,6 +193,16 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
                 job.status = JobStatus.FAILED
                 job.error = f"Validation failed: {details}"
                 return
+
+            # Validate GeoJSON structure for vector uploads
+            if format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
+                from pathlib import Path
+                try:
+                    validate_geojson_structure(Path(input_path).read_bytes())
+                except ValueError as e:
+                    job.status = JobStatus.FAILED
+                    job.error = str(e)
+                    return
 
             # Extract bounds for auto-zoom
             bounds = await asyncio.to_thread(_extract_bounds, output_path, format_pair.dataset_type)

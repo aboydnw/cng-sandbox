@@ -199,3 +199,23 @@ def test_extract_band_metadata_fallback_names(no_description_tif):
     meta = _extract_band_metadata(no_description_tif)
     assert meta.band_count == 2
     assert meta.band_names == ["Band 1", "Band 2"]
+
+
+from src.services.pipeline import validate_geojson_structure
+
+
+def test_invalid_geojson_rejected():
+    # Missing "type" field entirely
+    bad_bytes = b'{"features": []}'
+    with pytest.raises(ValueError, match="Invalid GeoJSON"):
+        validate_geojson_structure(bad_bytes)
+
+    # Not a FeatureCollection
+    bad_bytes2 = b'{"type": "Point", "coordinates": [0, 0]}'
+    with pytest.raises(ValueError, match="Invalid GeoJSON"):
+        validate_geojson_structure(bad_bytes2)
+
+
+def test_valid_geojson_accepted():
+    good_bytes = b'{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}, "properties": {}}]}'
+    validate_geojson_structure(good_bytes)  # should not raise

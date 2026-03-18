@@ -1,0 +1,12 @@
+{
+  "converter": "gpq",
+  "test_file": "earthquakes",
+  "input_path": "/home/anthony/projects/map-app-builder/docs/geo-conversion-test-results/test-2-real-data/earthquakes.geojson",
+  "output_path": "/home/anthony/projects/map-app-builder/docs/shootout/results/raw/outputs/gpq_earthquakes.parquet",
+  "conversion": {
+    "status": "error",
+    "error_message": "gpq: error: command.ConvertCmd.Run(): failed to create parquet schema after reading 100 features",
+    "duration_seconds": 0.016287765000015497
+  },
+  "checks": []
+}

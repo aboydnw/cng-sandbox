@@ -1,0 +1,58 @@
+{
+  "converter": "geopandas",
+  "test_file": "firms",
+  "input_path": "/home/anthony/projects/map-app-builder/docs/geo-conversion-test-results/test-2-real-data/firms_shp/SUOMI_VIIRS_C2_Global_24h.shp",
+  "output_path": "/home/anthony/projects/map-app-builder/docs/shootout/results/raw/outputs/geopandas_firms.parquet",
+  "conversion": {
+    "status": "success",
+    "error_message": null,
+    "duration_seconds": 1.0521961270133033
+  },
+  "checks": [
+    {
+      "name": "Row count",
+      "passed": true,
+      "detail": "64476 rows"
+    },
+    {
+      "name": "CRS preserved",
+      "passed": true,
+      "detail": "EPSG:4326"
+    },
+    {
+      "name": "Columns preserved",
+      "passed": true,
+      "detail": "14 columns"
+    },
+    {
+      "name": "Geometry type",
+      "passed": true,
+      "detail": "{'Point'}"
+    },
+    {
+      "name": "Geometry validity",
+      "passed": true,
+      "detail": "All valid"
+    },
+    {
+      "name": "Geometry fidelity",
+      "passed": true,
+      "detail": "100 geometries compared, all match"
+    },
+    {
+      "name": "Attribute fidelity",
+      "passed": true,
+      "detail": "100 rows compared, all match"
+    },
+    {
+      "name": "Bounds preserved",
+      "passed": true,
+      "detail": "Max diff: 0.00e+00"
+    },
+    {
+      "name": "GeoParquet metadata",
+      "passed": true,
+      "detail": "Valid geo metadata"
+    }
+  ]
+}

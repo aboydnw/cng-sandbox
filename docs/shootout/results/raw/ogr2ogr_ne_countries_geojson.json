@@ -1,0 +1,12 @@
+{
+  "converter": "ogr2ogr",
+  "test_file": "ne_countries_geojson",
+  "input_path": "/home/anthony/projects/map-app-builder/docs/shootout/data/ne_countries_geojson/ne_50m_admin_0_countries.geojson",
+  "output_path": "/home/anthony/projects/map-app-builder/docs/shootout/results/raw/outputs/ogr2ogr_ne_countries_geojson.parquet",
+  "conversion": {
+    "status": "skipped",
+    "error_message": "'ogr2ogr' not found on PATH",
+    "duration_seconds": 0.0
+  },
+  "checks": []
+}

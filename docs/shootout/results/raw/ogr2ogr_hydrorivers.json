@@ -1,0 +1,12 @@
+{
+  "converter": "ogr2ogr",
+  "test_file": "hydrorivers",
+  "input_path": "/home/anthony/projects/map-app-builder/HydroRIVERS_v10_gr_shp/HydroRIVERS_v10_gr_shp/HydroRIVERS_v10_gr.shp",
+  "output_path": "/home/anthony/projects/map-app-builder/docs/shootout/results/raw/outputs/ogr2ogr_hydrorivers.parquet",
+  "conversion": {
+    "status": "skipped",
+    "error_message": "'ogr2ogr' not found on PATH",
+    "duration_seconds": 0.0
+  },
+  "checks": []
+}

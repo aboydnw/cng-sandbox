@@ -1,0 +1,58 @@
+{
+  "converter": "geopandas",
+  "test_file": "earthquakes",
+  "input_path": "/home/anthony/projects/map-app-builder/docs/geo-conversion-test-results/test-2-real-data/earthquakes.geojson",
+  "output_path": "/home/anthony/projects/map-app-builder/docs/shootout/results/raw/outputs/geopandas_earthquakes.parquet",
+  "conversion": {
+    "status": "success",
+    "error_message": null,
+    "duration_seconds": 0.5926789430086501
+  },
+  "checks": [
+    {
+      "name": "Row count",
+      "passed": true,
+      "detail": "10380 rows"
+    },
+    {
+      "name": "CRS preserved",
+      "passed": true,
+      "detail": "EPSG:4979"
+    },
+    {
+      "name": "Columns preserved",
+      "passed": true,
+      "detail": "28 columns"
+    },
+    {
+      "name": "Geometry type",
+      "passed": true,
+      "detail": "{'Point'}"
+    },
+    {
+      "name": "Geometry validity",
+      "passed": true,
+      "detail": "All valid"
+    },
+    {
+      "name": "Geometry fidelity",
+      "passed": true,
+      "detail": "100 geometries compared, all match"
+    },
+    {
+      "name": "Attribute fidelity",
+      "passed": true,
+      "detail": "100 rows compared, all match"
+    },
+    {
+      "name": "Bounds preserved",
+      "passed": true,
+      "detail": "Max diff: 0.00e+00"
+    },
+    {
+      "name": "GeoParquet metadata",
+      "passed": true,
+      "detail": "Valid geo metadata"
+    }
+  ]
+}

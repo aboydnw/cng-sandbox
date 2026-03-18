@@ -1,0 +1,12 @@
+{
+  "converter": "cogger",
+  "test_file": "ne_color",
+  "input_path": "/home/anthony/projects/map-app-builder/docs/shootout/data/ne_color/NE1_50M_SR/NE1_50M_SR.tif",
+  "output_path": "/home/anthony/projects/map-app-builder/docs/shootout/results/raw/outputs/cogger_ne_color.tif",
+  "conversion": {
+    "status": "skipped",
+    "error_message": "'cogger' not found on PATH",
+    "duration_seconds": 0.0
+  },
+  "checks": []
+}

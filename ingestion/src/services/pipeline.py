@@ -9,6 +9,7 @@ import asyncio
 import os
 import tempfile
 import traceback
+import uuid
 from dataclasses import dataclass
 
 import httpx
@@ -165,6 +166,40 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
         job.format_pair = format_pair
         validate_magic_bytes(input_path, format_pair)
         original_file_size = os.path.getsize(input_path)
+
+        # Variable selection for HDF5/NetCDF
+        if format_pair in (FormatPair.HDF5_TO_COG, FormatPair.NETCDF_TO_COG):
+            from src.services import scanner
+            from src.state import scan_store, scan_store_lock
+            from datetime import datetime as dt, timezone as tz
+
+            if format_pair == FormatPair.HDF5_TO_COG:
+                variables = await asyncio.to_thread(scanner.scan_hdf5, input_path)
+            else:
+                variables = await asyncio.to_thread(scanner.scan_netcdf, input_path)
+
+            if len(variables) > 1:
+                scan_id = str(uuid.uuid4())
+                job.scan_result = {"scan_id": scan_id, "variables": variables}
+                job.scan_event = asyncio.Event()
+
+                async with scan_store_lock:
+                    scan_store[scan_id] = {
+                        "path": input_path,
+                        "job": job,
+                        "created_at": dt.now(tz.utc),
+                        "variables": variables,
+                        "state": "waiting",
+                    }
+
+                await job.scan_event.wait()
+
+                async with scan_store_lock:
+                    if scan_id in scan_store:
+                        scan_store[scan_id]["state"] = "converting"
+            elif len(variables) == 1:
+                job.variable = variables[0]["name"]
+                job.group = variables[0].get("group", "")
 
         # Upload raw file to S3
         storage.upload_raw(input_path, job.dataset_id, job.filename)

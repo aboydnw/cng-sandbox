@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 
-const ALLOWED_EXTENSIONS = [".tif", ".tiff", ".zip", ".geojson", ".json", ".nc"];
-const RASTER_EXTENSIONS = [".tif", ".tiff", ".nc"];
+const ALLOWED_EXTENSIONS = [".tif", ".tiff", ".zip", ".geojson", ".json", ".nc", ".h5", ".hdf5"];
+const RASTER_EXTENSIONS = [".tif", ".tiff", ".nc", ".h5", ".hdf5"];
 
 interface FileUploaderProps {
   onFileSelected: (file: File) => void;
@@ -129,7 +129,7 @@ export function FileUploader({
           Drop your file here
         </Text>
         <Text color="brand.textSecondary" fontSize="13px" mb={5}>
-          GeoTIFF · Shapefile (.zip) · GeoJSON · NetCDF
+          GeoTIFF · Shapefile (.zip) · GeoJSON · NetCDF · HDF5
         </Text>
         <Button
           bg="brand.orange"

@@ -63,6 +63,18 @@ export interface StageInfo {
   detail?: string;
 }
 
+export interface ScannedVariable {
+  name: string;
+  group: string;
+  shape: number[];
+  dtype: string;
+}
+
+export interface ScanResult {
+  scan_id: string;
+  variables: ScannedVariable[];
+}
+
 export interface ConversionJobState {
   jobId: string | null;
   status: JobStatus;
@@ -72,4 +84,5 @@ export interface ConversionJobState {
   progressCurrent: number | null;
   progressTotal: number | null;
   isUploading: boolean;
+  scanResult: ScanResult | null;
 }

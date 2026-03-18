@@ -47,6 +47,7 @@ export interface Dataset {
   stac_collection_id: string | null;
   pg_table: string | null;
   parquet_url: string | null;
+  cog_url?: string;
   validation_results: ValidationCheck[];
   credits: Credit[];
   created_at: string;

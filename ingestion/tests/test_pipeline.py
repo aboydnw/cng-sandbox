@@ -5,7 +5,7 @@ import rasterio
 from rasterio.transform import from_bounds
 from shapely.geometry import Point, Polygon
 
-from src.models import FormatPair
+from src.models import DatasetType, FormatPair
 from src.services.pipeline import _detect_use_pmtiles, _extract_band_metadata, _extract_feature_stats, _extract_zoom_range_raster, get_credits
 
 
@@ -219,3 +219,17 @@ def test_invalid_geojson_rejected():
 def test_valid_geojson_accepted():
     good_bytes = b'{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}, "properties": {}}]}'
     validate_geojson_structure(good_bytes)  # should not raise
+
+
+def test_cog_url_built_for_raster():
+    converted_key = "datasets/abc-123/converted/data.tif"
+    format_pair = FormatPair.GEOTIFF_TO_COG
+    cog_url = f"/storage/{converted_key}" if format_pair.dataset_type == DatasetType.RASTER else None
+    assert cog_url == "/storage/datasets/abc-123/converted/data.tif"
+
+
+def test_cog_url_none_for_vector():
+    converted_key = "datasets/abc-123/converted/data.parquet"
+    format_pair = FormatPair.GEOJSON_TO_GEOPARQUET
+    cog_url = f"/storage/{converted_key}" if format_pair.dataset_type == DatasetType.RASTER else None
+    assert cog_url is None

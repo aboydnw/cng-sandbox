@@ -23,6 +23,9 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "geoalchemy2>=0.15.0",
     "psycopg2-binary>=2.9.0",
+    "rio-stac>=0.10.0",
+    "pystac>=1.10.0",
+    "geojson-pydantic>=1.1.0",
 ]
 
 [project.optional-dependencies]

@@ -27,7 +27,6 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTimestep = Number(searchParams.get("t") ?? 0);
   const [activeTab, setActiveTab] = useState("credits");
-  const [rasterTab, setRasterTab] = useState<"server" | "client">("server");
   const [basemap, setBasemap] = useState("streets");
   const [viewState, setViewState] = useState<MapViewState>({
     longitude: 0,
@@ -119,6 +118,15 @@ export default function MapPage() {
     ? findGaps(dataset.timesteps.map((t: { datetime: string }) => t.datetime)).length
     : 0;
 
+  // Client-side COG rendering uses Web Mercator which can't represent poles.
+  // Only offer it when the COG's bounds are within Mercator limits.
+  const canClientRender =
+    !dataset.is_temporal &&
+    !!dataset.cog_url &&
+    !!dataset.bounds &&
+    Math.abs(dataset.bounds[1]) < 85.05 &&
+    Math.abs(dataset.bounds[3]) < 85.05;
+
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
@@ -153,62 +161,24 @@ export default function MapPage() {
       <Flex flex={1} overflow="hidden">
         <Box flex={7} position="relative">
           {dataset.dataset_type === "raster" ? (
-            <>
-              {!dataset.is_temporal && dataset.cog_url && (
-                <Flex
-                  position="absolute"
-                  top={3}
-                  left="50%"
-                  transform="translateX(-50%)"
-                  zIndex={10}
-                >
-                  <Flex bg="white" borderRadius="6px" shadow="sm" overflow="hidden">
-                    <Box
-                      px={3}
-                      py={1}
-                      cursor="pointer"
-                      fontSize="sm"
-                      fontWeight={500}
-                      bg={rasterTab === "server" ? "brand.orange" : "white"}
-                      color={rasterTab === "server" ? "white" : "brand.brown"}
-                      onClick={() => setRasterTab("server")}
-                    >
-                      Tile Server
-                    </Box>
-                    <Box
-                      px={3}
-                      py={1}
-                      cursor="pointer"
-                      fontSize="sm"
-                      fontWeight={500}
-                      bg={rasterTab === "client" ? "brand.orange" : "white"}
-                      color={rasterTab === "client" ? "white" : "brand.brown"}
-                      onClick={() => setRasterTab("client")}
-                    >
-                      Client Rendering
-                    </Box>
-                  </Flex>
-                </Flex>
-              )}
-              {rasterTab === "client" && !dataset.is_temporal && dataset.cog_url ? (
-                <DirectRasterMap dataset={dataset} />
-              ) : (
-                <RasterMap
-                  dataset={dataset}
-                  initialTimestep={dataset.is_temporal ? initialTimestep : undefined}
-                  onTimestepChange={(index) => {
-                    setSearchParams(
-                      (prev) => {
-                        const next = new URLSearchParams(prev);
-                        next.set("t", String(index));
-                        return next;
-                      },
-                      { replace: true },
-                    );
-                  }}
-                />
-              )}
-            </>
+            activeTab === "client" && canClientRender ? (
+              <DirectRasterMap dataset={dataset} />
+            ) : (
+              <RasterMap
+                dataset={dataset}
+                initialTimestep={dataset.is_temporal ? initialTimestep : undefined}
+                onTimestepChange={(index) => {
+                  setSearchParams(
+                    (prev) => {
+                      const next = new URLSearchParams(prev);
+                      next.set("t", String(index));
+                      return next;
+                    },
+                    { replace: true },
+                  );
+                }}
+              />
+            )
           ) : activeTab === "explore" ? (
             <DuckDBMap
               table={arrowTable}
@@ -245,6 +215,23 @@ export default function MapPage() {
                   active={activeTab === "explore"}
                   onTableChange={setArrowTable}
                 />
+              ) : undefined
+            }
+            clientRenderContent={
+              canClientRender ? (
+                <Box p={6}>
+                  <Text fontSize="sm" color="brand.textSecondary" mb={3}>
+                    Client-side rendering reads the COG file directly from storage
+                    using HTTP Range requests and renders pixels on the GPU — no tile
+                    server involved.
+                  </Text>
+                  <Text fontSize="xs" color="brand.textSecondary">
+                    Powered by{" "}
+                    <Text as="span" fontWeight={600}>
+                      @developmentseed/deck.gl-geotiff
+                    </Text>
+                  </Text>
+                </Box>
               ) : undefined
             }
           />

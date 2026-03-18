@@ -125,6 +125,7 @@ services:
       PUBLIC_VECTOR_TILER_URL: /vector
       POSTGRES_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
       CORS_ORIGINS: '["http://localhost:5185"]'
+      CHECK_DISK_FREE_SPACE: "FALSE"
     depends_on:
       database:
         condition: service_healthy

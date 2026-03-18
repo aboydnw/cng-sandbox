@@ -142,7 +142,7 @@ export function FileUploader({
           Browse files
         </Button>
         <Text color="#aaa" fontSize="12px" mt={4}>
-          Up to 1 GB
+          Up to 15 GB
         </Text>
         <input
           ref={inputRef}

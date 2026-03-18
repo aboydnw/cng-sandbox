@@ -141,13 +141,19 @@ export function useConversionJob() {
       });
 
       if (!resp.ok) {
-        const detail = await resp.json().catch(() => ({ detail: "Fetch failed" }));
+        const body = await resp.json().catch(() => ({ detail: "Fetch failed" }));
+        const msg =
+          typeof body.detail === "string"
+            ? body.detail
+            : Array.isArray(body.detail)
+              ? body.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ")
+              : "Fetch failed";
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: detail.detail || "Fetch failed",
-          stages: updateStages("failed", detail.detail),
+          error: msg,
+          stages: updateStages("failed", msg),
         }));
         return;
       }

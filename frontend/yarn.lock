@@ -3942,6 +3942,7 @@ __metadata:
     d3-scale: "npm:^4.0.2"
     gif.js: "npm:^0.2.0"
     jsdom: "npm:^25.0.0"
+    lerc: "npm:^4.0.4"
     maplibre-gl: "npm:^4.0.0"
     mp4-muxer: "npm:^5.2.2"
     pmtiles: "npm:^4.4.0"
@@ -5300,6 +5301,13 @@ __metadata:
   version: 0.7.1
   resolution: "ktx-parse@npm:0.7.1"
   checksum: 10c0/07c0870a0d0fe0bd412b430ac58afd721136a1ca76db83a066b6d20810878822822cbe3b8c8507c15ae8680be0988675b4f5c3d1243262284f161b52c59d09e9
+  languageName: node
+  linkType: hard
+
+"lerc@npm:^4.0.4":
+  version: 4.1.0
+  resolution: "lerc@npm:4.1.0"
+  checksum: 10c0/774269168dfcab3157f33818a00307e7b791c405dd87ec7dea46622b45f842c7246284f620797cb0a0227cde60e763afa69e2a7c18768aeac3a11466579bf8c3
   languageName: node
   linkType: hard
 

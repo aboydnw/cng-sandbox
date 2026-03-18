@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     postgres_dsn: str = "postgresql://sandbox:sandbox_dev_password@localhost:5439/postgis"
 
     # Upload limits
-    max_upload_bytes: int = 1_073_741_824  # 1 GB
+    max_upload_bytes: int = 16_106_127_360  # 15 GB
 
     # CORS
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost:5185"]

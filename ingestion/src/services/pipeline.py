@@ -228,6 +228,15 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
             min_zoom = None
             max_zoom = None
 
+            # Compute raster stats for client-side rendering
+            raster_min = None
+            raster_max = None
+            if format_pair.dataset_type == DatasetType.RASTER:
+                from src.services.temporal_validation import compute_global_stats
+                raster_min, raster_max = await asyncio.to_thread(
+                    compute_global_stats, [output_path]
+                )
+
             # Stage 4: Ingest
             job.status = JobStatus.INGESTING
 
@@ -286,6 +295,8 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
             validation_results=job.validation_results,
             credits=get_credits(format_pair, use_pmtiles=use_pmtiles),
             created_at=job.created_at,
+            raster_min=raster_min,
+            raster_max=raster_max,
         )
         datasets_store[job.dataset_id] = dataset
 

@@ -9,6 +9,7 @@ interface CreditsPanelProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   exploreContent?: ReactNode;
+  clientRenderContent?: ReactNode;
 }
 
 function formatBandLabel(dataset: Dataset): string | null {
@@ -42,13 +43,16 @@ export function CreditsPanel({
   activeTab = "credits",
   onTabChange,
   exploreContent,
+  clientRenderContent,
 }: CreditsPanelProps) {
   const passedCount = dataset.validation_results.filter((v) => v.passed).length;
   const totalCount = dataset.validation_results.length;
   const allPassed = passedCount === totalCount;
   const days = daysUntilExpiry(dataset.created_at);
 
-  const showExplore = dataset.dataset_type === "vector" && dataset.parquet_url != null;
+  const showTabs =
+    (dataset.dataset_type === "vector" && dataset.parquet_url != null) ||
+    !!clientRenderContent;
 
   const creditsContent = (
     <>
@@ -186,7 +190,7 @@ export function CreditsPanel({
     </>
   );
 
-  if (!showExplore) {
+  if (!showTabs) {
     return (
       <Box
         w="100%"
@@ -214,7 +218,8 @@ export function CreditsPanel({
       <Tabs.Root value={activeTab} onValueChange={(e) => onTabChange?.(e.value)}>
         <Tabs.List>
           <Tabs.Trigger value="credits">Credits</Tabs.Trigger>
-          <Tabs.Trigger value="explore">Explore</Tabs.Trigger>
+          {exploreContent && <Tabs.Trigger value="explore">Explore</Tabs.Trigger>}
+          {clientRenderContent && <Tabs.Trigger value="client">Client Rendering</Tabs.Trigger>}
           <Tabs.Indicator />
         </Tabs.List>
         <Tabs.Content value="credits">
@@ -222,9 +227,16 @@ export function CreditsPanel({
             {creditsContent}
           </Box>
         </Tabs.Content>
-        <Tabs.Content value="explore">
-          {exploreContent}
-        </Tabs.Content>
+        {exploreContent && (
+          <Tabs.Content value="explore">
+            {exploreContent}
+          </Tabs.Content>
+        )}
+        {clientRenderContent && (
+          <Tabs.Content value="client">
+            {clientRenderContent}
+          </Tabs.Content>
+        )}
       </Tabs.Root>
     </Box>
   );

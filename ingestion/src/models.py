@@ -1,5 +1,6 @@
 """Pydantic models for jobs and datasets."""
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
@@ -27,6 +28,7 @@ class FormatPair(str, Enum):
     SHAPEFILE_TO_GEOPARQUET = "shapefile-to-geoparquet"
     GEOJSON_TO_GEOPARQUET = "geojson-to-geoparquet"
     NETCDF_TO_COG = "netcdf-to-cog"
+    HDF5_TO_COG = "hdf5-to-cog"
 
     @staticmethod
     def from_extension(ext: str) -> "FormatPair":
@@ -40,6 +42,8 @@ class FormatPair(str, Enum):
             ".json": FormatPair.GEOJSON_TO_GEOPARQUET,
             ".nc": FormatPair.NETCDF_TO_COG,
             ".nc4": FormatPair.NETCDF_TO_COG,
+            ".h5": FormatPair.HDF5_TO_COG,
+            ".hdf5": FormatPair.HDF5_TO_COG,
         }
         if ext not in mapping:
             raise ValueError(f"Unsupported format: {ext}")
@@ -47,7 +51,7 @@ class FormatPair(str, Enum):
 
     @property
     def dataset_type(self) -> DatasetType:
-        if self in (FormatPair.GEOTIFF_TO_COG, FormatPair.NETCDF_TO_COG):
+        if self in (FormatPair.GEOTIFF_TO_COG, FormatPair.NETCDF_TO_COG, FormatPair.HDF5_TO_COG):
             return DatasetType.RASTER
         return DatasetType.VECTOR
 
@@ -64,6 +68,8 @@ class Timestep(BaseModel):
 
 
 class Job(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     dataset_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     filename: str
@@ -74,6 +80,11 @@ class Job(BaseModel):
     progress_current: int | None = None
     progress_total: int | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Variable selection (HDF5/NetCDF scan flow)
+    variable: str | None = None
+    group: str | None = None
+    scan_event: asyncio.Event | None = Field(default=None, exclude=True)
+    scan_result: dict | None = Field(default=None, exclude=True)
 
 
 class Dataset(BaseModel):

@@ -8,13 +8,14 @@ import httpx
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, UploadFile
 from pydantic import BaseModel as PydanticBaseModel, field_validator
 
-from src.state import jobs, datasets
+from src.state import jobs, datasets, scan_store, scan_store_lock
 from src.config import get_settings
 from src.models import Job
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
 
-RASTER_EXTENSIONS = {".tif", ".tiff", ".nc", ".nc4"}
+RASTER_EXTENSIONS = {".tif", ".tiff", ".nc", ".nc4", ".h5", ".hdf5"}
+TEMPORAL_EXCLUDED = {".h5", ".hdf5"}
 MAX_TEMPORAL_FILES = 50
 
 
@@ -121,6 +122,40 @@ async def convert_url(
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
+class ScanConvertRequest(PydanticBaseModel):
+    variable: str
+    group: str = ""
+
+
+async def _handle_scan_convert(scan_id: str, variable: str, group: str):
+    """Core logic for scan-convert, extracted for testability."""
+    async with scan_store_lock:
+        entry = scan_store.get(scan_id)
+        if entry is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Scan expired or not found. Please re-upload the file.",
+            )
+        var_names = [v["name"] for v in entry["variables"]]
+        if variable not in var_names:
+            raise HTTPException(
+                status_code=400,
+                detail="Variable not found in scan results.",
+            )
+        job = entry["job"]
+        job.variable = variable
+        job.group = group
+        entry["state"] = "converting"
+    job.scan_event.set()
+
+
+@router.post("/scan/{scan_id}/convert")
+async def scan_convert(scan_id: str, body: ScanConvertRequest):
+    """Resume a paused pipeline with the selected variable."""
+    await _handle_scan_convert(scan_id, body.variable, body.group)
+    return {"status": "converting"}
+
+
 async def _run_and_cleanup(job: Job, input_path: str):
     """Run the pipeline, then clean up the temp file."""
     try:
@@ -155,6 +190,11 @@ async def upload_temporal(
             raise HTTPException(
                 status_code=400,
                 detail=f"Temporal uploads only support raster files. {f.filename} ({ext}) is not supported.",
+            )
+        if ext in TEMPORAL_EXCLUDED:
+            raise HTTPException(
+                status_code=400,
+                detail="Temporal uploads do not support HDF5 files yet.",
             )
         extensions.add(ext)
     if len(extensions) > 1:

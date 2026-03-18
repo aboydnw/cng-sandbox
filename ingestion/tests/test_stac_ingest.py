@@ -1,56 +1,57 @@
-from src.services.stac_ingest import build_collection, build_item, build_temporal_collection, build_temporal_item
+import os
+import tempfile
+
+import numpy as np
+import rasterio
+from rasterio.transform import from_bounds
+
+from geojson_pydantic import Polygon as GeoJsonPolygon
 
 
-def test_build_collection():
-    col = build_collection(
-        dataset_id="abc-123",
-        filename="temperature.tif",
-        bbox=[-10.0, -10.0, 10.0, 10.0],
-    )
-    assert col["id"] == "sandbox-abc-123"
-    assert col["type"] == "Collection"
-    assert col["extent"]["spatial"]["bbox"] == [[-10.0, -10.0, 10.0, 10.0]]
-    assert "temporal" in col["extent"]
+def _create_test_cog(path: str, bounds=(-10.0, -10.0, 10.0, 10.0), crs="EPSG:4326"):
+    """Create a minimal 4x4 GeoTIFF for testing."""
+    west, south, east, north = bounds
+    transform = from_bounds(west, south, east, north, 4, 4)
+    data = np.ones((1, 4, 4), dtype=np.uint8)
+    with rasterio.open(
+        path, "w", driver="GTiff", height=4, width=4,
+        count=1, dtype="uint8", crs=crs, transform=transform,
+    ) as dst:
+        dst.write(data)
 
 
-def test_build_item():
-    item = build_item(
-        dataset_id="abc-123",
-        filename="temperature.tif",
-        s3_href="s3://bucket/datasets/abc-123/converted/temperature.tif",
-        bbox=[-10.0, -10.0, 10.0, 10.0],
-        datetime_str="2026-03-13T00:00:00Z",
-    )
-    assert item["type"] == "Feature"
-    assert item["collection"] == "sandbox-abc-123"
-    assert item["assets"]["data"]["href"] == "s3://bucket/datasets/abc-123/converted/temperature.tif"
-    assert item["assets"]["data"]["type"] == "image/tiff; application=geotiff; profile=cloud-optimized"
-    assert item["bbox"] == [-10.0, -10.0, 10.0, 10.0]
-    coords = item["geometry"]["coordinates"][0]
-    assert len(coords) == 5  # closed polygon
+def test_ingest_raster_builds_valid_stac():
+    from src.services.stac_ingest import build_stac_item, build_stac_collection
 
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cog_path = os.path.join(tmpdir, "test.tif")
+        _create_test_cog(cog_path)
 
-def test_build_temporal_collection():
-    col = build_temporal_collection(
-        dataset_id="abc123",
-        filename="sst",
-        bbox=[-180, -90, 180, 90],
-        datetime_start="2015-01-01T00:00:00Z",
-        datetime_end="2023-01-01T00:00:00Z",
-    )
-    assert col["id"] == "sandbox-abc123"
-    assert col["extent"]["temporal"]["interval"] == [["2015-01-01T00:00:00Z", "2023-01-01T00:00:00Z"]]
+        item = build_stac_item(
+            cog_path=cog_path,
+            dataset_id="abc-123",
+            collection_id="sandbox-abc-123",
+            item_id="abc-123-data",
+            s3_href="s3://bucket/datasets/abc-123/converted/test.tif",
+        )
 
+        item.validate()
+        item_dict = item.to_dict()
 
-def test_build_temporal_item():
-    item = build_temporal_item(
-        dataset_id="abc123",
-        index=3,
-        s3_href="s3://bucket/datasets/abc123/timesteps/3/data.tif",
-        bbox=[-180, -90, 180, 90],
-        datetime_str="2018-01-01T00:00:00Z",
-    )
-    assert item["id"] == "abc123-3"
-    assert item["collection"] == "sandbox-abc123"
-    assert item["properties"]["datetime"] == "2018-01-01T00:00:00Z"
-    assert item["assets"]["data"]["href"] == "s3://bucket/datasets/abc123/timesteps/3/data.tif"
+        assert item_dict["id"] == "abc-123-data"
+        assert item_dict["collection"] == "sandbox-abc-123"
+        assert item_dict["assets"]["data"]["href"] == "s3://bucket/datasets/abc-123/converted/test.tif"
+        assert item_dict["assets"]["data"]["type"] == "image/tiff; application=geotiff; profile=cloud-optimized"
+        assert len(item_dict["bbox"]) == 4
+
+        collection = build_stac_collection(
+            collection_id="sandbox-abc-123",
+            description="User upload: test.tif",
+            item=item,
+        )
+
+        collection.validate()
+        col_dict = collection.to_dict()
+
+        assert col_dict["id"] == "sandbox-abc-123"
+        assert col_dict["extent"]["spatial"]["bbox"] == [list(item.bbox)]

@@ -1,4 +1,3 @@
-import pytest
 from src.models import FormatPair, DatasetType
 from src.services.detector import detect_format
 

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cng-toolkit"
+version = "0.1.0"
+description = "Geospatial file conversion and validation toolkit"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+raster = ["rasterio", "rio-cogeo", "numpy"]
+vector = ["geopandas", "pyarrow", "shapely"]
+netcdf = ["xarray", "netcdf4", "rasterio", "rio-cogeo", "numpy"]
+all = ["rasterio", "rio-cogeo", "numpy", "geopandas", "pyarrow", "shapely", "xarray", "netcdf4"]
+
+[project.scripts]
+cng = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+packages = [
+    "geotiff_to_cog",
+    "shapefile_to_geoparquet",
+    "geojson_to_geoparquet",
+    "netcdf_to_cog",
+]
+
+[tool.setuptools.package-dir]
+geotiff_to_cog = "geotiff-to-cog"
+shapefile_to_geoparquet = "shapefile-to-geoparquet"
+geojson_to_geoparquet = "geojson-to-geoparquet"
+netcdf_to_cog = "netcdf-to-cog"
+
+[tool.setuptools.package-data]
+geotiff_to_cog = ["scripts/*.py"]
+shapefile_to_geoparquet = ["scripts/*.py"]
+geojson_to_geoparquet = ["scripts/*.py"]
+netcdf_to_cog = ["scripts/*.py"]

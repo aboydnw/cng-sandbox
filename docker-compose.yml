@@ -1,0 +1,164 @@
+services:
+  database:
+    image: ghcr.io/stac-utils/pgstac:v0.9.6
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  stac-api:
+    image: ghcr.io/stac-utils/stac-fastapi-pgstac:5.0.2
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASS: ${POSTGRES_PASSWORD}
+      POSTGRES_DBNAME: ${POSTGRES_DB}
+      POSTGRES_HOST_READER: database
+      POSTGRES_HOST_WRITER: database
+      POSTGRES_PORT: 5432
+      DB_MIN_CONN_SIZE: 1
+      DB_MAX_CONN_SIZE: 1
+      ENABLE_TRANSACTIONS_EXTENSIONS: "TRUE"
+    ports:
+      - "8081:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  raster-tiler:
+    image: ghcr.io/stac-utils/titiler-pgstac:1.7.2
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASS: ${POSTGRES_PASSWORD}
+      POSTGRES_DBNAME: ${POSTGRES_DB}
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_ENDPOINT_URL: http://minio:9000
+      AWS_S3_ENDPOINT: minio:9000
+      AWS_HTTPS: "NO"
+      AWS_VIRTUAL_HOSTING: "FALSE"
+      GDAL_CACHEMAX: "75%"
+      VSI_CACHE: "TRUE"
+      VSI_CACHE_SIZE: "536870912"
+      MOSAIC_CONCURRENCY: 1
+    ports:
+      - "8082:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  vector-tiler:
+    image: ghcr.io/developmentseed/tipg:1.0.1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASS: ${POSTGRES_PASSWORD}
+      POSTGRES_DBNAME: ${POSTGRES_DB}
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      TIPG_CATALOG_TTL: 5
+    ports:
+      - "8083:80"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb --ignore-existing local/${S3_BUCKET};
+      mc anonymous set download local/${S3_BUCKET};
+      exit 0;
+      "
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      STAC_API_URL: http://stac-api:8080
+      RASTER_TILER_URL: http://raster-tiler:80
+      VECTOR_TILER_URL: http://vector-tiler:80
+      PUBLIC_RASTER_TILER_URL: /raster
+      PUBLIC_VECTOR_TILER_URL: /vector
+      POSTGRES_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
+      CORS_ORIGINS: '["http://localhost:5185"]'
+    depends_on:
+      database:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      stac-api:
+        condition: service_started
+      raster-tiler:
+        condition: service_started
+      vector-tiler:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "5185:5185"
+    environment:
+      VITE_API_BASE: ""
+      VITE_RASTER_TILER_URL: ""
+      VITE_VECTOR_TILER_URL: ""
+      API_PROXY_TARGET: http://ingestion:8000
+      RASTER_TILER_PROXY_TARGET: http://raster-tiler:80
+      VECTOR_TILER_PROXY_TARGET: http://vector-tiler:80
+      MINIO_PROXY_TARGET: http://minio:9000
+    depends_on:
+      ingestion:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  miniodata:

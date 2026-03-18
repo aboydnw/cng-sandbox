@@ -26,6 +26,7 @@ dependencies = [
     "rio-stac>=0.10.0",
     "pystac>=1.10.0",
     "geojson-pydantic>=1.1.0",
+    "h5py>=3.10.0",
 ]
 
 [project.optional-dependencies]

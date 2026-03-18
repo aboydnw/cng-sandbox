@@ -43,6 +43,10 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
     elif format_pair == FormatPair.NETCDF_TO_COG:
         credits.append({"tool": "xarray", "url": "https://xarray.dev", "role": "Read by"})
         credits.append({"tool": "rio-cogeo", "url": "https://github.com/cogeotiff/rio-cogeo", "role": "Converted by"})
+    elif format_pair == FormatPair.HDF5_TO_COG:
+        credits.append({"tool": "h5py", "url": "https://www.h5py.org", "role": "Read by"})
+        credits.append({"tool": "rasterio", "url": "https://rasterio.readthedocs.io", "role": "Reprojected by"})
+        credits.append({"tool": "rio-cogeo", "url": "https://github.com/cogeotiff/rio-cogeo", "role": "Converted by"})
     elif format_pair in (FormatPair.SHAPEFILE_TO_GEOPARQUET, FormatPair.GEOJSON_TO_GEOPARQUET):
         credits.append({"tool": "GeoPandas", "url": "https://geopandas.org", "role": "Converted by"})
 
@@ -176,11 +180,17 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = os.path.join(tmpdir, out_filename)
 
-            await asyncio.to_thread(_import_and_convert, format_pair, input_path, output_path)
+            await asyncio.to_thread(
+                _import_and_convert, format_pair, input_path, output_path,
+                variable=job.variable, group=job.group,
+            )
 
             # Stage 3: Validate
             job.status = JobStatus.VALIDATING
-            check_results = await asyncio.to_thread(_import_and_validate, format_pair, input_path, output_path)
+            check_results = await asyncio.to_thread(
+                _import_and_validate, format_pair, input_path, output_path,
+                variable=job.variable, group=job.group,
+            )
             job.validation_results = [
                 ValidationCheck(name=c.name, passed=c.passed, detail=c.detail)
                 for c in check_results
@@ -324,23 +334,34 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
             await asyncio.sleep(1.0)
 
 
-def _import_and_convert(format_pair: FormatPair, input_path: str, output_path: str) -> None:
+def _import_and_convert(format_pair: FormatPair, input_path: str, output_path: str,
+                        variable: str | None = None, group: str | None = None) -> None:
     """Import the appropriate cng-toolkit converter and run it."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
         from geotiff_to_cog import convert
+        convert(input_path, output_path, verbose=True)
     elif format_pair == FormatPair.SHAPEFILE_TO_GEOPARQUET:
         from shapefile_to_geoparquet import convert
+        convert(input_path, output_path, verbose=True)
     elif format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
         from geojson_to_geoparquet import convert
+        convert(input_path, output_path, verbose=True)
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import convert
+        kwargs = {"verbose": True}
+        if variable:
+            kwargs["variable"] = variable
+        convert(input_path, output_path, **kwargs)
+    elif format_pair == FormatPair.HDF5_TO_COG:
+        from hdf5_to_cog import convert
+        convert(input_path, output_path, variable=variable or "",
+                group=group or "", verbose=True)
     else:
         raise ValueError(f"Unknown format pair: {format_pair}")
 
-    convert(input_path, output_path, verbose=True)
 
-
-def _import_and_validate(format_pair: FormatPair, input_path: str, output_path: str) -> list:
+def _import_and_validate(format_pair: FormatPair, input_path: str, output_path: str,
+                         variable: str | None = None, group: str | None = None) -> list:
     """Import the appropriate cng-toolkit validator and run checks."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
         from geotiff_to_cog import run_checks
@@ -350,7 +371,11 @@ def _import_and_validate(format_pair: FormatPair, input_path: str, output_path: 
         from geojson_to_geoparquet import run_checks
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import run_checks
+        return run_checks(input_path, output_path, variable=variable)
+    elif format_pair == FormatPair.HDF5_TO_COG:
+        from hdf5_to_cog import run_checks
+        return run_checks(input_path, output_path, variable=variable or "",
+                          group=group or "")
     else:
         raise ValueError(f"Unknown format pair: {format_pair}")
-
     return run_checks(input_path, output_path)

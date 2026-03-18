@@ -5,6 +5,7 @@ import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
 import { CreditsPanel } from "../components/CreditsPanel";
 import { RasterMap } from "../components/RasterMap";
+import { DirectRasterMap } from "../components/DirectRasterMap";
 import { VectorMap } from "../components/VectorMap";
 import { DuckDBMap } from "../components/DuckDBMap";
 import { ExploreTab } from "../components/ExploreTab";
@@ -26,6 +27,7 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTimestep = Number(searchParams.get("t") ?? 0);
   const [activeTab, setActiveTab] = useState("credits");
+  const [rasterTab, setRasterTab] = useState<"server" | "client">("server");
   const [basemap, setBasemap] = useState("streets");
   const [viewState, setViewState] = useState<MapViewState>({
     longitude: 0,
@@ -151,17 +153,62 @@ export default function MapPage() {
       <Flex flex={1} overflow="hidden">
         <Box flex={7} position="relative">
           {dataset.dataset_type === "raster" ? (
-            <RasterMap
-              dataset={dataset}
-              initialTimestep={dataset.is_temporal ? initialTimestep : undefined}
-              onTimestepChange={(index) => {
-                setSearchParams((prev) => {
-                  const next = new URLSearchParams(prev);
-                  next.set("t", String(index));
-                  return next;
-                }, { replace: true });
-              }}
-            />
+            <>
+              {!dataset.is_temporal && dataset.cog_url && (
+                <Flex
+                  position="absolute"
+                  top={3}
+                  left="50%"
+                  transform="translateX(-50%)"
+                  zIndex={10}
+                >
+                  <Flex bg="white" borderRadius="6px" shadow="sm" overflow="hidden">
+                    <Box
+                      px={3}
+                      py={1}
+                      cursor="pointer"
+                      fontSize="sm"
+                      fontWeight={500}
+                      bg={rasterTab === "server" ? "brand.orange" : "white"}
+                      color={rasterTab === "server" ? "white" : "brand.brown"}
+                      onClick={() => setRasterTab("server")}
+                    >
+                      Tile Server
+                    </Box>
+                    <Box
+                      px={3}
+                      py={1}
+                      cursor="pointer"
+                      fontSize="sm"
+                      fontWeight={500}
+                      bg={rasterTab === "client" ? "brand.orange" : "white"}
+                      color={rasterTab === "client" ? "white" : "brand.brown"}
+                      onClick={() => setRasterTab("client")}
+                    >
+                      Client Rendering
+                    </Box>
+                  </Flex>
+                </Flex>
+              )}
+              {rasterTab === "client" && !dataset.is_temporal && dataset.cog_url ? (
+                <DirectRasterMap dataset={dataset} />
+              ) : (
+                <RasterMap
+                  dataset={dataset}
+                  initialTimestep={dataset.is_temporal ? initialTimestep : undefined}
+                  onTimestepChange={(index) => {
+                    setSearchParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.set("t", String(index));
+                        return next;
+                      },
+                      { replace: true },
+                    );
+                  }}
+                />
+              )}
+            </>
           ) : activeTab === "explore" ? (
             <DuckDBMap
               table={arrowTable}

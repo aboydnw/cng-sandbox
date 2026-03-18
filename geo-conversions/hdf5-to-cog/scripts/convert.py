@@ -32,8 +32,8 @@ from rasterio.crs import CRS
 from rasterio.transform import Affine
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
-_X_NAMES = {"xcoordinates", "x", "longitude", "lon"}
-_Y_NAMES = {"ycoordinates", "y", "latitude", "lat"}
+_X_NAMES = ["xcoordinates", "x", "longitude", "lon"]
+_Y_NAMES = ["ycoordinates", "y", "latitude", "lat"]
 
 
 def _find_dataset(group, candidates):

@@ -102,3 +102,28 @@ def test_ingest_temporal_builds_valid_stac():
         start_str, end_str = interval[0]
         assert start_str.startswith("2015-01-01")
         assert end_str.startswith("2017-01-01")
+
+
+def test_geometry_is_valid_geojson():
+    from src.services.stac_ingest import build_stac_item
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cog_path = os.path.join(tmpdir, "test.tif")
+        _create_test_cog(cog_path, bounds=(-122.5, 37.5, -122.0, 38.0), crs="EPSG:4326")
+
+        item = build_stac_item(
+            cog_path=cog_path,
+            dataset_id="geo-test",
+            collection_id="sandbox-geo-test",
+            item_id="geo-test-data",
+            s3_href="s3://bucket/test.tif",
+        )
+
+        geom = item.geometry
+        assert geom["type"] == "Polygon"
+        assert len(geom["coordinates"]) == 1
+        ring = geom["coordinates"][0]
+        assert ring[0] == ring[-1]  # closed ring
+
+        assert -123 < item.bbox[0] < -121
+        assert 37 < item.bbox[1] < 39

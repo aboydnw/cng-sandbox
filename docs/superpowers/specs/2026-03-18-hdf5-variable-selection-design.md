@@ -11,7 +11,9 @@ The sandbox currently supports GeoTIFF, Shapefile, GeoJSON, and NetCDF. HDF5 is 
 2. HDF5 files often contain 30+ raster variables. The converter needs to know which one to extract.
 3. Coordinates may be in projected CRS (e.g., EASE Grid) rather than lat/lon, requiring reprojection.
 
-The NetCDF converter has the same variable selection limitation — it silently picks the first `data_var`, which is a known gap from the initial implementation.
+The NetCDF converter has the same variable selection limitation — it silently picks the first `data_var`, which is a known gap from the initial implementation. (Note: the converter itself already accepts a `variable` parameter; the gap is that the pipeline never gives the user a chance to choose one.)
+
+**Format disambiguation:** Detection is extension-based (`.h5`/`.hdf5` → HDF5, `.nc`/`.nc4` → NetCDF). A NetCDF4 file renamed to `.h5` would go through the HDF5 converter, which uses h5py instead of xarray. This is acceptable — both read the same underlying HDF5 format — but the heuristics for coordinate/CRS detection differ. Users should use the correct extension for their files.
 
 ## Solution
 
@@ -32,16 +34,16 @@ Files with only one eligible variable skip the picker automatically.
 
 ## Design
 
-### New API: Scan Endpoint
+### Scan Flow via SSE
 
-`POST /api/scan/{scan_id}/convert`
+The upload endpoint (`POST /api/upload` and `POST /api/convert-url`) remains unchanged in its response shape — it always returns `{job_id, dataset_id}` immediately and starts the background pipeline. The scan flow is communicated via SSE on the existing job stream:
 
-After an HDF5 or NetCDF file is uploaded via the existing `POST /api/upload`, the backend detects the format and — instead of converting immediately — scans the file and returns the variable list in the upload response:
+1. Pipeline starts, reaches SCANNING stage
+2. For HDF5/NetCDF: pipeline scans the file for variables
+3. If multiple variables found: pipeline sets a `scan_result` field on the Job and **pauses** by awaiting an `asyncio.Event` on the Job. The SSE generator detects `job.scan_result` and emits `event: scan_result`:
 
 ```json
 {
-  "job_id": "uuid",
-  "dataset_id": "uuid",
   "scan_id": "uuid",
   "variables": [
     {
@@ -60,13 +62,15 @@ After an HDF5 or NetCDF file is uploaded via the existing `POST /api/upload`, th
 }
 ```
 
-**Auto-select rule:** If `variables` has exactly one entry, the backend skips the scan response, auto-selects that variable, and proceeds directly to conversion (no frontend change needed for simple files).
+4. If only one variable found: pipeline auto-selects it and continues to CONVERTING without pausing (no frontend change needed for simple files).
+
+**Auto-select rule:** If `variables` has exactly one entry, the backend auto-selects and proceeds directly to conversion. This preserves current behavior for simple NetCDF files.
 
 **Variable filtering:** Only 2D arrays (or 3D with a reducible time dimension) of numeric types (float32, float64, int16, int32, etc.) are included. Scalars, 1D coordinate arrays, and string datasets are excluded.
 
-**Scan storage:** A `scan_store` dict holds `{scan_id: {"path": temp_file_path, "job": job, "created_at": datetime}}`. Entries expire after 30 minutes via a cleanup check on each new scan request.
+### Variable Selection API
 
-**Convert trigger:** `POST /api/scan/{scan_id}/convert` with body:
+`POST /api/scan/{scan_id}/convert` with body:
 
 ```json
 {
@@ -75,7 +79,30 @@ After an HDF5 or NetCDF file is uploaded via the existing `POST /api/upload`, th
 }
 ```
 
-This retrieves the temp file from `scan_store`, starts the normal pipeline with the selected variable/group passed through, and cleans up the scan entry.
+This sets `job.variable` and `job.group`, then calls `job.scan_event.set()` to unblock the paused pipeline. The pipeline continues from CONVERTING through the normal stages.
+
+**Error cases:**
+- `scan_id` not found or expired → 404 with `"Scan expired or not found. Please re-upload the file."`
+- `variable` not in the scanned list → 400 with `"Variable not found in scan results."`
+
+### Pipeline Pause/Resume Mechanism
+
+The pipeline is an `async def` running in a `BackgroundTask`. To pause it mid-execution:
+
+1. Add `scan_event: asyncio.Event | None = None` and `scan_result: dict | None = None` fields to the `Job` model (excluded from serialization).
+2. In `run_pipeline`, after scanning variables, if multiple are found:
+   - Set `job.scan_result = {"scan_id": ..., "variables": [...]}` and create `job.scan_event = asyncio.Event()`
+   - `await job.scan_event.wait()` — this suspends the pipeline coroutine without blocking any thread
+   - When the event is set, read `job.variable` and `job.group`, then continue to CONVERTING
+3. The `POST /api/scan/{scan_id}/convert` endpoint sets `job.variable`, `job.group`, and calls `job.scan_event.set()`
+
+**SSE transport for `scan_result`:** The existing SSE generator in `jobs.py` polls `job.status` every 0.5s. Add a check: if `job.scan_result is not None` and hasn't been emitted yet, yield `{"event": "scan_result", "data": json.dumps(job.scan_result)}`. After emitting, set a flag so it's not re-emitted. The SSE connection stays open — subsequent status changes (CONVERTING, READY) flow through the same stream.
+
+**File lifecycle:** When the scan flow is active, the temp file is managed by `scan_store`, not by `_run_and_cleanup`. The pipeline should not delete the input file — instead, `_run_and_cleanup` checks whether a scan is in progress and skips deletion if so. The file is cleaned up either when conversion completes normally, or when the scan_store TTL expires.
+
+### Scan Storage
+
+A `scan_store` dict holds `{scan_id: {"path": temp_file_path, "job": job, "created_at": datetime, "variables": [...], "state": "waiting" | "converting"}}`. Entries expire after 30 minutes **only while in the "waiting" state** — once conversion has resumed (state = "converting"), the entry is not eligible for TTL cleanup. Cleanup runs via a background task on a 5-minute timer (not on each request) to avoid race conditions. All mutations to `scan_store` are protected by an `asyncio.Lock`.
 
 ### HDF5 Variable Discovery
 
@@ -155,19 +182,25 @@ hdf5-to-cog/
 - Add `HDF5_TO_COG` to `_MIME_WHITELIST` with `{"application/x-hdf5", "application/x-hdf", "application/octet-stream"}`
 - Update error message to list `.h5` / `.hdf5` as accepted formats
 
+**`models.py` (Job model):**
+- Add `variable: str | None = None` and `group: str | None = None` fields to the `Job` model. These are set when the user selects a variable via the scan flow, then forwarded to the converter.
+
 **`pipeline.py`:**
 - `_import_and_convert`: add `FormatPair.HDF5_TO_COG` branch → `from hdf5_to_cog import convert`
 - `_import_and_validate`: add `FormatPair.HDF5_TO_COG` branch → `from hdf5_to_cog import run_checks`
 - `get_credits`: add `HDF5_TO_COG` entry with h5py + rasterio credits
-- Pass `variable` and `group` kwargs through to converter (stored on the Job model or passed via scan flow)
+- Change `_import_and_convert` to accept and forward `**kwargs` from the Job's `variable` and `group` fields. The existing NetCDF converter already accepts `variable` as a kwarg — this just threads it through.
 
 **`upload.py`:**
-- Modify `upload_file` response: for HDF5/NetCDF formats, run scan first and return `scan_id` + `variables` in the response
-- New `POST /api/scan/{scan_id}/convert` endpoint
-- `scan_store` dict with TTL cleanup
+- Upload response shape unchanged (`{job_id, dataset_id}`) for all formats
+- New `POST /api/scan/{scan_id}/convert` endpoint (see Variable Selection API above)
+- Scan flow is handled inside the pipeline via SSE, not in the upload response
 
 **`state.py`:**
 - Add `scan_store: dict = {}` alongside `jobs` and `datasets`
+- Add `scan_store_lock: asyncio.Lock` for concurrent access protection
+
+**Note on `convert-url`:** The `POST /api/convert-url` endpoint follows the same two-phase pattern — it fetches the file, starts the pipeline, and if it's HDF5/NetCDF with multiple variables, the pipeline emits `scan_result` via SSE just like a file upload.
 
 ### Frontend Changes
 
@@ -182,10 +215,10 @@ hdf5-to-cog/
 - Simple, minimal — follows existing Chakra UI patterns in the codebase
 
 **`useConversionJob.ts` (upload hook):**
-- After upload response, check for `scan_id` and `variables` fields
-- If present and `variables.length > 1`: surface to parent via new state (`scanResult`)
-- If `variables.length === 1`: auto-call `/api/scan/{scan_id}/convert` immediately
-- New `confirmVariable(scanId, variable, group)` function that POSTs to the convert endpoint and then starts normal SSE polling
+- SSE listener handles new `event: scan_result` event type
+- When received: surface `scanResult` (scan_id + variables) to parent via new state
+- Single continuous SSE connection from upload through conversion — no reconnection needed
+- New `confirmVariable(scanId, variable, group)` function that POSTs to `/api/scan/{scan_id}/convert`, which resumes the pipeline; SSE then receives the normal CONVERTING → READY events
 
 **`MapPage.tsx`:**
 - Handle the new `scanResult` state from the upload hook

@@ -4,6 +4,7 @@ import { Box, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
+import { VariablePicker } from "../components/VariablePicker";
 import { useConversionJob } from "../hooks/useConversionJob";
 
 function formatSize(file: File): string {
@@ -13,7 +14,7 @@ function formatSize(file: File): string {
 
 export default function UploadPage() {
   const navigate = useNavigate();
-  const { state, startUpload, startUrlFetch, startTemporalUpload } = useConversionJob();
+  const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } = useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
 
   const isProcessing = state.isUploading || (state.jobId !== null && state.status !== "failed");
@@ -38,7 +39,12 @@ export default function UploadPage() {
   return (
     <Box minH="100vh" bg="white">
       <Header />
-      {isProcessing ? (
+      {state.scanResult ? (
+        <VariablePicker
+          variables={state.scanResult.variables}
+          onSelect={(variable, group) => confirmVariable(state.scanResult!.scan_id, variable, group)}
+        />
+      ) : isProcessing ? (
         <ProgressTracker
           stages={state.stages}
           filename={fileRef.current.name}

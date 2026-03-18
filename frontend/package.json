@@ -9,17 +9,20 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postinstall": "mkdir -p public && cp node_modules/gif.js/dist/gif.worker.js public/gif.worker.js"
+    "postinstall": "mkdir -p public && test -f node_modules/gif.js/dist/gif.worker.js && cp node_modules/gif.js/dist/gif.worker.js public/gif.worker.js || true"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.0.0",
-    "@deck.gl/core": "^9.0.0",
-    "@deck.gl/geo-layers": "^9.0.0",
-    "@deck.gl/layers": "^9.0.0",
-    "@deck.gl/react": "^9.0.0",
+    "@deck.gl/core": "^9.2.7",
+    "@deck.gl/geo-layers": "^9.2.7",
+    "@deck.gl/layers": "^9.2.7",
+    "@deck.gl/mesh-layers": "^9.2.7",
+    "@deck.gl/react": "^9.2.7",
+    "@developmentseed/deck.gl-geotiff": "^0.3.0",
     "@duckdb/duckdb-wasm": "^1.33.1-dev20.0",
     "@emotion/react": "^11.0.0",
     "@geoarrow/deck.gl-layers": "^0.3.1",
+    "@luma.gl/core": "^9.2.6",
     "@tanstack/react-query": "^5.0.0",
     "apache-arrow": "^21.1.0",
     "d3-format": "^3.1.0",
@@ -35,6 +38,7 @@
     "recharts": "^3.8.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.6.1",

@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef } from "react";
 import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
 import { MapView, WebMercatorViewport } from "@deck.gl/core";
-import Map from "react-map-gl/maplibre";
+import MapGL from "react-map-gl/maplibre";
 import { COGLayer } from "@developmentseed/deck.gl-geotiff";
 import { CreateTexture } from "@developmentseed/deck.gl-raster/gpu-modules";
 import wktParser from "wkt-parser";
@@ -43,18 +43,6 @@ async function localEpsgResolver(epsg: number) {
   return parsed;
 }
 
-/** Convert Web Mercator tile indices to geographic bounds [west, south, east, north]. */
-function tileToBounds(x: number, y: number, z: number): [number, number, number, number] {
-  const n = Math.PI - (2 * Math.PI * y) / 2 ** z;
-  const n2 = Math.PI - (2 * Math.PI * (y + 1)) / 2 ** z;
-  return [
-    (x / 2 ** z) * 360 - 180,               // west
-    (Math.atan(Math.sinh(n2)) * 180) / Math.PI, // south
-    ((x + 1) / 2 ** z) * 360 - 180,          // east
-    (Math.atan(Math.sinh(n)) * 180) / Math.PI,  // north
-  ];
-}
-
 /** Look up raw raster value at a geographic point from the tile cache. */
 function lookupValue(
   cache: Map<string, TileCacheEntry>,
@@ -62,13 +50,14 @@ function lookupValue(
   lat: number,
 ): number | null {
   let bestEntry: TileCacheEntry | null = null;
-  let bestZoom = -1;
+  let bestRes = Infinity;
 
   for (const [, entry] of cache) {
     const [west, south, east, north] = entry.bounds;
     if (lng >= west && lng <= east && lat >= south && lat <= north) {
-      if (entry.z > bestZoom) {
-        bestZoom = entry.z;
+      const res = (east - west) / entry.width;
+      if (res < bestRes) {
+        bestRes = res;
         bestEntry = entry;
       }
     }
@@ -159,7 +148,6 @@ interface TileCacheEntry {
   data: Float32Array;
   width: number;
   height: number;
-  z: number;
   bounds: [number, number, number, number]; // [west, south, east, north]
 }
 
@@ -204,7 +192,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
 
   const getTileData = useCallback(
     async (image: any, options: any) => {
-      const { device, x, y, z, signal } = options;
+      const { device, x, y, signal } = options;
       // Don't pass `pool` — Vite's dev server can't serve the decoder workers.
       // Main-thread decoding works fine for the tile sizes involved.
       const tile = await image.fetchTile(x, y, {
@@ -228,19 +216,23 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
       }
 
       // Cache raw float32 data for pixel inspector
-      const cacheKey = `${z}/${x}/${y}`;
-      const cache = tileCacheRef.current;
-      cache.set(cacheKey, {
-        data: new Float32Array(floatData),
-        width,
-        height,
-        z,
-        bounds: tileToBounds(x, y, z),
-      });
-      // Simple eviction: drop oldest entries when over cap
-      while (cache.size > MAX_CACHED_TILES) {
-        const firstKey = cache.keys().next().value;
-        if (firstKey !== undefined) cache.delete(firstKey);
+      if (dataset.bounds) {
+        const [dsWest, dsSouth, dsEast, dsNorth] = dataset.bounds;
+        // Use dataset bounds as the tile extent. For the overview level
+        // (single tile covering the whole image), this is exact.
+        const cacheKey = `${x}/${y}`;
+        const cache = tileCacheRef.current;
+        cache.set(cacheKey, {
+          data: new Float32Array(floatData),
+          width,
+          height,
+          bounds: [dsWest, dsSouth, dsEast, dsNorth],
+        });
+        // Simple eviction: drop oldest entries when over cap
+        while (cache.size > MAX_CACHED_TILES) {
+          const firstKey = cache.keys().next().value;
+          if (firstKey !== undefined) cache.delete(firstKey);
+        }
       }
 
       // Normalize float32 elevation to uint8 [0, 255]
@@ -272,7 +264,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
 
       return { texture, width, height };
     },
-    [rasterMin, rasterMax],
+    [rasterMin, rasterMax, dataset.bounds],
   );
 
   const renderTile = useCallback(
@@ -339,7 +331,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
         onHover={onHover}
         onError={(error) => console.error("DeckGL error:", error.message)}
       >
-        <Map mapStyle={BASEMAPS[basemap]} />
+        <MapGL mapStyle={BASEMAPS[basemap]} />
       </DeckGL>
 
       <Box position="absolute" top={3} left={3} bg="white" borderRadius="4px" shadow="sm" p={1}>

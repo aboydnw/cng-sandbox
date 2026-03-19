@@ -34,3 +34,24 @@ def test_convert_url_rejects_ftp_scheme(client):
 def test_convert_url_rejects_empty_scheme(client):
     resp = client.post("/api/convert-url", json={"url": "/etc/passwd"})
     assert resp.status_code == 422
+
+
+def test_convert_url_blocks_loopback():
+    from src.routes.upload import ConvertUrlRequest
+
+    with pytest.raises(ValueError, match="private"):
+        ConvertUrlRequest(url="http://127.0.0.1:9000/bucket/file.tif")
+
+
+def test_convert_url_blocks_private_ip():
+    from src.routes.upload import ConvertUrlRequest
+
+    with pytest.raises(ValueError, match="private"):
+        ConvertUrlRequest(url="http://10.0.0.1/file.tif")
+
+
+def test_convert_url_allows_public():
+    from src.routes.upload import ConvertUrlRequest
+
+    req = ConvertUrlRequest(url="https://example.com/file.tif")
+    assert req.url == "https://example.com/file.tif"

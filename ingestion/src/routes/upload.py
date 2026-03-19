@@ -1,6 +1,8 @@
 """Upload route — accepts files and starts the conversion pipeline."""
 
+import ipaddress
 import os
+import socket
 import tempfile
 from urllib.parse import urlparse
 
@@ -28,6 +30,24 @@ class ConvertUrlRequest(PydanticBaseModel):
         parsed = urlparse(v)
         if parsed.scheme not in ("http", "https"):
             raise ValueError("Only http and https URLs are supported")
+        hostname = parsed.hostname
+        if not hostname:
+            raise ValueError("URL must include a hostname")
+        try:
+            addr = ipaddress.ip_address(hostname)
+            if addr.is_private or addr.is_loopback or addr.is_reserved:
+                raise ValueError("URLs pointing to private networks are not allowed")
+        except ValueError as exc:
+            if "not allowed" in str(exc):
+                raise
+            try:
+                resolved = socket.getaddrinfo(hostname, None)
+                for _, _, _, _, sockaddr in resolved:
+                    addr = ipaddress.ip_address(sockaddr[0])
+                    if addr.is_private or addr.is_loopback or addr.is_reserved:
+                        raise ValueError("URLs resolving to private networks are not allowed")
+            except socket.gaierror:
+                pass
         return v
 
 router = APIRouter(prefix="/api")

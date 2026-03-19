@@ -64,12 +64,11 @@ function lookupValue(
   let bestEntry: TileCacheEntry | null = null;
   let bestZoom = -1;
 
-  for (const [key, entry] of cache) {
+  for (const [, entry] of cache) {
     const [west, south, east, north] = entry.bounds;
     if (lng >= west && lng <= east && lat >= south && lat <= north) {
-      const z = parseInt(key.split("/")[0], 10);
-      if (z > bestZoom) {
-        bestZoom = z;
+      if (entry.z > bestZoom) {
+        bestZoom = entry.z;
         bestEntry = entry;
       }
     }
@@ -160,6 +159,7 @@ interface TileCacheEntry {
   data: Float32Array;
   width: number;
   height: number;
+  z: number;
   bounds: [number, number, number, number]; // [west, south, east, north]
 }
 
@@ -173,6 +173,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
   const [opacity, setOpacity] = useState(0.8);
   const [basemap, setBasemap] = useState("streets");
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
+  const hoverRafRef = useRef<number | null>(null);
   const [hoverInfo, setHoverInfo] = useState<{
     x: number;
     y: number;
@@ -233,6 +234,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
         data: new Float32Array(floatData),
         width,
         height,
+        z,
         bounds: tileToBounds(x, y, z),
       });
       // Simple eviction: drop oldest entries when over cap
@@ -298,23 +300,30 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
 
   const onHover = useCallback(
     (info: any) => {
+      if (hoverRafRef.current !== null) {
+        cancelAnimationFrame(hoverRafRef.current);
+      }
       if (!info.coordinate) {
+        hoverRafRef.current = null;
         setHoverInfo(null);
         return;
       }
-      const [lng, lat] = info.coordinate;
-      const value = lookupValue(tileCacheRef.current, lng, lat);
-      if (value === null) {
-        setHoverInfo(null);
-        return;
-      }
-      setHoverInfo({
-        x: info.x,
-        y: info.y,
-        lng,
-        lat,
-        value,
-        bandName: dataset.band_names?.[0] ?? null,
+      hoverRafRef.current = requestAnimationFrame(() => {
+        hoverRafRef.current = null;
+        const [lng, lat] = info.coordinate;
+        const value = lookupValue(tileCacheRef.current, lng, lat);
+        if (value === null) {
+          setHoverInfo(null);
+          return;
+        }
+        setHoverInfo({
+          x: info.x,
+          y: info.y,
+          lng,
+          lat,
+          value,
+          bandName: dataset.band_names?.[0] ?? null,
+        });
       });
     },
     [dataset.band_names],

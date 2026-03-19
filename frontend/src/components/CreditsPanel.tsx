@@ -2,6 +2,7 @@ import { Box, Flex, Link, Tabs, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import type { Dataset } from "../types";
 import { detectCadence, formatDateRange } from "../utils/temporal";
+import { daysUntilExpiry } from "../utils/format";
 
 interface CreditsPanelProps {
   dataset: Dataset;
@@ -28,13 +29,6 @@ function formatBandLabel(dataset: Dataset): string | null {
     return `${dataset.band_count}-band RGB${extra ? ` + ${extra}` : ""}`;
   }
   return `${dataset.band_count}-band`;
-}
-
-function daysUntilExpiry(createdAt: string): number {
-  const created = new Date(createdAt);
-  const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const now = new Date();
-  return Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 export function CreditsPanel({

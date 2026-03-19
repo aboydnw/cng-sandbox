@@ -7,6 +7,7 @@ import { useFilterQuery } from "../hooks/useFilterQuery";
 import { FilterControls } from "./FilterControls";
 import { SqlEditor } from "./SqlEditor";
 import type { Dataset } from "../types";
+import { formatCount } from "../utils/format";
 
 interface ExploreTabProps {
   dataset: Dataset;
@@ -80,9 +81,6 @@ export function ExploreTab({ dataset, active, onTableChange }: ExploreTabProps) 
       </Box>
     );
   }
-
-  const formatCount = (n: number) =>
-    n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
 
   return (
     <Box p={4} fontSize="sm">

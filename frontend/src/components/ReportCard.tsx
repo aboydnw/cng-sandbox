@@ -1,6 +1,7 @@
 import { Box, Flex, Text, Tooltip } from "@chakra-ui/react";
 import type { Dataset } from "../types";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
+import { formatBytes } from "../utils/format";
 
 interface ReportCardProps {
   dataset: Dataset;
@@ -10,12 +11,6 @@ interface ReportCardProps {
 }
 
 // --- Formatting helpers ---
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function formatDownloadTime(bytes: number): string {
   const seconds = bytes / 1_500_000;

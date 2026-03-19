@@ -6,11 +6,7 @@ import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { useConversionJob } from "../hooks/useConversionJob";
-
-function formatSize(file: File): string {
-  const mb = file.size / (1024 * 1024);
-  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(file.size / 1024).toFixed(0)} KB`;
-}
+import { formatBytes } from "../utils/format";
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -20,7 +16,7 @@ export default function UploadPage() {
   const isProcessing = state.isUploading || (state.jobId !== null && state.status !== "failed");
 
   const handleFile = (file: File) => {
-    fileRef.current = { name: file.name, size: formatSize(file) };
+    fileRef.current = { name: file.name, size: formatBytes(file.size) };
     startUpload(file);
   };
 

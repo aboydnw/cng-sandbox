@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { ConversionJobState, StageInfo, JobStatus } from "../types";
+import type { ConversionJobState, StageInfo, JobStatus, ScanResult } from "../types";
 import { config } from "../config";
 
 const STAGE_NAMES = ["Scanning", "Converting", "Validating", "Ingesting", "Ready"];
@@ -47,6 +47,7 @@ export function useConversionJob() {
     progressCurrent: null,
     progressTotal: null,
     isUploading: false,
+    scanResult: null,
   });
 
   const esRef = useRef<EventSource | null>(null);
@@ -87,10 +88,53 @@ export function useConversionJob() {
       }
     });
 
+    es.addEventListener("scan_result", (event) => {
+      let data: ScanResult;
+      try {
+        data = JSON.parse((event as MessageEvent).data);
+      } catch {
+        return;
+      }
+
+      if (data.variables.length === 1) {
+        confirmVariable(data.scan_id, data.variables[0].name, data.variables[0].group);
+        return;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        scanResult: data,
+        isUploading: false,
+      }));
+    });
+
     es.onerror = () => {
       // EventSource handles reconnection automatically
     };
   }, []);
+
+  const confirmVariable = useCallback(
+    async (scanId: string, variable: string, group: string) => {
+      setState((prev) => ({ ...prev, scanResult: null }));
+
+      const resp = await fetch(`${config.apiBase}/api/scan/${scanId}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variable, group }),
+      });
+
+      if (!resp.ok) {
+        const detail = await resp.json().catch(() => ({ detail: "Variable selection failed" }));
+        setState((prev) => ({
+          ...prev,
+          status: "failed",
+          error: detail.detail || "Variable selection failed",
+          stages: updateStages("failed", detail.detail),
+        }));
+      }
+    },
+    [],
+  );
 
   const startUpload = useCallback(
     async (file: File) => {
@@ -212,5 +256,5 @@ export function useConversionJob() {
     [connectSSE],
   );
 
-  return { state, startUpload, startUrlFetch, startTemporalUpload };
+  return { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable };
 }

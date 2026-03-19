@@ -31,10 +31,16 @@ async def stream_job(job_id: str):
 
     async def event_generator():
         last_status = (None, None)
+        scan_result_emitted = False
         start = time.monotonic()
         max_duration = 600  # 10 minutes
 
         while time.monotonic() - start < max_duration:
+            # Emit scan_result once when available
+            if job.scan_result is not None and not scan_result_emitted:
+                scan_result_emitted = True
+                yield {"event": "scan_result", "data": json.dumps(job.scan_result)}
+
             current_snapshot = (job.status, job.progress_current)
             if current_snapshot != last_status:
                 last_status = current_snapshot

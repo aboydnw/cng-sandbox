@@ -24,7 +24,7 @@ dependencies = [
     "geoalchemy2>=0.15.0",
     "psycopg2-binary>=2.9.0",
     "rio-stac>=0.10.0",
-    "pystac>=1.10.0",
+    "pystac[validation]>=1.10.0",
     "geojson-pydantic>=1.1.0",
     "h5py>=3.10.0",
 ]

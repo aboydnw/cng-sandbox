@@ -94,6 +94,19 @@ function lookupValue(
   return val;
 }
 
+function formatCoord(lat: number, lng: number): string {
+  const latDir = lat >= 0 ? "N" : "S";
+  const lngDir = lng >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lng).toFixed(4)}°${lngDir}`;
+}
+
+function formatValue(value: number): string {
+  if (Math.abs(value) >= 1000) return value.toFixed(1);
+  if (Math.abs(value) >= 1) return value.toFixed(2);
+  if (Math.abs(value) >= 0.01) return value.toFixed(4);
+  return value.toPrecision(4);
+}
+
 const BASEMAPS: Record<string, string> = {
   streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
   satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
@@ -360,6 +373,31 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
           />
         </Box>
       </Flex>
+
+      {hoverInfo && (
+        <Box
+          position="absolute"
+          left={`${hoverInfo.x + 12}px`}
+          top={`${hoverInfo.y - 40}px`}
+          bg="white"
+          borderRadius="4px"
+          shadow="sm"
+          px={2}
+          py={1}
+          pointerEvents="none"
+          zIndex={10}
+          whiteSpace="nowrap"
+        >
+          <Text fontSize="13px" fontWeight={600} color="brand.brown">
+            {hoverInfo.bandName
+              ? `${hoverInfo.bandName}: ${formatValue(hoverInfo.value)}`
+              : formatValue(hoverInfo.value)}
+          </Text>
+          <Text fontSize="11px" color="brand.textSecondary">
+            {formatCoord(hoverInfo.lat, hoverInfo.lng)}
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }

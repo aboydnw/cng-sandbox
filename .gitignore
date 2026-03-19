@@ -5,4 +5,13 @@ dist/
 __pycache__/
 .pytest_cache/
 *.pyc
+.DS_Store
+*.log
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.env.local
+.env.*.local
 

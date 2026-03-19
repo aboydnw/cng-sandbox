@@ -1,6 +1,7 @@
 """FastAPI application for the CNG Sandbox ingestion service."""
 
 import asyncio
+import logging
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
@@ -53,6 +54,10 @@ async def lifespan(app: FastAPI):
 
 def create_app(settings=None) -> FastAPI:
     """Application factory — testable configuration."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    )
     if settings is None:
         settings = get_settings()
 

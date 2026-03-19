@@ -1,9 +1,11 @@
 """Pipeline orchestrator for temporal (multi-file) raster uploads."""
 
 import asyncio
+import logging
 import os
 import tempfile
-import traceback
+
+logger = logging.getLogger(__name__)
 
 from src.config import get_settings
 from src.models import (
@@ -95,7 +97,7 @@ async def run_temporal_pipeline(
                 failed = [c for c in check_results if not c.passed]
                 if failed:
                     details = "; ".join(f"{c.name}: {c.detail}" for c in failed)
-                    print(f"Validation failed for {entry.filename}: {details}")
+                    logger.warning("Validation failed for %s: %s", entry.filename, details)
                     job.status = JobStatus.FAILED
                     job.error = f"Validation failed for {entry.filename}: {details}"
                     _cleanup_uploaded(storage, uploaded_keys)
@@ -178,7 +180,7 @@ async def run_temporal_pipeline(
             datasets_store[job.dataset_id] = dataset
 
     except Exception as e:
-        traceback.print_exc()
+        logger.exception("Temporal pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
         job.error = str(e)
         _cleanup_uploaded(storage, uploaded_keys)

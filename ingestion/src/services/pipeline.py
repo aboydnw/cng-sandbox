@@ -6,11 +6,13 @@ freeze SSE streams and health checks during processing).
 """
 
 import asyncio
+import logging
 import os
 import tempfile
-import traceback
 import uuid
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 import httpx
 
@@ -239,7 +241,7 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
             failed = [c for c in check_results if not c.passed]
             if failed:
                 details = "; ".join(f"{c.name}: {c.detail}" for c in failed)
-                print(f"Validation failed: {details}")
+                logger.warning("Validation failed: %s", details)
                 job.status = JobStatus.FAILED
                 job.error = f"Validation failed: {details}"
                 return
@@ -351,7 +353,7 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
         datasets_store[job.dataset_id] = dataset
 
     except Exception as e:
-        traceback.print_exc()
+        logger.exception("Pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
         job.error = str(e)
 

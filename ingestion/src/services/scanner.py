@@ -39,17 +39,16 @@ def scan_hdf5(path: str) -> list[dict]:
 def scan_netcdf(path: str) -> list[dict]:
     """List eligible data variables from a NetCDF file."""
     variables = []
-    ds = xr.open_dataset(path)
-    for name in ds.data_vars:
-        da = ds[name]
-        spatial_dims = [d for d in da.dims if d.lower() not in ("time", "t")]
-        if len(spatial_dims) < 2:
-            continue
-        variables.append({
-            "name": str(name),
-            "group": "",
-            "shape": list(da.shape),
-            "dtype": str(da.dtype),
-        })
-    ds.close()
+    with xr.open_dataset(path) as ds:
+        for name in ds.data_vars:
+            da = ds[name]
+            spatial_dims = [d for d in da.dims if d.lower() not in ("time", "t")]
+            if len(spatial_dims) < 2:
+                continue
+            variables.append({
+                "name": str(name),
+                "group": "",
+                "shape": list(da.shape),
+                "dtype": str(da.dtype),
+            })
     return variables

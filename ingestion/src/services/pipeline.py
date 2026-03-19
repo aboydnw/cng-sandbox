@@ -178,6 +178,11 @@ async def run_pipeline(job: Job, input_path: str, datasets_store: dict) -> None:
             else:
                 variables = await asyncio.to_thread(scanner.scan_netcdf, input_path)
 
+            if len(variables) == 0:
+                job.status = JobStatus.FAILED
+                job.error = "No eligible raster variables found in this file."
+                return
+
             if len(variables) > 1:
                 scan_id = str(uuid.uuid4())
                 job.scan_result = {"scan_id": scan_id, "variables": variables}

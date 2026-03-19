@@ -79,24 +79,25 @@ def convert(input_path: str, output_path: str, variable: str = "",
 
         if variable not in grp:
             available = [k for k in grp.keys() if isinstance(grp[k], h5py.Dataset)]
-            print(f"Error: variable '{variable}' not found in group '{group}'")
-            print(f"Available datasets: {available}")
-            sys.exit(1)
+            raise ValueError(
+                f"Variable '{variable}' not found in group '{group}'. "
+                f"Available datasets: {available}"
+            )
 
         ds = grp[variable]
         data = ds[:].astype(np.float32)
         if data.ndim != 2:
-            print(f"Error: expected 2D variable, got shape {data.shape}")
-            sys.exit(1)
+            raise ValueError(f"Expected 2D variable, got shape {data.shape}")
 
         nodata = float(ds.attrs.get("_FillValue", -9999.0))
 
         x_coords = _find_dataset(grp, _X_NAMES)
         y_coords = _find_dataset(grp, _Y_NAMES)
         if x_coords is None or y_coords is None:
-            print(f"Error: cannot find coordinate arrays in group '{group}'")
-            print(f"Looking for x: {_X_NAMES}, y: {_Y_NAMES}")
-            sys.exit(1)
+            raise ValueError(
+                f"Cannot find coordinate arrays in group '{group}'. "
+                f"Looking for x: {_X_NAMES}, y: {_Y_NAMES}"
+            )
 
         src_crs = _detect_crs(grp, root, x_coords, y_coords)
 

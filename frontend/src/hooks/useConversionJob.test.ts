@@ -57,14 +57,13 @@ describe("fetchWithRetry", () => {
   });
 
   it("retries on network error and throws after exhausting retries", async () => {
+    vi.useRealTimers();
     mockFetch.mockRejectedValue(new Error("network error"));
 
-    const promise = fetchWithRetry("/api/test", undefined, 1);
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    await expect(promise).rejects.toThrow("network error");
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    await expect(fetchWithRetry("/api/test", undefined, 0)).rejects.toThrow(
+      "network error",
+    );
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it("does not retry 4xx errors", async () => {

@@ -2,6 +2,27 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import type { ConversionJobState, StageInfo, JobStatus, ScanResult } from "../types";
 import { config } from "../config";
 
+export async function fetchWithRetry(
+  input: RequestInfo,
+  init?: RequestInit,
+  maxRetries = 2
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const resp = await fetch(input, init);
+      if (resp.status >= 500 && attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      return resp;
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+  throw new Error("Fetch failed after retries");
+}
+
 const STAGE_NAMES = ["Scanning", "Converting", "Validating", "Ingesting", "Ready"];
 const STATUS_ORDER: JobStatus[] = ["scanning", "converting", "validating", "ingesting", "ready"];
 
@@ -59,6 +80,8 @@ export function useConversionJob() {
     };
   }, []);
 
+  const sseRetryCountRef = useRef(0);
+
   const connectSSE = useCallback((jobId: string) => {
     const es = new EventSource(`${config.apiBase}/api/jobs/${jobId}/stream`);
     esRef.current = es;
@@ -70,6 +93,7 @@ export function useConversionJob() {
       } catch {
         return;
       }
+      sseRetryCountRef.current = 0;
       const status = data.status;
       const error = data.error || null;
 
@@ -96,6 +120,8 @@ export function useConversionJob() {
         return;
       }
 
+      sseRetryCountRef.current = 0;
+
       if (data.variables.length === 1) {
         confirmVariable(data.scan_id, data.variables[0].name, data.variables[0].group);
         return;
@@ -109,7 +135,18 @@ export function useConversionJob() {
     });
 
     es.onerror = () => {
-      // EventSource handles reconnection automatically
+      es.close();
+      if (sseRetryCountRef.current < 3) {
+        sseRetryCountRef.current++;
+        setTimeout(() => connectSSE(jobId), 1000 * sseRetryCountRef.current);
+      } else {
+        setState((prev) => ({
+          ...prev,
+          error: "Connection lost. Please refresh the page.",
+          status: "failed",
+          stages: updateStages("failed", "Connection lost. Please refresh the page."),
+        }));
+      }
     };
   }, []);
 
@@ -117,7 +154,7 @@ export function useConversionJob() {
     async (scanId: string, variable: string, group: string) => {
       setState((prev) => ({ ...prev, scanResult: null }));
 
-      const resp = await fetch(`${config.apiBase}/api/scan/${scanId}/convert`, {
+      const resp = await fetchWithRetry(`${config.apiBase}/api/scan/${scanId}/convert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variable, group }),
@@ -143,7 +180,7 @@ export function useConversionJob() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const resp = await fetch(`${config.apiBase}/api/upload`, {
+      const resp = await fetchWithRetry(`${config.apiBase}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -178,7 +215,7 @@ export function useConversionJob() {
     async (url: string) => {
       setState((prev) => ({ ...prev, isUploading: true, status: "pending", error: null, stages: buildUploadingStages() }));
 
-      const resp = await fetch(`${config.apiBase}/api/convert-url`, {
+      const resp = await fetchWithRetry(`${config.apiBase}/api/convert-url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -225,7 +262,7 @@ export function useConversionJob() {
         formData.append("files", file);
       }
 
-      const resp = await fetch(`${config.apiBase}/api/upload-temporal`, {
+      const resp = await fetchWithRetry(`${config.apiBase}/api/upload-temporal`, {
         method: "POST",
         body: formData,
       });

@@ -12,6 +12,7 @@ __pycache__/
 *~
 .idea/
 .vscode/
+.env
 .env.local
 .env.*.local
 

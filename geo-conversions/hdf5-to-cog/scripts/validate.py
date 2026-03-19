@@ -95,8 +95,8 @@ def check_overviews(output_path: str, min_levels: int = 3) -> CheckResult:
 def check_pixel_fidelity(input_path: str, output_path: str, variable: str = "",
                           group: str = "", n: int = 1000, tolerance: float = 0.5) -> CheckResult:
     """Sample random pixels from HDF5, reproject coords, compare against COG values."""
-    _X_NAMES = {"xcoordinates", "x", "longitude", "lon"}
-    _Y_NAMES = {"ycoordinates", "y", "latitude", "lat"}
+    _X_NAMES = ["xcoordinates", "x", "longitude", "lon"]
+    _Y_NAMES = ["ycoordinates", "y", "latitude", "lat"]
 
     with h5py.File(input_path, "r") as f:
         grp = f[group] if group else f

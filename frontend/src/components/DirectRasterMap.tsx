@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
-import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
 import { MapView, WebMercatorViewport } from "@deck.gl/core";
 import MapGL from "react-map-gl/maplibre";
@@ -7,7 +7,7 @@ import { COGLayer } from "@developmentseed/deck.gl-geotiff";
 import { CreateTexture } from "@developmentseed/deck.gl-raster/gpu-modules";
 import wktParser from "wkt-parser";
 import type { Dataset } from "../types";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { BASEMAPS, BasemapPicker, BRAND_COLOR } from "./MapShell";
 
 // Offline EPSG resolver — avoids network fetch to epsg.io.
 // The library expects wkt-parser output format (units: "degree", not "degrees").
@@ -94,12 +94,6 @@ function formatValue(value: number): string {
   if (Math.abs(value) >= 0.01) return value.toFixed(4);
   return value.toPrecision(4);
 }
-
-const BASEMAPS: Record<string, string> = {
-  streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-  satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -335,17 +329,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
       </DeckGL>
 
       <Box position="absolute" top={3} left={3} bg="white" borderRadius="4px" shadow="sm" p={1}>
-        <NativeSelect.Root size="xs">
-          <NativeSelect.Field
-            value={basemap}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBasemap(e.target.value)}
-          >
-            <option value="streets">Streets</option>
-            <option value="satellite">Satellite</option>
-            <option value="dark">Dark</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
+        <BasemapPicker value={basemap} onChange={setBasemap} />
       </Box>
 
       <Flex
@@ -370,7 +354,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
             step={0.05}
             value={opacity}
             onChange={(e) => setOpacity(Number(e.target.value))}
-            style={{ width: 80, accentColor: "#CF3F02" }}
+            style={{ width: 80, accentColor: BRAND_COLOR }}
           />
         </Box>
       </Flex>

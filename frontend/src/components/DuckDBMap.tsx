@@ -1,21 +1,15 @@
 import { useMemo, useCallback } from "react";
-import { Box, NativeSelect } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { DeckGL } from "@deck.gl/react";
 import { MapView } from "@deck.gl/core";
 import { Map } from "react-map-gl/maplibre";
 import { GeoJsonLayer } from "@deck.gl/layers";
 import type { Table } from "apache-arrow";
 import type { MapViewState } from "@deck.gl/core";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { BASEMAPS, BasemapPicker, BRAND_COLOR_RGBA } from "./MapShell";
 
-const BASEMAPS: Record<string, string> = {
-  streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-  satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-};
-
-const FILL_COLOR = [207, 63, 2, 180] as [number, number, number, number];
-const LINE_COLOR = [207, 63, 2, 255] as [number, number, number, number];
+const FILL_COLOR = [...BRAND_COLOR_RGBA, 180] as [number, number, number, number];
+const LINE_COLOR = [...BRAND_COLOR_RGBA, 255] as [number, number, number, number];
 
 interface DuckDBMapProps {
   table: Table | null;
@@ -102,17 +96,7 @@ export function DuckDBMap({
         <Map mapStyle={BASEMAPS[basemap]} />
       </DeckGL>
       <Box position="absolute" top={3} left={3} bg="white" borderRadius="4px" shadow="sm" p={1}>
-        <NativeSelect.Root size="xs">
-          <NativeSelect.Field
-            value={basemap}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onBasemapChange(e.target.value)}
-          >
-            <option value="streets">Streets</option>
-            <option value="satellite">Satellite</option>
-            <option value="dark">Dark</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
+        <BasemapPicker value={basemap} onChange={onBasemapChange} />
       </Box>
     </Box>
   );

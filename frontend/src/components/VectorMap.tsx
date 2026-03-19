@@ -1,19 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
-import { Box, NativeSelect } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import maplibregl, { addProtocol, removeProtocol } from "maplibre-gl";
 import { createPMTilesProtocol } from "../lib/maptool";
 import type { Dataset } from "../types";
-import "maplibre-gl/dist/maplibre-gl.css";
-
-const BASEMAPS: Record<string, string> = {
-  streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-  satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-};
-
-const FILL_COLOR = "#CF3F02";
-const LINE_COLOR = "#CF3F02";
-const CIRCLE_COLOR = "#CF3F02";
+import { BASEMAPS, BasemapPicker, BRAND_COLOR } from "./MapShell";
 
 interface VectorMapProps {
   dataset: Dataset;
@@ -57,7 +47,7 @@ export function VectorMap({ dataset, basemap, onBasemapChange, onViewportChange 
       type: "fill",
       source: "vector-data",
       "source-layer": "default",
-      paint: { "fill-color": FILL_COLOR, "fill-opacity": 0.3 },
+      paint: { "fill-color": BRAND_COLOR, "fill-opacity": 0.3 },
     });
 
     map.addLayer({
@@ -65,7 +55,7 @@ export function VectorMap({ dataset, basemap, onBasemapChange, onViewportChange 
       type: "line",
       source: "vector-data",
       "source-layer": "default",
-      paint: { "line-color": LINE_COLOR, "line-width": 1.5 },
+      paint: { "line-color": BRAND_COLOR, "line-width": 1.5 },
     });
 
     map.addLayer({
@@ -74,7 +64,7 @@ export function VectorMap({ dataset, basemap, onBasemapChange, onViewportChange 
       source: "vector-data",
       "source-layer": "default",
       paint: {
-        "circle-color": CIRCLE_COLOR,
+        "circle-color": BRAND_COLOR,
         "circle-radius": 4,
         "circle-stroke-color": "#fff",
         "circle-stroke-width": 1,
@@ -194,17 +184,7 @@ export function VectorMap({ dataset, basemap, onBasemapChange, onViewportChange 
     <Box position="relative" w="100%" h="100%">
       <Box ref={containerRef} w="100%" h="100%" />
       <Box position="absolute" top={3} left={3} bg="white" borderRadius="4px" shadow="sm" p={1}>
-        <NativeSelect.Root size="xs">
-          <NativeSelect.Field
-            value={basemap}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onBasemapChange(e.target.value)}
-          >
-            <option value="streets">Streets</option>
-            <option value="satellite">Satellite</option>
-            <option value="dark">Dark</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
+        <BasemapPicker value={basemap} onChange={onBasemapChange} />
       </Box>
     </Box>
   );

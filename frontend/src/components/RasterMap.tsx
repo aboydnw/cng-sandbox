@@ -9,13 +9,7 @@ import { TemporalControls } from "./TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { detectCadence, formatTimestepLabel } from "../utils/temporal";
-import "maplibre-gl/dist/maplibre-gl.css";
-
-const BASEMAPS: Record<string, string> = {
-  streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-  satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-};
+import { BASEMAPS, BasemapPicker, BRAND_COLOR } from "./MapShell";
 
 const COLORMAP_NAMES = listColormaps();
 
@@ -174,17 +168,7 @@ export function RasterMap({ dataset, initialTimestep, onTimestepChange }: Raster
       </DeckGL>
 
       <Box position="absolute" top={3} left={3} bg="white" borderRadius="4px" shadow="sm" p={1}>
-        <NativeSelect.Root size="xs">
-          <NativeSelect.Field
-            value={basemap}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBasemap(e.target.value)}
-          >
-            <option value="streets">Streets</option>
-            <option value="satellite">Satellite</option>
-            <option value="dark">Dark</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
+        <BasemapPicker value={basemap} onChange={setBasemap} />
       </Box>
 
       {showingColormap && (
@@ -263,7 +247,7 @@ export function RasterMap({ dataset, initialTimestep, onTimestepChange }: Raster
             step={0.05}
             value={opacity}
             onChange={(e) => setOpacity(Number(e.target.value))}
-            style={{ width: 80, accentColor: "#CF3F02" }}
+            style={{ width: 80, accentColor: BRAND_COLOR }}
           />
         </Box>
       </Flex>

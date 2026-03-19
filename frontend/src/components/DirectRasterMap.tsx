@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
 import { MapView, WebMercatorViewport } from "@deck.gl/core";
@@ -41,6 +41,18 @@ async function localEpsgResolver(epsg: number) {
   const parsed = wktParser(projjson);
   EPSG_DEFS[epsg] = parsed;
   return parsed;
+}
+
+/** Convert Web Mercator tile indices to geographic bounds [west, south, east, north]. */
+function tileToBounds(x: number, y: number, z: number): [number, number, number, number] {
+  const n = Math.PI - (2 * Math.PI * y) / 2 ** z;
+  const n2 = Math.PI - (2 * Math.PI * (y + 1)) / 2 ** z;
+  return [
+    (x / 2 ** z) * 360 - 180,               // west
+    (Math.atan(Math.sinh(n2)) * 180) / Math.PI, // south
+    ((x + 1) / 2 ** z) * 360 - 180,          // east
+    (Math.atan(Math.sinh(n)) * 180) / Math.PI,  // north
+  ];
 }
 
 const BASEMAPS: Record<string, string> = {
@@ -92,6 +104,15 @@ const ViridisColorize = {
   },
 };
 
+interface TileCacheEntry {
+  data: Float32Array;
+  width: number;
+  height: number;
+  bounds: [number, number, number, number]; // [west, south, east, north]
+}
+
+const MAX_CACHED_TILES = 256;
+
 interface DirectRasterMapProps {
   dataset: Dataset;
 }
@@ -99,6 +120,7 @@ interface DirectRasterMapProps {
 export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
   const [opacity, setOpacity] = useState(0.8);
   const [basemap, setBasemap] = useState("streets");
+  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
   const rasterMin = dataset.raster_min ?? 0;
   const rasterMax = dataset.raster_max ?? 1;
 
@@ -121,7 +143,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
 
   const getTileData = useCallback(
     async (image: any, options: any) => {
-      const { device, x, y, signal } = options;
+      const { device, x, y, z, signal } = options;
       // Don't pass `pool` — Vite's dev server can't serve the decoder workers.
       // Main-thread decoding works fine for the tile sizes involved.
       const tile = await image.fetchTile(x, y, {
@@ -142,6 +164,21 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
       if (!floatData || !(floatData instanceof Float32Array)) {
         console.error("[DirectRasterMap] unexpected data type:", floatData);
         return { texture: null, width: 0, height: 0 };
+      }
+
+      // Cache raw float32 data for pixel inspector
+      const cacheKey = `${z}/${x}/${y}`;
+      const cache = tileCacheRef.current;
+      cache.set(cacheKey, {
+        data: new Float32Array(floatData),
+        width,
+        height,
+        bounds: tileToBounds(x, y, z),
+      });
+      // Simple eviction: drop oldest entries when over cap
+      while (cache.size > MAX_CACHED_TILES) {
+        const firstKey = cache.keys().next().value;
+        if (firstKey !== undefined) cache.delete(firstKey);
       }
 
       // Normalize float32 elevation to uint8 [0, 255]

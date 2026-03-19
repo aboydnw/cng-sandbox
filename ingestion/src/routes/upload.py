@@ -4,10 +4,11 @@ import ipaddress
 import os
 import socket
 import tempfile
+from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
 from pydantic import BaseModel as PydanticBaseModel, field_validator
 
 from src.state import jobs, datasets, scan_store, scan_store_lock
@@ -50,95 +51,81 @@ class ConvertUrlRequest(PydanticBaseModel):
                 pass
         return v
 
-router = APIRouter(prefix="/api")
-
-
-@router.post("/upload")
-
-async def upload_file(
-    request: Request,
-    file: UploadFile,
-    background_tasks: BackgroundTasks,
-):
-    """Accept a file upload and start the conversion pipeline."""
+@asynccontextmanager
+async def _save_chunks(suffix: str):
+    """Write chunks to a temp file with size validation. Cleans up on error."""
     settings = get_settings()
-
-    # Validate file size (read in chunks to avoid loading entire file in memory)
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename or "")[1])
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     size = 0
     try:
-        while chunk := await file.read(1024 * 1024):  # 1MB chunks
+        async def write(chunk: bytes):
+            nonlocal size
             size += len(chunk)
             if size > settings.max_upload_bytes:
-                os.unlink(tmp.name)
                 raise HTTPException(
                     status_code=413,
                     detail=f"File too large. Maximum size is {settings.max_upload_bytes // (1024*1024)} MB.",
                 )
             tmp.write(chunk)
+        yield tmp.name, write
         tmp.close()
-    except HTTPException:
-        raise
     except Exception:
-        os.unlink(tmp.name)
+        tmp.close()
+        if os.path.exists(tmp.name):
+            os.unlink(tmp.name)
         raise
 
+
+router = APIRouter(prefix="/api")
+
+
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile,
+    background_tasks: BackgroundTasks,
+):
+    """Accept a file upload and start the conversion pipeline."""
     if not file.filename:
-        os.unlink(tmp.name)
         raise HTTPException(status_code=400, detail="Filename is required.")
+
+    ext = os.path.splitext(file.filename)[1]
+    async with _save_chunks(suffix=ext) as (tmp_path, write):
+        while chunk := await file.read(1024 * 1024):
+            await write(chunk)
 
     job = Job(filename=file.filename)
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_and_cleanup, job, tmp.name)
+    background_tasks.add_task(_run_and_cleanup, job, tmp_path)
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
 @router.post("/convert-url")
-
 async def convert_url(
-    request: Request,
     body: ConvertUrlRequest,
     background_tasks: BackgroundTasks,
 ):
     """Fetch a file from a URL and start the conversion pipeline."""
-    settings = get_settings()
-
     parsed = urlparse(body.url)
     filename = os.path.basename(parsed.path) or "download"
+    ext = os.path.splitext(filename)[1]
 
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1])
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
-            async with client.stream("GET", body.url) as resp:
-                resp.raise_for_status()
-                size = 0
-                async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
-                    size += len(chunk)
-                    if size > settings.max_upload_bytes:
-                        os.unlink(tmp.name)
-                        raise HTTPException(
-                            status_code=413,
-                            detail=f"File too large. Maximum size is {settings.max_upload_bytes // (1024*1024)} MB.",
-                        )
-                    tmp.write(chunk)
-        tmp.close()
+        async with _save_chunks(suffix=ext) as (tmp_path, write):
+            async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
+                async with client.stream("GET", body.url) as resp:
+                    resp.raise_for_status()
+                    async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
+                        await write(chunk)
     except httpx.HTTPStatusError as e:
-        os.unlink(tmp.name)
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e.response.status_code}")
     except httpx.RequestError as e:
-        os.unlink(tmp.name)
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}")
-    except HTTPException:
-        raise
-    except Exception:
-        os.unlink(tmp.name)
-        raise
 
     job = Job(filename=filename)
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_and_cleanup, job, tmp.name)
+    background_tasks.add_task(_run_and_cleanup, job, tmp_path)
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
@@ -186,21 +173,16 @@ async def _run_and_cleanup(job: Job, input_path: str):
 
 
 @router.post("/upload-temporal")
-
 async def upload_temporal(
-    request: Request,
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
 ):
     """Accept multiple raster files and start the temporal conversion pipeline."""
-    settings = get_settings()
-
     if len(files) < 2:
         raise HTTPException(status_code=400, detail="Temporal upload requires at least 2 files.")
     if len(files) > MAX_TEMPORAL_FILES:
         raise HTTPException(status_code=400, detail=f"Maximum {MAX_TEMPORAL_FILES} files per temporal upload.")
 
-    # Validate all files are raster formats and same type
     extensions = set()
     for f in files:
         if not f.filename:
@@ -220,29 +202,16 @@ async def upload_temporal(
     if len(extensions) > 1:
         raise HTTPException(status_code=400, detail="All files must be the same format.")
 
-    # Save all files to temp
     tmp_paths = []
     filenames = []
     try:
         for f in files:
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(f.filename)[1])
-            size = 0
-            while chunk := await f.read(1024 * 1024):
-                size += len(chunk)
-                if size > settings.max_upload_bytes:
-                    for p in tmp_paths:
-                        os.unlink(p)
-                    os.unlink(tmp.name)
-                    raise HTTPException(
-                        status_code=413,
-                        detail=f"{f.filename} is too large. Maximum size per file is {settings.max_upload_bytes // (1024*1024)} MB.",
-                    )
-                tmp.write(chunk)
-            tmp.close()
-            tmp_paths.append(tmp.name)
+            ext = os.path.splitext(f.filename)[1]
+            async with _save_chunks(suffix=ext) as (tmp_path, write):
+                while chunk := await f.read(1024 * 1024):
+                    await write(chunk)
+            tmp_paths.append(tmp_path)
             filenames.append(f.filename)
-    except HTTPException:
-        raise
     except Exception:
         for p in tmp_paths:
             if os.path.exists(p):

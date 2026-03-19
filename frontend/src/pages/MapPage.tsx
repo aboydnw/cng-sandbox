@@ -15,6 +15,7 @@ import type { Dataset } from "../types";
 import type { Table } from "apache-arrow";
 import type { MapViewState } from "@deck.gl/core";
 import { findGaps } from "../utils/temporal";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 export default function MapPage() {
   const { id } = useParams<{ id: string }>();
@@ -158,85 +159,87 @@ export default function MapPage() {
         </Button>
       </Header>
 
-      <Flex flex={1} overflow="hidden">
-        <Box flex={7} position="relative">
-          {dataset.dataset_type === "raster" ? (
-            activeTab === "client" && canClientRender ? (
-              <DirectRasterMap dataset={dataset} />
-            ) : (
-              <RasterMap
-                dataset={dataset}
-                initialTimestep={dataset.is_temporal ? initialTimestep : undefined}
-                onTimestepChange={(index) => {
-                  setSearchParams(
-                    (prev) => {
-                      const next = new URLSearchParams(prev);
-                      next.set("t", String(index));
-                      return next;
-                    },
-                    { replace: true },
-                  );
-                }}
-              />
-            )
-          ) : activeTab === "explore" ? (
-            <DuckDBMap
-              table={arrowTable}
-              viewState={viewState}
-              onViewStateChange={setViewState}
-              basemap={basemap}
-              onBasemapChange={setBasemap}
-            />
-          ) : (
-            <VectorMap
-              dataset={dataset}
-              basemap={basemap}
-              onBasemapChange={setBasemap}
-              onViewportChange={(vp) => setViewState((prev) => ({ ...prev, ...vp }))}
-            />
-          )}
-        </Box>
-
-        <Box
-          ref={creditsPanelRef}
-          flex={3}
-          display={{ base: "none", md: "block" }}
-          overflow="auto"
-        >
-          <CreditsPanel
-            dataset={dataset}
-            gapCount={gapCount}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            exploreContent={
-              dataset.parquet_url ? (
-                <ExploreTab
+      <ErrorBoundary>
+        <Flex flex={1} overflow="hidden">
+          <Box flex={7} position="relative">
+            {dataset.dataset_type === "raster" ? (
+              activeTab === "client" && canClientRender ? (
+                <DirectRasterMap dataset={dataset} />
+              ) : (
+                <RasterMap
                   dataset={dataset}
-                  active={activeTab === "explore"}
-                  onTableChange={setArrowTable}
+                  initialTimestep={dataset.is_temporal ? initialTimestep : undefined}
+                  onTimestepChange={(index) => {
+                    setSearchParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.set("t", String(index));
+                        return next;
+                      },
+                      { replace: true },
+                    );
+                  }}
                 />
-              ) : undefined
-            }
-            clientRenderContent={
-              canClientRender ? (
-                <Box p={6}>
-                  <Text fontSize="sm" color="brand.textSecondary" mb={3}>
-                    Client-side rendering reads the COG file directly from storage
-                    using HTTP Range requests and renders pixels on the GPU — no tile
-                    server involved.
-                  </Text>
-                  <Text fontSize="xs" color="brand.textSecondary">
-                    Powered by{" "}
-                    <Text as="span" fontWeight={600}>
-                      @developmentseed/deck.gl-geotiff
+              )
+            ) : activeTab === "explore" ? (
+              <DuckDBMap
+                table={arrowTable}
+                viewState={viewState}
+                onViewStateChange={setViewState}
+                basemap={basemap}
+                onBasemapChange={setBasemap}
+              />
+            ) : (
+              <VectorMap
+                dataset={dataset}
+                basemap={basemap}
+                onBasemapChange={setBasemap}
+                onViewportChange={(vp) => setViewState((prev) => ({ ...prev, ...vp }))}
+              />
+            )}
+          </Box>
+
+          <Box
+            ref={creditsPanelRef}
+            flex={3}
+            display={{ base: "none", md: "block" }}
+            overflow="auto"
+          >
+            <CreditsPanel
+              dataset={dataset}
+              gapCount={gapCount}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              exploreContent={
+                dataset.parquet_url ? (
+                  <ExploreTab
+                    dataset={dataset}
+                    active={activeTab === "explore"}
+                    onTableChange={setArrowTable}
+                  />
+                ) : undefined
+              }
+              clientRenderContent={
+                canClientRender ? (
+                  <Box p={6}>
+                    <Text fontSize="sm" color="brand.textSecondary" mb={3}>
+                      Client-side rendering reads the COG file directly from storage
+                      using HTTP Range requests and renders pixels on the GPU — no tile
+                      server involved.
                     </Text>
-                  </Text>
-                </Box>
-              ) : undefined
-            }
-          />
-        </Box>
-      </Flex>
+                    <Text fontSize="xs" color="brand.textSecondary">
+                      Powered by{" "}
+                      <Text as="span" fontWeight={600}>
+                        @developmentseed/deck.gl-geotiff
+                      </Text>
+                    </Text>
+                  </Box>
+                ) : undefined
+              }
+            />
+          </Box>
+        </Flex>
+      </ErrorBoundary>
       <ReportCard
         dataset={dataset}
         isOpen={reportCardOpen}

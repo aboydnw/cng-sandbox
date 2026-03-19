@@ -55,6 +55,45 @@ function tileToBounds(x: number, y: number, z: number): [number, number, number,
   ];
 }
 
+/** Look up raw raster value at a geographic point from the tile cache. */
+function lookupValue(
+  cache: Map<string, TileCacheEntry>,
+  lng: number,
+  lat: number,
+): number | null {
+  let bestEntry: TileCacheEntry | null = null;
+  let bestZoom = -1;
+
+  for (const [key, entry] of cache) {
+    const [west, south, east, north] = entry.bounds;
+    if (lng >= west && lng <= east && lat >= south && lat <= north) {
+      const z = parseInt(key.split("/")[0], 10);
+      if (z > bestZoom) {
+        bestZoom = z;
+        bestEntry = entry;
+      }
+    }
+  }
+
+  if (!bestEntry) return null;
+
+  const [west, south, east, north] = bestEntry.bounds;
+  const px = Math.floor(
+    ((lng - west) / (east - west)) * bestEntry.width,
+  );
+  const py = Math.floor(
+    ((north - lat) / (north - south)) * bestEntry.height,
+  );
+
+  if (px < 0 || px >= bestEntry.width || py < 0 || py >= bestEntry.height) {
+    return null;
+  }
+
+  const val = bestEntry.data[py * bestEntry.width + px];
+  if (val !== val) return null; // NaN check
+  return val;
+}
+
 const BASEMAPS: Record<string, string> = {
   streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
   satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
@@ -121,6 +160,14 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
   const [opacity, setOpacity] = useState(0.8);
   const [basemap, setBasemap] = useState("streets");
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
+  const [hoverInfo, setHoverInfo] = useState<{
+    x: number;
+    y: number;
+    lng: number;
+    lat: number;
+    value: number;
+    bandName: string | null;
+  } | null>(null);
   const rasterMin = dataset.raster_min ?? 0;
   const rasterMax = dataset.raster_max ?? 1;
 
@@ -236,6 +283,30 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
     ];
   }, [dataset.cog_url, opacity, getTileData, renderTile]);
 
+  const onHover = useCallback(
+    (info: any) => {
+      if (!info.coordinate) {
+        setHoverInfo(null);
+        return;
+      }
+      const [lng, lat] = info.coordinate;
+      const value = lookupValue(tileCacheRef.current, lng, lat);
+      if (value === null) {
+        setHoverInfo(null);
+        return;
+      }
+      setHoverInfo({
+        x: info.x,
+        y: info.y,
+        lng,
+        lat,
+        value,
+        bandName: dataset.band_names?.[0] ?? null,
+      });
+    },
+    [dataset.band_names],
+  );
+
   return (
     <Box position="relative" w="100%" h="100%">
       <DeckGL
@@ -243,6 +314,7 @@ export function DirectRasterMap({ dataset }: DirectRasterMapProps) {
         controller
         layers={layers}
         views={new MapView({ repeat: true })}
+        onHover={onHover}
         onError={(error) => console.error("DeckGL error:", error.message)}
       >
         <Map mapStyle={BASEMAPS[basemap]} />

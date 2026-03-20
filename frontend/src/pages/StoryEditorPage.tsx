@@ -230,9 +230,13 @@ export default function StoryEditorPage() {
     updateStory((s) => ({ ...s, published: true }));
     saveStory({ ...story, published: true });
     const url = `${window.location.origin}/story/${story.id}`;
-    navigator.clipboard.writeText(url);
-    setPublishFeedback("Published! URL copied to clipboard.");
-    setTimeout(() => setPublishFeedback(null), 3000);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url);
+      setPublishFeedback("Published! URL copied to clipboard.");
+    } else {
+      setPublishFeedback(`Published! Reader URL: ${url}`);
+    }
+    setTimeout(() => setPublishFeedback(null), 5000);
   }
 
   // Build layers

@@ -26,7 +26,7 @@ My rough notes:
 
 Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytelling story about geospatial data. Use clear, accessible language suitable for a non-technical audience. Write in the style of a scientific narrative, not marketing copy. Output as markdown.`;
 
-    navigator.clipboard.writeText(prompt);
+    navigator.clipboard?.writeText(prompt);
     setShowAiPrompt(false);
     setRoughNotes("");
   }

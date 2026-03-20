@@ -7,7 +7,13 @@ export async function createStoryOnServer(story: Omit<Story, "id" | "created_at"
   const resp = await fetch(BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(story),
+    body: JSON.stringify({
+      title: story.title,
+      description: story.description,
+      dataset_id: story.dataset_id,
+      chapters: story.chapters,
+      published: story.published,
+    }),
   });
   if (!resp.ok) throw new Error(`Failed to create story: ${resp.status}`);
   return resp.json();

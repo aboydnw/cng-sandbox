@@ -1,3 +1,13 @@
+function uuid(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export interface MapState {
   center: [number, number];
   zoom: number;
@@ -44,7 +54,7 @@ export function createChapter(
   overrides: Partial<Chapter> = {},
 ): Chapter {
   return {
-    id: crypto.randomUUID(),
+    id: uuid(),
     order: 0,
     title: "Untitled chapter",
     narrative: "",
@@ -59,7 +69,7 @@ export function createStory(
   overrides: Partial<Story> = {},
 ): Story {
   return {
-    id: crypto.randomUUID(),
+    id: uuid(),
     title: "Untitled story",
     dataset_id: datasetId,
     chapters: [createChapter({ order: 0, title: "Chapter 1" })],

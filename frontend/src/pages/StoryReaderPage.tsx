@@ -13,7 +13,7 @@ import {
   buildRasterTileLayers,
   buildVectorLayer,
 } from "../lib/layers";
-import { getStoryFromServer, DEFAULT_LAYER_CONFIG } from "../lib/story";
+import { getStoryFromServer, DEFAULT_LAYER_CONFIG, migrateStory } from "../lib/story";
 import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -21,7 +21,7 @@ import { config } from "../config";
 export default function StoryReaderPage({ embed = false }: { embed?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const [story, setStory] = useState<Story | null>(null);
-  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [datasetMap, setDatasetMap] = useState<Map<string, Dataset | null>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
@@ -40,11 +40,13 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         const loaded = await getStoryFromServer(id!);
         if (!loaded) {
           setError("Story not found");
+          setLoading(false);
           return;
         }
-        setStory(loaded);
-        if (loaded.chapters.length > 0) {
-          const ch = loaded.chapters[0];
+        const migrated = migrateStory(loaded);
+        setStory(migrated);
+        if (migrated.chapters.length > 0) {
+          const ch = migrated.chapters[0];
           setCamera({
             longitude: ch.map_state.center[0],
             latitude: ch.map_state.center[1],
@@ -56,46 +58,45 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load story");
-      } finally {
         setLoading(false);
       }
     }
     loadStory();
   }, [id]);
 
-  // Fetch dataset from API
+  // Fetch all datasets referenced by the story
   useEffect(() => {
     if (!story) return;
-    async function fetchDataset() {
-      try {
-        const resp = await fetch(
-          `${config.apiBase}/api/datasets/${story!.dataset_id}`,
-        );
-        if (!resp.ok) {
-          setError(
-            resp.status === 404
-              ? "This story's data has expired"
-              : `Failed to load dataset (HTTP ${resp.status})`,
-          );
-          return;
-        }
-        setDataset(await resp.json());
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load dataset");
-      }
+    async function fetchDatasets() {
+      const ids = story!.dataset_ids ?? [story!.dataset_id];
+      const uniqueIds = [...new Set(ids)];
+      const entries = await Promise.all(
+        uniqueIds.map(async (dsId) => {
+          try {
+            const resp = await fetch(`${config.apiBase}/api/datasets/${dsId}`);
+            if (!resp.ok) return [dsId, null] as const;
+            return [dsId, await resp.json() as Dataset] as const;
+          } catch {
+            return [dsId, null] as const;
+          }
+        }),
+      );
+      setDatasetMap(new Map(entries));
+      setLoading(false);
     }
-    fetchDataset();
+    fetchDatasets();
   }, [story]);
 
   // Initialize camera from dataset bounds if first chapter has default state
   useEffect(() => {
-    if (dataset?.bounds && story?.chapters[0]) {
-      const ch = story.chapters[0];
-      if (ch.map_state.center[0] === 0 && ch.map_state.center[1] === 0) {
-        setCamera(cameraFromBounds(dataset.bounds));
-      }
+    if (!story || datasetMap.size === 0) return;
+    const firstChapter = story.chapters[0];
+    if (!firstChapter) return;
+    const ds = datasetMap.get(firstChapter.layer_config.dataset_id);
+    if (ds?.bounds && firstChapter.map_state.center[0] === 0 && firstChapter.map_state.center[1] === 0) {
+      setCamera(cameraFromBounds(ds.bounds));
     }
-  }, [dataset, story]);
+  }, [story, datasetMap]);
 
   // Set up scrollama
   useEffect(() => {
@@ -143,12 +144,14 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
 
   // Build layers
   const layers = useMemo(() => {
-    if (!dataset) return [];
     const chapter = sortedChapters[activeChapterIndex];
-    const lc = chapter?.layer_config ?? DEFAULT_LAYER_CONFIG;
+    if (!chapter) return [];
+    const ds = datasetMap.get(chapter.layer_config.dataset_id);
+    if (!ds) return [];
+    const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
-    if (dataset.dataset_type === "raster") {
-      const base = dataset.tile_url;
+    if (ds.dataset_type === "raster") {
+      const base = ds.tile_url;
       const sep = base.includes("?") ? "&" : "?";
       const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
       return buildRasterTileLayers({
@@ -159,19 +162,23 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
     }
     return [
       buildVectorLayer({
-        tileUrl: dataset.tile_url,
-        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
+        tileUrl: ds.tile_url,
+        isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
         opacity: lc.opacity,
-        minZoom: dataset.min_zoom ?? undefined,
-        maxZoom: dataset.max_zoom ?? undefined,
+        minZoom: ds.min_zoom ?? undefined,
+        maxZoom: ds.max_zoom ?? undefined,
       }),
     ];
-  }, [dataset, activeChapterIndex, story, sortedChapters]);
+  }, [datasetMap, activeChapterIndex, sortedChapters]);
 
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
     setTransitionDuration(undefined);
   }, []);
+
+  const activeChapterDataset = sortedChapters[activeChapterIndex]
+    ? datasetMap.get(sortedChapters[activeChapterIndex].layer_config.dataset_id)
+    : undefined;
 
   if (loading) {
     return (
@@ -195,12 +202,6 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         <Text color="gray.600" fontSize="lg">
           {error}
         </Text>
-        {story && error === "This story's data has expired" && (
-          <Text color="gray.500" fontSize="sm">
-            The narrative text is preserved below, but the map data is no longer
-            available.
-          </Text>
-        )}
         <Link to="/">
           <Text color="brand.orange" fontWeight={600}>
             ← Back to sandbox
@@ -296,7 +297,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
 
         {/* Right: sticky map */}
         <Box w="60%" position="relative">
-          {dataset && (
+          {datasetMap.size > 0 && (
             <UnifiedMap
               camera={camera}
               onCameraChange={handleCameraChange}
@@ -306,6 +307,20 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
               transitionDuration={transitionDuration}
               transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
             />
+          )}
+          {activeChapterDataset === null && (
+            <Flex
+              position="absolute"
+              inset={0}
+              align="center"
+              justify="center"
+              bg="blackAlpha.600"
+              zIndex={10}
+            >
+              <Text color="white" fontSize="lg" fontWeight={500}>
+                Data no longer available
+              </Text>
+            </Flex>
           )}
         </Box>
       </Flex>

@@ -15,7 +15,8 @@ export async function createStoryOnServer(story: Omit<Story, "id" | "created_at"
 
 export async function getStoryFromServer(id: string): Promise<Story | null> {
   const resp = await fetch(`${BASE}/${id}`);
-  if (!resp.ok) return null;
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error(`Failed to load story: ${resp.status}`);
   return resp.json();
 }
 

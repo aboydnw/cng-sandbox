@@ -239,8 +239,10 @@ export default function StoryEditorPage() {
   // Publish
   function handlePublish() {
     if (!story) return;
-    updateStory((s) => ({ ...s, published: true }));
-    saveStoryToServer({ ...story, published: true });
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    const published = { ...story, published: true };
+    setStory(published);
+    saveStoryToServer(published);
     const url = `${window.location.origin}/story/${story.id}`;
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url);

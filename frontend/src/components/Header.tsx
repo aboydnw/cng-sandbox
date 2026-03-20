@@ -19,20 +19,9 @@ export function Header({ children }: HeaderProps) {
     >
       <Flex align="center" gap={3}>
         <img src="/logo.svg" alt="Development Seed" width={32} height={32} />
-        <Box>
-          <Text as="span" color="brand.brown" fontWeight={700} fontSize="15px">
-            CNG Sandbox
-          </Text>
-          <Text
-            as="span"
-            color="brand.textSecondary"
-            fontSize="13px"
-            ml={2}
-            display={{ base: "none", md: "inline" }}
-          >
-            by Development Seed
-          </Text>
-        </Box>
+        <Text as="span" color="brand.brown" fontWeight={700} fontSize="15px">
+          CNG Sandbox
+        </Text>
       </Flex>
       {children && <Flex gap={2}>{children}</Flex>}
     </Flex>

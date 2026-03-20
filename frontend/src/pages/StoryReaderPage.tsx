@@ -14,7 +14,7 @@ import {
   buildVectorLayer,
 } from "../lib/layers";
 import { getStoryFromServer, DEFAULT_LAYER_CONFIG, migrateStory } from "../lib/story";
-import type { Story, Chapter } from "../lib/story";
+import type { Story } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
 

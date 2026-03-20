@@ -2,26 +2,28 @@ import { createCOGLayer } from "../maptool";
 import type { Timestep } from "../../types";
 
 interface RasterTileLayerOptions {
+  id?: string;
   tileUrl: string;
   opacity: number;
   isTemporalActive: boolean;
   timesteps?: Timestep[];
   activeTimestepIndex?: number;
-  onViewportLoad?: (index: number) => () => void;
+  getLoadCallback?: (index: number) => () => void;
 }
 
 export function buildRasterTileLayers({
+  id = "raster-tile-0",
   tileUrl,
   opacity,
   isTemporalActive,
   timesteps = [],
   activeTimestepIndex = 0,
-  onViewportLoad,
+  getLoadCallback,
 }: RasterTileLayerOptions) {
   if (!isTemporalActive) {
     return [
       createCOGLayer({
-        id: "raster-tile-0",
+        id,
         tileUrl,
         opacity,
       }),
@@ -33,7 +35,7 @@ export function buildRasterTileLayers({
       id: `raster-ts-${i}`,
       tileUrl: `${tileUrl}&datetime=${ts.datetime}`,
       opacity: i === activeTimestepIndex ? opacity : 0,
-      onViewportLoad: onViewportLoad?.(i),
+      onViewportLoad: getLoadCallback?.(i),
     }),
   );
 }

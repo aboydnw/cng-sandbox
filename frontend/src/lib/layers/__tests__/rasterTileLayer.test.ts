@@ -12,6 +12,25 @@ describe("buildRasterTileLayers", () => {
     expect(layers[0].id).toBe("raster-tile-0");
   });
 
+  it("uses custom id for non-temporal layer", () => {
+    const layers = buildRasterTileLayers({
+      id: "raster-layer-viridis-1",
+      tileUrl: "/raster/tiles/{z}/{x}/{y}.png?colormap_name=viridis",
+      opacity: 0.8,
+      isTemporalActive: false,
+    });
+    expect(layers[0].id).toBe("raster-layer-viridis-1");
+  });
+
+  it("returns empty array when temporal with no timesteps", () => {
+    const layers = buildRasterTileLayers({
+      tileUrl: "/raster/tiles/{z}/{x}/{y}.png?colormap_name=viridis",
+      opacity: 1,
+      isTemporalActive: true,
+    });
+    expect(layers).toHaveLength(0);
+  });
+
   it("returns N layers for temporal dataset with opacity toggle", () => {
     const layers = buildRasterTileLayers({
       tileUrl: "/raster/tiles/{z}/{x}/{y}.png?colormap_name=viridis",

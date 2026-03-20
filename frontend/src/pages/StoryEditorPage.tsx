@@ -72,7 +72,7 @@ export default function StoryEditorPage() {
       setStory(migrated);
       setActiveChapterId(migrated.chapters[0]?.id ?? "");
       if (JSON.stringify(migrated) !== JSON.stringify(loaded)) {
-        saveStoryToServer(migrated);
+        saveStoryToServer(migrated).catch(console.error);
       }
     }
     loadStory();

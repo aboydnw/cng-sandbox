@@ -2,7 +2,7 @@ import type { Story } from "./types";
 
 export function migrateStory(story: any): Story {
   const chapters = (story.chapters ?? []).map((ch: any) => {
-    const lc = ch.layer_config ?? {};
+    const lc = { ...(ch.layer_config ?? {}) };
     if (!lc.dataset_id) {
       lc.dataset_id = story.dataset_id;
     }

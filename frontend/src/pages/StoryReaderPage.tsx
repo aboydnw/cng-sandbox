@@ -123,7 +123,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
   // Fly to chapter on active change
   useEffect(() => {
     if (!story) return;
-    const chapter = story.chapters[activeChapterIndex];
+    const chapter = sortedChapters[activeChapterIndex];
     if (!chapter) return;
 
     setBasemap(chapter.map_state.basemap);
@@ -135,7 +135,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
       bearing: chapter.map_state.bearing,
       pitch: chapter.map_state.pitch,
     });
-  }, [activeChapterIndex, story]);
+  }, [activeChapterIndex, sortedChapters]);
 
   const sortedChapters = useMemo(
     () => (story ? [...story.chapters].sort((a, b) => a.order - b.order) : []),

@@ -10,13 +10,17 @@ import { UnifiedMap } from "../components/UnifiedMap";
 import { RasterControls } from "../components/RasterControls";
 import { PixelInspectorTooltip, usePixelInspector } from "../components/PixelInspector";
 import { VectorPopupOverlay, useVectorPopup } from "../components/VectorPopup";
-import { buildRasterTileLayers } from "../lib/layers/rasterTileLayer";
-import { buildVectorLayer } from "../lib/layers/vectorLayer";
-import { buildGeoJsonLayer, arrowTableToGeoJSON } from "../lib/layers/geojsonLayer";
-import { buildCogLayer } from "../lib/layers/cogLayer";
-import type { TileCacheEntry } from "../lib/layers/cogLayer";
-import { DEFAULT_CAMERA, cameraFromBounds } from "../lib/layers/types";
-import type { CameraState } from "../lib/layers/types";
+import {
+  type CameraState,
+  type TileCacheEntry,
+  DEFAULT_CAMERA,
+  cameraFromBounds,
+  buildRasterTileLayers,
+  buildCogLayer,
+  buildVectorLayer,
+  buildGeoJsonLayer,
+  arrowTableToGeoJSON,
+} from "../lib/layers";
 import { useColorScale, MapLegend } from "../lib/maptool";
 import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";

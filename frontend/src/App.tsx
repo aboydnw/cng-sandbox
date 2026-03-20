@@ -4,6 +4,7 @@ import MapPage from "./pages/MapPage";
 import ExpiredPage from "./pages/ExpiredPage";
 import StoryReaderPage from "./pages/StoryReaderPage";
 import StoryEditorPage from "./pages/StoryEditorPage";
+import StoryEmbedPage from "./pages/StoryEmbedPage";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <Route path="/map/:id" element={<MapPage />} />
       <Route path="/expired/:id" element={<ExpiredPage />} />
       <Route path="/story/new" element={<StoryEditorPage />} />
+      <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
       <Route path="/story/:id" element={<StoryReaderPage />} />
       <Route path="/story/:id/edit" element={<StoryEditorPage />} />
     </Routes>

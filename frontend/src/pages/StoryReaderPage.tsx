@@ -18,7 +18,7 @@ import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
 
-export default function StoryReaderPage() {
+export default function StoryReaderPage({ embed = false }: { embed?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const [story, setStory] = useState<Story | null>(null);
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -210,23 +210,24 @@ export default function StoryReaderPage() {
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">
-      {/* Header */}
-      <Flex
-        h="48px"
-        px={5}
-        align="center"
-        borderBottom="1px solid"
-        borderColor="gray.200"
-        bg="white"
-        flexShrink={0}
-      >
-        <Heading size="sm" fontWeight={600} color="gray.800">
-          {story.title}
-        </Heading>
-        <Text ml="auto" fontSize="xs" color="gray.500">
-          Made with CNG Sandbox
-        </Text>
-      </Flex>
+      {!embed && (
+        <Flex
+          h="48px"
+          px={5}
+          align="center"
+          borderBottom="1px solid"
+          borderColor="gray.200"
+          bg="white"
+          flexShrink={0}
+        >
+          <Heading size="sm" fontWeight={600} color="gray.800">
+            {story.title}
+          </Heading>
+          <Text ml="auto" fontSize="xs" color="gray.500">
+            Made with CNG Sandbox
+          </Text>
+        </Flex>
+      )}
 
       {/* Main content */}
       <Flex flex={1} overflow="hidden">

@@ -166,6 +166,7 @@ Uses **scrollama** (same library as VEDA-UI, vanilla JS, ~5KB).
 - On mount, fetch dataset from `/api/datasets/{dataset_id}`.
 - Build layer using existing layer builders (same as MapPage).
 - Single layer for entire story — only camera moves between chapters.
+- Basemap can vary per chapter (stored in `MapState.basemap`) — the reader swaps basemap style on chapter transition alongside the camera fly-to.
 
 ### Edge cases
 
@@ -265,6 +266,13 @@ No backend dependencies. No database changes.
 | 5 | AI drafting — prompt template (copy-paste to ChatGPT/Claude) | Phase 3 |
 
 Reader before editor: the reader is the output people experience. If the scrollytelling transitions aren't compelling, the editor doesn't matter.
+
+---
+
+## Resolved Open Questions (from parent spec)
+
+1. **Mobile reader** — Desktop-only for v1. The side-by-side layout does not stack on mobile.
+2. **Transition timing** — Fixed 2000ms duration for fly-to transitions. Adaptive timing is a v2 consideration.
 
 ---
 

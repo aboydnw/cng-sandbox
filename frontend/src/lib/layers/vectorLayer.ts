@@ -1,5 +1,7 @@
 import { MVTLayer } from "@deck.gl/geo-layers";
 import { PMTiles } from "pmtiles";
+import { load } from "@loaders.gl/core";
+import { MVTLoader } from "@loaders.gl/mvt";
 import { BRAND_COLOR_RGBA } from "../../components/MapShell";
 
 const FILL_COLOR: [number, number, number, number] = [
@@ -21,6 +23,8 @@ interface VectorLayerOptions {
   tileUrl: string;
   isPMTiles: boolean;
   opacity: number;
+  minZoom?: number;
+  maxZoom?: number;
   onHover?: (info: any) => void;
   onClick?: (info: any) => void;
 }
@@ -30,12 +34,16 @@ export function buildVectorLayer({
   tileUrl,
   isPMTiles,
   opacity,
+  minZoom,
+  maxZoom,
   onHover,
   onClick,
 }: VectorLayerOptions) {
   const baseConfig = {
     id,
     opacity,
+    ...(minZoom !== undefined && { minZoom }),
+    ...(maxZoom !== undefined && { maxZoom }),
     pickable: true,
     autoHighlight: true,
     highlightColor: [255, 255, 255, 60] as [number, number, number, number],
@@ -59,15 +67,17 @@ export function buildVectorLayer({
     return new MVTLayer({
       ...baseConfig,
       data: `${absoluteUrl}/{z}/{x}/{y}.pbf`,
-      loadOptions: {
-        fetch: async (url: string, _context: any) => {
-          const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
-          if (!match) return new Response(null, { status: 404 });
-          const [, z, x, y] = match.map(Number);
-          const tile = await pmtilesSource.getZxy(z, x, y);
-          if (!tile?.data) return new Response(null, { status: 404 });
-          return new Response(tile.data);
-        },
+      fetch: async (url: string, context: any) => {
+        const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+        if (!match) return null;
+        const [, z, x, y] = match.map(Number);
+        const tile = await pmtilesSource.getZxy(z, x, y);
+        if (!tile?.data) return null;
+        // Parse through loaders.gl so MVTLayer gets properly structured data
+        return load(tile.data, MVTLoader, {
+          ...context.loadOptions,
+          mimeType: "application/x-protobuf",
+        });
       },
     });
   }

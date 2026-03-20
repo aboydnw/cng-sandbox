@@ -247,6 +247,8 @@ export default function MapPage() {
       tileUrl: dataset.tile_url,
       isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
       opacity: 1,
+      minZoom: dataset.min_zoom ?? undefined,
+      maxZoom: dataset.max_zoom ?? undefined,
       onClick: vectorPopup.onClick,
     })];
   }, [dataset, activeTab, canClientRender, tileUrl, opacity, colormapName,

@@ -15,7 +15,9 @@ const LINE_COLOR: [number, number, number, number] = [
   255,
 ];
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface VectorLayerOptions {
+  id?: string;
   tileUrl: string;
   isPMTiles: boolean;
   opacity: number;
@@ -24,34 +26,39 @@ interface VectorLayerOptions {
 }
 
 export function buildVectorLayer({
+  id = "vector-mvt",
   tileUrl,
   isPMTiles,
   opacity,
   onHover,
   onClick,
 }: VectorLayerOptions) {
+  const baseConfig = {
+    id,
+    opacity,
+    pickable: true,
+    autoHighlight: true,
+    highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+    getFillColor: FILL_COLOR,
+    getLineColor: LINE_COLOR,
+    getLineWidth: 1.5,
+    lineWidthMinPixels: 1,
+    getPointRadius: 4,
+    pointRadiusMinPixels: 3,
+    pointType: "circle" as const,
+    stroked: true,
+    filled: true,
+    onHover,
+    onClick,
+  };
+
   if (isPMTiles) {
     const absoluteUrl = `${window.location.origin}${tileUrl}`;
     const pmtilesSource = new PMTiles(absoluteUrl);
 
     return new MVTLayer({
-      id: "vector-mvt",
+      ...baseConfig,
       data: `${absoluteUrl}/{z}/{x}/{y}.pbf`,
-      opacity,
-      pickable: true,
-      autoHighlight: true,
-      highlightColor: [255, 255, 255, 60],
-      getFillColor: FILL_COLOR,
-      getLineColor: LINE_COLOR,
-      getLineWidth: 1.5,
-      lineWidthMinPixels: 1,
-      getPointRadius: 4,
-      pointRadiusMinPixels: 3,
-      pointType: "circle",
-      stroked: true,
-      filled: true,
-      onHover,
-      onClick,
       loadOptions: {
         fetch: async (url: string, _context: any) => {
           const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
@@ -71,22 +78,7 @@ export function buildVectorLayer({
     : tileUrl;
 
   return new MVTLayer({
-    id: "vector-mvt",
+    ...baseConfig,
     data,
-    opacity,
-    pickable: true,
-    autoHighlight: true,
-    highlightColor: [255, 255, 255, 60],
-    getFillColor: FILL_COLOR,
-    getLineColor: LINE_COLOR,
-    getLineWidth: 1.5,
-    lineWidthMinPixels: 1,
-    getPointRadius: 4,
-    pointRadiusMinPixels: 3,
-    pointType: "circle",
-    stroked: true,
-    filled: true,
-    onHover,
-    onClick,
   });
 }

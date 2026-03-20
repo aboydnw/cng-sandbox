@@ -13,7 +13,7 @@ import {
   buildRasterTileLayers,
   buildVectorLayer,
 } from "../lib/layers";
-import { getStoryFromServer } from "../lib/story";
+import { getStoryFromServer, DEFAULT_LAYER_CONFIG } from "../lib/story";
 import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -136,16 +136,24 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
     });
   }, [activeChapterIndex, story]);
 
+  const sortedChapters = useMemo(
+    () => (story ? [...story.chapters].sort((a, b) => a.order - b.order) : []),
+    [story],
+  );
+
   // Build layers
   const layers = useMemo(() => {
     if (!dataset) return [];
+    const chapter = sortedChapters[activeChapterIndex];
+    const lc = chapter?.layer_config ?? DEFAULT_LAYER_CONFIG;
+
     if (dataset.dataset_type === "raster") {
       const base = dataset.tile_url;
       const sep = base.includes("?") ? "&" : "?";
-      const tileUrl = `${base}${sep}colormap_name=viridis`;
+      const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
       return buildRasterTileLayers({
         tileUrl,
-        opacity: 0.8,
+        opacity: lc.opacity,
         isTemporalActive: false,
       });
     }
@@ -153,16 +161,16 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
       buildVectorLayer({
         tileUrl: dataset.tile_url,
         isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
-        opacity: 1,
+        opacity: lc.opacity,
         minZoom: dataset.min_zoom ?? undefined,
         maxZoom: dataset.max_zoom ?? undefined,
       }),
     ];
-  }, [dataset]);
+  }, [dataset, activeChapterIndex, story, sortedChapters]);
 
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
-    setTransitionDuration(undefined); // clear so user interaction doesn't re-trigger animation
+    setTransitionDuration(undefined);
   }, []);
 
   if (loading) {
@@ -203,10 +211,6 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
   }
 
   if (!story) return null;
-
-  const sortedChapters = [...story.chapters].sort(
-    (a, b) => a.order - b.order,
-  );
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">

@@ -1,12 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../src/theme";
 import { CreditsPanel } from "../src/components/CreditsPanel";
 import type { Dataset } from "../src/types";
 
 function renderWithProviders(ui: React.ReactElement) {
-  return render(<ChakraProvider value={system}>{ui}</ChakraProvider>);
+  return render(
+    <MemoryRouter>
+      <ChakraProvider value={system}>{ui}</ChakraProvider>
+    </MemoryRouter>,
+  );
 }
 
 const rasterDataset: Dataset = {

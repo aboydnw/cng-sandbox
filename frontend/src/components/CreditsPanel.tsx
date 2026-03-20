@@ -1,4 +1,5 @@
 import { Box, Flex, Link, Tabs, Text } from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { Dataset } from "../types";
 import { detectCadence, formatDateRange } from "../utils/temporal";
@@ -153,18 +154,17 @@ export function CreditsPanel({
         >
           What's next
         </Text>
-        <Link
-          display="block"
-          color="brand.orange"
-          fontSize="13px"
-          fontWeight={600}
-          mb={2}
-          href="https://developmentseed.org/contact"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Turn this into a story →
-        </Link>
+        <RouterLink to={`/story/new?dataset=${dataset.id}`}>
+          <Text
+            display="block"
+            color="brand.orange"
+            fontSize="13px"
+            fontWeight={600}
+            mb={2}
+          >
+            Turn this into a story →
+          </Text>
+        </RouterLink>
         <Link
           display="block"
           color="brand.orange"

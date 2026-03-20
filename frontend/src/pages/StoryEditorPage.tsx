@@ -17,8 +17,9 @@ import {
   type Chapter,
   createStory,
   createChapter,
-  getStory,
-  saveStory,
+  createStoryOnServer,
+  getStoryFromServer,
+  saveStoryToServer,
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -45,8 +46,9 @@ export default function StoryEditorPage() {
 
   // Load or create story
   useEffect(() => {
-    if (id) {
-      const loaded = getStory(id);
+    if (!id) return;
+    async function loadStory() {
+      const loaded = await getStoryFromServer(id!);
       if (!loaded) {
         setError("Story not found");
         setLoading(false);
@@ -55,7 +57,7 @@ export default function StoryEditorPage() {
       setStory(loaded);
       setActiveChapterId(loaded.chapters[0]?.id ?? "");
     }
-    // New story: wait for dataset to load, then create
+    loadStory();
   }, [id]);
 
   // Fetch dataset
@@ -75,10 +77,10 @@ export default function StoryEditorPage() {
 
         // Create new story if this is /story/new
         if (!id && datasetIdParam) {
-          const newStory = createStory(datasetIdParam);
+          const draft = createStory(datasetIdParam);
           if (data.bounds) {
             const cam = cameraFromBounds(data.bounds);
-            newStory.chapters[0].map_state = {
+            draft.chapters[0].map_state = {
               center: [cam.longitude, cam.latitude],
               zoom: cam.zoom,
               bearing: 0,
@@ -86,11 +88,10 @@ export default function StoryEditorPage() {
               basemap: "streets",
             };
           }
-          setStory(newStory);
-          setActiveChapterId(newStory.chapters[0].id);
-          saveStory(newStory);
-          // Update URL to the edit route
-          navigate(`/story/${newStory.id}/edit`, { replace: true });
+          const saved = await createStoryOnServer(draft);
+          setStory(saved);
+          setActiveChapterId(saved.chapters[0].id);
+          navigate(`/story/${saved.id}/edit`, { replace: true });
         }
 
         // Set initial camera
@@ -111,7 +112,7 @@ export default function StoryEditorPage() {
     (updated: Story) => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
-        saveStory(updated);
+        saveStoryToServer(updated);
       }, 500);
     },
     [],
@@ -228,7 +229,7 @@ export default function StoryEditorPage() {
   function handlePublish() {
     if (!story) return;
     updateStory((s) => ({ ...s, published: true }));
-    saveStory({ ...story, published: true });
+    saveStoryToServer({ ...story, published: true });
     const url = `${window.location.origin}/story/${story.id}`;
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url);

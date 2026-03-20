@@ -647,6 +647,7 @@ export default function StoryReaderPage() {
 
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
+    setTransitionDuration(undefined); // clear so user interaction doesn't re-trigger animation
   }, []);
 
   // --- Error state ---

@@ -243,8 +243,11 @@ export default function StoryEditorPage() {
   const layers = useMemo(() => {
     if (!dataset) return [];
     if (dataset.dataset_type === "raster") {
+      const base = dataset.tile_url;
+      const sep = base.includes("?") ? "&" : "?";
+      const tileUrl = `${base}${sep}colormap_name=viridis`;
       return buildRasterTileLayers({
-        tileUrl: dataset.tile_url,
+        tileUrl,
         opacity: 0.8,
         isTemporalActive: false,
       });

@@ -12,6 +12,7 @@ interface NarrativeEditorProps {
   onLayerConfigChange: (config: LayerConfig) => void;
   datasetType: "raster" | "vector";
   datasets: Dataset[];
+  onAddDataset?: () => void;
 }
 
 export function NarrativeEditor({
@@ -23,6 +24,7 @@ export function NarrativeEditor({
   onLayerConfigChange,
   datasetType,
   datasets,
+  onAddDataset,
 }: NarrativeEditorProps) {
   const [showAiPrompt, setShowAiPrompt] = useState(false);
   const [roughNotes, setRoughNotes] = useState("");
@@ -86,15 +88,31 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
       <Flex gap={4} px={4} py={2} borderTop="1px solid" borderColor="gray.100" flexWrap="wrap">
         <Box>
           <Text fontSize="xs" color="gray.500" mb={1}>Dataset</Text>
-          <select
-            value={layerConfig.dataset_id}
-            onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
-            style={{ fontSize: "13px", padding: "4px 8px", maxWidth: "200px" }}
-          >
-            {datasets.map(ds => (
-              <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
-            ))}
-          </select>
+          <Flex gap={1} align="center">
+            <select
+              value={layerConfig.dataset_id}
+              onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
+              style={{ fontSize: "13px", padding: "4px 8px", maxWidth: "200px" }}
+            >
+              {datasets.map(ds => (
+                <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
+              ))}
+            </select>
+            {onAddDataset && (
+              <Text
+                as="button"
+                fontSize="12px"
+                color="blue.500"
+                fontWeight={600}
+                cursor="pointer"
+                onClick={onAddDataset}
+                _hover={{ color: "blue.600" }}
+                whiteSpace="nowrap"
+              >
+                + Add
+              </Text>
+            )}
+          </Flex>
         </Box>
         {datasetType === "raster" && (
           <>

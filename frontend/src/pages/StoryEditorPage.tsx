@@ -5,6 +5,7 @@ import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
+import { UploadModal } from "../components/UploadModal";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -47,6 +48,7 @@ export default function StoryEditorPage() {
   const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchAllDatasets() {
@@ -131,6 +133,26 @@ export default function StoryEditorPage() {
     if (dataset && !map.has(dataset.id)) map.set(dataset.id, dataset);
     return map;
   }, [allDatasets, dataset]);
+
+  async function handleDatasetReady(datasetId: string) {
+    setUploadModalOpen(false);
+    try {
+      const resp = await fetch(`${config.apiBase}/api/datasets/${datasetId}`);
+      if (!resp.ok) return;
+      const ds: Dataset = await resp.json();
+      setAllDatasets((prev) =>
+        prev.some((d) => d.id === ds.id) ? prev : [...prev, ds],
+      );
+      if (activeChapterId) {
+        updateChapterLayerConfig({
+          ...(activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG),
+          dataset_id: datasetId,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch new dataset", e);
+    }
+  }
 
   // Debounced auto-save
   const debouncedSave = useCallback(
@@ -445,6 +467,7 @@ export default function StoryEditorPage() {
                 onLayerConfigChange={updateChapterLayerConfig}
                 datasetType={activeDataset?.dataset_type ?? "raster"}
                 datasets={allDatasets}
+                onAddDataset={() => setUploadModalOpen(true)}
               />
             ) : (
               <Flex h="100%" align="center" justify="center">
@@ -454,6 +477,11 @@ export default function StoryEditorPage() {
           </Box>
         </Flex>
       </Flex>
+      <UploadModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onDatasetReady={handleDatasetReady}
+      />
     </Box>
   );
 }

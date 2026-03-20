@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Spinner, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
 import { FlyToInterpolator } from "@deck.gl/core";
@@ -13,7 +13,7 @@ import {
   buildRasterTileLayers,
   buildVectorLayer,
 } from "../lib/layers";
-import { getStory } from "../lib/story";
+import { getStoryFromServer } from "../lib/story";
 import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -22,6 +22,7 @@ export default function StoryReaderPage() {
   const { id } = useParams<{ id: string }>();
   const [story, setStory] = useState<Story | null>(null);
   const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
@@ -31,27 +32,35 @@ export default function StoryReaderPage() {
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
 
-  // Load story from localStorage
+  // Load story from API
   useEffect(() => {
     if (!id) return;
-    const loaded = getStory(id);
-    if (!loaded) {
-      setError("Story not found");
-      return;
+    async function loadStory() {
+      try {
+        const loaded = await getStoryFromServer(id!);
+        if (!loaded) {
+          setError("Story not found");
+          return;
+        }
+        setStory(loaded);
+        if (loaded.chapters.length > 0) {
+          const ch = loaded.chapters[0];
+          setCamera({
+            longitude: ch.map_state.center[0],
+            latitude: ch.map_state.center[1],
+            zoom: ch.map_state.zoom,
+            bearing: ch.map_state.bearing,
+            pitch: ch.map_state.pitch,
+          });
+          setBasemap(ch.map_state.basemap);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load story");
+      } finally {
+        setLoading(false);
+      }
     }
-    setStory(loaded);
-    // Initialize camera from first chapter (no transition)
-    if (loaded.chapters.length > 0) {
-      const ch = loaded.chapters[0];
-      setCamera({
-        longitude: ch.map_state.center[0],
-        latitude: ch.map_state.center[1],
-        zoom: ch.map_state.zoom,
-        bearing: ch.map_state.bearing,
-        pitch: ch.map_state.pitch,
-      });
-      setBasemap(ch.map_state.basemap);
-    }
+    loadStory();
   }, [id]);
 
   // Fetch dataset from API
@@ -155,6 +164,14 @@ export default function StoryReaderPage() {
     setCamera(c);
     setTransitionDuration(undefined); // clear so user interaction doesn't re-trigger animation
   }, []);
+
+  if (loading) {
+    return (
+      <Flex h="100vh" align="center" justify="center">
+        <Spinner size="lg" />
+      </Flex>
+    );
+  }
 
   // --- Error state ---
   if (error) {

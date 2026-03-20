@@ -1,9 +1,10 @@
 # Storytelling Thin Slice — Design Spec
 
-**Status:** Approved
+**Status:** v1 Implemented
 **Date:** 2026-03-20
 **Parent:** [CNG Sandbox Storytelling Spec v0.2](~/Documents/obsidian-notes/Project Docs/CNG Sandbox/cng-sandbox-storytelling-spec.md)
 **Prerequisite:** Unified Map Renderer (complete — [plan](../plans/2026-03-20-unified-map-renderer.md))
+**Branch:** `feat/storytelling-thin-slice`
 
 ---
 
@@ -273,6 +274,50 @@ Reader before editor: the reader is the output people experience. If the scrolly
 
 1. **Mobile reader** — Desktop-only for v1. The side-by-side layout does not stack on mobile.
 2. **Transition timing** — Fixed 2000ms duration for fly-to transitions. Adaptive timing is a v2 consideration.
+
+---
+
+## Implementation Status
+
+**All v1 phases complete.** Branch: `feat/storytelling-thin-slice` (11 commits).
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| 1. Data model | ✅ Done | Types, localStorage CRUD, 7 unit tests |
+| 2. Story reader | ✅ Done | Scrollama transitions, sticky map, markdown rendering |
+| 3. Story editor | ✅ Done | Three-panel layout, map capture, drag reorder, auto-save |
+| 4. CTA integration | ✅ Done | CreditsPanel links to `/story/new?dataset={id}` |
+| 5. AI drafting | ✅ Done | Prompt template copies to clipboard |
+
+### Implementation details beyond original spec
+
+- **UnifiedMap extended** with optional `transitionDuration` and `transitionInterpolator` props to support fly-to animations without breaking existing MapPage usage.
+- **`crypto.randomUUID` fallback** — added a Math.random-based UUID generator for non-secure contexts (plain HTTP).
+- **`navigator.clipboard` fallback** — publish and AI draft gracefully degrade when clipboard API is unavailable (non-HTTPS). Publish shows the URL inline instead.
+- **Raster colormap** — story pages append `colormap_name=viridis` to tile URLs. MapPage does this dynamically based on user selection; story pages use viridis as the default since v1 has no per-story colormap picker.
+
+### Known limitations (expected for v1)
+
+- Stories are localStorage-only — not shareable across devices or browsers.
+- Raster layers always use the viridis colormap at 80% opacity — no per-chapter layer styling.
+- Desktop-only layout — no mobile responsive design.
+- No auto-save indicator visible to the user (save is silent, debounced 500ms).
+- No undo/redo.
+
+---
+
+## What Comes Next
+
+Potential v2 improvements, roughly ordered by user impact:
+
+1. **Server-side persistence** — Move stories from localStorage to the database. This unlocks sharing, embed, and cross-device access. Requires a new `stories` table and API endpoints.
+2. **Shareable URLs / embed mode** — Once stories are server-persisted, generate public URLs and an `<iframe>` embed snippet. The reader already works standalone — it just needs a non-localStorage data source.
+3. **Per-chapter layer styling** — Let users choose colormap, opacity, and band per chapter. Requires adding a `LayerConfig` to the `Chapter` type and a layer controls UI in the editor.
+4. **Multi-dataset stories** — `dataset_id` → `dataset_ids[]`. Each chapter could reference a different dataset. Significant UI complexity.
+5. **Story gallery** — A `/stories` page listing all published stories. Trivial once server persistence exists.
+6. **Mobile reader** — Stack narrative above map instead of side-by-side. The reader component tree supports this with CSS changes.
+7. **Rich text editor** — Replace the plain textarea with a markdown editor that has toolbar buttons and live preview.
+8. **Adaptive transition timing** — Scale fly-to duration based on distance between chapter camera positions instead of a fixed 2000ms.
 
 ---
 

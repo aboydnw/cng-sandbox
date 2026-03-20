@@ -15,6 +15,8 @@ import {
 import {
   type Story,
   type Chapter,
+  type LayerConfig,
+  DEFAULT_LAYER_CONFIG,
   createStory,
   createChapter,
   createStoryOnServer,
@@ -225,6 +227,15 @@ export default function StoryEditorPage() {
     }));
   }
 
+  function updateChapterLayerConfig(config: LayerConfig) {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) =>
+        ch.id === activeChapterId ? { ...ch, layer_config: config } : ch,
+      ),
+    }));
+  }
+
   // Publish
   function handlePublish() {
     if (!story) return;
@@ -243,13 +254,15 @@ export default function StoryEditorPage() {
   // Build layers
   const layers = useMemo(() => {
     if (!dataset) return [];
+    const lc = activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG;
+
     if (dataset.dataset_type === "raster") {
       const base = dataset.tile_url;
       const sep = base.includes("?") ? "&" : "?";
-      const tileUrl = `${base}${sep}colormap_name=viridis`;
+      const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
       return buildRasterTileLayers({
         tileUrl,
-        opacity: 0.8,
+        opacity: lc.opacity,
         isTemporalActive: false,
       });
     }
@@ -257,12 +270,12 @@ export default function StoryEditorPage() {
       buildVectorLayer({
         tileUrl: dataset.tile_url,
         isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
-        opacity: 1,
+        opacity: lc.opacity,
         minZoom: dataset.min_zoom ?? undefined,
         maxZoom: dataset.max_zoom ?? undefined,
       }),
     ];
-  }, [dataset]);
+  }, [dataset, activeChapter]);
 
   // --- Loading / error ---
   if (loading) {
@@ -397,6 +410,9 @@ export default function StoryEditorPage() {
                 narrative={activeChapter.narrative}
                 onTitleChange={updateChapterTitle}
                 onNarrativeChange={updateChapterNarrative}
+                layerConfig={activeChapter.layer_config}
+                onLayerConfigChange={updateChapterLayerConfig}
+                datasetType={dataset?.dataset_type ?? "raster"}
               />
             ) : (
               <Flex h="100%" align="center" justify="center">

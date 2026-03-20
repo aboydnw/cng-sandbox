@@ -9,7 +9,10 @@ from datetime import datetime, timezone, timedelta
 import boto3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import create_engine as sa_create_engine
+from sqlalchemy.orm import sessionmaker
 from src.config import get_settings
+from src.models.story import Base
 from src.state import scan_store, scan_store_lock
 
 
@@ -29,7 +32,7 @@ async def _cleanup_scans():
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def _default_lifespan(app: FastAPI):
     settings = get_settings()
     s3 = boto3.client(
         "s3",
@@ -52,7 +55,7 @@ async def lifespan(app: FastAPI):
     cleanup_task.cancel()
 
 
-def create_app(settings=None) -> FastAPI:
+def create_app(settings=None, lifespan=None) -> FastAPI:
     """Application factory — testable configuration."""
     logging.basicConfig(
         level=logging.INFO,
@@ -60,8 +63,14 @@ def create_app(settings=None) -> FastAPI:
     )
     if settings is None:
         settings = get_settings()
+    if lifespan is None:
+        lifespan = _default_lifespan
 
     app = FastAPI(title="CNG Sandbox Ingestion API", lifespan=lifespan)
+
+    db_engine = sa_create_engine(settings.postgres_dsn)
+    Base.metadata.create_all(db_engine)
+    app.state.db_session_factory = sessionmaker(bind=db_engine)
 
     app.add_middleware(
         CORSMiddleware,

@@ -22,6 +22,7 @@ import {
   createStoryOnServer,
   getStoryFromServer,
   saveStoryToServer,
+  migrateStory,
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -45,6 +46,17 @@ export default function StoryEditorPage() {
   const [transitionDuration, setTransitionDuration] = useState<number | undefined>(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
+
+  useEffect(() => {
+    async function fetchAllDatasets() {
+      try {
+        const resp = await fetch(`${config.apiBase}/api/datasets`);
+        if (resp.ok) setAllDatasets(await resp.json());
+      } catch {}
+    }
+    fetchAllDatasets();
+  }, []);
 
   // Load or create story
   useEffect(() => {
@@ -56,8 +68,12 @@ export default function StoryEditorPage() {
         setLoading(false);
         return;
       }
-      setStory(loaded);
-      setActiveChapterId(loaded.chapters[0]?.id ?? "");
+      const migrated = migrateStory(loaded);
+      setStory(migrated);
+      setActiveChapterId(migrated.chapters[0]?.id ?? "");
+      if (JSON.stringify(migrated) !== JSON.stringify(loaded)) {
+        saveStoryToServer(migrated);
+      }
     }
     loadStory();
   }, [id]);
@@ -109,6 +125,13 @@ export default function StoryEditorPage() {
     fetchDataset();
   }, [story?.dataset_id, datasetIdParam, id, navigate]);
 
+  const datasetMap = useMemo(() => {
+    const map = new Map<string, Dataset>();
+    for (const ds of allDatasets) map.set(ds.id, ds);
+    if (dataset && !map.has(dataset.id)) map.set(dataset.id, dataset);
+    return map;
+  }, [allDatasets, dataset]);
+
   // Debounced auto-save
   const debouncedSave = useCallback(
     (updated: Story) => {
@@ -131,6 +154,9 @@ export default function StoryEditorPage() {
   }
 
   const activeChapter = story?.chapters.find((c) => c.id === activeChapterId);
+  const activeDataset = activeChapter
+    ? datasetMap.get(activeChapter.layer_config.dataset_id) ?? dataset
+    : dataset;
 
   // Select chapter: fly map to its saved state
   function selectChapter(chapterId: string) {
@@ -176,6 +202,7 @@ export default function StoryEditorPage() {
   // Add chapter
   function addChapter() {
     const maxOrder = Math.max(...(story?.chapters.map((c) => c.order) ?? [0]));
+    const inheritedDatasetId = activeChapter?.layer_config.dataset_id ?? story?.dataset_id ?? "";
     const newCh = createChapter({
       order: maxOrder + 1,
       title: `Chapter ${(story?.chapters.length ?? 0) + 1}`,
@@ -186,6 +213,7 @@ export default function StoryEditorPage() {
         pitch: camera.pitch,
         basemap,
       },
+      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: inheritedDatasetId },
     });
     updateStory((s) => ({ ...s, chapters: [...s.chapters, newCh] }));
     setActiveChapterId(newCh.id);
@@ -255,11 +283,12 @@ export default function StoryEditorPage() {
 
   // Build layers
   const layers = useMemo(() => {
-    if (!dataset) return [];
+    const ds = activeDataset;
+    if (!ds) return [];
     const lc = activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG;
 
-    if (dataset.dataset_type === "raster") {
-      const base = dataset.tile_url;
+    if (ds.dataset_type === "raster") {
+      const base = ds.tile_url;
       const sep = base.includes("?") ? "&" : "?";
       const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
       return buildRasterTileLayers({
@@ -270,14 +299,14 @@ export default function StoryEditorPage() {
     }
     return [
       buildVectorLayer({
-        tileUrl: dataset.tile_url,
-        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
+        tileUrl: ds.tile_url,
+        isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
         opacity: lc.opacity,
-        minZoom: dataset.min_zoom ?? undefined,
-        maxZoom: dataset.max_zoom ?? undefined,
+        minZoom: ds.min_zoom ?? undefined,
+        maxZoom: ds.max_zoom ?? undefined,
       }),
     ];
-  }, [dataset, activeChapter]);
+  }, [activeDataset, activeChapter]);
 
   // --- Loading / error ---
   if (loading) {
@@ -414,7 +443,8 @@ export default function StoryEditorPage() {
                 onNarrativeChange={updateChapterNarrative}
                 layerConfig={activeChapter.layer_config}
                 onLayerConfigChange={updateChapterLayerConfig}
-                datasetType={dataset?.dataset_type ?? "raster"}
+                datasetType={activeDataset?.dataset_type ?? "raster"}
+                datasets={allDatasets}
               />
             ) : (
               <Flex h="100%" align="center" justify="center">

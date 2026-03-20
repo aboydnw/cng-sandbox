@@ -16,6 +16,14 @@ export interface MapState {
   basemap: string;
 }
 
+export interface LayerConfig {
+  colormap: string;
+  opacity: number;
+  basemap: string;
+  band?: number;
+  timestep?: number;
+}
+
 export interface Chapter {
   id: string;
   order: number;
@@ -23,6 +31,7 @@ export interface Chapter {
   narrative: string;
   map_state: MapState;
   transition: "fly-to" | "instant";
+  layer_config: LayerConfig;
 }
 
 export interface Story {
@@ -42,6 +51,12 @@ export interface StoryIndexEntry {
   created_at: string;
 }
 
+export const DEFAULT_LAYER_CONFIG: LayerConfig = {
+  colormap: "viridis",
+  opacity: 0.8,
+  basemap: "streets",
+};
+
 export const DEFAULT_MAP_STATE: MapState = {
   center: [0, 0],
   zoom: 2,
@@ -60,6 +75,7 @@ export function createChapter(
     narrative: "",
     map_state: { ...DEFAULT_MAP_STATE },
     transition: "fly-to",
+    layer_config: { ...DEFAULT_LAYER_CONFIG },
     ...overrides,
   };
 }

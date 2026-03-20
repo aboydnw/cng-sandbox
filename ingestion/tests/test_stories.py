@@ -119,3 +119,40 @@ def test_delete_story(client):
     resp = client.delete(f"/api/stories/{story_id}")
     assert resp.status_code == 204
     assert client.get(f"/api/stories/{story_id}").status_code == 404
+
+
+def test_response_includes_dataset_ids(client):
+    resp = client.post("/api/stories", json={
+        "title": "Multi",
+        "dataset_id": "ds-primary",
+        "chapters": [
+            {
+                "id": "ch-1", "order": 0, "title": "Ch1", "narrative": "",
+                "map_state": {}, "transition": "fly-to",
+                "layer_config": {"dataset_id": "ds-1", "colormap": "viridis", "opacity": 0.8, "basemap": "streets"},
+            },
+            {
+                "id": "ch-2", "order": 1, "title": "Ch2", "narrative": "",
+                "map_state": {}, "transition": "fly-to",
+                "layer_config": {"dataset_id": "ds-2", "colormap": "plasma", "opacity": 0.6, "basemap": "dark"},
+            },
+        ],
+    })
+    data = resp.json()
+    assert "dataset_ids" in data
+    assert sorted(data["dataset_ids"]) == ["ds-1", "ds-2"]
+
+
+def test_dataset_ids_falls_back_to_dataset_id(client):
+    resp = client.post("/api/stories", json={
+        "title": "Old-style",
+        "dataset_id": "ds-only",
+        "chapters": [
+            {
+                "id": "ch-1", "order": 0, "title": "Ch1", "narrative": "",
+                "map_state": {}, "transition": "fly-to",
+            },
+        ],
+    })
+    data = resp.json()
+    assert data["dataset_ids"] == ["ds-only"]

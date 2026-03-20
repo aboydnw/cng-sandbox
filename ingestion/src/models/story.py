@@ -56,6 +56,7 @@ class StoryResponse(BaseModel):
     title: str
     description: str | None
     dataset_id: str
+    dataset_ids: list[str]
     chapters: list[ChapterPayload]
     published: bool
     created_at: str

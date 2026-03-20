@@ -6,6 +6,7 @@ import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
 import { UploadModal } from "../components/UploadModal";
+import { Header } from "../components/Header";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -348,17 +349,7 @@ export default function StoryEditorPage() {
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">
-      {/* Top bar */}
-      <Flex
-        h="48px"
-        px={4}
-        align="center"
-        borderBottom="1px solid"
-        borderColor="gray.200"
-        bg="white"
-        flexShrink={0}
-        justify="space-between"
-      >
+      <Header>
         <input
           type="text"
           value={story.title}
@@ -396,7 +387,7 @@ export default function StoryEditorPage() {
             </Text>
           )}
         </Flex>
-      </Flex>
+      </Header>
 
       {/* Three-panel layout */}
       <Flex flex={1} overflow="hidden">

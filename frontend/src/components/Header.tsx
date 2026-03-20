@@ -1,4 +1,5 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Flex, Text } from "@chakra-ui/react";
+import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 
 interface HeaderProps {
@@ -17,12 +18,14 @@ export function Header({ children }: HeaderProps) {
       borderBottom="1px solid"
       borderColor="brand.border"
     >
-      <Flex align="center" gap={3}>
-        <img src="/logo.svg" alt="Development Seed" width={32} height={32} />
-        <Text as="span" color="brand.brown" fontWeight={700} fontSize="15px">
-          CNG Sandbox
-        </Text>
-      </Flex>
+      <Link to="/" style={{ textDecoration: "none" }}>
+        <Flex align="center" gap={3}>
+          <img src="/logo.svg" alt="Development Seed" width={32} height={32} />
+          <Text as="span" color="brand.brown" fontWeight={700} fontSize="15px">
+            CNG Sandbox
+          </Text>
+        </Flex>
+      </Link>
       {children && <Flex gap={2}>{children}</Flex>}
     </Flex>
   );

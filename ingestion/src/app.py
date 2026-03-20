@@ -86,9 +86,11 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.upload import router as upload_router
     from src.routes.jobs import router as jobs_router
     from src.routes.datasets import router as datasets_router
+    from src.routes.stories import router as stories_router
     app.include_router(upload_router)
     app.include_router(jobs_router)
     app.include_router(datasets_router)
+    app.include_router(stories_router)
 
     return app
 

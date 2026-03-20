@@ -17,6 +17,7 @@ export interface MapState {
 }
 
 export interface LayerConfig {
+  dataset_id: string;
   colormap: string;
   opacity: number;
   basemap: string;
@@ -39,6 +40,7 @@ export interface Story {
   title: string;
   description?: string;
   dataset_id: string;
+  dataset_ids: string[];
   chapters: Chapter[];
   created_at: string;
   published: boolean;
@@ -52,6 +54,7 @@ export interface StoryIndexEntry {
 }
 
 export const DEFAULT_LAYER_CONFIG: LayerConfig = {
+  dataset_id: "",
   colormap: "viridis",
   opacity: 0.8,
   basemap: "streets",
@@ -88,7 +91,8 @@ export function createStory(
     id: uuid(),
     title: "Untitled story",
     dataset_id: datasetId,
-    chapters: [createChapter({ order: 0, title: "Chapter 1" })],
+    dataset_ids: [datasetId],
+    chapters: [createChapter({ order: 0, title: "Chapter 1", layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: datasetId } })],
     created_at: new Date().toISOString(),
     published: false,
     ...overrides,

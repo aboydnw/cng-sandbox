@@ -1,7 +1,7 @@
 import { forwardRef, useCallback } from "react";
 import { Box } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
-import { MapView } from "@deck.gl/core";
+import { MapView, FlyToInterpolator } from "@deck.gl/core";
 import Map from "react-map-gl/maplibre";
 import type { Layer } from "@deck.gl/core";
 import type { CameraState } from "../lib/layers/types";
@@ -17,6 +17,8 @@ interface UnifiedMapProps {
   onClick?: (info: any) => void;
   getTooltip?: (info: any) => any;
   children?: React.ReactNode;
+  transitionDuration?: number;
+  transitionInterpolator?: FlyToInterpolator;
 }
 
 export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
@@ -30,6 +32,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     onClick,
     getTooltip,
     children,
+    transitionDuration,
+    transitionInterpolator,
   },
   ref,
 ) {
@@ -46,11 +50,15 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     [onCameraChange],
   );
 
+  const viewState = transitionDuration
+    ? { ...camera, transitionDuration, transitionInterpolator }
+    : camera;
+
   return (
     <Box position="relative" w="100%" h="100%">
       <DeckGL
         ref={ref}
-        viewState={camera}
+        viewState={viewState}
         onViewStateChange={handleViewStateChange}
         controller={{ dragRotate: true }}
         layers={layers}

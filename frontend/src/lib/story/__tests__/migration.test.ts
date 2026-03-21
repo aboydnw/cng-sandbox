@@ -81,4 +81,19 @@ describe("migrateStory", () => {
     expect(migrated.dataset_ids).toEqual(["ds-abc"]);
     expect(migrated.chapters).toEqual([]);
   });
+
+  it("backfills chapter type as scrollytelling when missing", () => {
+    const old = makeOldStory();
+    const migrated = migrateStory(old);
+    expect(migrated.chapters[0].type).toBe("scrollytelling");
+    expect(migrated.chapters[1].type).toBe("scrollytelling");
+  });
+
+  it("preserves existing chapter type", () => {
+    const old = makeOldStory();
+    old.chapters[0].type = "prose";
+    const migrated = migrateStory(old);
+    expect(migrated.chapters[0].type).toBe("prose");
+    expect(migrated.chapters[1].type).toBe("scrollytelling");
+  });
 });

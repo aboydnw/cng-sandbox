@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 
 import httpx
 from sqlalchemy.orm import Session
@@ -46,12 +47,18 @@ async def delete_stac_collection(collection_id: str) -> None:
         logger.exception("Failed to delete STAC collection %s", collection_id)
 
 
+_SAFE_TABLE_RE = re.compile(r"^sandbox_[a-f0-9]+$")
+
+
 def delete_vector_table(dataset_id: str) -> None:
     """Drop the vector table from PostgreSQL. Best-effort."""
     try:
         from sqlalchemy import create_engine, text
         settings = get_settings()
         table_name = vector_ingest.build_table_name(dataset_id)
+        if not _SAFE_TABLE_RE.match(table_name):
+            logger.error("Refusing to drop table with unsafe name: %s", table_name)
+            return
         engine = create_engine(settings.postgres_dsn)
         with engine.connect() as conn:
             conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}"'))
@@ -61,7 +68,7 @@ def delete_vector_table(dataset_id: str) -> None:
         logger.exception("Failed to drop vector table for %s", dataset_id)
 
 
-async def delete_dataset(session: Session, dataset_id: str, storage: StorageService | None = None) -> dict:
+async def delete_dataset(session: Session, dataset_id: str, storage: StorageService | None = None) -> dict | None:
     """Delete a dataset and all its artifacts. Returns response dict."""
     row = session.get(DatasetRow, dataset_id)
     if row is None:

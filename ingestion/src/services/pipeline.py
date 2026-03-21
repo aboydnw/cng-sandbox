@@ -351,26 +351,8 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             raster_min=raster_min,
             raster_max=raster_max,
         )
-        from src.models.dataset import DatasetRow
-        session = db_session_factory()
-        try:
-            row = DatasetRow(
-                id=dataset.id,
-                filename=dataset.filename,
-                dataset_type=dataset.dataset_type.value,
-                format_pair=dataset.format_pair.value,
-                tile_url=dataset.tile_url,
-                bounds_json=json.dumps(dataset.bounds) if dataset.bounds else None,
-                metadata_json=json.dumps({
-                    k: v for k, v in dataset.model_dump().items()
-                    if k not in ("id", "filename", "dataset_type", "format_pair", "tile_url", "bounds", "created_at")
-                }, default=str),
-                created_at=dataset.created_at,
-            )
-            session.add(row)
-            session.commit()
-        finally:
-            session.close()
+        from src.models.dataset import persist_dataset
+        persist_dataset(db_session_factory, dataset)
 
     except Exception as e:
         logger.exception("Pipeline failed for job %s", job.id)

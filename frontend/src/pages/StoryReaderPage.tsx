@@ -229,6 +229,7 @@ function ScrollytellingBlock({
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
             transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
+            interactive={false}
           />
         )}
         {activeDataset === null && (

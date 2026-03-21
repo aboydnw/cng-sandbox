@@ -19,6 +19,7 @@ interface UnifiedMapProps {
   children?: React.ReactNode;
   transitionDuration?: number;
   transitionInterpolator?: FlyToInterpolator;
+  interactive?: boolean;
 }
 
 export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
@@ -34,6 +35,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     children,
     transitionDuration,
     transitionInterpolator,
+    interactive = true,
   },
   ref,
 ) {
@@ -62,7 +64,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         ref={ref}
         viewState={viewState}
         onViewStateChange={handleViewStateChange}
-        controller={{ dragRotate: true }}
+        controller={interactive ? { dragRotate: true } : false}
         layers={layers}
         views={views}
         onHover={onHover}

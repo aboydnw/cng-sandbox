@@ -34,8 +34,8 @@ The StoryMap Builder thin slice is live. Before implementing anything in this sp
 - Per-chapter band selection and timestep selection for temporal stories
 
 **Not started (this spec covers these):**
-- Static export (downloadable ZIP)
-- Vercel / GitHub Pages deploy
+- ~~Static export (downloadable ZIP)~~ → See [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md)
+- ~~Vercel / GitHub Pages deploy~~ → See [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md)
 - Media embedding (images, video in chapters)
 - Story gallery / discovery page
 - Mapping dictionary with auto-detection and "Show Your Work" panel
@@ -399,19 +399,7 @@ Each data source has:
 
 ### 4.3 Publishing Pipeline
 
-When the user clicks "Publish," the sandbox:
-
-1. **Bundles the story config** (JSON) with the rendering engine (JS/CSS/HTML) into a standalone static site
-2. **Resolves data source URLs:**
-   - If the COGs are on the sandbox's temporary storage (30-day expiry), warn the user: "These files expire in N days. For a permanent story, upload them to your own storage." Offer the guided self-hosting flow (connect R2/S3 bucket, push files).
-   - If the COGs are already on permanent storage (user's own bucket, or public URLs), no action needed.
-3. **Offers output options:**
-   - **Download ZIP**: Complete static site in a zip. User can host anywhere.
-   - **Deploy to Vercel**: One-click deploy via Vercel's deploy button (pre-configured `vercel.json` included). Requires user to log in to Vercel.
-   - **Deploy to GitHub Pages**: Generates a GitHub repo with the story files and enables Pages. Requires GitHub auth.
-   - **Embed code**: iframe snippet for embedding in an existing site.
-
-The published site has zero runtime dependency on the sandbox. It's pure HTML/JS/CSS reading from the user's data URLs. If the sandbox goes down, published stories keep working.
+> **Superseded.** See the standalone [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md) for the full publishing design. Summary: GitHub OAuth login, static reader bundle pushed to a repo under the user's GitHub account, hosted via GitHub Pages, data on Cloudflare R2.
 
 ### 4.4 Template Library
 
@@ -443,29 +431,17 @@ Templates provide a starting structure — the user can add, remove, or rearrang
 
 ### New integration needed (this spec)
 
-- **Static site bundler** (Phase 1): Packages story config + rendering engine into a deployable ZIP. This is new infrastructure — no equivalent exists in the sandbox today.
+- ~~**Static site bundler**~~ → See [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md)
+- ~~**Vercel deploy flow**~~ → Superseded by GitHub Pages approach in publishing spec
+- ~~**GitHub Pages deploy**~~ → See [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md)
 - **Multi-dataset data source manager** (Phase 2): A panel listing all datasets the user has uploaded. Requires querying `/api/datasets` and letting the user select which ones to include in the story.
 - **Band metadata endpoint** (Phase 3): The mapping dictionary auto-detection needs raster band statistics. Check whether `/api/datasets/:id` already returns this, or whether titiler-pgstac's `/info` endpoint can be used directly. May need a new lightweight endpoint.
-- **Vercel deploy flow** (Phase 1): Vercel's deploy button pattern redirects to Vercel's own deploy flow with a pre-configured template. Check whether this requires OAuth or just a URL redirect with a repo/template reference.
-- **GitHub Pages deploy** (Phase 2): Requires GitHub token to create a repo and enable Pages. OAuth flow needed.
 
 ---
 
 ## 6. Data Persistence and Expiry
 
-Story configuration is already persisted server-side in PostgreSQL via SQLAlchemy (shipped in thin slice). The persistence question is not about the story config — it's about the **data files** the story references.
-
-Stories reference COG and PMTiles files on the sandbox's MinIO storage, which expire after 30 days via S3 lifecycle policy. This creates a tension: a storymap should feel permanent, but the underlying data is temporary.
-
-**Resolution:**
-
-- **During editing and initial sharing**: Data lives on sandbox storage. The story config in PostgreSQL references these sandbox URLs. The story is viewable at `/story/:id` and embeddable at `/story/:id/embed`. This works within the 30-day window.
-- **On publish (static export)**: The publishing flow must resolve the data permanence question:
-  - **Warn clearly**: "Your data files expire in N days. Published stories that reference sandbox data will break after expiry."
-  - **Option A — Download everything**: The static export ZIP includes the data files themselves (COGs, PMTiles). The user hosts everything together. Works for datasets under ~500MB. Above that, ZIP size becomes impractical.
-  - **Option B — Move data to permanent storage**: Guide the user to push their files to R2/S3 (connects to the guided self-hosting wizard in v3). The story config updates its URLs to point to the new permanent location.
-  - **Option C — Accept the expiry**: For short-lived stories (conference demos, grant applications with a deadline), the user may not need permanence. The published story works for 30 days and then the data links break. The story config and narrative text survive — only the map tiles stop rendering.
-- **URL portability**: The story config format must use absolute URLs for all data sources. This means a user can later update the URLs (e.g., moving from sandbox storage to R2) by editing the config JSON — no need to re-export or rebuild the story.
+> **Superseded.** See Section 5 of the [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md) for the data storage and cost model. Summary: Cloudflare R2 replaces MinIO in production, per-user 5GB quota, inactive cleanup after 12 months, zero egress costs.
 
 ---
 
@@ -600,18 +576,18 @@ This last line is the ambient DevSeed credit — not a watermark, but a contextu
 
 ### Phase 1: Publishing pipeline (target: 2–3 weeks)
 
-This is the highest-priority gap — stories exist but can't leave the sandbox.
+> **See [Story Publishing Pipeline spec](superpowers/specs/2026-03-21-story-publishing-design.md) for full design.**
 
-- **Static export**: Bundle story config + scrollama renderer + MapLibre + CSS into a self-contained ZIP. The ZIP should work when opened from a local file server or any static host.
-- **Vercel one-click deploy**: Pre-configured `vercel.json`, deploy button flow. User logs into Vercel, clicks deploy, gets a URL.
-- **Data permanence warning**: If story references sandbox-hosted data (30-day expiry), warn on publish. Offer: "Download your data files" or "Deploy to your own storage" (links to future guided self-hosting wizard).
-- **Story config portability**: Ensure the published story reads from absolute URLs in the config. Updating URLs later (e.g., moving COGs from sandbox to R2) should fix the story without re-exporting.
+- GitHub OAuth integration
+- Static reader bundle (separate Vite build target)
+- Publish flow: create GitHub repo, push reader + story.json, enable GitHub Pages
+- Re-publish flow: push updated story.json to existing repo
+- "Your Stories" page for logged-in users
 
 ### Phase 2: Media + multi-dataset (target: 2–3 weeks after Phase 1)
 
 - **Media embedding**: Image URL and video embed (YouTube/Vimeo iframe) per chapter. Position options: above text, below text, background behind text.
 - **Multi-dataset stories**: Add layers from multiple uploaded datasets. The data source manager lists all datasets the user has uploaded to the sandbox. Each can be added as a source and configured per-chapter.
-- **GitHub Pages deploy**: Alternative to Vercel for users who prefer GitHub.
 - **Embed code improvements**: The iframe embed route exists (`/story/:id/embed`). Add a "Copy embed code" button in the editor and a responsive sizing option.
 
 ### Phase 3: Mapping dictionary + "Show Your Work" (target: 3–4 weeks after Phase 2)

@@ -154,7 +154,7 @@ services:
       PUBLIC_RASTER_TILER_URL: /raster
       PUBLIC_VECTOR_TILER_URL: /vector
       POSTGRES_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
-      CORS_ORIGINS: '["http://localhost:5185"]'
+      CORS_ORIGINS: '["http://localhost:5185", "https://${SITE_ADDRESS:-localhost}"]'
       CHECK_DISK_FREE_SPACE: "FALSE"
     depends_on:
       database:
@@ -195,6 +195,34 @@ services:
       ingestion:
         condition: service_healthy
 
+  caddy:
+    build:
+      context: caddy
+    restart: unless-stopped
+    profiles:
+      - prod
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
+      AUTH_USER: ${AUTH_USER:-demo}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+    depends_on:
+      frontend:
+        condition: service_started
+
 volumes:
   pgdata:
   miniodata:
+  caddy_data:
+  caddy_config:

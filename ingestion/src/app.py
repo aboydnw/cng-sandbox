@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine as sa_create_engine
 from sqlalchemy.orm import sessionmaker
 from src.config import get_settings
-from src.models.story import Base
+from src.models.base import Base
 from src.state import scan_store, scan_store_lock
 
 

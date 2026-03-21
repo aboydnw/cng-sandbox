@@ -4,13 +4,10 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, String, Boolean, DateTime, Text
-from sqlalchemy.orm import DeclarativeBase
 
 from pydantic import BaseModel
 
-
-class Base(DeclarativeBase):
-    pass
+from src.models.base import Base
 
 
 class StoryRow(Base):

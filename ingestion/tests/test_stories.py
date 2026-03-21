@@ -1,26 +1,6 @@
-from contextlib import asynccontextmanager
-
-import pytest
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-from starlette.testclient import TestClient
-
-from src.app import create_app
-from src.config import Settings
-from src.models.story import Base
-
-
-@pytest.fixture
-def db_engine():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
+import pytest
 
 
 @pytest.fixture
@@ -29,27 +9,6 @@ def db_session(db_engine):
     session = Session()
     yield session
     session.close()
-
-
-@asynccontextmanager
-async def _noop_lifespan(app):
-    yield
-
-
-@pytest.fixture
-def app(db_engine):
-    settings = Settings(
-        s3_endpoint="http://fake:9000",
-        postgres_dsn="sqlite:///:memory:",
-    )
-    application = create_app(settings, lifespan=_noop_lifespan)
-    application.state.db_session_factory = sessionmaker(bind=db_engine)
-    return application
-
-
-@pytest.fixture
-def client(app):
-    return TestClient(app, raise_server_exceptions=False)
 
 
 def test_stories_table_created(db_engine):

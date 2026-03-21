@@ -1,22 +1,55 @@
 import os
 import json
 import tempfile
+from contextlib import asynccontextmanager
 
 import numpy as np
 import pytest
-from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from starlette.testclient import TestClient
+
+from src.app import create_app
+from src.config import Settings
+from src.models.base import Base
+
+
+@asynccontextmanager
+async def _noop_lifespan(app):
+    yield
 
 
 @pytest.fixture
-def client():
-    from src.app import app
-    with TestClient(app) as c:
-        yield c
+def db_engine():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def app(db_engine):
+    settings = Settings(
+        s3_endpoint="http://fake:9000",
+        postgres_dsn="sqlite:///:memory:",
+    )
+    application = create_app(settings, lifespan=_noop_lifespan)
+    application.state.db_session_factory = sessionmaker(bind=db_engine)
+    return application
+
+
+@pytest.fixture
+def client(app):
+    return TestClient(app, raise_server_exceptions=False)
 
 
 @pytest.fixture
 def synthetic_geotiff():
-    """Generate a small synthetic GeoTIFF for testing."""
     import rasterio
     from rasterio.transform import from_bounds
 
@@ -40,7 +73,6 @@ def synthetic_geotiff():
 
 @pytest.fixture
 def synthetic_geojson():
-    """Generate a small synthetic GeoJSON for testing."""
     with tempfile.NamedTemporaryFile(suffix=".geojson", mode="w", delete=False) as f:
         geojson = {
             "type": "FeatureCollection",

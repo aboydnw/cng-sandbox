@@ -1,6 +1,7 @@
 """Pipeline orchestrator for temporal (multi-file) raster uploads."""
 
 import asyncio
+import json
 import logging
 import os
 import tempfile
@@ -26,7 +27,7 @@ async def run_temporal_pipeline(
     job: Job,
     input_paths: list[str],
     filenames: list[str],
-    datasets_store: dict,
+    db_session_factory,
 ) -> None:
     """Execute the temporal conversion pipeline for multiple raster files.
 
@@ -177,7 +178,26 @@ async def run_temporal_pipeline(
                 raster_max=raster_max,
                 created_at=job.created_at,
             )
-            datasets_store[job.dataset_id] = dataset
+            from src.models.dataset import DatasetRow
+            session = db_session_factory()
+            try:
+                row = DatasetRow(
+                    id=dataset.id,
+                    filename=dataset.filename,
+                    dataset_type=dataset.dataset_type.value,
+                    format_pair=dataset.format_pair.value,
+                    tile_url=dataset.tile_url,
+                    bounds_json=json.dumps(dataset.bounds) if dataset.bounds else None,
+                    metadata_json=json.dumps({
+                        k: v for k, v in dataset.model_dump().items()
+                        if k not in ("id", "filename", "dataset_type", "format_pair", "tile_url", "bounds", "created_at")
+                    }, default=str),
+                    created_at=dataset.created_at,
+                )
+                session.add(row)
+                session.commit()
+            finally:
+                session.close()
 
     except Exception as e:
         logger.exception("Temporal pipeline failed for job %s", job.id)

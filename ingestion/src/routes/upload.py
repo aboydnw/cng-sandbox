@@ -8,10 +8,10 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, UploadFile
 from pydantic import BaseModel as PydanticBaseModel, field_validator
 
-from src.state import jobs, datasets, scan_store, scan_store_lock
+from src.state import jobs, scan_store, scan_store_lock
 from src.config import get_settings
 from src.models import Job
 from src.services.pipeline import run_pipeline
@@ -81,6 +81,7 @@ router = APIRouter(prefix="/api")
 
 @router.post("/upload")
 async def upload_file(
+    request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
 ):
@@ -96,12 +97,13 @@ async def upload_file(
     job = Job(filename=file.filename)
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_and_cleanup, job, tmp_path)
+    background_tasks.add_task(_run_and_cleanup, job, tmp_path, request.app.state.db_session_factory)
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
 @router.post("/convert-url")
 async def convert_url(
+    request: Request,
     body: ConvertUrlRequest,
     background_tasks: BackgroundTasks,
 ):
@@ -125,7 +127,7 @@ async def convert_url(
     job = Job(filename=filename)
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_and_cleanup, job, tmp_path)
+    background_tasks.add_task(_run_and_cleanup, job, tmp_path, request.app.state.db_session_factory)
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
@@ -163,10 +165,10 @@ async def scan_convert(scan_id: str, body: ScanConvertRequest):
     return {"status": "converting"}
 
 
-async def _run_and_cleanup(job: Job, input_path: str):
+async def _run_and_cleanup(job: Job, input_path: str, db_session_factory):
     """Run the pipeline, then clean up the temp file."""
     try:
-        await run_pipeline(job, input_path, datasets)
+        await run_pipeline(job, input_path, db_session_factory)
     finally:
         if os.path.exists(input_path):
             os.unlink(input_path)
@@ -174,6 +176,7 @@ async def _run_and_cleanup(job: Job, input_path: str):
 
 @router.post("/upload-temporal")
 async def upload_temporal(
+    request: Request,
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
 ):
@@ -221,14 +224,14 @@ async def upload_temporal(
     job = Job(filename=filenames[0])
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_temporal_and_cleanup, job, tmp_paths, filenames)
+    background_tasks.add_task(_run_temporal_and_cleanup, job, tmp_paths, filenames, request.app.state.db_session_factory)
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
-async def _run_temporal_and_cleanup(job: Job, input_paths: list[str], filenames: list[str]):
+async def _run_temporal_and_cleanup(job: Job, input_paths: list[str], filenames: list[str], db_session_factory):
     """Run the temporal pipeline, then clean up all temp files."""
     try:
-        await run_temporal_pipeline(job, input_paths, filenames, datasets)
+        await run_temporal_pipeline(job, input_paths, filenames, db_session_factory)
     finally:
         for path in input_paths:
             if os.path.exists(path):

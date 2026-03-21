@@ -1,0 +1,13 @@
+{$SITE_ADDRESS} {
+	tls {
+		dns duckdns {$DUCKDNS_TOKEN}
+	}
+
+	basic_auth {
+		{$AUTH_USER} {$AUTH_PASSWORD_HASH}
+	}
+
+	encode gzip
+
+	reverse_proxy frontend:5185
+}

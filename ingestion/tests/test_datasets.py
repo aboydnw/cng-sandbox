@@ -45,6 +45,78 @@ def test_get_dataset_not_found(client):
     assert resp.status_code == 404
 
 
+def test_delete_dataset_endpoint(client, db_engine):
+    from src.models.dataset import DatasetRow
+    from sqlalchemy.orm import sessionmaker
+    from datetime import datetime, timezone
+
+    session = sessionmaker(bind=db_engine)()
+    row = DatasetRow(
+        id="ds-del",
+        filename="delete-me.tif",
+        dataset_type="raster",
+        format_pair="geotiff-to-cog",
+        tile_url="/raster/collections/sandbox-ds-del/tiles/{z}/{x}/{y}",
+        metadata_json='{"stac_collection_id": "sandbox-ds-del"}',
+        created_at=datetime.now(timezone.utc),
+    )
+    session.add(row)
+    session.commit()
+    session.close()
+
+    resp = client.delete("/api/datasets/ds-del")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["deleted"] is True
+
+    resp = client.get("/api/datasets/ds-del")
+    assert resp.status_code == 404
+
+
+def test_delete_dataset_not_found(client):
+    resp = client.delete("/api/datasets/nonexistent")
+    assert resp.status_code == 404
+
+
+def test_delete_dataset_reports_affected_stories(client, db_engine):
+    from src.models.dataset import DatasetRow
+    from src.models.story import StoryRow
+    from sqlalchemy.orm import sessionmaker
+    from datetime import datetime, timezone
+    import json
+
+    session = sessionmaker(bind=db_engine)()
+    session.add(DatasetRow(
+        id="ds-ref",
+        filename="referenced.tif",
+        dataset_type="raster",
+        format_pair="geotiff-to-cog",
+        tile_url="/raster/tiles/{z}/{x}/{y}",
+        metadata_json="{}",
+        created_at=datetime.now(timezone.utc),
+    ))
+    session.add(StoryRow(
+        id="story-1",
+        title="Test Story",
+        dataset_id="ds-ref",
+        chapters_json=json.dumps([{
+            "id": "ch-1", "order": 0, "title": "Ch1", "narrative": "text",
+            "map_state": {"center": [0, 0], "zoom": 2, "bearing": 0, "pitch": 0, "basemap": "streets"},
+            "transition": "fly-to",
+            "layer_config": {"dataset_id": "ds-ref", "colormap": "viridis", "opacity": 1},
+        }]),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    ))
+    session.commit()
+    session.close()
+
+    resp = client.delete("/api/datasets/ds-ref")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "story-1" in data["affected_stories"]
+
+
 def test_storage_delete_object(monkeypatch):
     from src.services.storage import StorageService
 

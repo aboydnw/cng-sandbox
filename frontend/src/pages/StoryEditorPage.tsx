@@ -17,6 +17,7 @@ import {
 import {
   type Story,
   type Chapter,
+  type ChapterType,
   type LayerConfig,
   DEFAULT_LAYER_CONFIG,
   createStory,
@@ -287,6 +288,15 @@ export default function StoryEditorPage() {
     }));
   }
 
+  function updateChapterType(type: ChapterType) {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) =>
+        ch.id === activeChapterId ? { ...ch, type } : ch,
+      ),
+    }));
+  }
+
   // Publish
   function handlePublish() {
     if (!story) return;
@@ -411,35 +421,36 @@ export default function StoryEditorPage() {
 
         {/* Right: map + editor stacked */}
         <Flex flex={1} direction="column" overflow="hidden">
-          {/* Map (top) */}
-          <Box flex={6} position="relative">
-            <UnifiedMap
-              camera={camera}
-              onCameraChange={setCamera}
-              layers={layers}
-              basemap={basemap}
-              onBasemapChange={setBasemap}
-              transitionDuration={transitionDuration}
-              transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
-            >
-              {/* Capture button */}
-              <Button
-                position="absolute"
-                bottom={4}
-                left="50%"
-                transform="translateX(-50%)"
-                size="sm"
-                bg={captureFlash ? "green.500" : "blue.500"}
-                color="white"
-                shadow="md"
-                onClick={captureView}
-                transition="background 0.3s"
-                _hover={{ bg: captureFlash ? "green.500" : "blue.600" }}
+          {/* Map (top) — hidden for prose chapters */}
+          {activeChapter?.type !== "prose" && (
+            <Box flex={6} position="relative">
+              <UnifiedMap
+                camera={camera}
+                onCameraChange={setCamera}
+                layers={layers}
+                basemap={basemap}
+                onBasemapChange={setBasemap}
+                transitionDuration={transitionDuration}
+                transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
               >
-                {captureFlash ? "✓ Captured!" : "📍 Capture this view"}
-              </Button>
-            </UnifiedMap>
-          </Box>
+                <Button
+                  position="absolute"
+                  bottom={4}
+                  left="50%"
+                  transform="translateX(-50%)"
+                  size="sm"
+                  bg={captureFlash ? "green.500" : "blue.500"}
+                  color="white"
+                  shadow="md"
+                  onClick={captureView}
+                  transition="background 0.3s"
+                  _hover={{ bg: captureFlash ? "green.500" : "blue.600" }}
+                >
+                  {captureFlash ? "✓ Captured!" : "📍 Capture this view"}
+                </Button>
+              </UnifiedMap>
+            </Box>
+          )}
 
           {/* Editor (bottom) */}
           <Box
@@ -450,6 +461,8 @@ export default function StoryEditorPage() {
           >
             {activeChapter ? (
               <NarrativeEditor
+                chapterType={activeChapter.type}
+                onChapterTypeChange={updateChapterType}
                 title={activeChapter.title}
                 narrative={activeChapter.narrative}
                 onTitleChange={updateChapterTitle}

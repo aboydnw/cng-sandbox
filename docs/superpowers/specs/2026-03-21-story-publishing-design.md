@@ -183,6 +183,12 @@ MapLibre (~200KB gzipped) + Scrollama (~3KB) + deck.gl (if included, ~150KB) + r
 
 Existing CRUD endpoints (`POST/GET/PATCH/DELETE /api/stories`) remain unchanged and unauthenticated.
 
+### Implementation notes
+
+- **GitHub file push method**: Use the Git Data API (create blobs → create tree → create commit → update ref) rather than the Contents API, which only handles single files. The reader bundle has multiple files.
+- **OAuth cookie in local dev**: The `secure` flag on the httpOnly cookie prevents it from being sent over plain HTTP. Use a separate GitHub OAuth App for local development with `http://localhost` callback, and make the `secure` flag conditional on environment.
+- **R2 CORS**: The R2 bucket must have a CORS policy allowing `*.github.io` origins (and any custom domains) so published stories can fetch tiles directly.
+
 ---
 
 ## 5. Data Storage & Costs

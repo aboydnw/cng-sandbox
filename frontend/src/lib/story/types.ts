@@ -25,9 +25,12 @@ export interface LayerConfig {
   timestep?: number;
 }
 
+export type ChapterType = "scrollytelling" | "prose" | "map";
+
 export interface Chapter {
   id: string;
   order: number;
+  type: ChapterType;
   title: string;
   narrative: string;
   map_state: MapState;
@@ -74,6 +77,7 @@ export function createChapter(
   return {
     id: uuid(),
     order: 0,
+    type: "scrollytelling",
     title: "Untitled chapter",
     narrative: "",
     map_state: { ...DEFAULT_MAP_STATE },

@@ -54,15 +54,15 @@ describe("migrateStory", () => {
       dataset_ids: ["ds-1", "ds-2"],
       chapters: [
         {
-          id: "ch-1", order: 0, title: "Ch1", narrative: "",
+          id: "ch-1", order: 0, type: "scrollytelling" as const, title: "Ch1", narrative: "",
           map_state: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0, basemap: "streets" },
-          transition: "fly-to",
+          transition: "fly-to" as const,
           layer_config: { dataset_id: "ds-1", colormap: "viridis", opacity: 0.8, basemap: "streets" },
         },
         {
-          id: "ch-2", order: 1, title: "Ch2", narrative: "",
+          id: "ch-2", order: 1, type: "scrollytelling" as const, title: "Ch2", narrative: "",
           map_state: { center: [10, 20], zoom: 5, bearing: 0, pitch: 0, basemap: "streets" },
-          transition: "fly-to",
+          transition: "fly-to" as const,
           layer_config: { dataset_id: "ds-2", colormap: "plasma", opacity: 0.6, basemap: "dark" },
         },
       ],

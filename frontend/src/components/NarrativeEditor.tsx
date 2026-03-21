@@ -1,9 +1,11 @@
 import { Box, Flex, Text, Textarea } from "@chakra-ui/react";
 import { useState } from "react";
-import type { LayerConfig } from "../lib/story";
+import type { ChapterType, LayerConfig } from "../lib/story";
 import type { Dataset } from "../types";
 
 interface NarrativeEditorProps {
+  chapterType: ChapterType;
+  onChapterTypeChange: (type: ChapterType) => void;
   title: string;
   narrative: string;
   onTitleChange: (title: string) => void;
@@ -16,6 +18,8 @@ interface NarrativeEditorProps {
 }
 
 export function NarrativeEditor({
+  chapterType,
+  onChapterTypeChange,
   title,
   narrative,
   onTitleChange,
@@ -45,6 +49,20 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
 
   return (
     <Flex direction="column" h="100%" p={3} gap={2}>
+      {/* Type selector */}
+      <Flex gap={2} align="center">
+        <Text fontSize="xs" color="gray.500" fontWeight={600}>Type</Text>
+        <select
+          value={chapterType}
+          onChange={(e) => onChapterTypeChange(e.target.value as ChapterType)}
+          style={{ fontSize: "13px", padding: "4px 8px" }}
+        >
+          <option value="scrollytelling">Scrollytelling</option>
+          <option value="prose">Prose</option>
+          <option value="map">Map</option>
+        </select>
+      </Flex>
+
       <input
         type="text"
         value={title}
@@ -85,61 +103,63 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
         _focus={{ borderColor: "blue.300", boxShadow: "none" }}
       />
 
-      <Flex gap={4} px={4} py={2} borderTop="1px solid" borderColor="gray.100" flexWrap="wrap">
-        <Box>
-          <Text fontSize="xs" color="gray.500" mb={1}>Dataset</Text>
-          <Flex gap={1} align="center">
-            <select
-              value={layerConfig.dataset_id}
-              onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
-              style={{ fontSize: "13px", padding: "4px 8px", maxWidth: "200px" }}
-            >
-              {datasets.map(ds => (
-                <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
-              ))}
-            </select>
-            {onAddDataset && (
-              <Text
-                as="button"
-                fontSize="12px"
-                color="blue.500"
-                fontWeight={600}
-                cursor="pointer"
-                onClick={onAddDataset}
-                _hover={{ color: "blue.600" }}
-                whiteSpace="nowrap"
-              >
-                + Add
-              </Text>
-            )}
-          </Flex>
-        </Box>
-        {datasetType === "raster" && (
-          <>
-            <Box>
-              <Text fontSize="xs" color="gray.500" mb={1}>Colormap</Text>
+      {chapterType !== "prose" && (
+        <Flex gap={4} px={4} py={2} borderTop="1px solid" borderColor="gray.100" flexWrap="wrap">
+          <Box>
+            <Text fontSize="xs" color="gray.500" mb={1}>Dataset</Text>
+            <Flex gap={1} align="center">
               <select
-                value={layerConfig.colormap}
-                onChange={(e) => onLayerConfigChange({ ...layerConfig, colormap: e.target.value })}
-                style={{ fontSize: "13px", padding: "4px 8px" }}
+                value={layerConfig.dataset_id}
+                onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
+                style={{ fontSize: "13px", padding: "4px 8px", maxWidth: "200px" }}
               >
-                {["viridis", "plasma", "inferno", "magma", "cividis", "terrain", "blues", "reds"].map(cm => (
-                  <option key={cm} value={cm}>{cm}</option>
+                {datasets.map(ds => (
+                  <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
                 ))}
               </select>
-            </Box>
-            <Box>
-              <Text fontSize="xs" color="gray.500" mb={1}>Opacity</Text>
-              <input
-                type="range"
-                min={0} max={100}
-                value={Math.round(layerConfig.opacity * 100)}
-                onChange={(e) => onLayerConfigChange({ ...layerConfig, opacity: Number(e.target.value) / 100 })}
-              />
-            </Box>
-          </>
-        )}
-      </Flex>
+              {onAddDataset && (
+                <Text
+                  as="button"
+                  fontSize="12px"
+                  color="blue.500"
+                  fontWeight={600}
+                  cursor="pointer"
+                  onClick={onAddDataset}
+                  _hover={{ color: "blue.600" }}
+                  whiteSpace="nowrap"
+                >
+                  + Add
+                </Text>
+              )}
+            </Flex>
+          </Box>
+          {datasetType === "raster" && (
+            <>
+              <Box>
+                <Text fontSize="xs" color="gray.500" mb={1}>Colormap</Text>
+                <select
+                  value={layerConfig.colormap}
+                  onChange={(e) => onLayerConfigChange({ ...layerConfig, colormap: e.target.value })}
+                  style={{ fontSize: "13px", padding: "4px 8px" }}
+                >
+                  {["viridis", "plasma", "inferno", "magma", "cividis", "terrain", "blues", "reds"].map(cm => (
+                    <option key={cm} value={cm}>{cm}</option>
+                  ))}
+                </select>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="gray.500" mb={1}>Opacity</Text>
+                <input
+                  type="range"
+                  min={0} max={100}
+                  value={Math.round(layerConfig.opacity * 100)}
+                  onChange={(e) => onLayerConfigChange({ ...layerConfig, opacity: Number(e.target.value) / 100 })}
+                />
+              </Box>
+            </>
+          )}
+        </Flex>
+      )}
 
       {showAiPrompt ? (
         <Box border="1px solid" borderColor="gray.200" borderRadius="6px" p={3}>

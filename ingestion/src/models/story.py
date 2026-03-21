@@ -29,6 +29,7 @@ class StoryRow(Base):
 class ChapterPayload(BaseModel):
     id: str
     order: int
+    type: str = "scrollytelling"
     title: str
     narrative: str
     map_state: dict

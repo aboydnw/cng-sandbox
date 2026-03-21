@@ -81,7 +81,11 @@ export function ChapterList({
             </Text>
             <Flex justify="space-between" align="center" mt={1}>
               <Text fontSize="10px" opacity={0.7}>
-                zoom {chapter.map_state.zoom.toFixed(0)} · {chapter.transition}
+                {chapter.type === "prose"
+                  ? "prose"
+                  : chapter.type === "map"
+                    ? "map · zoom " + chapter.map_state.zoom.toFixed(0)
+                    : "zoom " + chapter.map_state.zoom.toFixed(0) + " · " + chapter.transition}
               </Text>
               {confirmDeleteId === chapter.id ? (
                 <Flex gap={1}>

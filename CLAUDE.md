@@ -51,6 +51,55 @@ docker compose -f docker-compose.yml up -d <service>
 
 Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `minio`, `minio-init`, `ingestion`, `frontend`
 
+## Production Deployment (Hetzner)
+
+The sandbox can be deployed to a public URL with HTTPS and basic auth using the `prod` Docker Compose profile.
+
+### Prerequisites
+
+1. **DuckDNS subdomain:** Sign up at [duckdns.org](https://www.duckdns.org), create a subdomain, note the token
+2. **Hetzner firewall:** Allow inbound TCP 22, 80, 443 only (block all other ports from external access). Configure in the Hetzner Cloud console (Firewalls section). Also check the OS-level firewall: `sudo ufw status` — if active, ensure ports 80 and 443 are allowed (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)
+3. **Generate a password hash:**
+   ```bash
+   docker run --rm caddy caddy hash-password --plaintext 'your-password'
+   ```
+
+### Configure
+
+1. Edit `.env` on the VM and fill in the deployment variables:
+   ```
+   SITE_ADDRESS=your-subdomain.duckdns.org
+   DUCKDNS_TOKEN=your-token-here
+   AUTH_USER=demo
+   AUTH_PASSWORD_HASH=$$2a$$14$$... (escape $ as $$ for Docker Compose)
+   ```
+
+2. Edit `scripts/update-duckdns.sh` and set `SUBDOMAIN` and `TOKEN`
+
+3. Add the cron job:
+   ```bash
+   crontab -e
+   # Add: */5 * * * * /path/to/scripts/update-duckdns.sh >> /var/log/duckdns.log 2>&1
+   ```
+
+### Start
+
+```bash
+docker compose --profile prod up -d --build
+```
+
+### Verify
+
+- Visit `https://your-subdomain.duckdns.org` — should prompt for username/password
+- After auth, the sandbox should load normally
+- Upload a file to verify CORS works end-to-end
+
+### Notes
+
+- `docker compose up` (without `--profile prod`) still runs local dev without Caddy
+- Backend service ports (8000, 8081-8083, 9000-9001) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
+- The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
+
 ## Services and Ports
 
 | Port | Service | Image |

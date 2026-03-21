@@ -16,3 +16,4 @@ __pycache__/
 .env.local
 .env.*.local
 .superpowers/
+.worktrees/

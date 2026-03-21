@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Box, Flex, Heading, Spinner, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
-import type { Layer } from "@deck.gl/core";
+import scrollama from "scrollama";
+import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ProseChapter } from "../components/ProseChapter";
 import { MapChapter } from "../components/MapChapter";
 
 import {
   type CameraState,
+  cameraFromBounds,
   buildRasterTileLayers,
   buildVectorLayer,
 } from "../lib/layers";
@@ -17,85 +19,230 @@ import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
 
-function ScrollytellingChapter({
-  chapter,
-  chapterIndex,
-  layers,
-  dataset,
+type ContentBlock =
+  | { type: "scrollytelling"; chapters: Chapter[]; startIndex: number }
+  | { type: "prose"; chapter: Chapter; index: number }
+  | { type: "map"; chapter: Chapter; index: number };
+
+function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
+  const blocks: ContentBlock[] = [];
+  let scrollyGroup: Chapter[] = [];
+  let scrollyStartIndex = 0;
+
+  for (let i = 0; i < chapters.length; i++) {
+    const ch = chapters[i];
+    if (ch.type === "scrollytelling" || !ch.type) {
+      if (scrollyGroup.length === 0) scrollyStartIndex = i;
+      scrollyGroup.push(ch);
+    } else {
+      if (scrollyGroup.length > 0) {
+        blocks.push({ type: "scrollytelling", chapters: scrollyGroup, startIndex: scrollyStartIndex });
+        scrollyGroup = [];
+      }
+      blocks.push({ type: ch.type, chapter: ch, index: i });
+    }
+  }
+  if (scrollyGroup.length > 0) {
+    blocks.push({ type: "scrollytelling", chapters: scrollyGroup, startIndex: scrollyStartIndex });
+  }
+  return blocks;
+}
+
+function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset | null>) {
+  const ds = datasetMap.get(chapter.layer_config.dataset_id);
+  if (!ds) return [];
+  const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
+
+  if (ds.dataset_type === "raster") {
+    const base = ds.tile_url;
+    const sep = base.includes("?") ? "&" : "?";
+    const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+    return buildRasterTileLayers({
+      tileUrl,
+      opacity: lc.opacity,
+      isTemporalActive: false,
+    });
+  }
+  return [
+    buildVectorLayer({
+      tileUrl: ds.tile_url,
+      isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
+      opacity: lc.opacity,
+      minZoom: ds.min_zoom ?? undefined,
+      maxZoom: ds.max_zoom ?? undefined,
+    }),
+  ];
+}
+
+function ScrollytellingBlock({
+  chapters,
+  startIndex,
+  datasetMap,
 }: {
-  chapter: Chapter;
-  chapterIndex: number;
-  layers: Layer[];
-  dataset: Dataset | null;
+  chapters: Chapter[];
+  startIndex: number;
+  datasetMap: Map<string, Dataset | null>;
 }) {
-  const [chapterCamera, setChapterCamera] = useState<CameraState>({
-    longitude: chapter.map_state.center[0],
-    latitude: chapter.map_state.center[1],
-    zoom: chapter.map_state.zoom,
-    bearing: chapter.map_state.bearing,
-    pitch: chapter.map_state.pitch,
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [camera, setCamera] = useState<CameraState>({
+    longitude: chapters[0].map_state.center[0],
+    latitude: chapters[0].map_state.center[1],
+    zoom: chapters[0].map_state.zoom,
+    bearing: chapters[0].map_state.bearing,
+    pitch: chapters[0].map_state.pitch,
   });
-  const [chapterBasemap, setChapterBasemap] = useState(chapter.map_state.basemap);
+  const [basemap, setBasemap] = useState(chapters[0].map_state.basemap);
+  const [transitionDuration, setTransitionDuration] = useState<number | undefined>(undefined);
+  const flyToRef = useRef(new FlyToInterpolator());
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
+
+  // Initialize camera from dataset bounds if first chapter has default state
+  useEffect(() => {
+    if (datasetMap.size === 0) return;
+    const firstChapter = chapters[0];
+    const ds = datasetMap.get(firstChapter.layer_config.dataset_id);
+    if (ds?.bounds && firstChapter.map_state.center[0] === 0 && firstChapter.map_state.center[1] === 0) {
+      setCamera(cameraFromBounds(ds.bounds));
+    }
+  }, [datasetMap, chapters]);
+
+  // Set up scrollama
+  useEffect(() => {
+    if (!stepsRef.current || chapters.length === 0) return;
+
+    const scroller = scrollama();
+    scrollerRef.current = scroller;
+
+    scroller
+      .setup({
+        step: stepsRef.current.querySelectorAll("[data-step]") as unknown as HTMLElement[],
+        offset: 0.8,
+      })
+      .onStepEnter(({ index }) => {
+        setActiveIndex(index);
+      });
+
+    return () => {
+      scroller.destroy();
+      scrollerRef.current = null;
+    };
+  }, [chapters]);
+
+  // Fly to chapter on active change
+  useEffect(() => {
+    const chapter = chapters[activeIndex];
+    if (!chapter) return;
+
+    setBasemap(chapter.map_state.basemap);
+    setTransitionDuration(chapter.transition === "fly-to" ? 2000 : undefined);
+    setCamera({
+      longitude: chapter.map_state.center[0],
+      latitude: chapter.map_state.center[1],
+      zoom: chapter.map_state.zoom,
+      bearing: chapter.map_state.bearing,
+      pitch: chapter.map_state.pitch,
+    });
+  }, [activeIndex, chapters]);
+
+  const layers = useMemo(
+    () => buildLayersForChapter(chapters[activeIndex], datasetMap),
+    [datasetMap, activeIndex, chapters],
+  );
 
   const handleCameraChange = useCallback((c: CameraState) => {
-    setChapterCamera(c);
+    setCamera(c);
+    setTransitionDuration(undefined);
   }, []);
 
+  const activeDataset = chapters[activeIndex]
+    ? datasetMap.get(chapters[activeIndex].layer_config.dataset_id)
+    : undefined;
+
   return (
-    <Flex h="80vh" overflow="hidden">
-      {/* Left: narrative */}
-      <Box w="40%" overflowY="auto" bg="gray.50" p={8}>
-        <Box
-          bg="white"
-          borderRadius="8px"
-          p={6}
-          shadow="sm"
-          border="1px solid"
-          borderColor="gray.200"
-        >
-          <Text
-            fontSize="10px"
-            textTransform="uppercase"
-            letterSpacing="1px"
-            color="blue.500"
-            fontWeight={600}
-            mb={2}
-          >
-            Chapter {chapterIndex + 1}
-          </Text>
-          <Heading size="md" mb={3} color="gray.800">
-            {chapter.title}
-          </Heading>
+    <Flex h="100vh" overflow="hidden" position="relative">
+      {/* Left: scrolling narrative */}
+      <Box
+        w="40%"
+        overflowY="auto"
+        bg="gray.50"
+        ref={stepsRef}
+      >
+        {chapters.map((chapter, i) => (
           <Box
-            fontSize="sm"
-            color="gray.700"
-            lineHeight="1.7"
-            css={{
-              "& p": { marginBottom: "1em" },
-              "& h1, & h2, & h3": {
-                fontWeight: 600,
-                marginBottom: "0.5em",
-              },
-            }}
+            key={chapter.id}
+            data-step
+            px={8}
+            pt={i === 0 ? 12 : 4}
+            pb="80vh"
+            opacity={activeIndex === i ? 1 : 0.3}
+            transition="opacity 0.4s ease"
           >
-            <Markdown>{chapter.narrative}</Markdown>
+            <Box
+              bg="white"
+              borderRadius="8px"
+              p={6}
+              shadow="sm"
+              border="1px solid"
+              borderColor={activeIndex === i ? "blue.200" : "gray.200"}
+            >
+              <Text
+                fontSize="10px"
+                textTransform="uppercase"
+                letterSpacing="1px"
+                color="blue.500"
+                fontWeight={600}
+                mb={2}
+              >
+                Chapter {startIndex + i + 1}
+              </Text>
+              <Heading size="md" mb={3} color="gray.800">
+                {chapter.title}
+              </Heading>
+              <Box
+                fontSize="sm"
+                color="gray.700"
+                lineHeight="1.7"
+                css={{
+                  "& p": { marginBottom: "1em" },
+                  "& h1, & h2, & h3": {
+                    fontWeight: 600,
+                    marginBottom: "0.5em",
+                  },
+                }}
+              >
+                <Markdown>{chapter.narrative}</Markdown>
+              </Box>
+            </Box>
           </Box>
-        </Box>
+        ))}
       </Box>
 
-      {/* Right: map */}
-      <Box w="60%" position="relative">
-        {dataset ? (
+      {/* Right: sticky map */}
+      <Box w="60%" position="sticky" top={0} h="100vh">
+        {datasetMap.size > 0 && (
           <UnifiedMap
-            camera={chapterCamera}
+            camera={camera}
             onCameraChange={handleCameraChange}
             layers={layers}
-            basemap={chapterBasemap}
-            onBasemapChange={setChapterBasemap}
+            basemap={basemap}
+            onBasemapChange={setBasemap}
+            transitionDuration={transitionDuration}
+            transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
           />
-        ) : (
-          <Flex h="100%" align="center" justify="center" bg="gray.200">
-            <Text color="gray.500">Data no longer available</Text>
+        )}
+        {activeDataset === null && (
+          <Flex
+            position="absolute"
+            inset={0}
+            align="center"
+            justify="center"
+            bg="blackAlpha.600"
+            zIndex={10}
+          >
+            <Text color="white" fontSize="lg" fontWeight={500}>
+              Data no longer available
+            </Text>
           </Flex>
         )}
       </Box>
@@ -159,6 +306,11 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
     [story],
   );
 
+  const contentBlocks = useMemo(
+    () => groupChaptersIntoBlocks(sortedChapters),
+    [sortedChapters],
+  );
+
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
@@ -167,7 +319,6 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
     );
   }
 
-  // --- Error state ---
   if (error) {
     return (
       <Flex
@@ -215,57 +366,35 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
 
       {/* Main content */}
       <Box flex={1} overflowY="auto">
-        {sortedChapters.map((chapter, i) => {
-          if (chapter.type === "prose") {
+        {contentBlocks.map((block, blockIndex) => {
+          if (block.type === "prose") {
             return (
               <ProseChapter
-                key={chapter.id}
-                chapter={chapter}
-                chapterIndex={i}
+                key={block.chapter.id}
+                chapter={block.chapter}
+                chapterIndex={block.index}
               />
             );
           }
 
-          if (chapter.type === "map") {
-            const ds = datasetMap.get(chapter.layer_config.dataset_id) ?? null;
+          if (block.type === "map") {
+            const ds = datasetMap.get(block.chapter.layer_config.dataset_id) ?? null;
             return (
               <MapChapter
-                key={chapter.id}
-                chapter={chapter}
-                chapterIndex={i}
+                key={block.chapter.id}
+                chapter={block.chapter}
+                chapterIndex={block.index}
                 dataset={ds}
               />
             );
           }
 
-          // scrollytelling — individual map + narrative side by side
-          const ds = datasetMap.get(chapter.layer_config.dataset_id);
-          const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
-          const chapterLayers = ds
-            ? ds.dataset_type === "raster"
-              ? buildRasterTileLayers({
-                  tileUrl: `${ds.tile_url}${ds.tile_url.includes("?") ? "&" : "?"}colormap_name=${lc.colormap}`,
-                  opacity: lc.opacity,
-                  isTemporalActive: false,
-                })
-              : [
-                  buildVectorLayer({
-                    tileUrl: ds.tile_url,
-                    isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
-                    opacity: lc.opacity,
-                    minZoom: ds.min_zoom ?? undefined,
-                    maxZoom: ds.max_zoom ?? undefined,
-                  }),
-                ]
-            : [];
-
           return (
-            <ScrollytellingChapter
-              key={chapter.id}
-              chapter={chapter}
-              chapterIndex={i}
-              layers={chapterLayers}
-              dataset={ds ?? null}
+            <ScrollytellingBlock
+              key={`scrolly-${blockIndex}`}
+              chapters={block.chapters}
+              startIndex={block.startIndex}
+              datasetMap={datasetMap}
             />
           );
         })}

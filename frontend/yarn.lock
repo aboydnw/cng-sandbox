@@ -4497,6 +4497,7 @@ __metadata:
     react-markdown: "npm:^10.1.0"
     react-router-dom: "npm:^7.0.0"
     recharts: "npm:^3.8.0"
+    scrollama: "npm:^3.2.0"
     typescript: "npm:^5.5.0"
     typescript-eslint: "npm:^8.0.0"
     vite: "npm:^4.5.14"
@@ -8538,6 +8539,13 @@ __metadata:
   version: 0.27.0
   resolution: "scheduler@npm:0.27.0"
   checksum: 10c0/4f03048cb05a3c8fddc45813052251eca00688f413a3cee236d984a161da28db28ba71bd11e7a3dd02f7af84ab28d39fb311431d3b3772fed557945beb00c452
+  languageName: node
+  linkType: hard
+
+"scrollama@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "scrollama@npm:3.2.0"
+  checksum: 10c0/3ba38cffbfca10dce4fa98f1c5b636d3173c3633541eee55e021033b547f8035f8ae815253aa1c01b5a2839dacba3c3f8784f912f855246da74bc588a7a809c0
   languageName: node
   linkType: hard
 

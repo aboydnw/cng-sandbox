@@ -43,3 +43,37 @@ def test_list_datasets_with_data(client, db_engine):
 def test_get_dataset_not_found(client):
     resp = client.get("/api/datasets/nonexistent")
     assert resp.status_code == 404
+
+
+def test_storage_delete_object(monkeypatch):
+    from src.services.storage import StorageService
+
+    deleted_keys = []
+
+    class FakeS3:
+        def delete_object(self, Bucket, Key):
+            deleted_keys.append(Key)
+
+        def list_objects_v2(self, Bucket, Prefix):
+            return {"Contents": [{"Key": f"{Prefix}file1"}, {"Key": f"{Prefix}file2"}]}
+
+    storage = StorageService(s3_client=FakeS3(), bucket="test-bucket")
+    storage.delete_object("datasets/ds-001/converted/data.tif")
+    assert deleted_keys == ["datasets/ds-001/converted/data.tif"]
+
+
+def test_storage_delete_prefix(monkeypatch):
+    from src.services.storage import StorageService
+
+    deleted_keys = []
+
+    class FakeS3:
+        def list_objects_v2(self, Bucket, Prefix):
+            return {"Contents": [{"Key": f"{Prefix}file1"}, {"Key": f"{Prefix}file2"}]}
+
+        def delete_object(self, Bucket, Key):
+            deleted_keys.append(Key)
+
+    storage = StorageService(s3_client=FakeS3(), bucket="test-bucket")
+    storage.delete_prefix("datasets/ds-001/")
+    assert len(deleted_keys) == 2

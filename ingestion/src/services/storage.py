@@ -48,3 +48,21 @@ class StorageService:
     def get_s3_uri(self, key: str) -> str:
         """Return the s3:// URI for a key."""
         return f"s3://{self.bucket}/{key}"
+
+    def delete_object(self, key: str) -> None:
+        """Delete a single object from S3."""
+        self.s3.delete_object(Bucket=self.bucket, Key=key)
+
+    def delete_prefix(self, prefix: str) -> None:
+        """Delete all objects under a given S3 prefix."""
+        continuation_token = None
+        while True:
+            kwargs = {"Bucket": self.bucket, "Prefix": prefix}
+            if continuation_token:
+                kwargs["ContinuationToken"] = continuation_token
+            resp = self.s3.list_objects_v2(**kwargs)
+            for obj in resp.get("Contents", []):
+                self.s3.delete_object(Bucket=self.bucket, Key=obj["Key"])
+            if not resp.get("IsTruncated"):
+                break
+            continuation_token = resp.get("NextContinuationToken")

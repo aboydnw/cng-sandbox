@@ -416,6 +416,17 @@ Open Data Discovery Panel. After the user's data is on the map, surface 3–5 re
 
 **The bar:** A researcher who uploaded a deforestation raster for Borneo discovers — on the same page — that the Allen Coral Atlas, Global Forest Watch, and Sentinel-2 composites for the same region already exist as cloud-native datasets.
 
+### Future — "Smart raster visualization"
+
+Automatic detection of raster data characteristics (value range, distribution, data type) to recommend or auto-apply the right visualization parameters. Today, a user uploads a file and we apply a colormap to the raw values — but radar backscatter needs a log transform, temperature needs a diverging colormap centered on zero, categorical data needs discrete colors, and most continuous data benefits from percentile stretching instead of raw min/max. The sandbox should detect these cases and handle them without requiring the user to understand radiometric scaling. This could include:
+
+- **Percentile-based rescaling** — compute p2/p98 during ingestion and use those as default visualization bounds, so outlier pixels don't compress the color range
+- **Data-type-aware transforms** — detect SAR backscatter (e.g., from NISAR GCOV) and auto-apply dB scaling (10×log10), detect elevation data and apply hillshade, etc.
+- **Colormap recommendation** — suggest sequential colormaps for continuous data, diverging for anomalies, categorical for classified rasters
+- **Per-band statistics** — compute stats per band rather than global, so multi-band selection uses the right range for the selected band
+
+**The bar:** A scientist uploads a NISAR GCOV radar backscatter file and sees recognizable terrain on the map without needing to know what decibels are.
+
 ### v4 — "Build a production map application" _(See Section 7)_
 
 Custom Map Application CTA. A Dev Seed engagement pathway for organizations that have proven their data works in the sandbox and want a permanent, branded, interactive web application.

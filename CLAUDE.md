@@ -1,6 +1,6 @@
 # CNG Sandbox
 
-Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefile, or NetCDF files and get back browseable raster/vector tile maps.
+Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5 files and get back browseable raster/vector tile maps.
 
 ## Architecture
 
@@ -128,7 +128,7 @@ cd ingestion && uv run pytest -v
 
 1. **Upload/fetch** → save raw file
 2. **Scan** → detect file type, validate
-3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG
+3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG, HDF5→COG
 4. **Store** → COGs to MinIO S3, vectors to PostgreSQL
 5. **Register** → COGs registered in pgSTAC, vectors available via tipg
 6. **Ready** → tile URL returned to frontend

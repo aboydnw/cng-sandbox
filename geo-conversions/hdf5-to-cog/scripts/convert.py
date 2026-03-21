@@ -101,6 +101,14 @@ def convert(input_path: str, output_path: str, variable: str = "",
 
         src_crs = _detect_crs(grp, root, x_coords, y_coords)
 
+    # Rewrap 0–360 longitudes to -180–180
+    if float(x_coords.max()) > 180:
+        shift_idx = np.searchsorted(x_coords, 180)
+        x_coords = np.concatenate([x_coords[shift_idx:] - 360, x_coords[:shift_idx]])
+        data = np.concatenate([data[:, shift_idx:], data[:, :shift_idx]], axis=1)
+        if verbose:
+            print("Rewrapped longitudes from 0–360 to -180–180")
+
     # Ensure north-to-south orientation (y decreasing)
     if y_coords[0] < y_coords[-1]:
         y_coords = y_coords[::-1]

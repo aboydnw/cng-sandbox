@@ -57,5 +57,29 @@ def test_compute_global_stats(monkeypatch, tmp_path):
             dst.write(data, 1)
 
     rmin, rmax = compute_global_stats([str(tmp_path / "test_0.tif"), str(tmp_path / "test_1.tif")])
-    assert rmin == pytest.approx(0.0, abs=0.1)
-    assert rmax == pytest.approx(20.0, abs=0.1)
+    # Returns p2/p98 percentiles — close to but not exactly min/max
+    assert rmin == pytest.approx(0.0, abs=0.5)
+    assert rmax == pytest.approx(20.0, abs=1.0)
+
+
+def test_compute_global_stats_clips_outliers(monkeypatch, tmp_path):
+    import rasterio
+    from rasterio.transform import from_bounds
+
+    # 10000 pixels: mostly 10-20, with a few extreme outliers
+    data = np.full(10000, 15.0, dtype=np.float32)
+    data[:100] = 0.0     # 1% low outliers
+    data[100:200] = 1.0  # 1% near-low
+    data[9800:9900] = 99.0  # 1% near-high
+    data[9900:] = 1000.0    # 1% high outliers
+    data = data.reshape(100, 100)
+
+    path = tmp_path / "outliers.tif"
+    transform = from_bounds(0, 0, 1, 1, 100, 100)
+    with rasterio.open(path, "w", driver="GTiff", height=100, width=100, count=1, dtype="float32", transform=transform) as dst:
+        dst.write(data, 1)
+
+    rmin, rmax = compute_global_stats([str(path)])
+    # p2/p98 should clip the 0 and 1000 outliers
+    assert rmin >= 0.5
+    assert rmax <= 100.0

@@ -8,6 +8,7 @@ A self-hosted geospatial data conversion sandbox. Upload spatial data files and 
 |-------|--------|
 | GeoTIFF | Cloud-Optimized GeoTIFF (raster tiles) |
 | NetCDF | Cloud-Optimized GeoTIFF (raster tiles) |
+| HDF5 | Cloud-Optimized GeoTIFF (raster tiles) |
 | GeoJSON | Vector tiles |
 | Shapefile | Vector tiles |
 

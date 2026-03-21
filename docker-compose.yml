@@ -120,7 +120,7 @@ services:
       retries: 5
 
   minio-init:
-    image: minio/mc:RELEASE.2025-02-21T16-00-23Z
+    image: minio/mc:latest
     depends_on:
       minio:
         condition: service_healthy
@@ -180,7 +180,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 1G
     ports:
       - "5185:5185"
     environment:

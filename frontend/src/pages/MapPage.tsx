@@ -50,6 +50,7 @@ export default function MapPage() {
   const [colormapName, setColormapName] = useState("viridis");
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
   const deckRef = useRef(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
 
   const vectorPopup = useVectorPopup();
@@ -57,7 +58,11 @@ export default function MapPage() {
 
   useEffect(() => {
     if (dataset?.bounds) {
-      setCamera(cameraFromBounds(dataset.bounds));
+      const el = mapContainerRef.current;
+      const size = el
+        ? { width: el.clientWidth, height: el.clientHeight }
+        : undefined;
+      setCamera(cameraFromBounds(dataset.bounds, size));
     }
   }, [dataset?.bounds]);
 
@@ -110,14 +115,18 @@ export default function MapPage() {
 
     if (isSingleBand) {
       let url = `${base}${separator}colormap_name=${colormapName}`;
-      if (dataset.is_temporal && dataset.raster_min != null && dataset.raster_max != null) {
+      if (dataset.raster_min != null && dataset.raster_max != null) {
         url += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
       }
       return url;
     }
 
     if (isMultiBand && typeof effectiveBand === "number") {
-      return `${base}${separator}bidx=${effectiveBand + 1}&colormap_name=${colormapName}`;
+      let url = `${base}${separator}bidx=${effectiveBand + 1}&colormap_name=${colormapName}`;
+      if (dataset.raster_min != null && dataset.raster_max != null) {
+        url += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
+      }
+      return url;
     }
 
     return base;
@@ -125,7 +134,7 @@ export default function MapPage() {
 
   // --- Color scale for legend ---
   const domain: [number, number] =
-    dataset?.is_temporal && dataset.raster_min != null && dataset.raster_max != null
+    dataset?.raster_min != null && dataset?.raster_max != null
       ? [dataset.raster_min, dataset.raster_max]
       : [0, 1];
 
@@ -341,7 +350,7 @@ export default function MapPage() {
 
       <ErrorBoundary>
         <Flex flex={1} overflow="hidden">
-          <Box flex={7} position="relative">
+          <Box flex={7} position="relative" ref={mapContainerRef}>
             <UnifiedMap
               ref={deckRef}
               camera={camera}

@@ -80,6 +80,14 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
     lats = da[lat_dim].values
     lons = da[lon_dim].values
 
+    # Rewrap 0–360 longitudes to -180–180
+    if float(lons.max()) > 180:
+        da = da.assign_coords({lon_dim: (da[lon_dim].values + 180) % 360 - 180})
+        da = da.sortby(lon_dim)
+        lons = da[lon_dim].values
+        if verbose:
+            print("Rewrapped longitudes from 0–360 to -180–180")
+
     # Ensure lat is north-to-south (top-to-bottom for raster)
     if lats[0] < lats[-1]:
         da = da.isel({lat_dim: slice(None, None, -1)})

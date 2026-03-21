@@ -58,25 +58,30 @@ def validate_cross_file_compatibility(cog_paths: list[str]) -> list[str]:
 
 
 def compute_global_stats(cog_paths: list[str]) -> tuple[float, float]:
-    """Compute the global min and max pixel values across all COGs."""
+    """Compute p2/p98 percentile pixel values across all COGs.
+
+    Uses the 2nd and 98th percentiles instead of raw min/max so that
+    outlier pixels don't compress the visual color range.
+    """
     import numpy as np
 
-    global_min = float("inf")
-    global_max = float("-inf")
+    all_valid: list[np.ndarray] = []
 
     for path in cog_paths:
         with rasterio.open(path) as src:
             for band_idx in range(1, src.count + 1):
                 data = src.read(band_idx).astype(np.float64)
-                # Filter out nodata values
                 if src.nodata is not None:
                     valid = data[data != src.nodata]
                 else:
                     valid = data.ravel()
+                valid = valid[~np.isnan(valid)]
                 if valid.size > 0:
-                    global_min = min(global_min, float(np.nanmin(valid)))
-                    global_max = max(global_max, float(np.nanmax(valid)))
+                    all_valid.append(valid)
 
-    if global_min == float("inf"):
+    if not all_valid:
         return 0.0, 1.0
-    return global_min, global_max
+
+    combined = np.concatenate(all_valid)
+    p2, p98 = np.percentile(combined, [2, 98])
+    return float(p2), float(p98)

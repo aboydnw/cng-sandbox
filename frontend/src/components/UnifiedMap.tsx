@@ -1,4 +1,4 @@
-import { forwardRef, useCallback } from "react";
+import { forwardRef, useCallback, useMemo } from "react";
 import { Box } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
 import { MapView, FlyToInterpolator } from "@deck.gl/core";
@@ -50,6 +50,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     [onCameraChange],
   );
 
+  const views = useMemo(() => new MapView({ repeat: true }), []);
+
   const viewState = transitionDuration
     ? { ...camera, transitionDuration, transitionInterpolator }
     : camera;
@@ -62,12 +64,19 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         onViewStateChange={handleViewStateChange}
         controller={{ dragRotate: true }}
         layers={layers}
-        views={new MapView({ repeat: true })}
+        views={views}
         onHover={onHover}
         onClick={onClick}
         getTooltip={getTooltip}
       >
-        <Map mapStyle={BASEMAPS[basemap]} />
+        <Map
+          mapStyle={BASEMAPS[basemap]}
+          longitude={camera.longitude}
+          latitude={camera.latitude}
+          zoom={camera.zoom}
+          bearing={camera.bearing}
+          pitch={camera.pitch}
+        />
       </DeckGL>
 
       <Box

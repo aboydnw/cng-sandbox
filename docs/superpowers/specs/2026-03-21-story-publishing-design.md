@@ -62,9 +62,19 @@ The existing `published` boolean stays, but now means "has been deployed to GitH
 | `repo` | Create repos and push content |
 | `read:user` | Get the user's GitHub ID and username |
 
-### Session handling
+### OAuth implementation
 
-Store the GitHub access token in the browser session. The backend uses it to make GitHub API calls on the user's behalf. No server-side session store needed — the token is short-lived and can be re-obtained via OAuth.
+Register a **GitHub OAuth App** (not a GitHub App — simpler for this use case). The standard OAuth web flow:
+
+1. Frontend redirects to `https://github.com/login/oauth/authorize` with client ID and scopes
+2. GitHub redirects back with an authorization code
+3. Backend exchanges the code for an access token via `POST https://github.com/login/oauth/access_token`
+4. Backend stores the access token in an **httpOnly, secure cookie** (not localStorage — prevents XSS exposure)
+5. On subsequent requests, the cookie is sent automatically; the backend reads the token from it to make GitHub API calls
+
+The `repo` scope is broad (grants access to all user repos). This is a known tradeoff with GitHub OAuth Apps — fine-grained scoping requires GitHub Apps, which add installation complexity. Acceptable for v1; document the scope in the OAuth consent screen description so users know what they're granting.
+
+Note: GitHub Pages for **private repos requires a paid GitHub plan** (Pro/Team/Enterprise). For v1, default to public repos and note this limitation in the publish dialog.
 
 ---
 
@@ -83,7 +93,7 @@ my-story/
 
 ### How the reader is built
 
-The reader is a pre-built artifact, not built per-publish. It's a single Vite build of the story reader components that already exist in the sandbox frontend (`StoryReaderPage`, `MapChapter`, `ProseChapter`, Scrollama logic). Built once, versioned, reused across all published stories.
+The reader is a pre-built artifact, not built per-publish. It's a separate Vite build target that compiles the story reader components (`StoryReaderPage`, `MapChapter`, `ProseChapter`, Scrollama logic) into a standalone bundle. Built once, versioned, stored as a build artifact in the sandbox repo (e.g., `frontend/dist/reader/`). At publish time, these files are copied into the user's GitHub repo alongside their `story.json`.
 
 ### What the reader does
 
@@ -102,6 +112,12 @@ The reader is a pre-built artifact, not built per-publish. It's a single Vite bu
 ### Versioning
 
 The reader bundle has a version number. When we ship improvements (new chapter types, better transitions, etc.), previously published stories keep working on their version. Users can re-publish from the sandbox to get the latest reader.
+
+### `story.json` schema
+
+The published `story.json` is the same shape as the existing `StoryResponse` from the API, with one addition: a `reader_version` field at the top level so the reader bundle can detect compatibility.
+
+Data source URLs in `story.json` are absolute R2 URLs (e.g., `https://r2.example.com/datasets/abc123/output.tif`). These are the same URLs the sandbox uses internally — no rewriting needed at publish time.
 
 ### Size estimate
 
@@ -141,6 +157,32 @@ MapLibre (~200KB gzipped) + Scrollama (~3KB) + deck.gl (if included, ~150KB) + r
 - User can "Unpublish" which disables GitHub Pages via the API. The repo stays (it's theirs). The sandbox clears `published_url` and sets `published = false`.
 - We do NOT delete their repo — that's destructive and it's their property.
 
+### Error handling
+
+| Failure | Behavior |
+|---------|----------|
+| OAuth denied/cancelled | Return to editor, no state change |
+| Repo name conflict (409) | Prompt user to choose a different name |
+| GitHub API rate limit | Show "GitHub is busy, try again in a few minutes" |
+| Pages enablement failure | Retry once; if still failing, create the repo anyway and show manual Pages instructions |
+| Push failure on re-publish | Show error with "Try again" button; story remains unchanged |
+| GitHub token expired/revoked | Prompt re-authentication on next publish attempt |
+
+### New API endpoints
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/auth/github` | None | Redirect to GitHub OAuth |
+| `GET` | `/api/auth/github/callback` | None | OAuth callback, sets session cookie |
+| `GET` | `/api/auth/me` | GitHub session | Returns current user info (GitHub ID, username) |
+| `POST` | `/api/auth/logout` | GitHub session | Clears session cookie |
+| `GET` | `/api/stories/mine` | GitHub session | List stories owned by current user |
+| `POST` | `/api/stories/{id}/publish` | GitHub session | First publish: create repo, push, enable Pages |
+| `POST` | `/api/stories/{id}/republish` | GitHub session | Update: push new `story.json` to existing repo |
+| `POST` | `/api/stories/{id}/unpublish` | GitHub session | Disable Pages, clear `published_url` |
+
+Existing CRUD endpoints (`POST/GET/PATCH/DELETE /api/stories`) remain unchanged and unauthenticated.
+
 ---
 
 ## 5. Data Storage & Costs
@@ -149,17 +191,19 @@ MapLibre (~200KB gzipped) + Scrollama (~3KB) + deck.gl (if included, ~150KB) + r
 
 | Environment | Storage backend | Expiry |
 |-------------|----------------|--------|
-| Current (dev/demo) | MinIO (local S3-compatible) | 30-day lifecycle |
+| Current (dev/demo) | MinIO (local S3-compatible) | No lifecycle policy configured yet |
 | Production | Cloudflare R2 | No expiry by default |
 
 R2 replaces MinIO as the primary storage backend in production. All uploaded datasets go directly to R2. Data URLs are absolute and stable — they work from both the sandbox reader and the published GitHub Pages site. No URL rewriting needed at publish time.
+
+**Note**: The R2 migration (changing the ingestion pipeline, titiler S3 configuration, URL scheme) is a separate effort from the publishing pipeline. This spec assumes R2 is in place and data URLs are already absolute R2 URLs. If R2 migration hasn't happened yet, published stories can still work by pointing at the current MinIO/sandbox URLs — but those URLs are not permanent.
 
 ### Cost controls
 
 | Lever | Mechanism |
 |-------|-----------|
 | Per-user quota | Tied to GitHub user ID. Default 5GB free. Warn at 80%, block uploads at 100%. |
-| Inactive cleanup | Stories not viewed or edited in 12 months → email warning → delete data after 30 more days. Story config survives in PostgreSQL; data URLs break. |
+| Inactive cleanup | Stories not edited in 12 months (based on `updated_at`) → email warning → delete data after 30 more days. Story config survives in PostgreSQL; data URLs break. |
 | Require login for uploads (future) | Once R2 is primary, require GitHub login to upload. Prevents drive-by storage consumption. |
 
 ### Cost projections
@@ -207,6 +251,8 @@ Same editor as today. The only difference is a banner at the top: "This story is
 ### Anonymous stories
 
 Stories created without logging in still work exactly as they do today — saved in PostgreSQL, viewable at `/story/:id`. They just can't be published. The publish button prompts GitHub login, which retroactively claims the story.
+
+**Known limitation**: Any logged-in user who knows an anonymous story's URL could claim it by clicking Publish. This is acceptable for v1 — anonymous stories are drafts, and claiming them is low-risk. If this becomes a problem, a browser-local secret token (stored at creation time, required to claim) can be added later.
 
 ### Collaboration (future, not v1)
 

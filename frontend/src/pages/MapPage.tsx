@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Button, Flex, Spinner, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
-import { CreditsPanel } from "../components/CreditsPanel";
+import { SidePanel } from "../components/SidePanel";
+import { RasterSidebarControls } from "../components/RasterSidebarControls";
 import { ExploreTab } from "../components/ExploreTab";
-import { ReportCard } from "../components/ReportCard";
+import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
 import { UnifiedMap } from "../components/UnifiedMap";
-import { RasterControls } from "../components/RasterControls";
 import { PixelInspectorTooltip, usePixelInspector } from "../components/PixelInspector";
 import { VectorPopupOverlay, useVectorPopup } from "../components/VectorPopup";
 import {
@@ -26,11 +26,14 @@ import { useColorScale, MapLegend } from "../lib/maptool";
 import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useTemporalExport } from "../hooks/useTemporalExport";
+import { useTileTransferSize } from "../hooks/useTileTransferSize";
 import { detectCadence, formatTimestepLabel, findGaps } from "../utils/temporal";
 import { config } from "../config";
 import type { Dataset } from "../types";
 import type { Table } from "apache-arrow";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+
+type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
 
 export default function MapPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,10 +42,9 @@ export default function MapPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportCardOpen, setReportCardOpen] = useState(false);
-  const creditsPanelRef = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTimestep = Number(searchParams.get("t") ?? 0);
-  const [activeTab, setActiveTab] = useState("credits");
+  const [renderMode, setRenderMode] = useState<RenderMode>("server");
   const [basemap, setBasemap] = useState("streets");
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [arrowTable, setArrowTable] = useState<Table | null>(null);
@@ -56,6 +58,17 @@ export default function MapPage() {
 
   const vectorPopup = useVectorPopup();
   const pixelInspector = usePixelInspector(tileCacheRef, dataset?.band_names ?? null);
+
+  // --- Initialize renderMode based on dataset type ---
+  useEffect(() => {
+    if (dataset) {
+      setRenderMode(dataset.dataset_type === "vector" ? "vector-tiles" : "server");
+    }
+  }, [dataset]);
+
+  // --- Tile transfer size ---
+  const tileUrlPrefix = dataset?.tile_url ? getTileUrlPrefix(dataset.tile_url) : "";
+  const bytesTransferred = useTileTransferSize(tileUrlPrefix);
 
   useEffect(() => {
     if (dataset?.bounds) {
@@ -218,17 +231,20 @@ export default function MapPage() {
     [arrowTable],
   );
 
-  // --- Gap count ---
-  const gapCount = dataset?.is_temporal
-    ? findGaps(dataset.timesteps.map((t: { datetime: string }) => t.datetime)).length
-    : 0;
+  // --- Handle table change from ExploreTab ---
+  const handleTableChange = useCallback((table: Table | null) => {
+    setArrowTable(table);
+    if (dataset?.dataset_type === "vector") {
+      setRenderMode(table ? "geojson" : "vector-tiles");
+    }
+  }, [dataset]);
 
   // --- Build deck.gl layers ---
   const layers = useMemo(() => {
     if (!dataset) return [];
 
     if (dataset.dataset_type === "raster") {
-      if (activeTab === "client" && canClientRender) {
+      if (renderMode === "client" && canClientRender) {
         return buildCogLayer({
           cogUrl: dataset.cog_url!,
           opacity,
@@ -249,7 +265,7 @@ export default function MapPage() {
       });
     }
 
-    if (activeTab === "explore" && geojson) {
+    if (renderMode === "geojson" && geojson) {
       return buildGeoJsonLayer({ geojson });
     }
 
@@ -261,15 +277,15 @@ export default function MapPage() {
       maxZoom: dataset.max_zoom ?? undefined,
       onClick: vectorPopup.onClick,
     })];
-  }, [dataset, activeTab, canClientRender, tileUrl, opacity, colormapName,
+  }, [dataset, renderMode, canClientRender, tileUrl, opacity, colormapName,
       effectiveBand, animation.activeIndex, geojson, vectorPopup.onClick, getLoadCallback]);
 
   // --- Event handlers ---
-  const onHover = activeTab === "client" && canClientRender ? pixelInspector.onHover : undefined;
-  const onMapClick = dataset?.dataset_type === "vector" && activeTab !== "explore" ? vectorPopup.onClick : undefined;
+  const onHover = renderMode === "client" && canClientRender ? pixelInspector.onHover : undefined;
+  const onMapClick = dataset?.dataset_type === "vector" && renderMode !== "geojson" ? vectorPopup.onClick : undefined;
 
   const getTooltip = useMemo(() => {
-    if (dataset?.dataset_type !== "vector" || activeTab !== "explore") return undefined;
+    if (dataset?.dataset_type !== "vector" || renderMode !== "geojson") return undefined;
     return ({ object }: { object?: Record<string, unknown> }) => {
       if (!object) return null;
       const props = Object.entries(object)
@@ -278,7 +294,7 @@ export default function MapPage() {
         .join("\n");
       return { text: props, style: { fontSize: "12px" } };
     };
-  }, [dataset?.dataset_type, activeTab]);
+  }, [dataset?.dataset_type, renderMode]);
 
   // --- Loading / error states ---
   if (loading) {
@@ -314,11 +330,6 @@ export default function MapPage() {
     );
   }
 
-  const scrollToCredits = () => {
-    setReportCardOpen(false);
-    creditsPanelRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   if (!dataset) return null;
 
   return (
@@ -326,28 +337,6 @@ export default function MapPage() {
       <Header>
         <BugReportLink datasetId={dataset.id} />
         <ShareButton />
-        {dataset.tile_url && (
-          <Button
-            variant="ghost"
-            color="brand.orange"
-            size="sm"
-            fontWeight={600}
-            borderRadius="4px"
-            onClick={() => setReportCardOpen(true)}
-          >
-            See what changed →
-          </Button>
-        )}
-        <Button
-          bg="brand.bgSubtle"
-          color="brand.brown"
-          size="sm"
-          fontWeight={500}
-          borderRadius="4px"
-          asChild
-        >
-          <Link to="/">New upload</Link>
-        </Button>
       </Header>
 
       <ErrorBoundary>
@@ -364,22 +353,7 @@ export default function MapPage() {
               onClick={onMapClick}
               getTooltip={getTooltip}
             >
-              {dataset.dataset_type === "raster" && (
-                <RasterControls
-                  opacity={opacity}
-                  onOpacityChange={setOpacity}
-                  colormapName={colormapName}
-                  onColormapChange={setColormapName}
-                  showColormap={showingColormap}
-                  bands={selectableBands}
-                  hasRgb={hasRgb}
-                  selectedBand={selectedBand}
-                  onBandChange={setSelectedBand}
-                  showBands={isMultiBand && activeTab !== "client"}
-                />
-              )}
-
-              {showingColormap && activeTab !== "client" && (
+              {showingColormap && renderMode !== "client" && (
                 <Box position="absolute" bottom={3} left={3}>
                   <MapLegend
                     layers={[{
@@ -393,7 +367,7 @@ export default function MapPage() {
                 </Box>
               )}
 
-              {dataset.is_temporal && activeTab !== "client" && (
+              {dataset.is_temporal && renderMode !== "client" && (
                 <TemporalControls
                   timesteps={dataset.timesteps}
                   activeIndex={animation.activeIndex}
@@ -414,54 +388,53 @@ export default function MapPage() {
                 />
               )}
 
-              {pixelInspector.hoverInfo && activeTab === "client" && (
+              {pixelInspector.hoverInfo && renderMode === "client" && (
                 <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />
               )}
 
-              {vectorPopup.popup && dataset.dataset_type === "vector" && activeTab !== "explore" && (
+              {vectorPopup.popup && dataset.dataset_type === "vector" && renderMode !== "geojson" && (
                 <VectorPopupOverlay popup={vectorPopup.popup} onDismiss={vectorPopup.dismiss} />
               )}
             </UnifiedMap>
           </Box>
 
           <Box
-            ref={creditsPanelRef}
             flex={3}
             display={{ base: "none", md: "block" }}
-            overflow="auto"
+            bg="gray.900"
+            borderLeftWidth="1px"
+            borderColor="gray.700"
           >
-            <CreditsPanel
+            <SidePanel
               dataset={dataset}
-              gapCount={gapCount}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              exploreContent={
-                dataset.parquet_url ? (
-                  <ExploreTab
-                    dataset={dataset}
-                    active={activeTab === "explore"}
-                    onTableChange={setArrowTable}
-                  />
-                ) : undefined
-              }
-              clientRenderContent={
-                canClientRender ? (
-                  <Box p={6}>
-                    <Text fontSize="sm" color="brand.textSecondary" mb={3}>
-                      Client-side rendering reads the COG file directly from storage
-                      using HTTP Range requests and renders pixels on the GPU — no tile
-                      server involved.
-                    </Text>
-                    <Text fontSize="xs" color="brand.textSecondary">
-                      Powered by{" "}
-                      <Text as="span" fontWeight={600}>
-                        @developmentseed/deck.gl-geotiff
-                      </Text>
-                    </Text>
-                  </Box>
-                ) : undefined
-              }
-            />
+              bytesTransferred={bytesTransferred}
+              onDetailsClick={() => setReportCardOpen(true)}
+            >
+              {dataset.dataset_type === "raster" && (
+                <RasterSidebarControls
+                  opacity={opacity}
+                  onOpacityChange={setOpacity}
+                  colormapName={colormapName}
+                  onColormapChange={setColormapName}
+                  showColormap={showingColormap}
+                  bands={selectableBands}
+                  hasRgb={hasRgb}
+                  selectedBand={selectedBand}
+                  onBandChange={setSelectedBand}
+                  showBands={isMultiBand}
+                  canClientRender={canClientRender}
+                  renderMode={renderMode === "client" ? "client" : "server"}
+                  onRenderModeChange={(mode) => setRenderMode(mode)}
+                />
+              )}
+              {dataset.dataset_type === "vector" && dataset.parquet_url && (
+                <ExploreTab
+                  dataset={dataset}
+                  active={true}
+                  onTableChange={handleTableChange}
+                />
+              )}
+            </SidePanel>
           </Box>
         </Flex>
       </ErrorBoundary>

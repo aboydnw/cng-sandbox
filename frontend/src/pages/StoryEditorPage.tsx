@@ -83,41 +83,57 @@ export default function StoryEditorPage() {
     loadStory();
   }, [id]);
 
-  // Fetch dataset
+  // Create new story if this is /story/new
   useEffect(() => {
-    const dsId = story?.dataset_id ?? datasetIdParam;
+    if (id || story) return;
+    async function createNew() {
+      try {
+        const draft = createStory(datasetIdParam);
+        if (datasetIdParam) {
+          const resp = await fetch(`${config.apiBase}/api/datasets/${datasetIdParam}`);
+          if (resp.ok) {
+            const data: Dataset = await resp.json();
+            setDataset(data);
+            if (data.bounds) {
+              const cam = cameraFromBounds(data.bounds);
+              draft.chapters[0].map_state = {
+                center: [cam.longitude, cam.latitude],
+                zoom: cam.zoom,
+                bearing: 0,
+                pitch: 0,
+                basemap: "streets",
+              };
+              setCamera(cam);
+            }
+          }
+        }
+        const saved = await createStoryOnServer(draft);
+        setStory(saved);
+        setActiveChapterId(saved.chapters[0]?.id ?? "");
+        navigate(`/story/${saved.id}/edit`, { replace: true });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to create story");
+      } finally {
+        setLoading(false);
+      }
+    }
+    createNew();
+  }, [id, story, datasetIdParam, navigate]);
+
+  // Fetch primary dataset for existing stories
+  useEffect(() => {
+    const dsId = story?.dataset_id;
     if (!dsId) {
-      setError("No dataset specified");
-      setLoading(false);
+      if (story) setLoading(false);
       return;
     }
+    if (dataset?.id === dsId) return;
     async function fetchDataset() {
       try {
         const resp = await fetch(`${config.apiBase}/api/datasets/${dsId}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data: Dataset = await resp.json();
         setDataset(data);
-
-        // Create new story if this is /story/new
-        if (!id && datasetIdParam) {
-          const draft = createStory(datasetIdParam);
-          if (data.bounds) {
-            const cam = cameraFromBounds(data.bounds);
-            draft.chapters[0].map_state = {
-              center: [cam.longitude, cam.latitude],
-              zoom: cam.zoom,
-              bearing: 0,
-              pitch: 0,
-              basemap: "streets",
-            };
-          }
-          const saved = await createStoryOnServer(draft);
-          setStory(saved);
-          setActiveChapterId(saved.chapters[0].id);
-          navigate(`/story/${saved.id}/edit`, { replace: true });
-        }
-
-        // Set initial camera
         if (data.bounds) {
           setCamera(cameraFromBounds(data.bounds));
         }
@@ -128,7 +144,7 @@ export default function StoryEditorPage() {
       }
     }
     fetchDataset();
-  }, [story?.dataset_id, datasetIdParam, id, navigate]);
+  }, [story?.dataset_id]);
 
   const datasetMap = useMemo(() => {
     const map = new Map<string, Dataset>();

@@ -100,6 +100,25 @@ def test_submit_bug_report_github_unavailable(github_client):
     assert resp.status_code == 502
 
 
+def test_submit_bug_report_with_job_context(github_client):
+    payload = {
+        "description": "Upload failed during conversion",
+        "page_url": "/",
+        "job_id": "job-789",
+        "console_logs": [],
+    }
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {"html_url": "https://github.com/org/repo/issues/3"}
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("src.routes.bug_report.httpx.post", return_value=mock_response):
+        resp = github_client.post("/api/bug-report", json=payload)
+
+    assert resp.status_code == 200
+    assert resp.json()["issue_url"] == "https://github.com/org/repo/issues/3"
+
+
 def test_submit_bug_report_not_configured(client):
     payload = {
         "description": "",

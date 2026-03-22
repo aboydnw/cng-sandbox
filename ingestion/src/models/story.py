@@ -16,7 +16,7 @@ class StoryRow(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String, nullable=False, default="Untitled story")
     description = Column(String, nullable=True)
-    dataset_id = Column(String, nullable=False)
+    dataset_id = Column(String, nullable=True)
     chapters_json = Column(Text, nullable=False, default="[]")
     published = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -37,7 +37,7 @@ class ChapterPayload(BaseModel):
 class StoryCreate(BaseModel):
     title: str = "Untitled story"
     description: str | None = None
-    dataset_id: str
+    dataset_id: str | None = None
     chapters: list[ChapterPayload] = []
     published: bool = False
 
@@ -53,7 +53,7 @@ class StoryResponse(BaseModel):
     id: str
     title: str
     description: str | None
-    dataset_id: str
+    dataset_id: str | None
     dataset_ids: list[str]
     chapters: list[ChapterPayload]
     published: bool

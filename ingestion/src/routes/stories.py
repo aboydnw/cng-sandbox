@@ -24,7 +24,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         ds_id = lc.get("dataset_id")
         if ds_id and ds_id not in chapter_dataset_ids:
             chapter_dataset_ids.append(ds_id)
-    dataset_ids = chapter_dataset_ids if chapter_dataset_ids else [row.dataset_id]
+    dataset_ids = chapter_dataset_ids if chapter_dataset_ids else ([row.dataset_id] if row.dataset_id else [])
     return StoryResponse(
         id=row.id,
         title=row.title,

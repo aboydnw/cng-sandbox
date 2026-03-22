@@ -1,0 +1,1 @@
+ALTER TABLE stories ALTER COLUMN dataset_id DROP NOT NULL;

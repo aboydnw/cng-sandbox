@@ -102,6 +102,17 @@ def test_response_includes_dataset_ids(client):
     assert sorted(data["dataset_ids"]) == ["ds-1", "ds-2"]
 
 
+def test_create_story_without_dataset_id(client):
+    resp = client.post("/api/stories", json={
+        "title": "No Dataset",
+        "chapters": [],
+    })
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["dataset_ids"] == []
+    assert data["dataset_id"] is None
+
+
 def test_dataset_ids_falls_back_to_dataset_id(client):
     resp = client.post("/api/stories", json={
         "title": "Old-style",

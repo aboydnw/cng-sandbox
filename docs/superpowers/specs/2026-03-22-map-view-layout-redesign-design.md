@@ -49,7 +49,7 @@ A visually prominent card with:
 - "What's next" label
 - "Tell a story with this data" heading
 - One-line description: "Add annotations, narrative text, and guided map views to create a shareable data story."
-- "Create story →" button (filled, brand-colored)
+- "Create story →" button (filled, brand-colored). Clicking it creates a new story pre-loaded with the current dataset, with a prose chapter 1 and a map chapter 2, then navigates to the story editor.
 
 This replaces the small "Turn this into a story →" text link currently in the Credits tab.
 

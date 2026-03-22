@@ -40,7 +40,7 @@ The StoryMap Builder thin slice is live. Before implementing anything in this sp
 - Story gallery / discovery page
 - Mapping dictionary with auto-detection and "Show Your Work" panel
 - Chapter-level interactions (swipe comparison, time slider, layer toggle)
-- Story templates
+- Story templates — pre-built starting points (e.g., "Before/After comparison", "Temporal change narrative", "Regional overview") that pre-configure chapter types, layout patterns, and placeholder narrative prompts so users don't start from a blank canvas
 
 ---
 

@@ -335,7 +335,13 @@ The Open Data Discovery Panel answers that. It surfaces related datasets from th
 
 **Why this matters for Dev Seed:** Every organization that uploads data is implicitly asking "what does the broader ecosystem look like?" Surfacing the answer — with attribution to the catalogs Dev Seed helped build and maintain — positions Dev Seed as the integration layer between a user's data and the open geospatial ecosystem. That is a services conversation, not a product sale.
 
-**Implementation scope:** Requires a lightweight dataset index (pre-curated, not a live search across all catalogs), a bounding box intersection service, and a data-type taxonomy. Estimated at ~2,000 lines of backend + frontend.
+**Standard data libraries (near-term, before full discovery):**
+
+Before building the full discovery panel, we can offer a curated set of ready-to-use datasets from public STAC catalogs that Dev Seed is close to — Planetary Computer, Earth Search (Element 84), NASA VEDA. These would be available to all users from the homepage as a "Browse public data" entry point, letting people explore and build stories with high-quality open data without uploading anything. This lowers the barrier to entry significantly: a user curious about the sandbox can start building a story with real data immediately.
+
+This is a stepping stone toward the full discovery panel — it validates the catalog integration, tile rendering from external STACs, and the UX for browsing/selecting datasets, without requiring the bounding-box matching or recommendation engine.
+
+**Implementation scope (full discovery):** Requires a lightweight dataset index (pre-curated, not a live search across all catalogs), a bounding box intersection service, and a data-type taxonomy. Estimated at ~2,000 lines of backend + frontend.
 
 ---
 
@@ -522,7 +528,7 @@ _(Storytelling was originally v3 in the roadmap. Pulled forward because it provi
 Visual, no-code storytelling builder with three chapter types. Scrollytelling chapters use Scrollama-driven scroll-to-fly transitions with a shared sticky map (no user navigation). Prose chapters render centered markdown text without a map. Map chapters render narrative above an interactive embedded map with zoom controls. Multi-dataset support via per-chapter dataset selection.
 
 **Complete:** Story editor, reader, persistence, embed route, per-chapter styling, chapter types (scrollytelling/prose/map), multi-dataset stories, scrollytelling block grouping, backward-compatible migration. See Section 7.
-**Next:** Static export, Vercel deploy, media embedding, story gallery.
+**Next:** Static export, Vercel deploy, media embedding, story gallery, standard data libraries (public STAC catalogs).
 
 **The bar:** A conservationist with no dev background creates a multi-chapter story mixing guided map narratives, prose introductions, and explorable maps — then shares it with their board of directors.
 

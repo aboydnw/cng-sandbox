@@ -1,64 +1,154 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
 import { Header } from "../components/Header";
+import { HomepageHero } from "../components/HomepageHero";
+import { PathCard } from "../components/PathCard";
 import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
+import { BugReportModal } from "../components/BugReportModal";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { formatBytes } from "../utils/format";
 
+type PageMode = "initial" | "upload-idle" | "uploading" | "error" | "variable-picker";
+
 export default function UploadPage() {
   const navigate = useNavigate();
-  const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } = useConversionJob();
+  const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } =
+    useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
+  const [mode, setMode] = useState<PageMode>("initial");
+  const [reportOpen, setReportOpen] = useState(false);
 
   const isProcessing = state.isUploading || (state.jobId !== null && state.status !== "failed");
 
-  const handleFile = (file: File) => {
-    fileRef.current = { name: file.name, size: formatBytes(file.size) };
-    startUpload(file);
-  };
+  // Derive mode from conversion job state
+  useEffect(() => {
+    if (state.scanResult) {
+      setMode("variable-picker");
+    } else if (state.status === "failed") {
+      setMode("error");
+    } else if (isProcessing) {
+      setMode("uploading");
+    }
+  }, [state.scanResult, state.status, isProcessing]);
 
-  const handleUrl = (url: string) => {
-    const filename = url.split("/").pop() || "download";
-    fileRef.current = { name: filename, size: "fetching..." };
-    startUrlFetch(url);
-  };
-
+  // Navigate on success
   useEffect(() => {
     if (state.status === "ready" && state.datasetId) {
       navigate(`/map/${state.datasetId}`);
     }
   }, [state.status, state.datasetId, navigate]);
 
+  const handleFile = useCallback(
+    (file: File) => {
+      fileRef.current = { name: file.name, size: formatBytes(file.size) };
+      setMode("uploading");
+      startUpload(file);
+    },
+    [startUpload],
+  );
+
+  const handleUrl = useCallback(
+    (url: string) => {
+      const filename = url.split("/").pop() || "download";
+      fileRef.current = { name: filename, size: "fetching..." };
+      setMode("uploading");
+      startUrlFetch(url);
+    },
+    [startUrlFetch],
+  );
+
+  const handleTemporalUpload = useCallback(
+    (files: File[]) => {
+      fileRef.current = { name: `${files.length} files`, size: "calculating..." };
+      setMode("uploading");
+      startTemporalUpload(files);
+    },
+    [startTemporalUpload],
+  );
+
+  const handleRetry = useCallback(() => {
+    setMode("upload-idle");
+  }, []);
+
+  const handleReport = useCallback(() => {
+    setReportOpen(true);
+  }, []);
+
+  const uploadCardExpanded = mode !== "initial";
+
   return (
     <Box minH="100vh" bg="white">
       <Header />
-      {state.scanResult ? (
-        <VariablePicker
-          variables={state.scanResult.variables}
-          onSelect={(variable, group) => confirmVariable(state.scanResult!.scan_id, variable, group)}
+      <HomepageHero />
+
+      <Flex
+        gap={5}
+        px={8}
+        pb={14}
+        pt={4}
+        maxW="900px"
+        mx="auto"
+      >
+        {/* Left card: Convert a file */}
+        <PathCard
+          icon="📁"
+          title="Convert a file"
+          description="Upload a geospatial file and we'll convert it to a shareable web map"
+          ctaLabel="Browse files"
+          onClick={() => setMode("upload-idle")}
+          expanded={uploadCardExpanded}
+          faded={false}
+          onCollapse={mode === "upload-idle" ? () => setMode("initial") : undefined}
+        >
+          {mode === "upload-idle" && (
+            <FileUploader
+              onFileSelected={handleFile}
+              onFilesSelected={handleTemporalUpload}
+              onUrlSubmitted={handleUrl}
+              disabled={false}
+              embedded
+            />
+          )}
+          {(mode === "uploading" || mode === "error") && (
+            <ProgressTracker
+              stages={state.stages}
+              filename={fileRef.current.name}
+              fileSize={fileRef.current.size}
+              onRetry={mode === "error" ? handleRetry : undefined}
+              onReport={mode === "error" ? handleReport : undefined}
+              embedded
+            />
+          )}
+          {mode === "variable-picker" && state.scanResult && (
+            <VariablePicker
+              variables={state.scanResult.variables}
+              onSelect={(variable, group) =>
+                confirmVariable(state.scanResult!.scan_id, variable, group)
+              }
+            />
+          )}
+        </PathCard>
+
+        {/* Right card: Build a story */}
+        <PathCard
+          icon="📖"
+          title="Build a story"
+          description="Create a scrollytelling narrative with your data or from our public library"
+          ctaLabel="Start building"
+          onClick={() => navigate("/story/new")}
+          expanded={false}
+          faded={uploadCardExpanded}
         />
-      ) : isProcessing ? (
-        <ProgressTracker
-          stages={state.stages}
-          filename={fileRef.current.name}
-          fileSize={fileRef.current.size}
-        />
-      ) : (
-        <FileUploader
-          onFileSelected={handleFile}
-          onFilesSelected={startTemporalUpload}
-          onUrlSubmitted={handleUrl}
-          disabled={false}
-        />
-      )}
-      {state.status === "failed" && state.error && (
-        <Box textAlign="center" py={4}>
-          <Text color="red.500" fontSize="14px">{state.error}</Text>
-        </Box>
-      )}
+      </Flex>
+
+      <BugReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        jobId={state.jobId ?? undefined}
+      />
     </Box>
   );
 }

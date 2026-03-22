@@ -102,6 +102,26 @@ describe("ReportCard", () => {
     expect(screen.getByText("titiler + deck.gl")).toBeTruthy();
   });
 
+  it("shows deck.gl client-side card when renderMode is client", () => {
+    renderWithChakra(
+      <ReportCard
+        dataset={makeDataset({
+          dataset_type: "raster",
+          format_pair: "geotiff-to-cog",
+          tile_url: "/raster/datasets/test-id",
+          credits: [
+            { tool: "rio-cogeo", role: "Converted", url: "https://github.com/cogeotiff/rio-cogeo" },
+          ],
+        })}
+        isOpen={true}
+        onClose={() => {}}
+        renderMode="client"
+      />
+    );
+    expect(screen.getByText("deck.gl (client-side)")).toBeTruthy();
+    expect(screen.queryByText("titiler + deck.gl")).toBeNull();
+  });
+
   it("renders vector/tipg tech cards for non-pmtiles vector datasets", () => {
     renderWithChakra(
       <ReportCard

@@ -91,6 +91,7 @@ export function getTechCards(
   credits: { tool: string; role: string; url: string }[],
   formatPair: string,
   tileUrl: string,
+  renderMode?: string,
 ): TechDescription[] {
   const cards: TechDescription[] = [];
   const seen = new Set<string>();
@@ -122,7 +123,8 @@ export function getTechCards(
       if (!seen.has("Displayed" + "tipg + MapLibre")) cards.push(TECH_DESCRIPTIONS["tipg"]);
     }
   } else {
-    if (!seen.has("Displayed" + "titiler + deck.gl")) cards.push(TECH_DESCRIPTIONS["titiler"]);
+    const rasterDisplay = renderMode === "client" ? "deck.gl" : "titiler";
+    cards.push(TECH_DESCRIPTIONS[rasterDisplay]);
   }
 
   return cards;

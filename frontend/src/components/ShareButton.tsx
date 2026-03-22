@@ -1,26 +1,76 @@
 import { useState, useCallback } from "react";
 import { Button } from "@chakra-ui/react";
 
+const STYLE = `
+.share-roller {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 1.2em;
+  overflow: hidden;
+  width: 80px;
+}
+.share-roller span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  transition: transform 300ms ease, opacity 250ms ease;
+  white-space: nowrap;
+}
+.share-roller .share-label { transform: translateY(0); opacity: 1; }
+.share-roller .copied-label { position: absolute; inset: 0; transform: translateY(120%); opacity: 0; }
+.share-roller[data-copied="true"] .share-label { transform: translateY(-120%); opacity: 0; }
+.share-roller[data-copied="true"] .copied-label { transform: translateY(0); opacity: 1; }
+`;
+
+function copyToClipboard(text: string): void {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text: string): void {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+
 export function ShareButton() {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(window.location.href);
+  const handleCopy = useCallback(() => {
+    copyToClipboard(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, []);
 
   return (
-    <Button
-      bg="brand.orange"
-      color="white"
-      size="sm"
-      fontWeight={600}
-      borderRadius="4px"
-      _hover={{ bg: "brand.orangeHover" }}
-      onClick={handleCopy}
-    >
-      {copied ? "Copied!" : "🔗 Share"}
-    </Button>
+    <>
+      <style>{STYLE}</style>
+      <Button
+        bg="brand.orange"
+        color="white"
+        size="sm"
+        fontWeight={600}
+        borderRadius="4px"
+        _hover={{ bg: "brand.orangeHover" }}
+        onClick={handleCopy}
+        px={4}
+      >
+        <span className="share-roller" data-copied={copied}>
+          <span className="share-label">🔗 Share</span>
+          <span className="copied-label">✓ Copied</span>
+        </span>
+      </Button>
+    </>
   );
 }

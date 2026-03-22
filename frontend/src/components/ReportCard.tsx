@@ -7,6 +7,7 @@ interface ReportCardProps {
   dataset: Dataset;
   isOpen: boolean;
   onClose: () => void;
+  renderMode?: string;
 }
 
 export function getTileUrlPrefix(tileUrl: string): string {
@@ -73,10 +74,10 @@ function getTransformationSteps(dataset: Dataset): {
 
 // --- Main component ---
 
-export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
+export function ReportCard({ dataset, isOpen, onClose, renderMode }: ReportCardProps) {
   if (!isOpen) return null;
 
-  const techCards = getTechCards(dataset.credits, dataset.format_pair, dataset.tile_url);
+  const techCards = getTechCards(dataset.credits, dataset.format_pair, dataset.tile_url, renderMode);
 
   return (
     <Box

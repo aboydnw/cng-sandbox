@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChakraProvider } from "@chakra-ui/react";
-import { ReportCard } from "./ReportCard";
+import { ReportCard, getTileUrlPrefix } from "./ReportCard";
 import { system } from "../theme";
 import type { Dataset } from "../types";
 
@@ -33,7 +33,10 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     pg_table: null,
     parquet_url: null,
     validation_results: [],
-    credits: [],
+    credits: [
+      { tool: "GeoPandas", role: "Converted", url: "https://github.com/geopandas/geopandas" },
+      { tool: "tippecanoe", role: "Tiled", url: "https://github.com/felt/tippecanoe" },
+    ],
     created_at: "2026-01-01T00:00:00Z",
     is_temporal: false,
     timesteps: [],
@@ -57,7 +60,7 @@ describe("ReportCard", () => {
     expect(screen.getByText("test.shp")).toBeTruthy();
   });
 
-  it("calls onClose when ✕ is clicked", async () => {
+  it("calls onClose when close button is clicked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={onClose} />);
@@ -65,60 +68,69 @@ describe("ReportCard", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("shows file size comparison when both sizes present", () => {
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
-    expect(screen.getByText("180.0 MB")).toBeTruthy();
-    expect(screen.getAllByText("14.0 MB").length).toBeGreaterThan(0);
-    expect(screen.getByText(/92% smaller/)).toBeTruthy();
-  });
-
-  it("shows feature count and geometry type for vector datasets", () => {
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
-    expect(screen.getByText(/24,891/)).toBeTruthy();
-    expect(screen.getByText(/Polygon features/)).toBeTruthy();
-  });
-
-  it("hides feature section for raster datasets", () => {
-    renderWithChakra(
-      <ReportCard
-        dataset={makeDataset({ dataset_type: "raster", format_pair: "geotiff-to-cog", feature_count: null, geometry_types: null })}
-        isOpen={true}
-        onClose={() => {}}
-      />
-    );
-    expect(screen.queryByText(/features/)).toBeNull();
-  });
-
-  it("shows zoom range when available", () => {
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
-    expect(screen.getByText(/z0–z14/)).toBeTruthy();
-  });
-
-  it("calls onScrollToCredits when footer link is clicked", async () => {
-    const user = userEvent.setup();
-    const onScrollToCredits = vi.fn();
-    renderWithChakra(
-      <ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} onScrollToCredits={onScrollToCredits} />
-    );
-    await user.click(screen.getByText("See the full pipeline →"));
-    expect(onScrollToCredits).toHaveBeenCalled();
-  });
-
-  it("shows mixed geometry type label with slash join", () => {
-    renderWithChakra(
-      <ReportCard
-        dataset={makeDataset({ geometry_types: ["Polygon", "MultiPolygon"] })}
-        isOpen={true}
-        onClose={() => {}}
-      />
-    );
-    expect(screen.getByText(/Polygon \/ MultiPolygon features/)).toBeTruthy();
-  });
-
   it("shows transformation steps for shapefile-to-pmtiles path", () => {
     renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
     expect(screen.getByText(/.shp.*Shapefile/)).toBeTruthy();
     expect(screen.getByText(/.parquet.*GeoParquet/)).toBeTruthy();
     expect(screen.getByText(/.pmtiles.*PMTiles/)).toBeTruthy();
+  });
+
+  it("renders TechCards based on dataset credits", () => {
+    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
+    expect(screen.getByText("GeoPandas")).toBeTruthy();
+    expect(screen.getByText("tippecanoe")).toBeTruthy();
+    expect(screen.getByText("PMTiles + MapLibre")).toBeTruthy();
+  });
+
+  it("renders raster tech cards for geotiff-to-cog datasets", () => {
+    renderWithChakra(
+      <ReportCard
+        dataset={makeDataset({
+          dataset_type: "raster",
+          format_pair: "geotiff-to-cog",
+          tile_url: "/raster/datasets/test-id",
+          credits: [
+            { tool: "rio-cogeo", role: "Converted", url: "https://github.com/cogeotiff/rio-cogeo" },
+          ],
+        })}
+        isOpen={true}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.getByText("rio-cogeo")).toBeTruthy();
+    expect(screen.getByText("MinIO (S3-compatible)")).toBeTruthy();
+    expect(screen.getByText("titiler + deck.gl")).toBeTruthy();
+  });
+
+  it("renders vector/tipg tech cards for non-pmtiles vector datasets", () => {
+    renderWithChakra(
+      <ReportCard
+        dataset={makeDataset({
+          tile_url: "/vector/collections/public.test/tiles",
+          credits: [
+            { tool: "GeoPandas", role: "Converted", url: "https://github.com/geopandas/geopandas" },
+          ],
+        })}
+        isOpen={true}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.getByText("GeoPandas")).toBeTruthy();
+    expect(screen.getByText("PostGIS")).toBeTruthy();
+    expect(screen.getByText("tipg + MapLibre")).toBeTruthy();
+  });
+});
+
+describe("getTileUrlPrefix", () => {
+  it("extracts /pmtiles/ from pmtiles URL", () => {
+    expect(getTileUrlPrefix("/pmtiles/datasets/test-id/test.pmtiles")).toBe("/pmtiles/");
+  });
+
+  it("extracts /raster/ from raster URL", () => {
+    expect(getTileUrlPrefix("/raster/datasets/test-id")).toBe("/raster/");
+  });
+
+  it("extracts /vector/ from vector URL", () => {
+    expect(getTileUrlPrefix("/vector/collections/public.test/tiles")).toBe("/vector/");
   });
 });

@@ -469,7 +469,6 @@ export default function MapPage() {
         dataset={dataset}
         isOpen={reportCardOpen}
         onClose={() => setReportCardOpen(false)}
-        onScrollToCredits={scrollToCredits}
       />
     </Box>
   );

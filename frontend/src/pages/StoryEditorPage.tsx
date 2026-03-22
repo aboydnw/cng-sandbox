@@ -7,6 +7,7 @@ import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
 import { UploadModal } from "../components/UploadModal";
 import { Header } from "../components/Header";
+import { BugReportLink } from "../components/BugReportLink";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -375,6 +376,7 @@ export default function StoryEditorPage() {
           placeholder="Story title"
         />
         <Flex gap={2} align="center">
+          <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
           <Button
             size="sm"
             variant="outline"

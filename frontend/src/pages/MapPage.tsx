@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom"
 import { Box, Button, Flex, Spinner, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
+import { BugReportLink } from "../components/BugReportLink";
 import { CreditsPanel } from "../components/CreditsPanel";
 import { ExploreTab } from "../components/ExploreTab";
 import { ReportCard } from "../components/ReportCard";
@@ -323,6 +324,7 @@ export default function MapPage() {
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
+        <BugReportLink datasetId={dataset.id} />
         <ShareButton />
         {dataset.tile_url && (
           <Button

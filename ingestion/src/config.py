@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost:5185"]
 
+    # GitHub bug reporting
+    github_token: str = ""
+    github_repo: str = ""
+
     model_config = {"env_prefix": "", "case_sensitive": False}
 
 

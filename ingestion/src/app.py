@@ -72,6 +72,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     db_engine = sa_create_engine(settings.postgres_dsn)
     Base.metadata.create_all(db_engine)
     app.state.db_session_factory = sessionmaker(bind=db_engine)
+    app.state.settings = settings
 
     app.add_middleware(
         CORSMiddleware,
@@ -88,10 +89,12 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.jobs import router as jobs_router
     from src.routes.datasets import router as datasets_router
     from src.routes.stories import router as stories_router
+    from src.routes.bug_report import router as bug_report_router
     app.include_router(upload_router)
     app.include_router(jobs_router)
     app.include_router(datasets_router)
     app.include_router(stories_router)
+    app.include_router(bug_report_router)
 
     return app
 

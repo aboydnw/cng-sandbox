@@ -15,6 +15,7 @@ import {
   buildVectorLayer,
 } from "../lib/layers";
 import { getStoryFromServer, DEFAULT_LAYER_CONFIG, migrateStory } from "../lib/story";
+import { BugReportLink } from "../components/BugReportLink";
 import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -359,6 +360,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
           <Heading size="sm" fontWeight={600} color="gray.800">
             {story.title}
           </Heading>
+          <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
           <Text ml="auto" fontSize="xs" color="gray.500">
             Made with CNG Sandbox
           </Text>

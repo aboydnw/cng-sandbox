@@ -96,7 +96,7 @@ This redesign promotes story building to a first-class entry point alongside fil
 
 ```
 ┌───────────────────────────────┐  ┌────────┐
-│  ← Convert a file              │  │  ...   │
+│  Convert a file                │  │  ...   │
 │                                │  └────────┘
 │  filename.tif (24.5 MB)       │
 │                                │
@@ -112,7 +112,7 @@ This redesign promotes story building to a first-class entry point alongside fil
 
 ```
 ┌───────────────────────────────┐  ┌────────┐
-│  ← Convert a file              │  │  ...   │
+│  Convert a file                │  │  ...   │
 │                                │  └────────┘
 │  filename.tif (24.5 MB)       │
 │                                │
@@ -163,14 +163,14 @@ Add an enhanced error rendering mode:
 
 - When a stage has `status === "error"`, render it with a red icon and display the error message below the stage name
 - Below the stages list, render two action buttons: "Try again" and "Report this issue"
+- The existing `StageInfo.detail` field already carries error messages for failed stages — use it as-is for the error text. No new `error` prop needed.
 - **New props:**
   - `onRetry: () => void` — resets to the drop zone state
-  - `onReport: () => void` — opens the bug report modal
-  - `error: string | null` — the error message to display on the failed stage
+  - `onReport: () => void` — opens the bug report modal (omit if bug report feature not yet available)
 
 ### Unchanged: `FileUploader`, `VariablePicker`
 
-Used as-is. Rendered as children inside the expanded `PathCard`.
+Used as-is. Rendered as children inside the expanded `PathCard`. The `FileUploader`'s multi-file upload path (`onFilesSelected` / `startTemporalUpload`) must be preserved in the rewrite — it is wired through to the expanded card just like single-file upload.
 
 ---
 
@@ -202,14 +202,14 @@ The page manages two pieces of state: which card is active, and the upload lifec
      │   uploading     │  ← ProgressTracker visible
      └───────┬─────────┘
              │
-      ┌──────┼──────┬────────────┐
-      │      │      │            │
-   success  error  scan-result  back (×)
-      │      │      │            │
-      ▼      ▼      ▼            ▼
-   navigate ┌────┐ ┌──────────┐ ┌──────────┐
-   /map/:id │error│ │var-picker│ │ initial  │
-            └──┬─┘ └────┬─────┘ └──────────┘
+      ┌──────┼──────┐
+      │      │      │
+   success  error  scan-result
+      │      │      │
+      ▼      ▼      ▼
+   navigate ┌────┐ ┌──────────┐
+   /map/:id │error│ │var-picker│
+            └──┬─┘ └────┬─────┘
                │        │
           retry │   select var
                │        │
@@ -217,7 +217,7 @@ The page manages two pieces of state: which card is active, and the upload lifec
           upload-idle  uploading
 ```
 
-The "back" affordance (collapse) is available in `upload-idle` state. Once uploading starts, the back arrow is hidden — the user is committed.
+The "back" affordance (collapse back to two-card view) is available only in `upload-idle` state. Once uploading starts, the back arrow is hidden — the user is committed. There is no way to cancel an in-progress upload.
 
 ---
 
@@ -240,10 +240,12 @@ All animations use CSS transitions for performance. No animation libraries neede
 
 ## 7. Bug Report Integration in Error State
 
+**Prerequisite:** The bug report feature (see `docs/superpowers/plans/2026-03-22-bug-report-button.md`) must be implemented first. If it is not yet available when this redesign is built, the "Report this issue" button should be omitted from the error state and added later once the bug report feature ships.
+
 When the upload pipeline fails:
 
 1. `ProgressTracker` renders the error inline at the failed stage
-2. "Report this issue" button opens `BugReportModal` (from the bug report feature, currently being implemented)
+2. "Report this issue" button opens `BugReportModal` (from the bug report feature)
 3. The modal is pre-filled with:
    - `page_url`: current path (`/`)
    - `description`: pre-populated with the error message and failed stage name

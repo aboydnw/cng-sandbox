@@ -45,23 +45,26 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
           w="100%"
           size="sm"
           variant="outline"
-          color="gray.300"
-          borderColor="gray.600"
+          color="brand.brown"
+          borderColor="brand.border"
+          fontWeight={500}
+          borderRadius="4px"
+          _hover={{ borderColor: "brand.orange", color: "brand.orange" }}
           onClick={() => setMode("upload")}
         >
           New upload
         </Button>
 
         {expiryDays !== null && (
-          <Text fontSize="xs" color="gray.500" mt={3} textAlign="center">
-            ⏳ Expires in {expiryDays} day{expiryDays !== 1 ? "s" : ""}
+          <Text fontSize="11px" color="brand.textSecondary" mt={3} textAlign="center">
+            Expires in {expiryDays} day{expiryDays !== 1 ? "s" : ""}
           </Text>
         )}
       </Box>
 
       {/* Contextual bottom — scrollable */}
       {children && (
-        <Box flex={1} overflowY="auto" p={4} borderTopWidth="1px" borderColor="gray.700">
+        <Box flex={1} overflowY="auto" p={4} borderTopWidth="1px" borderColor="brand.border">
           {children}
         </Box>
       )}

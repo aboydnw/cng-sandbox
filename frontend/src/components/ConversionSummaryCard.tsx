@@ -20,43 +20,53 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
   const toLabel = formatLabel[1] ?? "converted";
 
   return (
-    <Box bg="gray.800" borderRadius="md" p={4} cursor="pointer" onClick={onDetailsClick} _hover={{ bg: "gray.750" }}>
+    <Box
+      bg="white"
+      borderRadius="8px"
+      border="1px solid"
+      borderColor="brand.border"
+      p={4}
+      cursor="pointer"
+      onClick={onDetailsClick}
+      transition="all 200ms ease-out"
+      _hover={{ borderColor: "brand.orange", shadow: "md" }}
+    >
       <Flex justify="space-between" align="center" mb={3}>
-        <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
+        <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" fontWeight={600}>
           Conversion summary
         </Text>
-        <Text fontSize="xs" color="brand.orange" cursor="pointer">
+        <Text fontSize="11px" color="brand.orange" fontWeight={600}>
           Details →
         </Text>
       </Flex>
 
       {/* Mini pipeline */}
       <Flex align="center" gap={2} mb={3}>
-        <Box bg="gray.700" borderRadius="sm" px={2} py={0.5}>
-          <Text fontSize="xs" color="gray.300">{fromLabel}</Text>
+        <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
+          <Text fontSize="12px" color="brand.textSecondary">{fromLabel}</Text>
         </Box>
-        <Text fontSize="xs" color="gray.500">→</Text>
-        <Box bg="gray.700" borderRadius="sm" px={2} py={0.5}>
-          <Text fontSize="xs" color="green.400">{toLabel}</Text>
+        <Text fontSize="12px" color="brand.textSecondary">→</Text>
+        <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
+          <Text fontSize="12px" color="brand.success" fontWeight={600}>{toLabel}</Text>
         </Box>
       </Flex>
 
       {/* Stats */}
       <Flex gap={6}>
         <Box>
-          <Text fontSize="md" color="white" fontWeight="bold">
+          <Text fontSize="13px" color="brand.brown" fontWeight={700}>
             {originalSize ? formatBytes(originalSize) : "—"} → {convertedSize ? formatBytes(convertedSize) : "—"}
           </Text>
           {pctSmaller !== null && pctSmaller > 0 && (
-            <Text fontSize="xs" color="green.400">{pctSmaller}% smaller</Text>
+            <Text fontSize="11px" color="brand.success">{pctSmaller}% smaller</Text>
           )}
         </Box>
         {bytesTransferred !== null && bytesTransferred > 0 && (
           <Box>
-            <Text fontSize="md" color="brand.orange" fontWeight="bold">
+            <Text fontSize="13px" color="brand.orange" fontWeight={700}>
               {formatBytes(bytesTransferred)} fetched
             </Text>
-            <Text fontSize="xs" color="gray.400">
+            <Text fontSize="11px" color="brand.textSecondary">
               of {convertedSize ? formatBytes(convertedSize) : "—"} total
             </Text>
           </Box>

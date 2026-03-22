@@ -401,9 +401,9 @@ export default function MapPage() {
           <Box
             flex={3}
             display={{ base: "none", md: "block" }}
-            bg="gray.900"
+            bg="brand.bgSubtle"
             borderLeftWidth="1px"
-            borderColor="gray.700"
+            borderColor="brand.border"
           >
             <SidePanel
               dataset={dataset}

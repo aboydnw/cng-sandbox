@@ -44,24 +44,28 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
 
   return (
     <Box
-      bg="linear-gradient(135deg, rgba(207,63,2,0.15), transparent)"
-      border="1px solid"
-      borderColor="brand.orange"
-      borderRadius="md"
+      bg="white"
+      border="2px solid"
+      borderColor="brand.border"
+      borderRadius="8px"
       p={4}
+      cursor="pointer"
+      onClick={handleCreate}
+      transition="all 200ms ease-out"
+      _hover={{ borderColor: "brand.orange", shadow: "md" }}
     >
-      <Text fontSize="xs" color="brand.orange" textTransform="uppercase" letterSpacing="wide" fontWeight="bold">
+      <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.orange" fontWeight={600}>
         What's next
       </Text>
-      <Text fontSize="md" color="white" fontWeight="bold" mt={1}>
+      <Text fontSize="15px" color="brand.brown" fontWeight={700} mt={1}>
         Tell a story with this data
       </Text>
-      <Text fontSize="xs" color="gray.400" mt={1} lineHeight="tall">
+      <Text fontSize="12px" color="brand.textSecondary" mt={1} lineHeight="1.6">
         Add annotations, narrative text, and guided map views to create a shareable data story.
       </Text>
-      <Button mt={3} size="sm" bg="brand.orange" color="white" onClick={handleCreate}>
+      <Text mt={3} fontSize="13px" color="brand.orange" fontWeight={600}>
         Create story →
-      </Button>
+      </Text>
     </Box>
   );
 }

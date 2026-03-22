@@ -62,10 +62,10 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
   return (
     <Box h="100%" overflowY="auto">
       <Flex align="center" justify="space-between" mb={4}>
-        <Text fontSize="sm" fontWeight="bold" color="white">
+        <Text fontSize="13px" fontWeight={700} color="brand.brown">
           Upload a new file
         </Text>
-        <Button size="xs" variant="ghost" color="gray.400" onClick={onCancel}>
+        <Button size="xs" variant="ghost" color="brand.textSecondary" _hover={{ color: "brand.brown" }} onClick={onCancel}>
           ← Back
         </Button>
       </Flex>

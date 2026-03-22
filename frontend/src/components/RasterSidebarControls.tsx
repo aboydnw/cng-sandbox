@@ -41,14 +41,14 @@ export function RasterSidebarControls({
 }: RasterSidebarControlsProps) {
   return (
     <Box>
-      <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase" letterSpacing="wide" mb={3}>
+      <Text fontSize="11px" color="brand.textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing="1px" mb={3}>
         Visualization
       </Text>
 
       {/* Band selector */}
       {showBands && bands && bands.length > 0 && (
         <Box mb={3}>
-          <Text fontSize="xs" color="gray.400" mb={1}>Band</Text>
+          <Text fontSize="11px" color="brand.textSecondary" mb={1}>Band</Text>
           <NativeSelect.Root size="sm">
             <NativeSelect.Field
               value={String(selectedBand)}
@@ -69,7 +69,7 @@ export function RasterSidebarControls({
       {/* Colormap selector */}
       {showColormap && (
         <Box mb={3}>
-          <Text fontSize="xs" color="gray.400" mb={1}>Colormap</Text>
+          <Text fontSize="11px" color="brand.textSecondary" mb={1}>Colormap</Text>
           <NativeSelect.Root size="sm">
             <NativeSelect.Field
               value={colormapName}
@@ -86,8 +86,8 @@ export function RasterSidebarControls({
       {/* Opacity slider */}
       <Box mb={3}>
         <Flex justify="space-between" mb={1}>
-          <Text fontSize="xs" color="gray.400">Opacity</Text>
-          <Text fontSize="xs" color="gray.400">{Math.round(opacity * 100)}%</Text>
+          <Text fontSize="11px" color="brand.textSecondary">Opacity</Text>
+          <Text fontSize="11px" color="brand.textSecondary">{Math.round(opacity * 100)}%</Text>
         </Flex>
         <input
           type="range"
@@ -105,15 +105,15 @@ export function RasterSidebarControls({
         <Box mb={3}>
           <Flex justify="space-between" align="center">
             <Box>
-              <Text fontSize="xs" color="gray.400">Client-side rendering</Text>
-              <Text fontSize="2xs" color="gray.500">Reads COG directly in browser</Text>
+              <Text fontSize="11px" color="brand.textSecondary">Client-side rendering</Text>
+              <Text fontSize="10px" color="brand.textSecondary">Reads COG directly in browser</Text>
             </Box>
             <Box
               as="button"
               w="40px"
               h="22px"
               borderRadius="full"
-              bg={renderMode === "client" ? "brand.orange" : "gray.600"}
+              bg={renderMode === "client" ? "brand.orange" : "brand.border"}
               position="relative"
               cursor="pointer"
               onClick={() => onRenderModeChange(renderMode === "client" ? "server" : "client")}

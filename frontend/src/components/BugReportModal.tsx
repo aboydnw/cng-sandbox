@@ -9,10 +9,11 @@ interface BugReportModalProps {
   onClose: () => void;
   datasetId?: string;
   storyId?: string;
+  jobId?: string;
   datasetIds?: string[];
 }
 
-export function BugReportModal({ open, onClose, datasetId, storyId, datasetIds }: BugReportModalProps) {
+export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datasetIds }: BugReportModalProps) {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [issueUrl, setIssueUrl] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export function BugReportModal({ open, onClose, datasetId, storyId, datasetIds }
       page_url: window.location.pathname,
       dataset_id: datasetId,
       story_id: storyId,
+      job_id: jobId,
       dataset_ids: datasetIds,
       console_logs: logs,
     };
@@ -105,6 +107,7 @@ export function BugReportModal({ open, onClose, datasetId, storyId, datasetIds }
               <Text fontWeight={600} mb={1}>What will be sent:</Text>
               {datasetId && <Text>Dataset: {datasetId}</Text>}
               {storyId && <Text>Story: {storyId}</Text>}
+              {jobId && <Text>Job: {jobId}</Text>}
               {datasetIds && datasetIds.length > 0 && (
                 <Text>Datasets: {datasetIds.join(", ")}</Text>
               )}

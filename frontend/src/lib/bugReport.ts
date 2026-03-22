@@ -5,6 +5,7 @@ export interface BugReportPayload {
   page_url: string;
   dataset_id?: string;
   story_id?: string;
+  job_id?: string;
   dataset_ids?: string[];
   console_logs: LogEntry[];
 }

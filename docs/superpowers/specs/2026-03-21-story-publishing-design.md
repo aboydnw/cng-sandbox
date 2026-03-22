@@ -19,11 +19,13 @@ A publishing pipeline that takes a story from the CNG Sandbox editor and produce
 
 ### User flow
 
-1. User creates/edits a story in the sandbox (no login required)
-2. User clicks "Publish" → prompted to log in with GitHub (OAuth)
-3. Sandbox creates a repo under the user's account, pushes static reader + `story.json`, enables GitHub Pages
-4. User gets a live URL (e.g., `username.github.io/my-story`)
-5. Later: user returns to sandbox, logs in with GitHub, sees their stories, edits one, clicks "Update" → sandbox pushes updated files to the same repo → GitHub Pages auto-redeploys
+1. User explores the sandbox — browses datasets, reads stories, experiments with the editor (no login required)
+2. User uploads a file → prompted to log in with GitHub (OAuth) → file uploaded and tied to their account
+3. User creates a story using their data, configures chapters, previews
+4. User clicks "Publish" → prompted to log in with GitHub if not already authenticated
+5. Sandbox creates a repo under the user's account, pushes static reader + `story.json`, enables GitHub Pages
+6. User gets a live URL (e.g., `username.github.io/my-story`)
+7. Later: user returns to sandbox, logs in with GitHub, sees their stories, edits one, clicks "Update" → sandbox pushes updated files to the same repo → GitHub Pages auto-redeploys
 
 ### "Graduating"
 
@@ -33,15 +35,27 @@ The user's repo is a normal GitHub repo they fully own. They can clone it, custo
 
 ## 2. Authentication & Story Ownership
 
-GitHub OAuth is the only auth, and it's lazy — not required until publish time.
+GitHub OAuth is the only auth. It's required at two entry points:
+
+1. **Uploading a file** (from any page, including the story editor)
+2. **Publishing a story**
+
+Users can explore the sandbox, browse existing datasets, and experiment with story creation without logging in. But the moment they want to bring their own data or push a story live, they need a GitHub account.
+
+### Why require login at upload time
+
+- Ties every uploaded file to a GitHub user ID — makes R2 quota enforcement straightforward
+- Prevents anonymous drive-by storage consumption
+- Users who are just exploring (viewing existing datasets, reading published stories) aren't gated
 
 ### Flow
 
-- Creating and editing stories requires no login. Same as today.
-- When the user clicks "Publish" for the first time, they're prompted to log in with GitHub.
-- The sandbox stores the GitHub user ID against the story in PostgreSQL. That's the ownership link.
+- Browsing datasets, viewing stories, and experimenting with the editor requires no login.
+- When the user tries to **upload a file**, they're prompted to log in with GitHub if not already authenticated.
+- When the user clicks **"Publish"**, they're prompted to log in with GitHub if not already authenticated.
+- The sandbox stores the GitHub user ID against stories and uploaded datasets in PostgreSQL. That's the ownership link.
 - On future visits, logging in with GitHub shows "Your Stories" — all stories linked to that GitHub user ID.
-- Unpublished stories with no GitHub user remain anonymous (accessible only by direct URL, like today).
+- Stories created during anonymous exploration (e.g., using existing datasets) have no owner until the user logs in. Publishing or uploading retroactively claims the story.
 
 ### Database changes
 
@@ -54,6 +68,8 @@ Add three nullable columns to `StoryRow`:
 | `published_url` | string, nullable | Live URL, e.g., `https://username.github.io/my-deforestation-story` |
 
 The existing `published` boolean stays, but now means "has been deployed to GitHub Pages" rather than just a flag.
+
+Add `github_user_id` to the dataset model as well (for upload ownership and quota tracking). This ties every uploaded file to a GitHub user, enabling per-user storage quota enforcement on R2.
 
 ### OAuth scopes
 
@@ -209,8 +225,8 @@ R2 replaces MinIO as the primary storage backend in production. All uploaded dat
 | Lever | Mechanism |
 |-------|-----------|
 | Per-user quota | Tied to GitHub user ID. Default 5GB free. Warn at 80%, block uploads at 100%. |
+| Login required for uploads | GitHub login required before any file upload. Every file is tied to a user — no anonymous storage consumption. |
 | Inactive cleanup | Stories not edited in 12 months (based on `updated_at`) → email warning → delete data after 30 more days. Story config survives in PostgreSQL; data URLs break. |
-| Require login for uploads (future) | Once R2 is primary, require GitHub login to upload. Prevents drive-by storage consumption. |
 
 ### Cost projections
 
@@ -254,11 +270,11 @@ Same editor as today. The only difference is a banner at the top: "This story is
 - Cannot add new datasets from the editor (go back to the sandbox upload flow, start a new story or re-upload)
 - Cannot change the repo name or URL after first publish
 
-### Anonymous stories
+### Anonymous exploration
 
-Stories created without logging in still work exactly as they do today — saved in PostgreSQL, viewable at `/story/:id`. They just can't be published. The publish button prompts GitHub login, which retroactively claims the story.
+Since file uploads require GitHub login, anonymous users can only create stories using existing datasets already in the sandbox. These stories are saved in PostgreSQL, viewable at `/story/:id`, but can't be published. The publish button (or any upload action) prompts GitHub login, which retroactively claims the story.
 
-**Known limitation**: Any logged-in user who knows an anonymous story's URL could claim it by clicking Publish. This is acceptable for v1 — anonymous stories are drafts, and claiming them is low-risk. If this becomes a problem, a browser-local secret token (stored at creation time, required to claim) can be added later.
+This means anonymous stories are inherently low-stakes — they reference shared data, not user-owned data. No ownership conflict is possible because the user hasn't uploaded anything.
 
 ### Collaboration (future, not v1)
 

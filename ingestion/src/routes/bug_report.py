@@ -54,7 +54,7 @@ def _build_issue_body(req: BugReportRequest) -> str:
         log_text = "\n".join(f"[{e.timestamp}] {e.level.upper()}: {e.message}" for e in req.console_logs)
         lines.extend([
             "",
-            f"<details>",
+            "<details>",
             f"<summary>Console logs ({len(req.console_logs)} entries)</summary>",
             "",
             "```",

@@ -20,7 +20,12 @@ export function initConsoleCapture(): () => void {
   const originalWarn = console.warn;
 
   const capture = (level: "error" | "warn", args: unknown[]) => {
-    const message = args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
+    const message = args
+      .map((a) => {
+        if (typeof a === "string") return a;
+        try { return JSON.stringify(a); } catch { return String(a); }
+      })
+      .join(" ");
     buffer.push({ timestamp: new Date().toISOString(), level, message });
     if (buffer.length > MAX_ENTRIES) {
       buffer.splice(0, buffer.length - MAX_ENTRIES);

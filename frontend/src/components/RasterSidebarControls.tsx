@@ -42,7 +42,7 @@ export function RasterSidebarControls({
   return (
     <Box>
       <Text fontSize="11px" color="brand.textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing="1px" mb={3}>
-        Visualization
+        Visualization Controls
       </Text>
 
       {/* Band selector */}
@@ -56,6 +56,14 @@ export function RasterSidebarControls({
                 const val = e.target.value;
                 onBandChange(val === "rgb" ? "rgb" : Number(val));
               }}
+              bg="white"
+              border="1px solid"
+              borderColor="brand.border"
+              borderRadius="6px"
+              px={3}
+              py={1}
+              fontSize="13px"
+              _hover={{ borderColor: "brand.orange" }}
             >
               {hasRgb && <option value="rgb">RGB</option>}
               {bands.map((b) => (
@@ -74,6 +82,14 @@ export function RasterSidebarControls({
             <NativeSelect.Field
               value={colormapName}
               onChange={(e) => onColormapChange(e.target.value)}
+              bg="white"
+              border="1px solid"
+              borderColor="brand.border"
+              borderRadius="6px"
+              px={3}
+              py={1}
+              fontSize="13px"
+              _hover={{ borderColor: "brand.orange" }}
             >
               {COLORMAP_NAMES.map((name) => (
                 <option key={name} value={name}>{name}</option>

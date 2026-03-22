@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import type { Dataset } from "../types";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { StoryCTABanner } from "./StoryCTABanner";
@@ -40,20 +40,32 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
           <StoryCTABanner dataset={dataset} />
         </Box>
 
-        <Button
+        <Flex
+          as="button"
           mt={4}
           w="100%"
-          size="sm"
-          variant="outline"
-          color="brand.brown"
+          align="center"
+          justify="center"
+          gap={2}
+          py={2}
+          bg="brand.bgSubtle"
+          border="1px dashed"
           borderColor="brand.border"
+          borderRadius="6px"
+          color="brand.brown"
+          fontSize="13px"
           fontWeight={500}
-          borderRadius="4px"
-          _hover={{ borderColor: "brand.orange", color: "brand.orange" }}
+          cursor="pointer"
+          transition="all 200ms ease-out"
+          _hover={{ borderColor: "brand.orange", color: "brand.orange", bg: "white" }}
           onClick={() => setMode("upload")}
         >
+          <Box as="svg" width="14px" height="14px" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="7" y1="2" x2="7" y2="12" />
+            <line x1="2" y1="7" x2="12" y2="7" />
+          </Box>
           New upload
-        </Button>
+        </Flex>
 
         {expiryDays !== null && (
           <Text fontSize="11px" color="brand.textSecondary" mt={3} textAlign="center">

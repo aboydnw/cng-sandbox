@@ -25,22 +25,19 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
       borderRadius="8px"
       border="1px solid"
       borderColor="brand.border"
+      borderLeftWidth="3px"
+      borderLeftColor="brand.orange"
       p={4}
       cursor="pointer"
       onClick={onDetailsClick}
       transition="all 200ms ease-out"
       _hover={{ borderColor: "brand.orange", shadow: "md" }}
     >
-      <Flex justify="space-between" align="center" mb={3}>
-        <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" fontWeight={600}>
-          Conversion summary
-        </Text>
-        <Text fontSize="11px" color="brand.orange" fontWeight={600}>
-          Details →
-        </Text>
-      </Flex>
+      <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" fontWeight={600} mb={2}>
+        Conversion summary
+      </Text>
 
-      {/* Mini pipeline */}
+      {/* Mini pipeline as title */}
       <Flex align="center" gap={2} mb={3}>
         <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
           <Text fontSize="12px" color="brand.textSecondary">{fromLabel}</Text>
@@ -52,7 +49,7 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
       </Flex>
 
       {/* Stats */}
-      <Flex gap={6}>
+      <Flex gap={6} mb={3}>
         <Box>
           <Text fontSize="13px" color="brand.brown" fontWeight={700}>
             {originalSize ? formatBytes(originalSize) : "—"} → {convertedSize ? formatBytes(convertedSize) : "—"}
@@ -72,6 +69,11 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
           </Box>
         )}
       </Flex>
+
+      {/* CTA at bottom */}
+      <Text fontSize="12px" color="brand.orange" fontWeight={600}>
+        Details →
+      </Text>
     </Box>
   );
 }

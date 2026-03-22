@@ -9,6 +9,7 @@ interface FileUploaderProps {
   onFilesSelected: (files: File[]) => void;
   onUrlSubmitted: (url: string) => void;
   disabled?: boolean;
+  embedded?: boolean;
 }
 
 const extractFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> => {
@@ -37,6 +38,7 @@ export function FileUploader({
   onFilesSelected,
   onUrlSubmitted,
   disabled,
+  embedded,
 }: FileUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,13 +96,17 @@ export function FileUploader({
   }, [url, onUrlSubmitted]);
 
   return (
-    <Flex direction="column" align="center" py={16} px={8}>
-      <Text color="brand.brown" fontSize="22px" fontWeight={700} mb={1}>
-        See your data on the web
-      </Text>
-      <Text color="brand.textSecondary" fontSize="14px" mb={9}>
-        Upload a geospatial file and get a shareable map in minutes
-      </Text>
+    <Flex direction="column" align="center" py={embedded ? 0 : 16} px={embedded ? 0 : 8}>
+      {!embedded && (
+        <>
+          <Text color="brand.brown" fontSize="22px" fontWeight={700} mb={1}>
+            See your data on the web
+          </Text>
+          <Text color="brand.textSecondary" fontSize="14px" mb={9}>
+            Upload a geospatial file and get a shareable map in minutes
+          </Text>
+        </>
+      )}
 
       <Box
         border="2px dashed"
@@ -109,7 +115,7 @@ export function FileUploader({
         p={14}
         textAlign="center"
         w="100%"
-        maxW="480px"
+        maxW={embedded ? "100%" : "480px"}
         bg={dragOver ? "orange.50" : "brand.bgSubtle"}
         cursor="pointer"
         onDragOver={(e) => {
@@ -173,7 +179,7 @@ export function FileUploader({
         </Text>
       )}
 
-      <Flex align="center" gap={4} w="100%" maxW="480px" mt={6}>
+      <Flex align="center" gap={4} w="100%" maxW={embedded ? "100%" : "480px"} mt={6}>
         <Box flex={1} h="1px" bg="brand.border" />
         <Text color="#aaa" fontSize="12px" textTransform="uppercase" letterSpacing="1px">
           or
@@ -181,7 +187,7 @@ export function FileUploader({
         <Box flex={1} h="1px" bg="brand.border" />
       </Flex>
 
-      <Flex gap={2} mt={5} w="100%" maxW="480px">
+      <Flex gap={2} mt={5} w="100%" maxW={embedded ? "100%" : "480px"}>
         <Input
           flex={1}
           placeholder="Paste an S3, GCS, or HTTP URL"

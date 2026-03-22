@@ -1,10 +1,13 @@
-import { Box, Flex, Text, Spinner } from "@chakra-ui/react";
+import { Box, Button, Flex, Text, Spinner } from "@chakra-ui/react";
 import type { StageInfo } from "../types";
 
 interface ProgressTrackerProps {
   stages: StageInfo[];
   filename: string;
   fileSize: string;
+  onRetry?: () => void;
+  onReport?: () => void;
+  embedded?: boolean;
 }
 
 function StageIcon({ status }: { status: StageInfo["status"] }) {
@@ -62,9 +65,9 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
   );
 }
 
-export function ProgressTracker({ stages, filename, fileSize }: ProgressTrackerProps) {
+export function ProgressTracker({ stages, filename, fileSize, onRetry, onReport, embedded }: ProgressTrackerProps) {
   return (
-    <Flex direction="column" align="center" py={14} px={8}>
+    <Flex direction="column" align={embedded ? "flex-start" : "center"} py={embedded ? 4 : 14} px={embedded ? 0 : 8}>
       <Text color="brand.brown" fontSize="18px" fontWeight={700} mb={1}>
         Processing {filename}
       </Text>
@@ -114,6 +117,35 @@ export function ProgressTracker({ stages, filename, fileSize }: ProgressTrackerP
           </Flex>
         ))}
       </Box>
+      {onRetry && stages.some((s) => s.status === "error") && (
+        <Flex gap={3} mt={6}>
+          <Button
+            size="sm"
+            bg="brand.orange"
+            color="white"
+            fontWeight={600}
+            borderRadius="4px"
+            _hover={{ bg: "brand.orangeHover" }}
+            onClick={onRetry}
+          >
+            Try again
+          </Button>
+          {onReport && (
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor="brand.border"
+              color="brand.textSecondary"
+              fontWeight={600}
+              borderRadius="4px"
+              _hover={{ color: "brand.brown" }}
+              onClick={onReport}
+            >
+              Report this issue
+            </Button>
+          )}
+        </Flex>
+      )}
     </Flex>
   );
 }

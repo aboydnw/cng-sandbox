@@ -42,7 +42,7 @@ export interface Story {
   id: string;
   title: string;
   description?: string;
-  dataset_id: string;
+  dataset_id: string | null;
   dataset_ids: string[];
   chapters: Chapter[];
   created_at: string;
@@ -52,7 +52,7 @@ export interface Story {
 export interface StoryIndexEntry {
   id: string;
   title: string;
-  dataset_id: string;
+  dataset_id: string | null;
   created_at: string;
 }
 
@@ -88,15 +88,28 @@ export function createChapter(
 }
 
 export function createStory(
-  datasetId: string,
+  datasetId?: string | null,
   overrides: Partial<Story> = {},
 ): Story {
+  const chapter = datasetId
+    ? createChapter({
+        order: 0,
+        title: "Chapter 1",
+        layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: datasetId },
+      })
+    : createChapter({
+        order: 0,
+        title: "Chapter 1",
+        type: "prose",
+        narrative: "",
+      });
+
   return {
     id: uuid(),
     title: "Untitled story",
-    dataset_id: datasetId,
-    dataset_ids: [datasetId],
-    chapters: [createChapter({ order: 0, title: "Chapter 1", layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: datasetId } })],
+    dataset_id: datasetId ?? null,
+    dataset_ids: datasetId ? [datasetId] : [],
+    chapters: [chapter],
     created_at: new Date().toISOString(),
     published: false,
     ...overrides,

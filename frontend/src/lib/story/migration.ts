@@ -19,7 +19,7 @@ export function migrateStory(story: any): Story {
       ? story.dataset_ids
       : uniqueIds.length > 0
         ? uniqueIds
-        : [story.dataset_id];
+        : story.dataset_id ? [story.dataset_id] : [];
 
   return { ...story, chapters, dataset_ids };
 }

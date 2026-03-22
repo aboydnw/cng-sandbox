@@ -112,7 +112,8 @@ export function FileUploader({
         border="2px dashed"
         borderColor={dragOver ? "brand.orange" : "#ccc"}
         borderRadius="12px"
-        p={14}
+        py={embedded ? 3 : 14}
+        px={embedded ? 5 : 14}
         textAlign="center"
         w="100%"
         maxW={embedded ? "100%" : "480px"}
@@ -128,28 +129,34 @@ export function FileUploader({
         opacity={disabled ? 0.5 : 1}
         pointerEvents={disabled ? "none" : "auto"}
       >
-        <Text fontSize="40px" mb={4} opacity={0.5}>
-          🗺
-        </Text>
-        <Text color="brand.brown" fontSize="16px" fontWeight={600} mb={2}>
+        {!embedded && (
+          <Text fontSize="40px" mb={4} opacity={0.5}>
+            🗺
+          </Text>
+        )}
+        <Text color="brand.brown" fontSize={embedded ? "14px" : "16px"} fontWeight={600} mb={embedded ? 1 : 2}>
           Drop your file here
         </Text>
-        <Text color="brand.textSecondary" fontSize="13px" mb={5}>
+        <Text color="brand.textSecondary" fontSize="13px" mb={embedded ? 2 : 5}>
           GeoTIFF · Shapefile (.zip) · GeoJSON · NetCDF · HDF5
         </Text>
-        <Button
-          bg="brand.orange"
-          color="white"
-          size="sm"
-          fontWeight={600}
-          borderRadius="4px"
-          _hover={{ bg: "brand.orangeHover" }}
-        >
-          Browse files
-        </Button>
-        <Text color="#aaa" fontSize="12px" mt={4}>
-          Up to 15 GB
-        </Text>
+        {!embedded && (
+          <Button
+            bg="brand.orange"
+            color="white"
+            size="sm"
+            fontWeight={600}
+            borderRadius="4px"
+            _hover={{ bg: "brand.orangeHover" }}
+          >
+            Browse files
+          </Button>
+        )}
+        {!embedded && (
+          <Text color="#aaa" fontSize="12px" mt={4}>
+            Up to 15 GB
+          </Text>
+        )}
         <input
           ref={inputRef}
           type="file"
@@ -179,7 +186,7 @@ export function FileUploader({
         </Text>
       )}
 
-      <Flex align="center" gap={4} w="100%" maxW={embedded ? "100%" : "480px"} mt={6}>
+      <Flex align="center" gap={4} w="100%" maxW={embedded ? "100%" : "480px"} mt={embedded ? 3 : 6}>
         <Box flex={1} h="1px" bg="brand.border" />
         <Text color="#aaa" fontSize="12px" textTransform="uppercase" letterSpacing="1px">
           or
@@ -187,7 +194,7 @@ export function FileUploader({
         <Box flex={1} h="1px" bg="brand.border" />
       </Flex>
 
-      <Flex gap={2} mt={5} w="100%" maxW={embedded ? "100%" : "480px"}>
+      <Flex gap={2} mt={embedded ? 3 : 5} w="100%" maxW={embedded ? "100%" : "480px"}>
         <Input
           flex={1}
           placeholder="Paste an S3, GCS, or HTTP URL"

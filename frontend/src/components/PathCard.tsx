@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 
 interface PathCardProps {
   icon: string;
@@ -37,23 +37,32 @@ export function PathCard({
       borderColor={expanded ? "brand.orange" : "brand.border"}
       borderRadius="16px"
       overflow="hidden"
+      minH={0}
       bg="white"
+      _hover={!expanded && !faded ? { borderColor: "brand.orange", shadow: "md" } : undefined}
+      cursor={!expanded && !faded ? "pointer" : undefined}
+      onClick={!expanded && !faded ? onClick : undefined}
     >
       {expanded ? (
-        <Box p={6}>
+        <Box p={5} overflow="auto" h="100%">
           <Flex align="center" gap={2} mb={4}>
-            <Box
-              as="button"
-              aria-label="Go back"
-              onClick={onCollapse}
-              cursor="pointer"
-              fontSize="18px"
-              color="brand.textSecondary"
-              _hover={{ color: "brand.brown" }}
-              p={1}
-            >
-              ←
-            </Box>
+            {onCollapse && (
+              <Box
+                as="button"
+                aria-label="Go back"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onCollapse();
+                }}
+                cursor="pointer"
+                fontSize="18px"
+                color="brand.textSecondary"
+                _hover={{ color: "brand.brown" }}
+                p={1}
+              >
+                ←
+              </Box>
+            )}
             <Text fontSize="16px" fontWeight={700} color="brand.brown">
               {title}
             </Text>
@@ -82,17 +91,13 @@ export function PathCard({
           <Text fontSize="13px" color="brand.textSecondary" mb={6} maxW="240px" lineHeight={1.5}>
             {description}
           </Text>
-          <Button
-            bg="brand.orange"
-            color="white"
-            size="sm"
+          <Text
+            color="brand.orange"
+            fontSize="14px"
             fontWeight={600}
-            borderRadius="6px"
-            _hover={{ bg: "brand.orangeHover" }}
-            onClick={onClick}
           >
-            {ctaLabel}
-          </Button>
+            {ctaLabel} →
+          </Text>
         </Flex>
       )}
     </Box>

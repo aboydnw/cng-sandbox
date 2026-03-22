@@ -23,13 +23,13 @@ describe("PathCard", () => {
     renderWithChakra(<PathCard {...defaultProps} />);
     expect(screen.getByText("Convert a file")).toBeTruthy();
     expect(screen.getByText("Upload a geospatial file")).toBeTruthy();
-    expect(screen.getByText("Browse files")).toBeTruthy();
+    expect(screen.getByText("Browse files →")).toBeTruthy();
   });
 
-  it("calls onClick when CTA button is clicked", () => {
+  it("calls onClick when card is clicked", () => {
     const onClick = vi.fn();
     renderWithChakra(<PathCard {...defaultProps} onClick={onClick} />);
-    fireEvent.click(screen.getByText("Browse files"));
+    fireEvent.click(screen.getByText("Convert a file"));
     expect(onClick).toHaveBeenCalledOnce();
   });
 
@@ -41,7 +41,7 @@ describe("PathCard", () => {
       </PathCard>,
     );
     expect(screen.getByText("Drop zone content")).toBeTruthy();
-    expect(screen.queryByText("Browse files")).toBeNull();
+    expect(screen.queryByText("Browse files →")).toBeNull();
     expect(screen.queryByText("Upload a geospatial file")).toBeNull();
   });
 
@@ -60,6 +60,6 @@ describe("PathCard", () => {
     renderWithChakra(<PathCard {...defaultProps} faded={true} />);
     expect(screen.getByText("Convert a file")).toBeTruthy();
     expect(screen.queryByText("Upload a geospatial file")).toBeNull();
-    expect(screen.queryByText("Browse files")).toBeNull();
+    expect(screen.queryByText("Browse files →")).toBeNull();
   });
 });

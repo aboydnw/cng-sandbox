@@ -80,17 +80,20 @@ export default function UploadPage() {
   const uploadCardExpanded = mode !== "initial";
 
   return (
-    <Box minH="100vh" bg="white">
+    <Flex direction="column" h="100vh" bg="white" overflow="hidden">
       <Header />
       <HomepageHero />
 
       <Flex
         gap={5}
         px={8}
-        pb={14}
-        pt={4}
+        pb={4}
+        pt={3}
         maxW="900px"
         mx="auto"
+        flex={1}
+        minH={0}
+        w="100%"
       >
         {/* Left card: Convert a file */}
         <PathCard
@@ -149,6 +152,6 @@ export default function UploadPage() {
         onClose={() => setReportOpen(false)}
         jobId={state.jobId ?? undefined}
       />
-    </Box>
+    </Flex>
   );
 }

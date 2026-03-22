@@ -6,6 +6,8 @@ import { BrowserRouter } from "react-router-dom";
 import { system } from "./theme";
 import App from "./App";
 import "./styles.css";
+import { initConsoleCapture } from "./lib/consoleCapture";
+initConsoleCapture();
 
 // Workaround for luma.gl v9.2.6 bug
 const orig = CanvasContext.prototype.getMaxDrawingBufferSize;

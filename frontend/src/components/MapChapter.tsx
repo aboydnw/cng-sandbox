@@ -38,7 +38,10 @@ export function MapChapter({ chapter, chapterIndex, dataset }: MapChapterProps) 
     if (dataset.dataset_type === "raster") {
       const base = dataset.tile_url;
       const sep = base.includes("?") ? "&" : "?";
-      const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+      let tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+      if (dataset.raster_min != null && dataset.raster_max != null) {
+        tileUrl += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
+      }
       return buildRasterTileLayers({
         tileUrl,
         opacity: lc.opacity,

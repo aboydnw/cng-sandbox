@@ -57,7 +57,10 @@ function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset
   if (ds.dataset_type === "raster") {
     const base = ds.tile_url;
     const sep = base.includes("?") ? "&" : "?";
-    const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+    let tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+    if (ds.raster_min != null && ds.raster_max != null) {
+      tileUrl += `&rescale=${ds.raster_min},${ds.raster_max}`;
+    }
     return buildRasterTileLayers({
       tileUrl,
       opacity: lc.opacity,

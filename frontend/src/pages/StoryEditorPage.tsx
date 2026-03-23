@@ -340,7 +340,10 @@ export default function StoryEditorPage() {
     if (ds.dataset_type === "raster") {
       const base = ds.tile_url;
       const sep = base.includes("?") ? "&" : "?";
-      const tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+      let tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
+      if (ds.raster_min != null && ds.raster_max != null) {
+        tileUrl += `&rescale=${ds.raster_min},${ds.raster_max}`;
+      }
       return buildRasterTileLayers({
         tileUrl,
         opacity: lc.opacity,
@@ -444,7 +447,7 @@ export default function StoryEditorPage() {
             <Box flex={6} position="relative">
               <UnifiedMap
                 camera={camera}
-                onCameraChange={setCamera}
+                onCameraChange={(c) => { setCamera(c); setTransitionDuration(undefined); }}
                 layers={layers}
                 basemap={basemap}
                 onBasemapChange={setBasemap}

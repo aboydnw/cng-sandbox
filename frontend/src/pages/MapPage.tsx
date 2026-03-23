@@ -400,10 +400,13 @@ export default function MapPage() {
 
           <Box
             flex={3}
+            maxW="340px"
+            minW="260px"
             display={{ base: "none", md: "block" }}
             bg="brand.bgSubtle"
             borderLeftWidth="1px"
             borderColor="brand.border"
+            overflow="hidden"
           >
             <SidePanel
               dataset={dataset}

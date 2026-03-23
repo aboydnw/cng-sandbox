@@ -91,9 +91,8 @@ export default function UploadPage() {
         pt={3}
         maxW="900px"
         mx="auto"
-        flex={1}
-        minH={0}
         w="100%"
+        align="flex-start"
       >
         {/* Left card: Convert a file */}
         <PathCard

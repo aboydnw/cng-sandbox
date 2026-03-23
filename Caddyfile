@@ -3,11 +3,40 @@
 		dns duckdns {$DUCKDNS_TOKEN}
 	}
 
-	basic_auth {
-		{$AUTH_USER} {$AUTH_PASSWORD_HASH}
+	# Data-serving paths: proxy directly to MinIO, bypassing Vite.
+	# No auth: programmatic clients (PMTiles, DuckDB WASM) can't
+	# send Basic Auth credentials with range requests.
+	handle /storage/* {
+		uri replace /storage /sandbox-data 1
+		reverse_proxy minio:9000 {
+			header_up Host {upstream_hostport}
+			header_up -Authorization
+		}
 	}
 
-	encode gzip
+	handle /pmtiles/* {
+		uri replace /pmtiles /sandbox-data 1
+		reverse_proxy minio:9000 {
+			header_up Host {upstream_hostport}
+			header_up -Authorization
+		}
+	}
 
-	reverse_proxy frontend:5185
+	# Everything else: auth + gzip, proxy to frontend.
+	# flush_interval -1 enables streaming (SSE for upload progress).
+	# keepalive off prevents Caddy from reusing stale connections to
+	# Vite's HTTP/1.1 dev server, which otherwise causes 400 errors
+	# on idle HTTP channels under HTTP/2 multiplexing.
+	handle {
+		basic_auth {
+			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
+		}
+		encode gzip
+		reverse_proxy frontend:5185 {
+			flush_interval -1
+			transport http {
+				keepalive off
+			}
+		}
+	}
 }

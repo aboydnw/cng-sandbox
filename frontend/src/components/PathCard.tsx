@@ -37,14 +37,13 @@ export function PathCard({
       borderColor={expanded ? "brand.orange" : "brand.border"}
       borderRadius="16px"
       overflow="hidden"
-      minH={0}
       bg="white"
       _hover={!expanded && !faded ? { borderColor: "brand.orange", shadow: "md" } : undefined}
       cursor={!expanded && !faded ? "pointer" : undefined}
       onClick={!expanded && !faded ? onClick : undefined}
     >
       {expanded ? (
-        <Box p={5} overflow="auto" h="100%">
+        <Box p={5} overflow="auto">
           <Flex align="center" gap={2} mb={4}>
             {onCollapse && (
               <Box

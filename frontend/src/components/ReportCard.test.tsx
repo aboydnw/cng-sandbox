@@ -16,7 +16,7 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     filename: "test.shp",
     dataset_type: "vector",
     format_pair: "shapefile-to-geoparquet",
-    tile_url: "/pmtiles/datasets/test-id/test.pmtiles",
+    tile_url: "/storage/datasets/test-id/converted/data.pmtiles",
     bounds: [-180, -90, 180, 90],
     band_count: null,
     band_names: null,
@@ -143,8 +143,8 @@ describe("ReportCard", () => {
 });
 
 describe("getTileUrlPrefix", () => {
-  it("extracts /pmtiles/ from pmtiles URL", () => {
-    expect(getTileUrlPrefix("/pmtiles/datasets/test-id/test.pmtiles")).toBe("/pmtiles/");
+  it("returns full URL for pmtiles paths", () => {
+    expect(getTileUrlPrefix("/storage/datasets/test-id/converted/data.pmtiles")).toBe("/storage/datasets/test-id/converted/data.pmtiles");
   });
 
   it("extracts /raster/ from raster URL", () => {

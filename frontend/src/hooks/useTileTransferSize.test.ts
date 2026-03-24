@@ -30,29 +30,29 @@ describe("useTileTransferSize", () => {
   });
 
   it("returns null when no matching entries exist yet", () => {
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize("/storage/datasets/abc/data.pmtiles"));
     expect(result.current).toBeNull();
   });
 
   it("sums transferSize for entries matching the prefix", () => {
     vi.spyOn(performance, "getEntriesByType").mockReturnValue([
-      makeEntry("http://localhost/pmtiles/datasets/abc/data.pmtiles", 1024),
-      makeEntry("http://localhost/pmtiles/datasets/abc/data.pmtiles", 512),
+      makeEntry("http://localhost/storage/datasets/abc/data.pmtiles", 1024),
+      makeEntry("http://localhost/storage/datasets/abc/data.pmtiles", 512),
       makeEntry("http://localhost/raster/tiles/0/0/0.png", 2048),
     ]);
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize("/storage/datasets/abc/data.pmtiles"));
     expect(result.current).toBe(1536);
   });
 
   it("updates when the observer fires with new entries", () => {
     vi.spyOn(performance, "getEntriesByType")
-      .mockReturnValueOnce([makeEntry("http://localhost/pmtiles/x", 100)])
+      .mockReturnValueOnce([makeEntry("http://localhost/storage/datasets/abc/data.pmtiles", 100)])
       .mockReturnValueOnce([
-        makeEntry("http://localhost/pmtiles/x", 100),
-        makeEntry("http://localhost/pmtiles/x", 200),
+        makeEntry("http://localhost/storage/datasets/abc/data.pmtiles", 100),
+        makeEntry("http://localhost/storage/datasets/abc/data.pmtiles", 200),
       ]);
 
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize("/storage/datasets/abc/data.pmtiles"));
     expect(result.current).toBe(100);
 
     act(() => {
@@ -63,15 +63,15 @@ describe("useTileTransferSize", () => {
 
   it("returns 0 (not null) when entries exist but all have transferSize 0 (Timing-Allow-Origin not set)", () => {
     vi.spyOn(performance, "getEntriesByType").mockReturnValue([
-      makeEntry("http://localhost/pmtiles/x", 0),
+      makeEntry("http://localhost/storage/datasets/abc/data.pmtiles", 0),
     ]);
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize("/storage/datasets/abc/data.pmtiles"));
     // entries exist but report 0 bytes → 0, not null (null = no entries at all)
     expect(result.current).toBe(0);
   });
 
   it("disconnects the observer on unmount", () => {
-    const { unmount } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { unmount } = renderHook(() => useTileTransferSize("/storage/datasets/abc/data.pmtiles"));
     unmount();
     expect(mockDisconnect).toHaveBeenCalledOnce();
   });

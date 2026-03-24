@@ -14,7 +14,7 @@ describe("buildVectorLayer", () => {
 
   it("creates an MVTLayer with pmtiles URL", () => {
     const layer = buildVectorLayer({
-      tileUrl: "/pmtiles/sandbox_abc123.pmtiles",
+      tileUrl: "/storage/datasets/abc123/converted/data.pmtiles",
       isPMTiles: true,
       opacity: 0.6,
     });

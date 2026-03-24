@@ -18,3 +18,4 @@ scripts/update-duckdns.sh
 .env.*.local
 .superpowers/
 .worktrees/
+docs/

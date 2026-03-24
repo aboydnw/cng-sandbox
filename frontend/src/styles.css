@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Satoshi Variable";
+  src: url("/fonts/Satoshi-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+:root {
+  --ease-out-expo: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 html,
 body,
 #root,

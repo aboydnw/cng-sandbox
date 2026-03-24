@@ -1,4 +1,3 @@
-import pytest
 from src.services.temporal_ordering import extract_timestamp_from_filename, order_files
 
 

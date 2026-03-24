@@ -60,7 +60,9 @@ export default function StoryEditorPage() {
       try {
         const resp = await fetch(`${config.apiBase}/api/datasets`);
         if (resp.ok) setAllDatasets(await resp.json());
-      } catch {}
+      } catch {
+        // ignore fetch errors
+      }
     }
     fetchAllDatasets();
   }, []);

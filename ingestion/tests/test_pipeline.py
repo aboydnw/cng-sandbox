@@ -6,7 +6,10 @@ from rasterio.transform import from_bounds
 from shapely.geometry import Point, Polygon
 
 from src.models import DatasetType, FormatPair
-from src.services.pipeline import _detect_use_pmtiles, _extract_band_metadata, _extract_feature_stats, _extract_zoom_range_raster, get_credits
+from src.services.pipeline import (
+    _detect_use_pmtiles, _extract_band_metadata, _extract_feature_stats,
+    _extract_zoom_range_raster, get_credits, validate_geojson_structure,
+)
 
 
 def test_get_credits_raster():
@@ -199,9 +202,6 @@ def test_extract_band_metadata_fallback_names(no_description_tif):
     meta = _extract_band_metadata(no_description_tif)
     assert meta.band_count == 2
     assert meta.band_names == ["Band 1", "Band 2"]
-
-
-from src.services.pipeline import validate_geojson_structure
 
 
 def test_invalid_geojson_rejected():

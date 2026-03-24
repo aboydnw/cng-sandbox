@@ -28,7 +28,7 @@ import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
-import { detectCadence, formatTimestepLabel, findGaps } from "../utils/temporal";
+import { detectCadence, formatTimestepLabel } from "../utils/temporal";
 import { config } from "../config";
 import type { Dataset } from "../types";
 import type { Table } from "apache-arrow";

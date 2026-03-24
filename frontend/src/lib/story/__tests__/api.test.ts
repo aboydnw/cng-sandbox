@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createStoryOnServer, getStoryFromServer, saveStoryToServer, deleteStoryFromServer, listStoriesFromServer } from "../api";
+import { createStoryOnServer, getStoryFromServer, saveStoryToServer, deleteStoryFromServer } from "../api";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);

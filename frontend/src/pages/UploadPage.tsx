@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Flex } from "@chakra-ui/react";
+import { Flex } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";

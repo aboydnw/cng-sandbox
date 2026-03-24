@@ -1,9 +1,10 @@
 """Proxy endpoints for browsing external STAC catalogs."""
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from src.middleware.rate_limit import catalog_rate_limiter
 from src.services.catalog_providers import PROVIDERS
 
 router = APIRouter(prefix="/api/catalog")
@@ -60,7 +61,8 @@ class SearchRequest(BaseModel):
 
 
 @router.post("/{provider_id}/search")
-async def search_items(provider_id: str, body: SearchRequest):
+async def search_items(provider_id: str, body: SearchRequest, request: Request):
+    catalog_rate_limiter.check(request)
     provider = _get_provider(provider_id)
     payload = {
         "collections": body.collections,

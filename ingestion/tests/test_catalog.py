@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 import httpx
 
+from src.middleware.rate_limit import catalog_rate_limiter
+
 
 def test_list_providers(client):
     resp = client.get("/api/catalog/providers")
@@ -70,3 +72,28 @@ def test_search_items(mock_client_class, client):
     assert resp.status_code == 200
     data = resp.json()
     assert len(data["features"]) == 1
+
+
+def test_rate_limit_on_search(client):
+    catalog_rate_limiter.reset()
+
+    with patch("src.routes.catalog.httpx.AsyncClient") as mock_client_class:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"type": "FeatureCollection", "features": []}
+        mock_instance = AsyncMock()
+        mock_instance.post.return_value = mock_response
+        mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+        mock_instance.__aexit__ = AsyncMock(return_value=False)
+        mock_client_class.return_value = mock_instance
+
+        for i in range(60):
+            resp = client.post("/api/catalog/earth-search/search", json={
+                "collections": ["sentinel-2-l2a"], "limit": 1,
+            })
+            assert resp.status_code == 200, f"Request {i+1} failed"
+
+        resp = client.post("/api/catalog/earth-search/search", json={
+            "collections": ["sentinel-2-l2a"], "limit": 1,
+        })
+        assert resp.status_code == 429

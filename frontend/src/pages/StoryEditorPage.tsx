@@ -30,6 +30,8 @@ import {
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
+import { Check, MapPin } from "@phosphor-icons/react";
+import { transition } from "../lib/interactionStyles";
 
 
 export default function StoryEditorPage() {
@@ -464,10 +466,13 @@ export default function StoryEditorPage() {
                   color="white"
                   shadow="md"
                   onClick={captureView}
-                  transition="background 0.3s"
+                  transition={transition(300)}
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
                   _hover={{ bg: captureFlash ? "green.500" : "blue.600" }}
                 >
-                  {captureFlash ? "✓ Captured!" : "📍 Capture this view"}
+                  {captureFlash ? <><Check size={14} /> Captured!</> : <><MapPin size={14} /> Capture this view</>}
                 </Button>
               </UnifiedMap>
             </Box>

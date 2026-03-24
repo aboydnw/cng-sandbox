@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { FileUploader } from "./FileUploader";
 import { ProgressTracker } from "./ProgressTracker";
 import { VariablePicker } from "./VariablePicker";
@@ -66,7 +67,7 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
           Upload a new file
         </Text>
         <Button size="xs" variant="ghost" color="brand.textSecondary" _hover={{ color: "brand.brown" }} onClick={onCancel}>
-          ← Back
+          <Flex align="center" gap={1}><ArrowLeft size={14} /> Back</Flex>
         </Button>
       </Flex>
 

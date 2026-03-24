@@ -1,4 +1,5 @@
 import { Box, Flex, Text, Textarea } from "@chakra-ui/react";
+import { Plus, Sparkle } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
 import type { Dataset } from "../types";
@@ -128,7 +129,7 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
                   _hover={{ color: "blue.600" }}
                   whiteSpace="nowrap"
                 >
-                  + Add
+                  <Flex align="center" gap={1}><Plus size={12} weight="bold" /> Add</Flex>
                 </Text>
               )}
             </Flex>
@@ -207,7 +208,7 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
           onClick={() => setShowAiPrompt(true)}
           _hover={{ color: "blue.500" }}
         >
-          ✨ Draft with AI
+          <Sparkle size={14} /> Draft with AI
         </Text>
       )}
     </Flex>

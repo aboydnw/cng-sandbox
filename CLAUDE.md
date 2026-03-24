@@ -5,16 +5,22 @@ Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefi
 ## Architecture
 
 ```
-Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8000)
-                                → /raster proxy → titiler-pgstac (:80)
-                                → /vector proxy → tipg (:80)
+Local dev:
+  Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8000)
+                                  → /raster proxy → titiler-pgstac (:80)
+                                  → /vector proxy → tipg (:80)
+                                  → /storage proxy → R2
 
-Ingestion API → Cloudflare R2 (S3-compatible object store)
-              → pgSTAC (PostgreSQL + PostGIS + STAC)
-              → STAC API (stac-fastapi-pgstac)
+Production:
+  Browser → sandbox.developmentseed.org → Cloudflare Worker (router)
+    /api/*, /raster/*, /vector/*  → Tunnel → Caddy → Docker services
+    /storage/*                    → R2 (Worker binding)
+    /*                            → Cloudflare Pages (static frontend)
 ```
 
-All services run in Docker. The frontend proxies all API and tiler requests through Vite's dev server, so the browser only talks to port 5185.
+In local dev, all services run in Docker and the frontend proxies all API and tiler requests through Vite's dev server, so the browser only talks to port 5185. In production, the Cloudflare Worker routes requests by path to Pages, Tunnel, or R2.
+
+The Ingestion API writes to Cloudflare R2 and registers data in pgSTAC (PostgreSQL + PostGIS + STAC), which is served by stac-fastapi-pgstac.
 
 ## Local Deployment
 
@@ -51,54 +57,28 @@ docker compose -f docker-compose.yml up -d <service>
 
 Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `ingestion`, `frontend`
 
-## Production Deployment (Hetzner)
+## Production Deployment
 
-The sandbox can be deployed to a public URL with HTTPS and basic auth using the `prod` Docker Compose profile.
+The sandbox is deployed to `sandbox.developmentseed.org` using Cloudflare infrastructure:
 
-### Prerequisites
+- **Cloudflare Pages**: serves the static frontend (built from `frontend/`)
+- **Cloudflare Tunnel**: exposes backend services without open ports on the VM
+- **Cloudflare Worker**: routes requests by path to Pages, Tunnel, or R2
+- **Caddy**: local reverse proxy routing `/api`, `/raster`, `/vector` to Docker containers
 
-1. **DuckDNS subdomain:** Sign up at [duckdns.org](https://www.duckdns.org), create a subdomain, note the token
-2. **Hetzner firewall:** Allow inbound TCP 22, 80, 443 only (block all other ports from external access). Configure in the Hetzner Cloud console (Firewalls section). Also check the OS-level firewall: `sudo ufw status` — if active, ensure ports 80 and 443 are allowed (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)
-3. **Generate a password hash:**
-   ```bash
-   docker run --rm caddy caddy hash-password --plaintext 'your-password'
-   ```
-
-### Configure
-
-1. Edit `.env` on the VM and fill in the deployment variables:
-   ```
-   SITE_ADDRESS=your-subdomain.duckdns.org
-   DUCKDNS_TOKEN=your-token-here
-   AUTH_USER=demo
-   AUTH_PASSWORD_HASH=$$2a$$14$$... (escape $ as $$ for Docker Compose)
-   ```
-
-2. Edit `scripts/update-duckdns.sh` and set `SUBDOMAIN` and `TOKEN`
-
-3. Add the cron job:
-   ```bash
-   crontab -e
-   # Add: */5 * * * * /path/to/scripts/update-duckdns.sh >> /var/log/duckdns.log 2>&1
-   ```
-
-### Start
+### Start production services
 
 ```bash
 docker compose --profile prod up -d --build
 ```
 
-### Verify
+This starts Caddy (local reverse proxy) and cloudflared (tunnel). The frontend is deployed separately via Cloudflare Pages (auto-deploys on push to main).
 
-- Visit `https://your-subdomain.duckdns.org` — should prompt for username/password
-- After auth, the sandbox should load normally
-- Upload a file to verify CORS works end-to-end
+### Configuration
 
-### Notes
+Set `CLOUDFLARE_TUNNEL_TOKEN` in `.env` on the VM. This is the only deployment-specific env var.
 
-- `docker compose up` (without `--profile prod`) still runs local dev without Caddy
-- Backend service ports (8000, 8081-8083) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
-- The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
+The Worker is deployed via `wrangler deploy` from the project root. See `wrangler.toml` for configuration.
 
 ## CI/CD
 
@@ -110,7 +90,7 @@ All changes go through PRs. Branch protection requires `backend`, `frontend`, `d
 
 Releases are managed by [release-please](https://github.com/googleapis/release-please). It watches `main` for conventional commits (`feat:`, `fix:`, etc.) and maintains an open Release PR with a changelog and version bump.
 
-**To release:** Merge the Release PR. This triggers auto-deploy to the Hetzner VM.
+**To release:** Merge the Release PR. This triggers auto-deploy.
 
 **Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions to deploy without creating a release.
 
@@ -164,8 +144,11 @@ This is the trickiest part of the stack. There are two URL contexts:
 2. **Public (browser-facing)**: Proxy paths that the browser uses. The ingestion API embeds these into dataset responses so the frontend knows where to fetch tiles.
    - `PUBLIC_RASTER_TILER_URL=/raster`
    - `PUBLIC_VECTOR_TILER_URL=/vector`
+   - `PUBLIC_STORAGE_URL=/storage`
 
-The frontend's Vite dev server proxies `/api` → ingestion, `/raster` → titiler, `/vector` → tipg. This is configured via server-side env vars (NOT `VITE_` prefixed):
+In local dev, the Vite dev server proxies these paths to the appropriate services. In production, the Cloudflare Worker routes them — `/storage/*` goes directly to R2 via a Worker binding, while the rest go through the Tunnel to Caddy.
+
+The frontend's Vite dev server proxies `/api` → ingestion, `/raster` → titiler, `/vector` → tipg, `/storage` → R2. This is configured via server-side env vars (NOT `VITE_` prefixed):
 - `API_PROXY_TARGET=http://ingestion:8000`
 - `RASTER_TILER_PROXY_TARGET=http://raster-tiler:80`
 - `VECTOR_TILER_PROXY_TARGET=http://vector-tiler:80`

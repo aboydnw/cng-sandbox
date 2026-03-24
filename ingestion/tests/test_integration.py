@@ -1,4 +1,4 @@
-"""Integration tests — require Docker Compose running (eoAPI + MinIO).
+"""Integration tests — require Docker Compose running (eoAPI + R2).
 
 Run with: cd sandbox && docker compose up -d
 Then: cd ingestion && python -m pytest tests/test_integration.py -v -s

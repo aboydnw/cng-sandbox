@@ -99,7 +99,7 @@ class Dataset(BaseModel):
     color_interpretation: list[str] | None = None  # raster only; from src.colorinterp
     dtype: str | None = None                    # raster only; from src.dtypes[0]
     original_file_size: int | None = None    # bytes, captured before conversion
-    converted_file_size: int | None = None   # bytes, output file in MinIO
+    converted_file_size: int | None = None   # bytes, output file in S3
     geoparquet_file_size: int | None = None  # bytes, GeoParquet before PMTiles conversion
     feature_count: int | None = None         # vector only; None for raster
     geometry_types: list[str] | None = None  # frequency-sorted; None for raster

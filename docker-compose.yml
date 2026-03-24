@@ -141,6 +141,7 @@ services:
   frontend:
     build:
       context: frontend
+      target: dev
     restart: unless-stopped
     deploy:
       resources:
@@ -160,6 +161,16 @@ services:
       ingestion:
         condition: service_healthy
 
+  frontend-build:
+    build:
+      context: frontend
+      target: builder
+    profiles:
+      - prod
+    volumes:
+      - frontend_dist:/app/dist
+    command: ["echo", "Build complete"]
+
   caddy:
     build:
       context: caddy
@@ -177,6 +188,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
+      - frontend_dist:/srv/frontend:ro
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
       DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
@@ -184,10 +196,13 @@ services:
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
       R2_PUBLIC_URL: ${R2_PUBLIC_URL}
     depends_on:
-      frontend:
-        condition: service_started
+      frontend-build:
+        condition: service_completed_successfully
+      ingestion:
+        condition: service_healthy
 
 volumes:
   pgdata:
   caddy_data:
   caddy_config:
+  frontend_dist:

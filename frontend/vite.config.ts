@@ -6,6 +6,9 @@ export default defineConfig({
   build: {
     target: "esnext",
   },
+  worker: {
+    format: "es",
+  },
   esbuild: {
     target: "esnext",
   },

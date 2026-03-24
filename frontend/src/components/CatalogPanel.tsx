@@ -4,16 +4,18 @@ import { useCatalog, type StacItem } from "../hooks/useCatalog";
 import { CollectionList } from "./CollectionList";
 import { ItemSearch } from "./ItemSearch";
 import { ItemResults } from "./ItemResults";
+import { ItemPreview } from "./ItemPreview";
 
 interface CatalogPanelProps {
   bbox?: number[];
   onItemSelect?: (item: StacItem) => void;
   onItemHover?: (item: StacItem | null) => void;
+  onTileUrlChange?: (url: string | null) => void;
 }
 
-type Step = "collections" | "search" | "results";
+type Step = "collections" | "search" | "results" | "preview";
 
-export function CatalogPanel({ bbox, onItemSelect, onItemHover }: CatalogPanelProps) {
+export function CatalogPanel({ bbox, onItemSelect, onItemHover, onTileUrlChange }: CatalogPanelProps) {
   const catalog = useCatalog();
 
   useEffect(() => {
@@ -22,11 +24,13 @@ export function CatalogPanel({ bbox, onItemSelect, onItemHover }: CatalogPanelPr
     }
   }, [catalog.providers]);
 
-  const step: Step = catalog.selectedCollection
-    ? catalog.results.length > 0 || catalog.loading
-      ? "results"
-      : "search"
-    : "collections";
+  const step: Step = catalog.selectedItem
+    ? "preview"
+    : catalog.selectedCollection
+      ? catalog.results.length > 0 || catalog.loading
+        ? "results"
+        : "search"
+      : "collections";
 
   if (catalog.error) {
     return (
@@ -107,6 +111,17 @@ export function CatalogPanel({ bbox, onItemSelect, onItemHover }: CatalogPanelPr
             />
           </Box>
         </>
+      )}
+
+      {step === "preview" && catalog.selectedItem && (
+        <ItemPreview
+          item={catalog.selectedItem}
+          onTileUrlChange={(url) => onTileUrlChange?.(url)}
+          onClose={() => {
+            catalog.selectItem(null);
+            onTileUrlChange?.(null);
+          }}
+        />
       )}
     </Box>
   );

@@ -50,6 +50,7 @@ export default function MapPage() {
   const [basemap, setBasemap] = useState("streets");
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [sidebarTab, setSidebarTab] = useState<"dataset" | "catalog">("dataset");
+  const [externalTileUrl, setExternalTileUrl] = useState<string | null>(null);
   const [arrowTable, setArrowTable] = useState<Table | null>(null);
 
   const [opacity, setOpacity] = useState(0.8);
@@ -368,6 +369,7 @@ export default function MapPage() {
               onHover={onHover}
               onClick={onMapClick}
               getTooltip={getTooltip}
+              externalTileUrl={externalTileUrl}
             >
               {showingColormap && renderMode !== "client" && (
                 <Box position="absolute" bottom={3} left={3}>
@@ -430,7 +432,7 @@ export default function MapPage() {
               onDetailsClick={() => setReportCardOpen(true)}
               activeTab={sidebarTab}
               onTabChange={setSidebarTab}
-              catalogContent={<CatalogPanel bbox={viewportBbox} />}
+              catalogContent={<CatalogPanel bbox={viewportBbox} onTileUrlChange={setExternalTileUrl} />}
             >
               {dataset.dataset_type === "raster" && (
                 <RasterSidebarControls

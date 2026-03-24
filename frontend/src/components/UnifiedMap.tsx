@@ -4,6 +4,8 @@ import DeckGL from "@deck.gl/react";
 import { MapView, FlyToInterpolator } from "@deck.gl/core";
 import Map from "react-map-gl/maplibre";
 import type { Layer } from "@deck.gl/core";
+import { TileLayer } from "@deck.gl/geo-layers";
+import { BitmapLayer, GeoJsonLayer } from "@deck.gl/layers";
 import type { CameraState } from "../lib/layers/types";
 import { BASEMAPS, BasemapPicker } from "./MapShell";
 
@@ -20,6 +22,8 @@ interface UnifiedMapProps {
   transitionDuration?: number;
   transitionInterpolator?: FlyToInterpolator;
   interactive?: boolean;
+  externalTileUrl?: string | null;
+  footprintGeometry?: GeoJSON.Geometry | null;
 }
 
 export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
@@ -36,6 +40,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     transitionDuration,
     transitionInterpolator,
     interactive = true,
+    externalTileUrl,
+    footprintGeometry,
   },
   ref,
 ) {
@@ -52,6 +58,53 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     [onCameraChange],
   );
 
+  const externalLayers = useMemo(() => {
+    const extra: Layer[] = [];
+    if (externalTileUrl) {
+      extra.push(
+        new TileLayer({
+          id: "external-tile-layer",
+          data: externalTileUrl,
+          minZoom: 0,
+          maxZoom: 22,
+          tileSize: 256,
+          renderSubLayers: (props: any) => {
+            const { boundingBox } = props.tile;
+            return new BitmapLayer(props, {
+              data: undefined,
+              image: props.data,
+              bounds: [boundingBox[0][0], boundingBox[0][1], boundingBox[1][0], boundingBox[1][1]],
+            });
+          },
+        }),
+      );
+    }
+    if (footprintGeometry) {
+      extra.push(
+        new GeoJsonLayer({
+          id: "footprint-highlight",
+          data: {
+            type: "FeatureCollection",
+            features: [{ type: "Feature", geometry: footprintGeometry, properties: {} }],
+          },
+          getFillColor: [255, 140, 0, 40],
+          getLineColor: [255, 140, 0, 200],
+          getLineWidth: 2,
+          lineWidthMinPixels: 1,
+          stroked: true,
+          filled: true,
+          pickable: false,
+        }),
+      );
+    }
+    return extra;
+  }, [externalTileUrl, footprintGeometry]);
+
+  const allLayers = useMemo(
+    () => [...layers, ...externalLayers],
+    [layers, externalLayers],
+  );
+
   const views = useMemo(() => new MapView({ repeat: true }), []);
 
   const viewState = transitionDuration
@@ -65,7 +118,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         viewState={viewState}
         onViewStateChange={handleViewStateChange}
         controller={interactive ? { dragRotate: true } : false}
-        layers={layers}
+        layers={allLayers}
         views={views}
         onHover={onHover}
         onClick={onClick}

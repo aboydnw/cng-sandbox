@@ -1,4 +1,5 @@
 import { Box, Flex, Text, Slider, Button } from "@chakra-ui/react";
+import { X, Plus } from "@phosphor-icons/react";
 import type { Filter, NumericFilter, CategoricalFilter } from "../hooks/useFilterQuery";
 import type { ColumnStats } from "../hooks/useGeoParquetQuery";
 
@@ -40,8 +41,10 @@ function NumericFilterControl({
           color="gray.400"
           cursor="pointer"
           onClick={onRemove}
+          display="flex"
+          alignItems="center"
         >
-          ×
+          <X size={10} weight="bold" />
         </Text>
       </Flex>
       <Slider.Root
@@ -99,8 +102,10 @@ function CategoricalFilterControl({
           color="gray.400"
           cursor="pointer"
           onClick={onRemove}
+          display="flex"
+          alignItems="center"
         >
-          ×
+          <X size={10} weight="bold" />
         </Text>
       </Flex>
       <Flex wrap="wrap" gap={1}>
@@ -159,9 +164,10 @@ export function FilterControls({
 
       {addableColumns.length > 0 && (
         <Box mt={2}>
-          <Text fontSize="xs" color="gray.500" mb={1}>
-            + Add filter
-          </Text>
+          <Flex align="center" gap={1} mb={1}>
+            <Plus size={12} weight="bold" />
+            <Text fontSize="xs" color="gray.500">Add filter</Text>
+          </Flex>
           <Flex wrap="wrap" gap={1}>
             {addableColumns.slice(0, 10).map((s) => (
               <Button

@@ -50,7 +50,7 @@ export function TemporalControls({
         {isLoading && (
           <Flex align="center" gap={2} mb={2}>
             <Box flex={1} h="3px" bg="#f0ebe5" borderRadius="2px" overflow="hidden">
-              <Box h="100%" bg="brand.orange" borderRadius="2px" w={`${(preloadProgress.current / preloadProgress.total) * 100}%`} transition="width 0.3s" />
+              <Box h="100%" bg="brand.orange" borderRadius="2px" w={`${(preloadProgress.current / preloadProgress.total) * 100}%`} transition="width 0.3s cubic-bezier(0.32, 0.72, 0, 1)" />
             </Box>
             <Text fontSize="11px" color="#888" whiteSpace="nowrap">
               Loading {preloadProgress.current} of {preloadProgress.total}…

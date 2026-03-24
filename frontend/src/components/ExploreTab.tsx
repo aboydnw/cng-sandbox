@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from "react";
-import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
+import { SpinnerGap } from "@phosphor-icons/react";
 import type { Table } from "apache-arrow";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
@@ -63,7 +64,7 @@ export function ExploreTab({ dataset, active, onTableChange }: ExploreTabProps) 
   if (duckdbLoading) {
     return (
       <Flex align="center" justify="center" h="200px" direction="column" gap={3}>
-        <Spinner size="md" color="brand.orange" />
+        <SpinnerGap size={24} color="#CF3F02" style={{ animation: "spin 1s linear infinite" }} />
         <Text fontSize="sm" color="gray.500">Loading DuckDB...</Text>
       </Flex>
     );

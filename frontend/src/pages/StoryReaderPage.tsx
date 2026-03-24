@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Box, Flex, Heading, Spinner, Text } from "@chakra-ui/react";
-import { ArrowLeft } from "@phosphor-icons/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
 import { FlyToInterpolator } from "@deck.gl/core";
@@ -320,7 +320,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <Spinner size="lg" />
+        <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
       </Flex>
     );
   }

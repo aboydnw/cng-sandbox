@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Box, Button, Flex, Spinner, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
@@ -30,7 +30,7 @@ import {
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
-import { Check, MapPin } from "@phosphor-icons/react";
+import { Check, MapPin, SpinnerGap } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
 
 
@@ -367,7 +367,7 @@ export default function StoryEditorPage() {
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <Spinner size="lg" />
+        <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
       </Flex>
     );
   }

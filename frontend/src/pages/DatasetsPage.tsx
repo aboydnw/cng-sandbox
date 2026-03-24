@@ -5,10 +5,10 @@ import {
   Button,
   Flex,
   Heading,
-  Spinner,
   Table,
   Text,
 } from "@chakra-ui/react";
+import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { config } from "../config";
 import type { Dataset } from "../types";
@@ -96,7 +96,7 @@ export default function DatasetsPage() {
 
         {loading ? (
           <Flex justify="center" py={12}>
-            <Spinner size="lg" />
+            <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
           </Flex>
         ) : datasets.length === 0 ? (
           <Flex

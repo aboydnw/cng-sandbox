@@ -1,6 +1,6 @@
 # CNG Sandbox
 
-A self-hosted geospatial data conversion sandbox. Upload spatial data files and get back browseable tile maps — no cloud accounts or API keys required.
+A self-hosted geospatial data conversion sandbox. Upload spatial data files and get back browseable tile maps.
 
 ## Supported formats
 
@@ -14,10 +14,10 @@ A self-hosted geospatial data conversion sandbox. Upload spatial data files and 
 
 ## Quick start
 
-You need [Docker](https://docs.docker.com/get-docker/) installed.
+You need [Docker](https://docs.docker.com/get-docker/) installed and a [Cloudflare R2](https://developers.cloudflare.com/r2/) bucket with API credentials.
 
 ```bash
-cp .env.example .env          # create local config
+cp .env.example .env          # create local config — fill in R2 credentials
 docker compose up -d --build   # start all services
 ```
 
@@ -45,7 +45,7 @@ Browser ── Frontend (:5185) ──┬── Ingestion API (:8000)
                               ├── Raster tiler  (:8082)
                               └── Vector tiler  (:8083)
 
-Ingestion API ──┬── MinIO (S3-compatible storage)
+Ingestion API ──┬── Cloudflare R2 (S3-compatible storage)
                 ├── PostgreSQL + PostGIS + pgSTAC
                 └── STAC API
 ```
@@ -65,7 +65,7 @@ All traffic goes through the frontend's dev server — the browser only talks to
 Start just the infrastructure (database, object store, tilers):
 
 ```bash
-docker compose up -d database minio minio-init stac-api raster-tiler vector-tiler
+docker compose up -d database stac-api raster-tiler vector-tiler
 ```
 
 Then run the backend and frontend locally for faster iteration:
@@ -92,7 +92,7 @@ cd frontend && npx vitest run       # frontend
 
 ## Configuration
 
-Copy `.env.example` to `.env` before starting. Defaults work for local development.
+Copy `.env.example` to `.env` before starting. R2 credentials must be configured before the stack will work.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -100,8 +100,11 @@ Copy `.env.example` to `.env` before starting. Defaults work for local developme
 | `POSTGRES_PASSWORD` | sandbox_dev_password | Database password |
 | `POSTGRES_DB` | postgis | Database name |
 | `POSTGRES_PORT` | 5439 | Host port for PostgreSQL |
-| `MINIO_ROOT_USER` | minioadmin | S3 storage username |
-| `MINIO_ROOT_PASSWORD` | minioadmin | S3 storage password |
+| `R2_ACCOUNT_ID` | — | Cloudflare account ID |
+| `R2_ACCESS_KEY_ID` | — | R2 API token access key |
+| `R2_SECRET_ACCESS_KEY` | — | R2 API token secret key |
+| `R2_ENDPOINT` | — | R2 S3 API endpoint URL |
+| `R2_PUBLIC_URL` | — | R2 public read URL (r2.dev) |
 | `S3_BUCKET` | sandbox-data | Bucket for converted files |
 
 ## Services
@@ -114,8 +117,6 @@ Copy `.env.example` to `.env` before starting. Defaults work for local developme
 | 8082 | Raster tiler | COG tile serving (titiler) |
 | 8083 | Vector tiler | Vector tile serving (tipg) |
 | 5439 | PostgreSQL | pgSTAC database |
-| 9000 | MinIO | S3-compatible object store |
-| 9001 | MinIO Console | Storage admin UI |
 
 All browser traffic goes through port 5185 — the frontend proxies API and tile requests to backend services.
 

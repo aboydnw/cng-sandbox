@@ -1,0 +1,16 @@
+name = "cng-sandbox-router"
+main = "worker/index.js"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "cng-sandbox"
+
+[vars]
+PAGES_URL = "https://cng-sandbox.pages.dev"
+
+# Uncomment and configure after Cloudflare setup:
+# [env.production]
+# routes = [
+#   { pattern = "sandbox.developmentseed.org", zone_name = "developmentseed.org" }
+# ]

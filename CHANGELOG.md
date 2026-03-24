@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/aboydnw/cng-sandbox/compare/v1.0.0...v1.1.0) (2026-03-24)
+
+
+### Features
+
+* serve production frontend as static files via Caddy ([#10](https://github.com/aboydnw/cng-sandbox/issues/10)) ([8025ac1](https://github.com/aboydnw/cng-sandbox/commit/8025ac1a6fe55e47791a0d7e2c954594d9585a80))
+
+
+### Bug Fixes
+
+* add release-please config and manifest for proper version tracking ([45536e4](https://github.com/aboydnw/cng-sandbox/commit/45536e4035025f0e4a60af3cbbb4f5c3b1b650eb))
+* improve icon+text spacing across all frontend components ([dd34c0c](https://github.com/aboydnw/cng-sandbox/commit/dd34c0c5e5479e7b0b6342aa8e833b2d6ced23a3))
+
 ## 1.0.0 (2026-03-24)
 
 

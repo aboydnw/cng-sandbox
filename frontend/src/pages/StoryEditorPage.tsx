@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Box, Button, Flex, Spinner, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
@@ -30,6 +30,8 @@ import {
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
+import { Check, MapPin, SpinnerGap } from "@phosphor-icons/react";
+import { transition } from "../lib/interactionStyles";
 
 
 export default function StoryEditorPage() {
@@ -58,7 +60,9 @@ export default function StoryEditorPage() {
       try {
         const resp = await fetch(`${config.apiBase}/api/datasets`);
         if (resp.ok) setAllDatasets(await resp.json());
-      } catch {}
+      } catch {
+        // ignore fetch errors
+      }
     }
     fetchAllDatasets();
   }, []);
@@ -365,7 +369,7 @@ export default function StoryEditorPage() {
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <Spinner size="lg" />
+        <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
       </Flex>
     );
   }
@@ -464,10 +468,13 @@ export default function StoryEditorPage() {
                   color="white"
                   shadow="md"
                   onClick={captureView}
-                  transition="background 0.3s"
+                  transition={transition(300)}
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
                   _hover={{ bg: captureFlash ? "green.500" : "blue.600" }}
                 >
-                  {captureFlash ? "✓ Captured!" : "📍 Capture this view"}
+                  {captureFlash ? <><Check size={14} /> Captured!</> : <><MapPin size={14} /> Capture this view</>}
                 </Button>
               </UnifiedMap>
             </Box>

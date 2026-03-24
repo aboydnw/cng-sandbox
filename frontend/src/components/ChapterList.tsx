@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
+import { Plus, X } from "@phosphor-icons/react";
 import type { Chapter } from "../lib/story";
 
 interface ChapterListProps {
@@ -125,7 +126,7 @@ export function ChapterList({
                       setConfirmDeleteId(chapter.id);
                     }}
                   >
-                    ×
+                    <X size={12} weight="bold" />
                   </Text>
                 )
               )}
@@ -149,7 +150,7 @@ export function ChapterList({
           onClick={onAdd}
           _hover={{ borderColor: "blue.300", color: "blue.500" }}
         >
-          + Add chapter
+          <Flex align="center" gap={1} justify="center"><Plus size={12} weight="bold" /> Add chapter</Flex>
         </Box>
       </Box>
     </Flex>

@@ -1,4 +1,5 @@
-import { Box, Button, Flex, Text, Spinner } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Check, SpinnerGap, X } from "@phosphor-icons/react";
 import type { StageInfo } from "../types";
 
 interface ProgressTrackerProps {
@@ -24,7 +25,7 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
         borderRadius="full"
         flexShrink={0}
       >
-        <Text color="white" fontSize="14px">✓</Text>
+        <Check size={14} weight="bold" color="white" />
       </Flex>
     );
   }
@@ -32,7 +33,7 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
   if (status === "active") {
     return (
       <Flex align="center" justify="center" w={size} h={size} flexShrink={0}>
-        <Spinner size="sm" color="brand.orange" />
+        <SpinnerGap size={16} color="var(--chakra-colors-brand-orange)" style={{ animation: "spin 1s linear infinite" }} />
       </Flex>
     );
   }
@@ -48,7 +49,7 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
         borderRadius="full"
         flexShrink={0}
       >
-        <Text color="white" fontSize="14px">✕</Text>
+        <X size={14} weight="bold" color="white" />
       </Flex>
     );
   }

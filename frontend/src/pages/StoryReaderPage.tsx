@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Box, Flex, Heading, Spinner, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
 import { FlyToInterpolator } from "@deck.gl/core";
@@ -180,7 +181,7 @@ function ScrollytellingBlock({
             pt={i === 0 ? 12 : 4}
             pb="80vh"
             opacity={activeIndex === i ? 1 : 0.3}
-            transition="opacity 0.4s ease"
+            transition="opacity 400ms cubic-bezier(0.32, 0.72, 0, 1)"
           >
             <Box
               bg="white"
@@ -207,6 +208,7 @@ function ScrollytellingBlock({
                 fontSize="sm"
                 color="gray.700"
                 lineHeight="1.7"
+                maxW="65ch"
                 css={{
                   "& p": { marginBottom: "1em" },
                   "& h1, & h2, & h3": {
@@ -319,7 +321,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <Spinner size="lg" />
+        <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
       </Flex>
     );
   }
@@ -339,7 +341,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         </Text>
         <Link to="/">
           <Text color="brand.orange" fontWeight={600}>
-            ← Back to sandbox
+            <Flex align="center" gap={1}><ArrowLeft size={14} /> Back to sandbox</Flex>
           </Text>
         </Link>
       </Flex>

@@ -6,22 +6,23 @@ freeze SSE streams and health checks during processing).
 """
 
 import asyncio
-import json
 import logging
 import os
 import tempfile
 import uuid
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
-
 import httpx
 
 from src.config import get_settings
-from src.models import Dataset, Job, JobStatus, FormatPair, DatasetType, ValidationCheck
+from src.models import (
+    Dataset, DatasetType, FormatPair, Job, JobStatus, ValidationCheck,
+)
 from src.services.detector import detect_format, validate_magic_bytes
 from src.services.storage import StorageService
 from src.services import stac_ingest, vector_ingest, pmtiles_ingest
+
+logger = logging.getLogger(__name__)
 
 
 def validate_geojson_structure(raw_bytes: bytes) -> None:
@@ -159,7 +160,6 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
     This function is called from a BackgroundTask. It catches all exceptions
     and sets job.status = FAILED with an error message rather than crashing.
     """
-    settings = get_settings()
     storage = StorageService()
 
     try:

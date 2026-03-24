@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Flex } from "@chakra-ui/react";
+import { Flex } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
@@ -8,6 +8,7 @@ import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { BugReportModal } from "../components/BugReportModal";
+import { FolderOpen, GlobeHemisphereWest } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { formatBytes } from "../utils/format";
 
@@ -96,7 +97,7 @@ export default function UploadPage() {
       >
         {/* Left card: Convert a file */}
         <PathCard
-          icon="📁"
+          icon={<FolderOpen size={36} />}
           title="Convert a file"
           description="Upload a geospatial file and we'll convert it to a shareable web map"
           ctaLabel="Browse files"
@@ -136,7 +137,7 @@ export default function UploadPage() {
 
         {/* Right card: Build a story */}
         <PathCard
-          icon="📖"
+          icon={<GlobeHemisphereWest size={36} />}
           title="Build a story"
           description="Create a scrollytelling narrative with your data or from our public library"
           ctaLabel="Start building"

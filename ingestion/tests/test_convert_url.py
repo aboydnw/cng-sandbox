@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from contextlib import asynccontextmanager
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,18 +7,22 @@ from src.app import create_app
 from src.config import Settings
 
 
+@asynccontextmanager
+async def _noop_lifespan(app):
+    yield
+
+
 @pytest.fixture
 def client():
     settings = Settings(
         s3_endpoint="http://fake:9000",
         stac_api_url="http://fake:8081",
         cors_origins=["*"],
+        postgres_dsn="sqlite:///:memory:",
     )
-    app = create_app(settings=settings)
-    with patch("src.app.boto3") as mock_boto3:
-        mock_boto3.client.return_value = MagicMock()
-        with TestClient(app) as c:
-            yield c
+    app = create_app(settings=settings, lifespan=_noop_lifespan)
+    with TestClient(app) as c:
+        yield c
 
 
 def test_convert_url_rejects_file_scheme(client):

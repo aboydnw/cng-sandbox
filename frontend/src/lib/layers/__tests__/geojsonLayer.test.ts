@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildGeoJsonLayer, arrowTableToGeoJSON } from "../geojsonLayer";
+import { buildGeoJsonLayer } from "../geojsonLayer";
 
 describe("buildGeoJsonLayer", () => {
   it("returns empty array when geojson is null", () => {

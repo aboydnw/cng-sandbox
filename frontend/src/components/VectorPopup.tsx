@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Box, Text } from "@chakra-ui/react";
+import { X } from "@phosphor-icons/react";
 
 interface PopupInfo {
   x: number;
@@ -64,7 +65,7 @@ export function VectorPopupOverlay({ popup, onDismiss }: VectorPopupOverlayProps
         border="none"
         p={1}
       >
-        ✕
+        <X size={14} />
       </Box>
       {Object.entries(popup.properties).map(([k, v]) => (
         <Box key={k} mb={1}>

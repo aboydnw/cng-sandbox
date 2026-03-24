@@ -52,7 +52,7 @@ export function UploadModal({ open, onClose, onDatasetReady }: UploadModalProps)
   return (
     <DialogRoot open={open} onOpenChange={(e) => !e.open && onClose()} size="lg">
       <DialogBackdrop />
-      <DialogContent>
+      <DialogContent shadow="lg">
         <DialogHeader>
           <DialogTitle>Add a dataset</DialogTitle>
           <DialogCloseTrigger asChild>

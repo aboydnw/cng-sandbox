@@ -5,8 +5,6 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_bounds
 
-from geojson_pydantic import Polygon as GeoJsonPolygon
-
 
 def _create_test_cog(path: str, bounds=(-10.0, -10.0, 10.0, 10.0), crs="EPSG:4326"):
     """Create a minimal 4x4 GeoTIFF for testing."""

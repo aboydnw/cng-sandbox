@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Box, Button, Flex, Spinner, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
@@ -27,7 +28,7 @@ import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
-import { detectCadence, formatTimestepLabel, findGaps } from "../utils/temporal";
+import { detectCadence, formatTimestepLabel } from "../utils/temporal";
 import { config } from "../config";
 import type { Dataset } from "../types";
 import type { Table } from "apache-arrow";
@@ -302,7 +303,7 @@ export default function MapPage() {
       <Box minH="100vh" bg="white">
         <Header />
         <Flex align="center" justify="center" h="calc(100vh - 56px)">
-          <Spinner size="lg" color="brand.orange" />
+          <SpinnerGap size={32} color="#CF3F02" style={{ animation: "spin 1s linear infinite" }} />
         </Flex>
       </Box>
     );

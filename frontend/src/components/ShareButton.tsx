@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Button } from "@chakra-ui/react";
+import { Check, LinkSimple } from "@phosphor-icons/react";
 
 const STYLE = `
 .share-roller {
@@ -16,7 +17,7 @@ const STYLE = `
   align-items: center;
   justify-content: center;
   width: 100%;
-  transition: transform 300ms ease, opacity 250ms ease;
+  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1), opacity 250ms cubic-bezier(0.32, 0.72, 0, 1);
   white-space: nowrap;
 }
 .share-roller .share-label { transform: translateY(0); opacity: 1; }
@@ -67,8 +68,8 @@ export function ShareButton() {
         px={4}
       >
         <span className="share-roller" data-copied={copied}>
-          <span className="share-label">🔗 Share</span>
-          <span className="copied-label">✓ Copied</span>
+          <span className="share-label"><LinkSimple size={14} weight="bold" /> Share</span>
+          <span className="copied-label"><Check size={14} weight="bold" /> Copied</span>
         </span>
       </Button>
     </>

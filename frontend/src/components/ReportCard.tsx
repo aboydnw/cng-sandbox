@@ -1,4 +1,5 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
+import { X } from "@phosphor-icons/react";
 import type { Dataset } from "../types";
 import { getTechCards } from "../lib/techDescriptions";
 import { TechCard } from "./TechCard";
@@ -106,8 +107,9 @@ export function ReportCard({ dataset, isOpen, onClose, renderMode }: ReportCardP
             fontSize="20px" color="brand.textSecondary" cursor="pointer" lineHeight="1"
             onClick={onClose} aria-label="Close report card"
             _hover={{ color: "brand.brown" }}
+            display="flex" alignItems="center"
           >
-            ✕
+            <X size={14} />
           </Text>
         </Flex>
 

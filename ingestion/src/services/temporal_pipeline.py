@@ -1,14 +1,10 @@
 """Pipeline orchestrator for temporal (multi-file) raster uploads."""
 
 import asyncio
-import json
 import logging
 import os
 import tempfile
 
-logger = logging.getLogger(__name__)
-
-from src.config import get_settings
 from src.models import (
     Dataset, DatasetType, FormatPair, Job, JobStatus, Timestep, ValidationCheck,
 )
@@ -21,6 +17,8 @@ from src.services.pipeline import (
     _import_and_convert, _import_and_validate, _extract_bounds,
     _extract_band_metadata, _extract_zoom_range_raster, get_credits,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def run_temporal_pipeline(
@@ -35,7 +33,6 @@ async def run_temporal_pipeline(
     validation, computes global stats, and ingests as a temporal STAC
     collection. Updates job status in-place.
     """
-    settings = get_settings()
     storage = StorageService()
     uploaded_keys: list[str] = []
 

@@ -32,6 +32,7 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     stac_collection_id: null,
     pg_table: null,
     parquet_url: null,
+    cog_url: null,
     validation_results: [],
     credits: [
       { tool: "GeoPandas", role: "Converted", url: "https://github.com/geopandas/geopandas" },

@@ -9,7 +9,6 @@ def _mock_cog_meta(crs="EPSG:4326", width=1000, height=1000, bands=1, bounds=(0,
 
 
 def test_compatible_files_pass(monkeypatch):
-    call_count = 0
     def fake_read(path):
         return _mock_cog_meta()
     monkeypatch.setattr(temporal_validation, "_read_cog_metadata", fake_read)

@@ -100,6 +100,31 @@ docker compose --profile prod up -d --build
 - Backend service ports (8000, 8081-8083, 9000-9001) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 
+## CI/CD
+
+### Pull Requests
+
+All changes go through PRs. Branch protection requires `backend`, `frontend`, and `docker-build` CI jobs to pass before merge.
+
+### Releases
+
+Releases are managed by [release-please](https://github.com/googleapis/release-please). It watches `main` for conventional commits (`feat:`, `fix:`, etc.) and maintains an open Release PR with a changelog and version bump.
+
+**To release:** Merge the Release PR. This triggers auto-deploy to the Hetzner VM.
+
+**Version:** Tracked in `version.txt` (managed by release-please, don't edit manually).
+
+### Conventional Commits
+
+All commits to `main` must use conventional prefixes:
+
+| Prefix | Meaning | Version bump |
+|--------|---------|-------------|
+| `feat:` | New feature | minor (0.1.0 → 0.2.0) |
+| `fix:` | Bug fix | patch (0.1.0 → 0.1.1) |
+| `feat!:` or `fix!:` | Breaking change | major (0.1.0 → 1.0.0) |
+| `chore:`, `docs:`, `refactor:` | Maintenance | no bump (appears in changelog) |
+
 ## Services and Ports
 
 | Port | Service | Image |

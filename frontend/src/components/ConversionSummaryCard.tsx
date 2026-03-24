@@ -1,6 +1,8 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
+import { ArrowRight } from "@phosphor-icons/react";
 import type { Dataset } from "../types";
 import { formatBytes } from "../utils/format";
+import { transition, cardHover, cardActive, focusRing } from "../lib/interactionStyles";
 
 interface ConversionSummaryCardProps {
   dataset: Dataset;
@@ -30,8 +32,10 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
       p={4}
       cursor="pointer"
       onClick={onDetailsClick}
-      transition="all 200ms ease-out"
-      _hover={{ borderColor: "brand.orange", shadow: "md" }}
+      transition={transition(200)}
+      _hover={{ ...cardHover, borderColor: "brand.orange" }}
+      _active={cardActive}
+      _focusVisible={focusRing}
     >
       <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" fontWeight={600} mb={2}>
         Conversion summary
@@ -71,9 +75,10 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
       </Flex>
 
       {/* CTA at bottom */}
-      <Text fontSize="12px" color="brand.orange" fontWeight={600}>
-        Details →
-      </Text>
+      <Flex align="center" gap={1}>
+        <Text fontSize="12px" color="brand.orange" fontWeight={600}>Details</Text>
+        <ArrowRight size={12} weight="bold" color="var(--chakra-colors-brand-orange)" />
+      </Flex>
     </Box>
   );
 }

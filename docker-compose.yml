@@ -116,10 +116,11 @@ services:
       STAC_API_URL: http://stac-api:8080
       RASTER_TILER_URL: http://raster-tiler:80
       VECTOR_TILER_URL: http://vector-tiler:80
-      PUBLIC_RASTER_TILER_URL: /raster
-      PUBLIC_VECTOR_TILER_URL: /vector
+      PUBLIC_RASTER_TILER_URL: ${PUBLIC_RASTER_TILER_URL:-/raster}
+      PUBLIC_VECTOR_TILER_URL: ${PUBLIC_VECTOR_TILER_URL:-/vector}
+      PUBLIC_STORAGE_URL: ${PUBLIC_STORAGE_URL:-/storage}
       POSTGRES_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
-      CORS_ORIGINS: '["http://localhost:5185", "https://${SITE_ADDRESS:-localhost}"]'
+      CORS_ORIGINS: '["http://localhost:5185", "${VERCEL_URL:-http://localhost:5185}"]'
       CHECK_DISK_FREE_SPACE: "FALSE"
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_REPO: ${GITHUB_REPO:-}
@@ -160,19 +161,8 @@ services:
       ingestion:
         condition: service_healthy
 
-  frontend-build:
-    build:
-      context: frontend
-      target: builder
-    profiles:
-      - prod
-    volumes:
-      - frontend_dist:/app/dist
-    command: ["echo", "Build complete"]
-
   caddy:
-    build:
-      context: caddy
+    image: caddy:2-alpine
     restart: unless-stopped
     profiles:
       - prod
@@ -180,28 +170,24 @@ services:
       resources:
         limits:
           memory: 128M
-    ports:
-      - "443:443"
-      - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-      - frontend_dist:/srv/frontend:ro
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
-      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
-      AUTH_USER: ${AUTH_USER:-demo}
-      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
-      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+      VERCEL_URL: ${VERCEL_URL:-http://localhost:5185}
     depends_on:
-      frontend-build:
-        condition: service_completed_successfully
       ingestion:
         condition: service_healthy
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles:
+      - prod
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - caddy
+
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
-  frontend_dist:

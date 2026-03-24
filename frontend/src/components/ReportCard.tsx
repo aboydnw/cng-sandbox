@@ -12,6 +12,7 @@ interface ReportCardProps {
 }
 
 export function getTileUrlPrefix(tileUrl: string): string {
+  if (tileUrl.endsWith(".pmtiles")) return tileUrl;
   const parts = tileUrl.split("/");
   return "/" + parts[1] + "/";
 }
@@ -27,7 +28,7 @@ function getTransformationSteps(dataset: Dataset): {
   steps: TransformStep[];
   final: string;
 } {
-  const isPmtiles = dataset.tile_url?.startsWith("/pmtiles/");
+  const isPmtiles = dataset.tile_url?.endsWith(".pmtiles");
   switch (dataset.format_pair) {
     case "geotiff-to-cog":
       return {

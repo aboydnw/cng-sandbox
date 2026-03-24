@@ -107,7 +107,7 @@ export function getTechCards(
 
   // Storage — always R2 for raster, PostGIS for vector via tipg
   const isVector = formatPair.includes("geoparquet");
-  const isPmtiles = tileUrl?.startsWith("/pmtiles/");
+  const isPmtiles = tileUrl?.endsWith(".pmtiles");
   if (isVector && !isPmtiles) {
     if (!seen.has("Cataloged" + "PostGIS")) cards.push(TECH_DESCRIPTIONS["PostGIS"]);
   } else {

@@ -16,13 +16,34 @@ export interface MapState {
   basemap: string;
 }
 
-export interface LayerConfig {
+export interface UploadedLayerConfig {
+  source?: "uploaded";
   dataset_id: string;
   colormap: string;
   opacity: number;
   basemap: string;
   band?: number;
   timestep?: number;
+}
+
+export interface ExternalLayerConfig {
+  source: "external";
+  provider: string;
+  collection_id: string;
+  item_id: string;
+  asset_url: string;
+  label: string;
+  colormap: string;
+  opacity: number;
+  basemap: string;
+  bands?: string[];
+  rescale?: [number, number];
+}
+
+export type LayerConfig = UploadedLayerConfig | ExternalLayerConfig;
+
+export function isExternalLayer(lc: LayerConfig): lc is ExternalLayerConfig {
+  return lc.source === "external";
 }
 
 export type ChapterType = "scrollytelling" | "prose" | "map";

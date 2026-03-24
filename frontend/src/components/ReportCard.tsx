@@ -12,6 +12,10 @@ interface ReportCardProps {
 }
 
 export function getTileUrlPrefix(tileUrl: string): string {
+  if (tileUrl.startsWith("http")) {
+    const url = new URL(tileUrl);
+    return url.origin + "/";
+  }
   const parts = tileUrl.split("/");
   return "/" + parts[1] + "/";
 }

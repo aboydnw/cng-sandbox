@@ -143,8 +143,9 @@ describe("ReportCard", () => {
 });
 
 describe("getTileUrlPrefix", () => {
-  it("extracts /pmtiles/ from pmtiles URL", () => {
-    expect(getTileUrlPrefix("/pmtiles/datasets/test-id/test.pmtiles")).toBe("/pmtiles/");
+  it("extracts prefix from full R2 URL", () => {
+    expect(getTileUrlPrefix("https://pub-xxx.r2.dev/datasets/test-id/converted/data.pmtiles"))
+      .toBe("https://pub-xxx.r2.dev/");
   });
 
   it("extracts /raster/ from raster URL", () => {

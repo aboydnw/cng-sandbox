@@ -13,7 +13,9 @@ export function useTileTransferSize(tileUrlPrefix: string): number | null {
   const [bytes, setBytes] = useState<number | null>(null);
 
   useEffect(() => {
-    const prefix = window.location.origin + tileUrlPrefix;
+    const prefix = tileUrlPrefix.startsWith("http")
+      ? tileUrlPrefix
+      : window.location.origin + tileUrlPrefix;
 
     const getTotal = (): number | null => {
       const entries = (performance.getEntriesByType("resource") as PerformanceResourceTiming[])

@@ -69,7 +69,7 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
       <Text fontSize="12px" color="brand.textSecondary" mt={1} mb={3} lineHeight="1.6">
         Add annotations, narrative text, and guided map views to create a shareable data story.
       </Text>
-      <Flex align="center" gap={1}>
+      <Flex align="center" gap={1.5}>
         <Text fontSize="12px" color="brand.orange" fontWeight={600}>Create story</Text>
         <ArrowRight size={12} weight="bold" color="var(--chakra-colors-brand-orange)" />
       </Flex>

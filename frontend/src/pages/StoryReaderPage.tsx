@@ -341,7 +341,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         </Text>
         <Link to="/">
           <Text color="brand.orange" fontWeight={600}>
-            <Flex align="center" gap={1}><ArrowLeft size={14} /> Back to sandbox</Flex>
+            <Flex align="center" gap={1.5}><ArrowLeft size={14} /> Back to sandbox</Flex>
           </Text>
         </Link>
       </Flex>

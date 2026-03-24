@@ -16,6 +16,7 @@ const STYLE = `
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   width: 100%;
   transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1), opacity 250ms cubic-bezier(0.32, 0.72, 0, 1);
   white-space: nowrap;

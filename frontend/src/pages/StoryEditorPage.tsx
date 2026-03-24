@@ -471,7 +471,7 @@ export default function StoryEditorPage() {
                   transition={transition(300)}
                   display="flex"
                   alignItems="center"
-                  gap={1}
+                  gap={1.5}
                   _hover={{ bg: captureFlash ? "green.500" : "blue.600" }}
                 >
                   {captureFlash ? <><Check size={14} /> Captured!</> : <><MapPin size={14} /> Capture this view</>}

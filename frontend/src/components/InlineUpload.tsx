@@ -67,7 +67,7 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
           Upload a new file
         </Text>
         <Button size="xs" variant="ghost" color="brand.textSecondary" _hover={{ color: "brand.brown" }} onClick={onCancel}>
-          <Flex align="center" gap={1}><ArrowLeft size={14} /> Back</Flex>
+          <Flex align="center" gap={1.5}><ArrowLeft size={14} /> Back</Flex>
         </Button>
       </Flex>
 

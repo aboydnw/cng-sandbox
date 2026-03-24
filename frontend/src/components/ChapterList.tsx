@@ -150,7 +150,7 @@ export function ChapterList({
           onClick={onAdd}
           _hover={{ borderColor: "blue.300", color: "blue.500" }}
         >
-          <Flex align="center" gap={1} justify="center"><Plus size={12} weight="bold" /> Add chapter</Flex>
+          <Flex align="center" gap={1.5} justify="center"><Plus size={12} weight="bold" /> Add chapter</Flex>
         </Box>
       </Box>
     </Flex>

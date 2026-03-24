@@ -98,7 +98,7 @@ export function PathCard({
           <Text fontSize="13px" color="brand.textSecondary" mb={6} maxW="240px" lineHeight={1.5}>
             {description}
           </Text>
-          <Flex align="center" gap={1} color="brand.orange" fontSize="14px" fontWeight={600}>
+          <Flex align="center" gap={1.5} color="brand.orange" fontSize="14px" fontWeight={600}>
             {ctaLabel} <ArrowRight size={14} weight="bold" />
           </Flex>
         </Flex>

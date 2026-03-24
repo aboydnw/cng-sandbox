@@ -164,7 +164,7 @@ export function FilterControls({
 
       {addableColumns.length > 0 && (
         <Box mt={2}>
-          <Flex align="center" gap={1} mb={1}>
+          <Flex align="center" gap={1.5} mb={1}>
             <Plus size={12} weight="bold" />
             <Text fontSize="xs" color="gray.500">Add filter</Text>
           </Flex>

@@ -129,7 +129,7 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
                   _hover={{ color: "blue.600" }}
                   whiteSpace="nowrap"
                 >
-                  <Flex align="center" gap={1}><Plus size={12} weight="bold" /> Add</Flex>
+                  <Flex align="center" gap={1.5}><Plus size={12} weight="bold" /> Add</Flex>
                 </Text>
               )}
             </Flex>
@@ -208,7 +208,7 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
           onClick={() => setShowAiPrompt(true)}
           _hover={{ color: "blue.500" }}
         >
-          <Sparkle size={14} /> Draft with AI
+          <Flex align="center" gap={1.5} display="inline-flex"><Sparkle size={14} /> Draft with AI</Flex>
         </Text>
       )}
     </Flex>

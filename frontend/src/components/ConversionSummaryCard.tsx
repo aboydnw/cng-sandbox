@@ -75,7 +75,7 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
       </Flex>
 
       {/* CTA at bottom */}
-      <Flex align="center" gap={1}>
+      <Flex align="center" gap={1.5}>
         <Text fontSize="12px" color="brand.orange" fontWeight={600}>Details</Text>
         <ArrowRight size={12} weight="bold" color="var(--chakra-colors-brand-orange)" />
       </Flex>

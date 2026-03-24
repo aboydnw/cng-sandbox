@@ -33,7 +33,7 @@ export function TechCard({ tech }: TechCardProps) {
         {tech.description}
       </Text>
       <Link href={tech.url} target="_blank" rel="noopener noreferrer" fontSize="12px" color="brand.orange" fontWeight={600} mt={2} display="block">
-        <Flex align="center" gap={1} display="inline-flex">
+        <Flex align="center" gap={1.5} display="inline-flex">
           View repo
           <ArrowSquareOut size={12} />
         </Flex>

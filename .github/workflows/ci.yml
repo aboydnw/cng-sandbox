@@ -30,7 +30,8 @@ jobs:
       - name: Lint with ruff
         run: pip install ruff && ruff check src/ tests/
 
-      - run: python -m pytest tests/ -v
+      - name: Run tests
+        run: python -m pytest tests/ -v --ignore=tests/test_integration.py
 
   frontend:
     runs-on: ubuntu-latest

@@ -51,6 +51,7 @@ async def _default_lifespan(app: FastAPI):
                 raise
             time.sleep(2)
     app.state.s3 = s3
+    Base.metadata.create_all(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
     yield
     cleanup_task.cancel()
@@ -70,7 +71,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app = FastAPI(title="CNG Sandbox Ingestion API", lifespan=lifespan)
 
     db_engine = sa_create_engine(settings.postgres_dsn)
-    Base.metadata.create_all(db_engine)
+    app.state.db_engine = db_engine
     app.state.db_session_factory = sessionmaker(bind=db_engine)
     app.state.settings = settings
 

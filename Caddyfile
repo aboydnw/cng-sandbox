@@ -3,22 +3,28 @@
 		dns duckdns {$DUCKDNS_TOKEN}
 	}
 
-	# Data-serving paths: proxy directly to MinIO, bypassing Vite.
+	# Data-serving paths: proxy to R2 public URL.
 	# No auth: programmatic clients (PMTiles, DuckDB WASM) can't
 	# send Basic Auth credentials with range requests.
 	handle /storage/* {
-		uri replace /storage /sandbox-data 1
-		reverse_proxy minio:9000 {
+		uri strip_prefix /storage
+		reverse_proxy {$R2_PUBLIC_URL} {
 			header_up Host {upstream_hostport}
 			header_up -Authorization
+			transport http {
+				tls
+			}
 		}
 	}
 
 	handle /pmtiles/* {
-		uri replace /pmtiles /sandbox-data 1
-		reverse_proxy minio:9000 {
+		uri strip_prefix /pmtiles
+		reverse_proxy {$R2_PUBLIC_URL} {
 			header_up Host {upstream_hostport}
 			header_up -Authorization
+			transport http {
+				tls
+			}
 		}
 	}
 

@@ -6,11 +6,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # S3 / MinIO
+    # S3 / Cloudflare R2
     s3_bucket: str = "sandbox-data"
-    s3_endpoint: str = "http://localhost:9000"
-    aws_access_key_id: str = "minioadmin"
-    aws_secret_access_key: str = "minioadmin"
+    s3_endpoint: str = ""
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
     s3_region: str = "us-east-1"
 
     # eoAPI URLs (internal, for server-to-server communication)

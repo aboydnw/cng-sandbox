@@ -77,12 +77,16 @@ export interface StoryIndexEntry {
   created_at: string;
 }
 
-export const DEFAULT_LAYER_CONFIG: LayerConfig = {
+export const DEFAULT_LAYER_CONFIG: UploadedLayerConfig = {
   dataset_id: "",
   colormap: "viridis",
   opacity: 0.8,
   basemap: "streets",
 };
+
+export function getDatasetId(lc: LayerConfig): string | undefined {
+  return isExternalLayer(lc) ? undefined : lc.dataset_id;
+}
 
 export const DEFAULT_MAP_STATE: MapState = {
   center: [0, 0],

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { migrateStory } from "../migration";
+import { getDatasetId } from "../types";
 import type { Story } from "../types";
 
 function makeOldStory(): any {
@@ -36,8 +37,8 @@ describe("migrateStory", () => {
   it("backfills layer_config.dataset_id from story.dataset_id", () => {
     const old = makeOldStory();
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].layer_config.dataset_id).toBe("ds-abc");
-    expect(migrated.chapters[1].layer_config.dataset_id).toBe("ds-abc");
+    expect(getDatasetId(migrated.chapters[0].layer_config)).toBe("ds-abc");
+    expect(getDatasetId(migrated.chapters[1].layer_config)).toBe("ds-abc");
   });
 
   it("adds dataset_ids array if missing", () => {
@@ -70,8 +71,8 @@ describe("migrateStory", () => {
       published: false,
     };
     const result = migrateStory(modern);
-    expect(result.chapters[0].layer_config.dataset_id).toBe("ds-1");
-    expect(result.chapters[1].layer_config.dataset_id).toBe("ds-2");
+    expect(getDatasetId(result.chapters[0].layer_config)).toBe("ds-1");
+    expect(getDatasetId(result.chapters[1].layer_config)).toBe("ds-2");
     expect(result.dataset_ids).toEqual(["ds-1", "ds-2"]);
   });
 

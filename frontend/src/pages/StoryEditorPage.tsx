@@ -27,6 +27,8 @@ import {
   getStoryFromServer,
   saveStoryToServer,
   migrateStory,
+  isExternalLayer,
+  getDatasetId,
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
@@ -167,10 +169,9 @@ export default function StoryEditorPage() {
         prev.some((d) => d.id === ds.id) ? prev : [...prev, ds],
       );
       if (activeChapterId) {
-        updateChapterLayerConfig({
-          ...(activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG),
-          dataset_id: datasetId,
-        });
+        const currentLc = activeChapter?.layer_config;
+        const baseLc = currentLc && !isExternalLayer(currentLc) ? currentLc : DEFAULT_LAYER_CONFIG;
+        updateChapterLayerConfig({ ...baseLc, dataset_id: datasetId });
       }
     } catch (e) {
       console.error("Failed to fetch new dataset", e);
@@ -199,8 +200,9 @@ export default function StoryEditorPage() {
   }
 
   const activeChapter = story?.chapters.find((c) => c.id === activeChapterId);
-  const activeDataset = activeChapter
-    ? datasetMap.get(activeChapter.layer_config.dataset_id) ?? dataset
+  const activeDatasetId = activeChapter ? getDatasetId(activeChapter.layer_config) : undefined;
+  const activeDataset = activeDatasetId
+    ? datasetMap.get(activeDatasetId) ?? dataset
     : dataset;
 
   // Select chapter: fly map to its saved state
@@ -247,7 +249,7 @@ export default function StoryEditorPage() {
   // Add chapter
   function addChapter() {
     const maxOrder = Math.max(...(story?.chapters.map((c) => c.order) ?? [0]));
-    const inheritedDatasetId = activeChapter?.layer_config.dataset_id ?? story?.dataset_id ?? "";
+    const inheritedDatasetId = (activeChapter ? getDatasetId(activeChapter.layer_config) : undefined) ?? story?.dataset_id ?? "";
     const newCh = createChapter({
       order: maxOrder + 1,
       title: `Chapter ${(story?.chapters.length ?? 0) + 1}`,

@@ -9,13 +9,16 @@ import { UnifiedMap } from "../components/UnifiedMap";
 import { ProseChapter } from "../components/ProseChapter";
 import { MapChapter } from "../components/MapChapter";
 
+import { TileLayer } from "@deck.gl/geo-layers";
+import { BitmapLayer } from "@deck.gl/layers";
 import {
   type CameraState,
   cameraFromBounds,
   buildRasterTileLayers,
   buildVectorLayer,
 } from "../lib/layers";
-import { getStoryFromServer, DEFAULT_LAYER_CONFIG, migrateStory } from "../lib/story";
+import { getStoryFromServer, DEFAULT_LAYER_CONFIG, migrateStory, isExternalLayer, getDatasetId } from "../lib/story";
+import { buildCogTileUrl } from "../hooks/useExternalTiles";
 import { BugReportLink } from "../components/BugReportLink";
 import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
@@ -51,7 +54,33 @@ function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
 }
 
 function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset | null>) {
-  const ds = datasetMap.get(chapter.layer_config.dataset_id);
+  if (isExternalLayer(chapter.layer_config)) {
+    const lc = chapter.layer_config;
+    const tileUrl = buildCogTileUrl({
+      assetUrl: lc.asset_url,
+      colormap: lc.colormap,
+      bands: lc.bands,
+      rescale: lc.rescale,
+    });
+    return [
+      new TileLayer({
+        id: `external-${chapter.id}`,
+        data: tileUrl,
+        minZoom: 0,
+        maxZoom: 19,
+        tileSize: 256,
+        renderSubLayers: (props: any) =>
+          new BitmapLayer(props, {
+            data: undefined,
+            image: props.data,
+            bounds: props.tile.bbox as [number, number, number, number],
+          }),
+      }),
+    ];
+  }
+
+  const dsId = getDatasetId(chapter.layer_config);
+  const ds = dsId ? datasetMap.get(dsId) : undefined;
   if (!ds) return [];
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
@@ -106,7 +135,8 @@ function ScrollytellingBlock({
   useEffect(() => {
     if (datasetMap.size === 0) return;
     const firstChapter = chapters[0];
-    const ds = datasetMap.get(firstChapter.layer_config.dataset_id);
+    const dsId = getDatasetId(firstChapter.layer_config);
+    const ds = dsId ? datasetMap.get(dsId) : undefined;
     if (ds?.bounds && firstChapter.map_state.center[0] === 0 && firstChapter.map_state.center[1] === 0) {
       setCamera(cameraFromBounds(ds.bounds));
     }
@@ -160,8 +190,11 @@ function ScrollytellingBlock({
     setTransitionDuration(undefined);
   }, []);
 
-  const activeDataset = chapters[activeIndex]
-    ? datasetMap.get(chapters[activeIndex].layer_config.dataset_id)
+  const activeDatasetId = chapters[activeIndex]
+    ? getDatasetId(chapters[activeIndex].layer_config)
+    : undefined;
+  const activeDataset = activeDatasetId
+    ? datasetMap.get(activeDatasetId)
     : undefined;
 
   return (
@@ -386,7 +419,8 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
           }
 
           if (block.type === "map") {
-            const ds = datasetMap.get(block.chapter.layer_config.dataset_id) ?? null;
+            const mapDsId = getDatasetId(block.chapter.layer_config);
+            const ds = mapDsId ? datasetMap.get(mapDsId) ?? null : null;
             return (
               <MapChapter
                 key={block.chapter.id}

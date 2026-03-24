@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { ArrowRight } from "@phosphor-icons/react";
 import { transition, cardHover, cardActive, focusRing } from "../lib/interactionStyles";
-import { createStory, createChapter, DEFAULT_LAYER_CONFIG } from "../lib/story/types";
+import { createStory, createChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { createStoryOnServer } from "../lib/story/api";
 import type { Dataset } from "../types";
 import { cameraFromBounds } from "../lib/layers";

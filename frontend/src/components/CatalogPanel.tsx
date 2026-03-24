@@ -1,0 +1,113 @@
+import { useEffect } from "react";
+import { Box, Text, Spinner } from "@chakra-ui/react";
+import { useCatalog, type StacItem } from "../hooks/useCatalog";
+import { CollectionList } from "./CollectionList";
+import { ItemSearch } from "./ItemSearch";
+import { ItemResults } from "./ItemResults";
+
+interface CatalogPanelProps {
+  bbox?: number[];
+  onItemSelect?: (item: StacItem) => void;
+  onItemHover?: (item: StacItem | null) => void;
+}
+
+type Step = "collections" | "search" | "results";
+
+export function CatalogPanel({ bbox, onItemSelect, onItemHover }: CatalogPanelProps) {
+  const catalog = useCatalog();
+
+  useEffect(() => {
+    if (catalog.providers.length > 0 && !catalog.selectedProvider) {
+      catalog.selectProvider(catalog.providers[0].id);
+    }
+  }, [catalog.providers]);
+
+  const step: Step = catalog.selectedCollection
+    ? catalog.results.length > 0 || catalog.loading
+      ? "results"
+      : "search"
+    : "collections";
+
+  if (catalog.error) {
+    return (
+      <Box p={3}>
+        <Text fontSize="sm" color="red.300">{catalog.error}</Text>
+        <Text
+          fontSize="xs"
+          color="blue.300"
+          cursor="pointer"
+          mt={2}
+          onClick={catalog.reset}
+        >
+          Try again
+        </Text>
+      </Box>
+    );
+  }
+
+  if (!catalog.selectedProvider) {
+    return (
+      <Box display="flex" justifyContent="center" py={4}>
+        <Spinner size="sm" />
+      </Box>
+    );
+  }
+
+  return (
+    <Box p={3}>
+      <Text fontSize="xs" color="whiteAlpha.500" mb={2}>
+        🌐 {catalog.providers.find((p) => p.id === catalog.selectedProvider)?.name}
+      </Text>
+
+      {step === "collections" && (
+        <CollectionList
+          collections={catalog.collections}
+          onSelect={(id) => {
+            catalog.selectCollection(id);
+          }}
+          loading={catalog.loading}
+        />
+      )}
+
+      {step === "search" && catalog.selectedCollection && (
+        <ItemSearch
+          collectionId={catalog.selectedCollection}
+          bbox={bbox}
+          onSearch={catalog.search}
+          loading={catalog.loading}
+          onBack={() => catalog.selectCollection("")}
+        />
+      )}
+
+      {step === "results" && (
+        <>
+          <ItemSearch
+            collectionId={catalog.selectedCollection!}
+            bbox={bbox}
+            onSearch={catalog.search}
+            loading={catalog.loading}
+            onBack={() => {
+              catalog.selectCollection("");
+            }}
+          />
+          <Box mt={3}>
+            <ItemResults
+              items={catalog.results}
+              onSelect={(item) => {
+                catalog.selectItem(item);
+                onItemSelect?.(item);
+              }}
+              onHover={onItemHover}
+              totalMatched={catalog.totalMatched}
+              onLoadMore={catalog.hasMore ? () => catalog.loadMore({
+                collections: [catalog.selectedCollection!],
+                bbox,
+              }) : undefined}
+              loading={catalog.loading}
+            />
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+}

@@ -59,8 +59,8 @@ A thin wrapper script that:
 3. Runs with a 30-minute timeout:
    ```
    timeout 1800 claude -p "$(cat scripts/triage-prompt.md)" \
-     --allowedTools "Edit" "Write" "Read" "Glob" "Grep" \
-       "Bash(gh:*)" "Bash(git:*)" "Bash(npx:*)" "Bash(uv:*)" "Bash(cd:*)"
+     --model opus \
+     --allowedTools "Edit,Write,Read,Glob,Grep,Bash(gh:*),Bash(git:*),Bash(npx:*),Bash(uv:*),Bash(cd:*)"
    ```
 4. Exits with the CLI's exit code
 

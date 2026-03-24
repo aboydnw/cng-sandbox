@@ -35,8 +35,9 @@ echo "$(date -Iseconds) Starting triage run..."
 
 timeout 1800 claude -p "$(cat "$PROMPT_FILE")" \
   --model opus \
-  --append-system-prompt "Do NOT use plan mode. Execute actions directly — do not create plans." \
-  --allowedTools "Edit,Write,Read,Glob,Grep,Bash(gh:*),Bash(git:*),Bash(npx:*),Bash(uv:*),Bash(cd:*)"
+  --permission-mode bypassPermissions \
+  --disable-slash-commands \
+  --append-system-prompt "Do NOT use plan mode or enter plan mode. Execute all actions directly."
 
 EXIT_CODE=$?
 

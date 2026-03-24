@@ -39,16 +39,6 @@ export default defineConfig({
           });
         },
       },
-      "/pmtiles": {
-        target: process.env.STORAGE_PROXY_TARGET || "",
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/pmtiles/, ""),
-      },
-      "/storage": {
-        target: process.env.STORAGE_PROXY_TARGET || "",
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/storage/, ""),
-      },
     },
   },
   resolve: {

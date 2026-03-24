@@ -150,13 +150,12 @@ services:
     ports:
       - "5185:5185"
     environment:
-      VITE_API_BASE: ""
+      VITE_BACKEND_URL: ""
       VITE_RASTER_TILER_URL: ""
       VITE_VECTOR_TILER_URL: ""
       API_PROXY_TARGET: http://ingestion:8000
       RASTER_TILER_PROXY_TARGET: http://raster-tiler:80
       VECTOR_TILER_PROXY_TARGET: http://vector-tiler:80
-      STORAGE_PROXY_TARGET: ${R2_PUBLIC_URL}
     depends_on:
       ingestion:
         condition: service_healthy

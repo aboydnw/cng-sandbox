@@ -8,7 +8,7 @@ export function HomepageHero() {
         <br />
         geospatial stack
       </Text>
-      <Text color="brand.textSecondary" fontSize="15px" mt={3} maxW="65ch">
+      <Text color="brand.textSecondary" fontSize="15px" mt={3} maxW="65ch" mx="auto">
         Choose your starting point
       </Text>
     </Box>

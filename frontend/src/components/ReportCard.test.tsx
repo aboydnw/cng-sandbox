@@ -99,7 +99,7 @@ describe("ReportCard", () => {
       />
     );
     expect(screen.getByText("rio-cogeo")).toBeTruthy();
-    expect(screen.getByText("MinIO (S3-compatible)")).toBeTruthy();
+    expect(screen.getByText("Cloudflare R2")).toBeTruthy();
     expect(screen.getByText("titiler + deck.gl")).toBeTruthy();
   });
 

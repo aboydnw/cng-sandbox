@@ -9,7 +9,7 @@ Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8000)
                                 → /raster proxy → titiler-pgstac (:80)
                                 → /vector proxy → tipg (:80)
 
-Ingestion API → MinIO (S3-compatible object store)
+Ingestion API → Cloudflare R2 (S3-compatible object store)
               → pgSTAC (PostgreSQL + PostGIS + STAC)
               → STAC API (stac-fastapi-pgstac)
 ```
@@ -49,7 +49,7 @@ docker compose -f docker-compose.yml build <service>
 docker compose -f docker-compose.yml up -d <service>
 ```
 
-Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `minio`, `minio-init`, `ingestion`, `frontend`
+Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `ingestion`, `frontend`
 
 ## Production Deployment (Hetzner)
 
@@ -97,7 +97,7 @@ docker compose --profile prod up -d --build
 ### Notes
 
 - `docker compose up` (without `--profile prod`) still runs local dev without Caddy
-- Backend service ports (8000, 8081-8083, 9000-9001) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
+- Backend service ports (8000, 8081-8083) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 
 ## CI/CD
@@ -147,12 +147,10 @@ All commits to `main` must use conventional prefixes:
 | 8082 | Raster tiler | titiler-pgstac 1.7.2 |
 | 8083 | Vector tiler | tipg 1.0.1 |
 | 5439 | PostgreSQL (pgSTAC) | pgstac 0.9.6 |
-| 9000 | MinIO S3 API | minio latest |
-| 9001 | MinIO Console | minio latest |
 
 ## Environment
 
-All env vars are in `.env`. Defaults work out of the box for local development.
+All env vars are in `.env`. R2 credentials (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL`) must be set before starting the stack.
 
 ## Networking: Internal vs Public URLs
 
@@ -215,7 +213,7 @@ cd ingestion && uv run pytest -v
 1. **Upload/fetch** → save raw file
 2. **Scan** → detect file type, validate
 3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG, HDF5→COG
-4. **Store** → COGs to MinIO S3, vectors to PostgreSQL
+4. **Store** → COGs to Cloudflare R2, vectors to PostgreSQL
 5. **Register** → COGs registered in pgSTAC, vectors available via tipg
 6. **Ready** → tile URL returned to frontend
 
@@ -228,7 +226,7 @@ cd ingestion && uv run pytest -v
 ### titiler-pgstac (raster tiler) notes
 
 - Uses GDAL internally. GDAL < 3.11 requires `AWS_S3_ENDPOINT` (hostname:port without protocol) for S3 access, in addition to `AWS_ENDPOINT_URL`.
-- `AWS_VIRTUAL_HOSTING=FALSE` is required for MinIO (path-style access).
+- `AWS_VIRTUAL_HOSTING=FALSE` is required for R2 (path-style access).
 
 ## Skill Feedback Loop
 

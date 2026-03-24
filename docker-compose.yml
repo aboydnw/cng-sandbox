@@ -59,11 +59,11 @@ services:
       POSTGRES_DBNAME: ${POSTGRES_DB}
       POSTGRES_HOST: database
       POSTGRES_PORT: 5432
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      AWS_ENDPOINT_URL: http://minio:9000
-      AWS_S3_ENDPOINT: minio:9000
-      AWS_HTTPS: "NO"
+      AWS_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      AWS_ENDPOINT_URL: ${R2_ENDPOINT}
+      AWS_S3_ENDPOINT: ${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+      AWS_HTTPS: "YES"
       AWS_VIRTUAL_HOSTING: "FALSE"
       GDAL_CACHEMAX: "75%"
       VSI_CACHE: "TRUE"
@@ -97,41 +97,6 @@ services:
       database:
         condition: service_healthy
 
-  minio:
-    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
-      mc mb --ignore-existing local/${S3_BUCKET};
-      mc anonymous set download local/${S3_BUCKET};
-      exit 0;
-      "
-
   ingestion:
     build:
       context: .
@@ -145,9 +110,9 @@ services:
       - "8000:8000"
     environment:
       S3_BUCKET: ${S3_BUCKET}
-      S3_ENDPOINT: http://minio:9000
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_ENDPOINT: ${R2_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
       STAC_API_URL: http://stac-api:8080
       RASTER_TILER_URL: http://raster-tiler:80
       VECTOR_TILER_URL: http://vector-tiler:80
@@ -160,8 +125,6 @@ services:
       GITHUB_REPO: ${GITHUB_REPO:-}
     depends_on:
       database:
-        condition: service_healthy
-      minio:
         condition: service_healthy
       stac-api:
         condition: service_started
@@ -178,6 +141,7 @@ services:
   frontend:
     build:
       context: frontend
+      target: dev
     restart: unless-stopped
     deploy:
       resources:
@@ -192,10 +156,20 @@ services:
       API_PROXY_TARGET: http://ingestion:8000
       RASTER_TILER_PROXY_TARGET: http://raster-tiler:80
       VECTOR_TILER_PROXY_TARGET: http://vector-tiler:80
-      MINIO_PROXY_TARGET: http://minio:9000
+      STORAGE_PROXY_TARGET: ${R2_PUBLIC_URL}
     depends_on:
       ingestion:
         condition: service_healthy
+
+  frontend-build:
+    build:
+      context: frontend
+      target: builder
+    profiles:
+      - prod
+    volumes:
+      - frontend_dist:/app/dist
+    command: ["echo", "Build complete"]
 
   caddy:
     build:
@@ -214,17 +188,21 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
+      - frontend_dist:/srv/frontend:ro
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
       DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
       AUTH_USER: ${AUTH_USER:-demo}
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
     depends_on:
-      frontend:
-        condition: service_started
+      frontend-build:
+        condition: service_completed_successfully
+      ingestion:
+        condition: service_healthy
 
 volumes:
   pgdata:
-  miniodata:
   caddy_data:
   caddy_config:
+  frontend_dist:

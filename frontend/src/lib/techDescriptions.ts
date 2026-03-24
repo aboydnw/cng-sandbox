@@ -36,12 +36,12 @@ const TECH_DESCRIPTIONS: Record<string, TechDescription> = {
       "Generated PMTiles — a single-file archive of pre-computed vector tiles at every zoom level, optimized for HTTP range requests.",
     url: "https://github.com/felt/tippecanoe",
   },
-  MinIO: {
+  R2: {
     role: "Stored",
-    name: "MinIO (S3-compatible)",
+    name: "Cloudflare R2",
     description:
-      "Your converted file is stored in an S3-compatible object store where tilers access it via HTTP range requests — the same protocol used by AWS S3 and Google Cloud Storage.",
-    url: "https://github.com/minio/minio",
+      "Your converted file is stored in Cloudflare R2, an S3-compatible object store with zero egress fees. Tilers access it via HTTP range requests — fetching only the bytes needed for each map tile.",
+    url: "https://developers.cloudflare.com/r2/",
   },
   pgSTAC: {
     role: "Cataloged",
@@ -105,13 +105,13 @@ export function getTechCards(
     }
   }
 
-  // Storage — always MinIO for raster, PostGIS for vector via tipg
+  // Storage — always R2 for raster, PostGIS for vector via tipg
   const isVector = formatPair.includes("geoparquet");
   const isPmtiles = tileUrl?.startsWith("/pmtiles/");
   if (isVector && !isPmtiles) {
     if (!seen.has("Cataloged" + "PostGIS")) cards.push(TECH_DESCRIPTIONS["PostGIS"]);
   } else {
-    if (!seen.has("Stored" + "MinIO (S3-compatible)")) cards.push(TECH_DESCRIPTIONS["MinIO"]);
+    if (!seen.has("Stored" + "Cloudflare R2")) cards.push(TECH_DESCRIPTIONS["R2"]);
     if (!seen.has("Cataloged" + "pgSTAC + STAC API")) cards.push(TECH_DESCRIPTIONS["pgSTAC"]);
   }
 

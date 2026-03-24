@@ -1,4 +1,4 @@
-"""S3/MinIO storage service for raw and converted files."""
+"""S3 storage service for raw and converted files."""
 
 import boto3
 
@@ -11,9 +11,9 @@ class StorageService:
             settings = get_settings()
             s3_client = boto3.client(
                 "s3",
-                endpoint_url=settings.s3_endpoint,
-                aws_access_key_id=settings.aws_access_key_id,
-                aws_secret_access_key=settings.aws_secret_access_key,
+                endpoint_url=settings.s3_endpoint or None,
+                aws_access_key_id=settings.aws_access_key_id or None,
+                aws_secret_access_key=settings.aws_secret_access_key or None,
                 region_name=settings.s3_region,
             )
         self.s3 = s3_client
@@ -32,7 +32,7 @@ class StorageService:
         return key
 
     def upload_pmtiles(self, local_path: str, dataset_id: str) -> str:
-        """Upload a .pmtiles file to MinIO. Returns the storage key."""
+        """Upload a .pmtiles file to S3. Returns the storage key."""
         key = f"datasets/{dataset_id}/converted/data.pmtiles"
         self.s3.upload_file(local_path, self.bucket, key)
         return key

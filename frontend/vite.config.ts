@@ -6,6 +6,9 @@ export default defineConfig({
   build: {
     target: "esnext",
   },
+  worker: {
+    format: "es",
+  },
   esbuild: {
     target: "esnext",
   },
@@ -37,14 +40,14 @@ export default defineConfig({
         },
       },
       "/pmtiles": {
-        target: process.env.MINIO_PROXY_TARGET || "http://localhost:9000",
+        target: process.env.STORAGE_PROXY_TARGET || "",
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/pmtiles/, "/sandbox-data"),
+        rewrite: (path: string) => path.replace(/^\/pmtiles/, ""),
       },
       "/storage": {
-        target: process.env.MINIO_PROXY_TARGET || "http://localhost:9000",
+        target: process.env.STORAGE_PROXY_TARGET || "",
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/storage/, "/sandbox-data"),
+        rewrite: (path: string) => path.replace(/^\/storage/, ""),
       },
     },
   },

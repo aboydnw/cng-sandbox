@@ -106,7 +106,7 @@ def test_ingest_pmtiles_uploads_to_storage(
 
     ingest_pmtiles("abc-123", polygon_parquet, _storage=mock_storage)
 
-    # Verify the file was uploaded to MinIO
+    # Verify the file was uploaded to S3
     obj = mock_storage.s3.get_object(
         Bucket="test-bucket",
         Key="datasets/abc-123/converted/data.pmtiles",

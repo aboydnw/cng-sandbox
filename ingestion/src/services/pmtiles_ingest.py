@@ -1,4 +1,4 @@
-"""Convert GeoParquet to PMTiles and ingest to MinIO for vector tile serving."""
+"""Convert GeoParquet to PMTiles and upload for vector tile serving."""
 
 import os
 import subprocess
@@ -31,7 +31,7 @@ def ingest_pmtiles(
     parquet_path: str,
     _storage: StorageService | None = None,
 ) -> tuple[str, int, int, int]:
-    """Convert GeoParquet to PMTiles and upload to MinIO.
+    """Convert GeoParquet to PMTiles and upload to S3.
 
     Returns (tile_url, min_zoom, max_zoom, file_size_bytes).
 

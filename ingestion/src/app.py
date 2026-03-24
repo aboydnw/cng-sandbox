@@ -2,11 +2,9 @@
 
 import asyncio
 import logging
-import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 
-import boto3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine as sa_create_engine
@@ -34,23 +32,6 @@ async def _cleanup_scans():
 
 @asynccontextmanager
 async def _default_lifespan(app: FastAPI):
-    settings = get_settings()
-    s3 = boto3.client(
-        "s3",
-        endpoint_url=settings.s3_endpoint,
-        aws_access_key_id=settings.aws_access_key_id,
-        aws_secret_access_key=settings.aws_secret_access_key,
-        region_name=settings.s3_region,
-    )
-    for attempt in range(30):
-        try:
-            s3.head_bucket(Bucket=settings.s3_bucket)
-            break
-        except Exception:
-            if attempt == 29:
-                raise
-            time.sleep(2)
-    app.state.s3 = s3
     Base.metadata.create_all(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
     yield

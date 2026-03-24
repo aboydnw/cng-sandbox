@@ -7,7 +7,6 @@ __pycache__/
 *.pyc
 .DS_Store
 *.log
-scripts/update-duckdns.sh
 *.swp
 *.swo
 *~

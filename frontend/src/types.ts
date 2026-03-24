@@ -55,6 +55,12 @@ export interface Dataset {
   timesteps: Timestep[];
   raster_min: number | null;
   raster_max: number | null;
+  crs: string | null;
+  crs_name: string | null;
+  pixel_width: number | null;
+  pixel_height: number | null;
+  resolution: number | null;
+  compression: string | null;
 }
 
 export interface StageInfo {

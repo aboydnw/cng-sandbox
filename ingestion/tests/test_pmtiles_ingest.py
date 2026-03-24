@@ -21,9 +21,20 @@ def _write_fake_pmtiles(path: str, min_zoom: int = 0, max_zoom: int = 14) -> Non
         f.write(bytes(header))
 
 
-def test_get_pmtiles_tile_url():
+def test_get_pmtiles_tile_url_default():
     url = get_pmtiles_tile_url("abc-123")
-    assert url == "/pmtiles/datasets/abc-123/converted/data.pmtiles"
+    assert url == "/storage/datasets/abc-123/converted/data.pmtiles"
+
+
+def test_get_pmtiles_tile_url_with_public_storage_url(monkeypatch):
+    monkeypatch.setenv("PUBLIC_STORAGE_URL", "https://pub-xxx.r2.dev")
+    from src.config import get_settings
+    get_settings.cache_clear()
+    try:
+        url = get_pmtiles_tile_url("abc-123")
+        assert url == "https://pub-xxx.r2.dev/datasets/abc-123/converted/data.pmtiles"
+    finally:
+        get_settings.cache_clear()
 
 
 @pytest.fixture
@@ -86,7 +97,7 @@ def test_ingest_pmtiles_calls_tippecanoe_with_required_flags(
     assert "--force" in cmd
     assert "--maximum-zoom=g" in cmd
     assert "--layer=default" in cmd
-    assert tile_url == "/pmtiles/datasets/abc-123/converted/data.pmtiles"
+    assert tile_url == "/storage/datasets/abc-123/converted/data.pmtiles"
     assert min_zoom == 0
     assert max_zoom == 14
     assert file_size == 102

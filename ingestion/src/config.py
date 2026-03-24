@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     public_raster_tiler_url: str = "http://localhost:8082"
     public_vector_tiler_url: str = "http://localhost:8083"
 
+    # Public storage URL (browser-facing, for URLs returned to clients)
+    public_storage_url: str = "/storage"
+
     # PostgreSQL (for vector ingest via geopandas)
     postgres_dsn: str = "postgresql://sandbox:sandbox_dev_password@localhost:5439/postgis"
 

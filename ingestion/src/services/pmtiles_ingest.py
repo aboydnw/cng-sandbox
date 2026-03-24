@@ -6,12 +6,14 @@ import tempfile
 
 import geopandas as gpd
 
+from src.config import get_settings
 from src.services.storage import StorageService
 
 
 def get_pmtiles_tile_url(dataset_id: str) -> str:
-    """Return the frontend-relative tile URL for a PMTiles dataset."""
-    return f"/pmtiles/datasets/{dataset_id}/converted/data.pmtiles"
+    """Return the browser-facing tile URL for a PMTiles dataset."""
+    settings = get_settings()
+    return f"{settings.public_storage_url}/datasets/{dataset_id}/converted/data.pmtiles"
 
 
 def _read_pmtiles_zoom_range(pmtiles_path: str) -> tuple[int, int]:

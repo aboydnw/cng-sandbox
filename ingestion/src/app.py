@@ -77,6 +77,8 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(datasets_router)
     app.include_router(stories_router)
     app.include_router(bug_report_router)
+    from src.routes.catalog import router as catalog_router
+    app.include_router(catalog_router)
 
     return app
 

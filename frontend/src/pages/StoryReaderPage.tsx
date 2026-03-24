@@ -53,7 +53,11 @@ function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
   return blocks;
 }
 
-function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset | null>) {
+function buildLayersForChapter(
+  chapter: Chapter,
+  datasetMap: Map<string, Dataset | null>,
+  onExternalTileError?: () => void,
+) {
   if (isExternalLayer(chapter.layer_config)) {
     const lc = chapter.layer_config;
     const tileUrl = buildCogTileUrl({
@@ -75,6 +79,10 @@ function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset
             image: props.data,
             bounds: props.tile.bbox as [number, number, number, number],
           }),
+        onTileError: (err: unknown) => {
+          console.warn("External tile load error:", err);
+          onExternalTileError?.();
+        },
       }),
     ];
   }
@@ -118,6 +126,7 @@ function ScrollytellingBlock({
   datasetMap: Map<string, Dataset | null>;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [externalTileError, setExternalTileError] = useState(false);
   const [camera, setCamera] = useState<CameraState>({
     longitude: chapters[0].map_state.center[0],
     latitude: chapters[0].map_state.center[1],
@@ -169,6 +178,7 @@ function ScrollytellingBlock({
     const chapter = chapters[activeIndex];
     if (!chapter) return;
 
+    setExternalTileError(false);
     setBasemap(chapter.map_state.basemap);
     setTransitionDuration(chapter.transition === "fly-to" ? 2000 : undefined);
     setCamera({
@@ -180,9 +190,13 @@ function ScrollytellingBlock({
     });
   }, [activeIndex, chapters]);
 
+  const handleExternalTileError = useCallback(() => {
+    setExternalTileError(true);
+  }, []);
+
   const layers = useMemo(
-    () => buildLayersForChapter(chapters[activeIndex], datasetMap),
-    [datasetMap, activeIndex, chapters],
+    () => buildLayersForChapter(chapters[activeIndex], datasetMap, handleExternalTileError),
+    [datasetMap, activeIndex, chapters, handleExternalTileError],
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
@@ -282,6 +296,20 @@ function ScrollytellingBlock({
           >
             <Text color="white" fontSize="lg" fontWeight={500}>
               Data no longer available
+            </Text>
+          </Flex>
+        )}
+        {externalTileError && (
+          <Flex
+            position="absolute"
+            inset={0}
+            align="center"
+            justify="center"
+            bg="blackAlpha.600"
+            zIndex={10}
+          >
+            <Text color="white" fontSize="lg" fontWeight={500}>
+              External imagery unavailable
             </Text>
           </Flex>
         )}

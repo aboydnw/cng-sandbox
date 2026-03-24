@@ -46,9 +46,9 @@ export function useCatalog() {
 
   useEffect(() => {
     fetch(`${config.apiBase}/api/catalog/providers`)
-      .then((r) => (r.ok ? r.json() : Promise.reject("Failed to load providers")))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("providers_unavailable"))))
       .then(setProviders)
-      .catch((e) => setError(String(e)));
+      .catch(() => setError("Could not connect to the catalog service"));
   }, []);
 
   const selectProvider = useCallback(async (providerId: string) => {
@@ -60,11 +60,11 @@ export function useCatalog() {
     setLoading(true);
     try {
       const resp = await fetch(`${config.apiBase}/api/catalog/${providerId}/collections`);
-      if (!resp.ok) throw new Error("Failed to load collections");
+      if (!resp.ok) throw new Error("collections_unavailable");
       const data = await resp.json();
       setCollections(data.collections || []);
-    } catch (e) {
-      setError(String(e));
+    } catch {
+      setError("Earth Search is temporarily unavailable");
     } finally {
       setLoading(false);
     }
@@ -104,13 +104,13 @@ export function useCatalog() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(_buildSearchBody(filters)),
       });
-      if (!resp.ok) throw new Error("Search failed");
+      if (!resp.ok) throw new Error("search_failed");
       const data = await resp.json();
       setResults(data.features || []);
       setTotalMatched(data.context?.matched ?? data.numberMatched ?? null);
       setNextToken(data.links?.find((l: { rel: string }) => l.rel === "next")?.body?.token ?? null);
-    } catch (e) {
-      setError(String(e));
+    } catch {
+      setError("Earth Search is temporarily unavailable");
     } finally {
       setLoading(false);
     }
@@ -126,13 +126,13 @@ export function useCatalog() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(_buildSearchBody(filters, nextToken)),
       });
-      if (!resp.ok) throw new Error("Search failed");
+      if (!resp.ok) throw new Error("search_failed");
       const data = await resp.json();
       setResults((prev) => [...prev, ...(data.features || [])]);
       setTotalMatched(data.context?.matched ?? data.numberMatched ?? null);
       setNextToken(data.links?.find((l: { rel: string }) => l.rel === "next")?.body?.token ?? null);
-    } catch (e) {
-      setError(String(e));
+    } catch {
+      setError("Earth Search is temporarily unavailable");
     } finally {
       setLoading(false);
     }

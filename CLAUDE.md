@@ -104,7 +104,7 @@ docker compose --profile prod up -d --build
 
 ### Pull Requests
 
-All changes go through PRs. Branch protection requires `backend`, `frontend`, and `docker-build` CI jobs to pass before merge.
+All changes go through PRs. Branch protection requires `backend`, `frontend`, `docker-build`, and `conventional-commits` CI jobs to pass before merge. PR titles must follow conventional commit format — this is enforced by the `conventional-commits` workflow.
 
 ### Releases
 
@@ -112,7 +112,19 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 **To release:** Merge the Release PR. This triggers auto-deploy to the Hetzner VM.
 
+**Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions to deploy without creating a release.
+
 **Version:** Tracked in `version.txt` (managed by release-please, don't edit manually).
+
+### GitHub App for Release-Please (optional)
+
+By default, release-please uses `GITHUB_TOKEN`, which means its PRs won't trigger CI checks (GitHub limitation). To fix this, set up a GitHub App:
+
+1. Create a GitHub App in your account settings with permissions: Contents (write), Pull Requests (write), Metadata (read)
+2. Install the app on the `cng-sandbox` repository
+3. In repo Settings > Secrets and variables > Actions:
+   - Add `RELEASE_BOT_ID` as a **variable** (the App ID)
+   - Add `RELEASE_BOT_PRIVATE_KEY` as a **secret** (the private key PEM)
 
 ### Conventional Commits
 

@@ -14,9 +14,20 @@ interface SidePanelProps {
   onDetailsClick: () => void;
   /** Contextual controls for the bottom section — raster or vector */
   children?: ReactNode;
+  activeTab?: "dataset" | "catalog";
+  onTabChange?: (tab: "dataset" | "catalog") => void;
+  catalogContent?: ReactNode;
 }
 
-export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children }: SidePanelProps) {
+export function SidePanel({
+  dataset,
+  bytesTransferred,
+  onDetailsClick,
+  children,
+  activeTab = "dataset",
+  onTabChange,
+  catalogContent,
+}: SidePanelProps) {
   const [mode, setMode] = useState<"dataset" | "upload">("dataset");
   const expiryDays = daysUntilExpiry(dataset.created_at);
 
@@ -30,54 +41,87 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
 
   return (
     <Flex direction="column" h="100%">
-      {/* Pinned top */}
-      <Box p={4} flexShrink={0}>
-        <ConversionSummaryCard
-          dataset={dataset}
-          bytesTransferred={bytesTransferred}
-          onDetailsClick={onDetailsClick}
-        />
+      {/* Tab bar */}
+      <Flex flexShrink={0} borderBottomWidth="1px" borderColor="brand.border">
+        {(["dataset", "catalog"] as const).map((tab) => (
+          <Box
+            key={tab}
+            as="button"
+            flex={1}
+            py={2}
+            fontSize="12px"
+            fontWeight={500}
+            cursor="pointer"
+            color={activeTab === tab ? "brand.orange" : "brand.textSecondary"}
+            borderBottomWidth="2px"
+            borderBottomColor={activeTab === tab ? "brand.orange" : "transparent"}
+            bg="transparent"
+            transition={transition(150)}
+            _hover={{ color: "brand.orange" }}
+            onClick={() => onTabChange?.(tab)}
+            textTransform="capitalize"
+          >
+            {tab}
+          </Box>
+        ))}
+      </Flex>
 
-        <Box mt={4}>
-          <StoryCTABanner dataset={dataset} />
+      {activeTab === "catalog" ? (
+        <Box flex={1} overflowY="auto">
+          {catalogContent}
         </Box>
+      ) : (
+        <>
+          {/* Pinned top */}
+          <Box p={4} flexShrink={0}>
+            <ConversionSummaryCard
+              dataset={dataset}
+              bytesTransferred={bytesTransferred}
+              onDetailsClick={onDetailsClick}
+            />
 
-        <Flex
-          as="button"
-          mt={4}
-          w="100%"
-          align="center"
-          justify="center"
-          gap={2}
-          py={2}
-          bg="brand.bgSubtle"
-          border="1px dashed"
-          borderColor="brand.border"
-          borderRadius="6px"
-          color="brand.brown"
-          fontSize="13px"
-          fontWeight={500}
-          cursor="pointer"
-          transition={transition(200)}
-          _hover={{ borderColor: "brand.orange", color: "brand.orange", bg: "white" }}
-          onClick={() => setMode("upload")}
-        >
-          <Plus size={14} weight="bold" />
-          New upload
-        </Flex>
+            <Box mt={4}>
+              <StoryCTABanner dataset={dataset} />
+            </Box>
 
-        {expiryDays !== null && (
-          <Text fontSize="11px" color="brand.textSecondary" mt={3} textAlign="center">
-            Expires in {expiryDays} day{expiryDays !== 1 ? "s" : ""}
-          </Text>
-        )}
-      </Box>
+            <Flex
+              as="button"
+              mt={4}
+              w="100%"
+              align="center"
+              justify="center"
+              gap={2}
+              py={2}
+              bg="brand.bgSubtle"
+              border="1px dashed"
+              borderColor="brand.border"
+              borderRadius="6px"
+              color="brand.brown"
+              fontSize="13px"
+              fontWeight={500}
+              cursor="pointer"
+              transition={transition(200)}
+              _hover={{ borderColor: "brand.orange", color: "brand.orange", bg: "white" }}
+              onClick={() => setMode("upload")}
+            >
+              <Plus size={14} weight="bold" />
+              New upload
+            </Flex>
 
-      {/* Contextual bottom — scrollable */}
-      {children && (
-        <Box flex={1} overflowY="auto" p={4} borderTopWidth="1px" borderColor="brand.border">
-          {children}
-        </Box>
+            {expiryDays !== null && (
+              <Text fontSize="11px" color="brand.textSecondary" mt={3} textAlign="center">
+                Expires in {expiryDays} day{expiryDays !== 1 ? "s" : ""}
+              </Text>
+            )}
+          </Box>
+
+          {/* Contextual bottom — scrollable */}
+          {children && (
+            <Box flex={1} overflowY="auto" p={4} borderTopWidth="1px" borderColor="brand.border">
+              {children}
+            </Box>
+          )}
+        </>
       )}
     </Flex>
   );

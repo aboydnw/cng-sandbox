@@ -6,6 +6,7 @@ import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
 import { SidePanel } from "../components/SidePanel";
+import { CatalogPanel } from "../components/CatalogPanel";
 import { RasterSidebarControls } from "../components/RasterSidebarControls";
 import { ExploreTab } from "../components/ExploreTab";
 import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
@@ -48,6 +49,7 @@ export default function MapPage() {
   const [renderMode, setRenderMode] = useState<RenderMode>("server");
   const [basemap, setBasemap] = useState("streets");
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
+  const [sidebarTab, setSidebarTab] = useState<"dataset" | "catalog">("dataset");
   const [arrowTable, setArrowTable] = useState<Table | null>(null);
 
   const [opacity, setOpacity] = useState(0.8);
@@ -281,6 +283,19 @@ export default function MapPage() {
   }, [dataset, renderMode, canClientRender, tileUrl, opacity, colormapName,
       effectiveBand, animation.activeIndex, geojson, vectorPopup.onClick, getLoadCallback]);
 
+  // --- Compute viewport bbox from camera state ---
+  const viewportBbox = useMemo<number[]>(() => {
+    const degreesPerTile = 360 / Math.pow(2, camera.zoom);
+    const halfW = degreesPerTile * 0.75;
+    const halfH = degreesPerTile * 0.5;
+    return [
+      Math.max(-180, camera.longitude - halfW),
+      Math.max(-90, camera.latitude - halfH),
+      Math.min(180, camera.longitude + halfW),
+      Math.min(90, camera.latitude + halfH),
+    ];
+  }, [camera.longitude, camera.latitude, camera.zoom]);
+
   // --- Event handlers ---
   const onHover = renderMode === "client" && canClientRender ? pixelInspector.onHover : undefined;
   const onMapClick = dataset?.dataset_type === "vector" && renderMode !== "geojson" ? vectorPopup.onClick : undefined;
@@ -413,6 +428,9 @@ export default function MapPage() {
               dataset={dataset}
               bytesTransferred={bytesTransferred}
               onDetailsClick={() => setReportCardOpen(true)}
+              activeTab={sidebarTab}
+              onTabChange={setSidebarTab}
+              catalogContent={<CatalogPanel bbox={viewportBbox} />}
             >
               {dataset.dataset_type === "raster" && (
                 <RasterSidebarControls

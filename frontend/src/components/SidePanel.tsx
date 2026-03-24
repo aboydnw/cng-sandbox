@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
+import { Plus } from "@phosphor-icons/react";
+import { transition } from "../lib/interactionStyles";
 import type { Dataset } from "../types";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { StoryCTABanner } from "./StoryCTABanner";
@@ -56,14 +58,11 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
           fontSize="13px"
           fontWeight={500}
           cursor="pointer"
-          transition="all 200ms ease-out"
+          transition={transition(200)}
           _hover={{ borderColor: "brand.orange", color: "brand.orange", bg: "white" }}
           onClick={() => setMode("upload")}
         >
-          <Box as="svg" width="14px" height="14px" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="7" y1="2" x2="7" y2="12" />
-            <line x1="2" y1="7" x2="12" y2="7" />
-          </Box>
+          <Plus size={14} weight="bold" />
           New upload
         </Flex>
 

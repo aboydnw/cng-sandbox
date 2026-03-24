@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
+import { CloudArrowUp } from "@phosphor-icons/react";
+import { transition } from "../lib/interactionStyles";
 
 const ALLOWED_EXTENSIONS = [".tif", ".tiff", ".zip", ".geojson", ".json", ".nc", ".h5", ".hdf5"];
 const RASTER_EXTENSIONS = [".tif", ".tiff", ".nc", ".h5", ".hdf5"];
@@ -128,11 +130,13 @@ export function FileUploader({
         onClick={() => !disabled && inputRef.current?.click()}
         opacity={disabled ? 0.5 : 1}
         pointerEvents={disabled ? "none" : "auto"}
+        transition={transition(200)}
+        _active={{ transform: "scale(0.99)" }}
       >
         {!embedded && (
-          <Text fontSize="40px" mb={4} opacity={0.5}>
-            🗺
-          </Text>
+          <Box mb={4} opacity={0.5}>
+            <CloudArrowUp size={40} />
+          </Box>
         )}
         <Text color="brand.brown" fontSize={embedded ? "14px" : "16px"} fontWeight={600} mb={embedded ? 1 : 2}>
           Drop your file here

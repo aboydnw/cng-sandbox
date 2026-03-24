@@ -97,6 +97,23 @@ services:
       database:
         condition: service_healthy
 
+  cog-tiler:
+    image: ghcr.io/developmentseed/titiler:latest
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    environment:
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      CPL_VSIL_CURL_ALLOWED_EXTENSIONS: .tif,.tiff
+      GDAL_CACHEMAX: "200"
+      GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: "YES"
+      VSI_CACHE: "TRUE"
+      VSI_CACHE_SIZE: "536870912"
+    ports:
+      - "8084:80"
+
   ingestion:
     build:
       context: .
@@ -156,6 +173,7 @@ services:
       API_PROXY_TARGET: http://ingestion:8000
       RASTER_TILER_PROXY_TARGET: http://raster-tiler:80
       VECTOR_TILER_PROXY_TARGET: http://vector-tiler:80
+      COG_TILER_PROXY_TARGET: http://cog-tiler:80
       STORAGE_PROXY_TARGET: ${R2_PUBLIC_URL}
     depends_on:
       ingestion:

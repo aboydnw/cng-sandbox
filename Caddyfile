@@ -60,6 +60,17 @@
 		}
 	}
 
+	# COG tile proxy (standalone titiler for external catalog imagery)
+	handle /cog/* {
+		basic_auth {
+			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
+		}
+		uri strip_prefix /cog
+		reverse_proxy cog-tiler:80 {
+			header_down Cache-Control "no-store"
+		}
+	}
+
 	# Frontend: serve static files from the production build.
 	# try_files falls back to index.html for SPA client-side routing.
 	handle {

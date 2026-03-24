@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import type { Table } from "apache-arrow";
+import { toAbsoluteUrl } from "../lib/url";
 
 export interface ColumnStats {
   name: string;
@@ -36,7 +37,7 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
   const [loading, setLoading] = useState(false);
   const geomColRef = useRef<string | null>(null);
 
-  const fullUrl = `${window.location.origin}${parquetUrl}`;
+  const fullUrl = toAbsoluteUrl(parquetUrl);
 
   const computeStats = useCallback(
     async (whereClause: string): Promise<{ count: number; stats: ColumnStats[] }> => {

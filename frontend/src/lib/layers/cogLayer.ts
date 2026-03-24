@@ -2,6 +2,7 @@ import type { MutableRefObject } from "react";
 import { COGLayer } from "@developmentseed/deck.gl-geotiff";
 import { CreateTexture } from "@developmentseed/deck.gl-raster/gpu-modules";
 import wktParser from "wkt-parser";
+import { toAbsoluteUrl } from "../url";
 
 // --- EPSG resolver (offline for common CRSes, network fallback) ---
 
@@ -106,7 +107,7 @@ export function buildCogLayer({
   datasetBounds,
   tileCacheRef,
 }: CogLayerOptions) {
-  const url = window.location.origin + cogUrl;
+  const url = toAbsoluteUrl(cogUrl);
   const range = rasterMax - rasterMin || 1;
 
   const getTileData = async (image: any, options: any) => {

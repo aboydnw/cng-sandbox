@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { ColumnStats } from "./useGeoParquetQuery";
+import { toAbsoluteUrl } from "../lib/url";
 
 export interface NumericFilter {
   column: string;
@@ -33,7 +34,7 @@ export function useFilterQuery({ parquetUrl, onSqlChange, debounceMs = 300 }: Us
   const [availableColumns, setAvailableColumns] = useState<ColumnStats[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const fullUrl = `${window.location.origin}${parquetUrl}`;
+  const fullUrl = toAbsoluteUrl(parquetUrl);
   const baseSql = `SELECT * FROM read_parquet('${fullUrl}')`;
 
   const buildFiltersFromStats = useCallback((stats: ColumnStats[]) => {

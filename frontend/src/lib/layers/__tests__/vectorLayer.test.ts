@@ -21,6 +21,15 @@ describe("buildVectorLayer", () => {
     expect(layer.id).toBe("vector-mvt");
   });
 
+  it("handles full R2 URL for PMTiles", () => {
+    const layer = buildVectorLayer({
+      tileUrl: "https://pub-xxx.r2.dev/datasets/abc/converted/data.pmtiles",
+      isPMTiles: true,
+      opacity: 0.6,
+    });
+    expect(layer.id).toBe("vector-mvt");
+  });
+
   it("is pickable for feature interaction", () => {
     const layer = buildVectorLayer({
       tileUrl: "/vector/collections/public.sandbox_abc123/tiles/{z}/{x}/{y}",

@@ -3,6 +3,7 @@ import { PMTiles } from "pmtiles";
 import { load } from "@loaders.gl/core";
 import { MVTLoader } from "@loaders.gl/mvt";
 import { BRAND_COLOR_RGBA } from "../../components/MapShell";
+import { toAbsoluteUrl } from "../url";
 
 const FILL_COLOR: [number, number, number, number] = [
   BRAND_COLOR_RGBA[0],
@@ -61,7 +62,7 @@ export function buildVectorLayer({
   };
 
   if (isPMTiles) {
-    const absoluteUrl = `${window.location.origin}${tileUrl}`;
+    const absoluteUrl = toAbsoluteUrl(tileUrl);
     const pmtilesSource = new PMTiles(absoluteUrl);
 
     return new MVTLayer({
@@ -83,9 +84,7 @@ export function buildVectorLayer({
   }
 
   // Regular MVT tiles from tipg
-  const data = tileUrl.startsWith("/")
-    ? `${window.location.origin}${tileUrl}`
-    : tileUrl;
+  const data = toAbsoluteUrl(tileUrl);
 
   return new MVTLayer({
     ...baseConfig,

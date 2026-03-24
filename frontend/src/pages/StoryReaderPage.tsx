@@ -208,6 +208,7 @@ function ScrollytellingBlock({
                 fontSize="sm"
                 color="gray.700"
                 lineHeight="1.7"
+                maxW="65ch"
                 css={{
                   "& p": { marginBottom: "1em" },
                   "& h1, & h2, & h3": {

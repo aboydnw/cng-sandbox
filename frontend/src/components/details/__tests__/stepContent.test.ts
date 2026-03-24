@@ -153,4 +153,17 @@ describe("getStepContent", () => {
     const display = getStepContent(pmtilesDataset as Dataset, 4);
     expect(display.tools.some((t) => t.name === "PMTiles")).toBe(true);
   });
+
+  it("returns PMTiles-specific Catalog content (not PostGIS)", () => {
+    const content = getStepContent(pmtilesDataset as Dataset, 2);
+    expect(content.title).toContain("tile archive");
+    expect(content.title).not.toContain("PostGIS");
+  });
+
+  it("returns cloud storage for PMTiles Store step (not database)", () => {
+    const content = getStepContent(pmtilesDataset as Dataset, 3);
+    expect(content.subtitle).toBe("cloud hosted");
+    expect(content.title).toContain("cloud");
+    expect(content.title).not.toContain("PostGIS");
+  });
 });

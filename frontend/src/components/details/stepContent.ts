@@ -304,7 +304,54 @@ function getCatalogStep(dataset: Dataset, pipeline: PipelineType): StepContent {
     };
   }
 
-  // vector pipelines
+  if (pipeline === "vector-pmtiles") {
+    const metadata: MetadataTileData[] = [
+      {
+        label: "Zoom Range",
+        value:
+          dataset.min_zoom != null && dataset.max_zoom != null
+            ? `${dataset.min_zoom} – ${dataset.max_zoom}`
+            : "—",
+      },
+      {
+        label: "Bounding Box",
+        value: formatBounds(dataset.bounds),
+        colSpan: 2,
+      },
+    ];
+
+    const tools: ToolCardData[] = [
+      {
+        name: "tippecanoe",
+        url: "https://github.com/felt/tippecanoe",
+        description:
+          "Builds an optimized tile index inside the PMTiles archive, choosing zoom levels and simplification automatically.",
+      },
+      {
+        name: "PMTiles",
+        url: "https://protomaps.com/pmtiles",
+        description:
+          "Single-file tile archive with a built-in directory that maps tile coordinates to byte ranges for efficient HTTP range requests.",
+      },
+    ];
+
+    return {
+      label: "Catalog",
+      subtitle: "queryable",
+      badge: "Step 2 of 4",
+      title: "Indexed into a queryable tile archive",
+      explanation: [
+        "The vector tiles were indexed into a <strong>PMTiles</strong> archive with an internal directory that maps tile coordinates to byte ranges.",
+        "This built-in index enables efficient HTTP range requests — the browser fetches only the tiles it needs without a server-side database.",
+      ],
+      beforeAfter: undefined,
+      metadata,
+      tools,
+      toolSectionTitle: "Open source tools used",
+    };
+  }
+
+  // vector-postgis
   const metadata: MetadataTileData[] = [
     {
       label: "Table",
@@ -398,7 +445,48 @@ function getStoreStep(dataset: Dataset, pipeline: PipelineType): StepContent {
     };
   }
 
-  // vector pipelines
+  if (pipeline === "vector-pmtiles") {
+    const metadata: MetadataTileData[] = [
+      {
+        label: "Storage",
+        value: "Cloudflare R2",
+      },
+      {
+        label: "Format",
+        value: "PMTiles archive",
+      },
+      {
+        label: "File Size",
+        value: formatBytes(dataset.converted_file_size),
+      },
+    ];
+
+    const tools: ToolCardData[] = [
+      {
+        name: "Cloudflare R2",
+        url: "https://www.cloudflare.com/developer-platform/r2/",
+        description:
+          "S3-compatible object storage with zero egress fees, hosting the PMTiles archive for direct browser access.",
+      },
+    ];
+
+    return {
+      label: "Store",
+      subtitle: "cloud hosted",
+      badge: "Step 3 of 4",
+      title: "Stored in cloud object storage",
+      explanation: [
+        "The PMTiles archive is stored in <strong>Cloudflare R2</strong> — an S3-compatible object store with zero egress fees.",
+        "The browser reads tiles directly from R2 using HTTP range requests, with no tile server required.",
+      ],
+      beforeAfter: undefined,
+      metadata,
+      tools,
+      toolSectionTitle: "Cloud storage",
+    };
+  }
+
+  // vector-postgis
   const metadata: MetadataTileData[] = [
     {
       label: "Database",

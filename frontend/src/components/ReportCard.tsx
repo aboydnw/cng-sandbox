@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { X } from "@phosphor-icons/react";
 import type { Dataset } from "../types";
@@ -43,17 +43,17 @@ export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  const allSteps = useMemo(
+    () => Array.from({ length: totalSteps }, (_, i) => getStepContent(dataset, i + 1)),
+    [dataset, totalSteps],
+  );
+
   if (!isOpen) return null;
 
-  // Build step summaries for timeline labels
-  const stepSummaries = Array.from({ length: totalSteps }, (_, i) => {
-    const content = getStepContent(dataset, i + 1);
-    return { label: content.label, subtitle: content.subtitle };
-  });
-
-  const currentContent = getStepContent(dataset, activeStep);
-  const prevContent = activeStep > 1 ? getStepContent(dataset, activeStep - 1) : null;
-  const nextContent = activeStep < totalSteps ? getStepContent(dataset, activeStep + 1) : null;
+  const stepSummaries = allSteps.map((s) => ({ label: s.label, subtitle: s.subtitle }));
+  const currentContent = allSteps[activeStep - 1];
+  const prevContent = activeStep > 1 ? allSteps[activeStep - 2] : null;
+  const nextContent = activeStep < totalSteps ? allSteps[activeStep] : null;
 
   return (
     <Box

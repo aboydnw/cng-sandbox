@@ -51,7 +51,7 @@ export function MapChapter({ chapter, chapterIndex, dataset }: MapChapterProps) 
     return [
       buildVectorLayer({
         tileUrl: dataset.tile_url,
-        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
+        isPMTiles: dataset.tile_url.endsWith(".pmtiles"),
         opacity: lc.opacity,
         minZoom: dataset.min_zoom ?? undefined,
         maxZoom: dataset.max_zoom ?? undefined,

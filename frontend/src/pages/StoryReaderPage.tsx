@@ -71,7 +71,7 @@ function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset
   return [
     buildVectorLayer({
       tileUrl: ds.tile_url,
-      isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
+      isPMTiles: ds.tile_url.endsWith(".pmtiles"),
       opacity: lc.opacity,
       minZoom: ds.min_zoom ?? undefined,
       maxZoom: ds.max_zoom ?? undefined,

@@ -27,7 +27,7 @@ function getTransformationSteps(dataset: Dataset): {
   steps: TransformStep[];
   final: string;
 } {
-  const isPmtiles = dataset.tile_url?.startsWith("/pmtiles/");
+  const isPmtiles = dataset.tile_url?.endsWith(".pmtiles");
   switch (dataset.format_pair) {
     case "geotiff-to-cog":
       return {

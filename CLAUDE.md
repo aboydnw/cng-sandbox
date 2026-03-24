@@ -5,16 +5,12 @@ Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefi
 ## Architecture
 
 ```
-Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8000)
-                                → /raster proxy → titiler-pgstac (:80)
-                                → /vector proxy → tipg (:80)
-
-Ingestion API → Cloudflare R2 (S3-compatible object store)
-              → pgSTAC (PostgreSQL + PostGIS + STAC)
-              → STAC API (stac-fastapi-pgstac)
+Browser → Vercel (static frontend)
+Browser → Cloudflare Tunnel (API + tile requests) → Caddy → Docker services
+Browser → R2 r2.dev directly (COGs, PMTiles, GeoParquet)
 ```
 
-All services run in Docker. The frontend proxies all API and tiler requests through Vite's dev server, so the browser only talks to port 5185.
+All backend services run in Docker on a Hetzner VM. The frontend is a static site hosted on Vercel. API and tile requests are routed through a Cloudflare Tunnel — no open ports required on the VM.
 
 ## Local Deployment
 
@@ -53,52 +49,33 @@ Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `ingestio
 
 ## Production Deployment (Hetzner)
 
-The sandbox can be deployed to a public URL with HTTPS and basic auth using the `prod` Docker Compose profile.
+The sandbox is deployed using Vercel for the frontend and a Cloudflare Tunnel for backend access. No open ports are required on the VM.
 
-### Prerequisites
+### Setup
 
-1. **DuckDNS subdomain:** Sign up at [duckdns.org](https://www.duckdns.org), create a subdomain, note the token
-2. **Hetzner firewall:** Allow inbound TCP 22, 80, 443 only (block all other ports from external access). Configure in the Hetzner Cloud console (Firewalls section). Also check the OS-level firewall: `sudo ufw status` — if active, ensure ports 80 and 443 are allowed (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)
-3. **Generate a password hash:**
+1. **Cloudflare Tunnel**: Add your domain to Cloudflare, then create a tunnel in Zero Trust → Networks → Tunnels. Note the tunnel token.
+
+2. **Vercel**: Import the repo in Vercel. Set the `VITE_BACKEND_URL` environment variable to your Cloudflare Tunnel URL (e.g. `https://your-tunnel.example.com`).
+
+3. **R2 CORS**: In the Cloudflare dashboard, configure CORS on your R2 bucket to allow requests from your Vercel domain.
+
+4. **Configure `.env`** on the VM:
+   ```
+   CLOUDFLARE_TUNNEL_TOKEN=your-token-here
+   VERCEL_URL=https://your-app.vercel.app
+   PUBLIC_RASTER_TILER_URL=https://your-tunnel.example.com/raster
+   PUBLIC_VECTOR_TILER_URL=https://your-tunnel.example.com/vector
+   PUBLIC_STORAGE_URL=https://your-bucket.r2.dev
+   ```
+
+5. **Start**:
    ```bash
-   docker run --rm caddy caddy hash-password --plaintext 'your-password'
+   docker compose --profile prod up -d --build
    ```
 
-### Configure
+6. **Hetzner firewall**: Close ports 80 and 443 — they are no longer needed. Only port 22 (SSH) should be open.
 
-1. Edit `.env` on the VM and fill in the deployment variables:
-   ```
-   SITE_ADDRESS=your-subdomain.duckdns.org
-   DUCKDNS_TOKEN=your-token-here
-   AUTH_USER=demo
-   AUTH_PASSWORD_HASH=$$2a$$14$$... (escape $ as $$ for Docker Compose)
-   ```
-
-2. Edit `scripts/update-duckdns.sh` and set `SUBDOMAIN` and `TOKEN`
-
-3. Add the cron job:
-   ```bash
-   crontab -e
-   # Add: */5 * * * * /path/to/scripts/update-duckdns.sh >> /var/log/duckdns.log 2>&1
-   ```
-
-### Start
-
-```bash
-docker compose --profile prod up -d --build
-```
-
-### Verify
-
-- Visit `https://your-subdomain.duckdns.org` — should prompt for username/password
-- After auth, the sandbox should load normally
-- Upload a file to verify CORS works end-to-end
-
-### Notes
-
-- `docker compose up` (without `--profile prod`) still runs local dev without Caddy
-- Backend service ports (8000, 8081-8083) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
-- The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
+7. **Remove DuckDNS cron entry** if one exists: `crontab -e`
 
 ## CI/CD
 
@@ -150,27 +127,27 @@ All commits to `main` must use conventional prefixes:
 
 ## Environment
 
-All env vars are in `.env`. R2 credentials (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL`) must be set before starting the stack.
+All env vars are in `.env`. R2 credentials (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL`) must be set before starting the stack. For production, also set `CLOUDFLARE_TUNNEL_TOKEN`, `VERCEL_URL`, and `PUBLIC_STORAGE_URL`.
 
-## Networking: Internal vs Public URLs
+## Networking: URL Contexts
 
-This is the trickiest part of the stack. There are two URL contexts:
+There are three URL contexts to keep straight:
 
 1. **Internal (server-to-server)**: Docker service names with container-internal ports. Used by the ingestion service to talk to tilers and STAC API.
    - `STAC_API_URL=http://stac-api:8080` (internal port, not 8081)
    - `RASTER_TILER_URL=http://raster-tiler:80` (internal port, not 8082)
    - `VECTOR_TILER_URL=http://vector-tiler:80` (internal port, not 8083)
 
-2. **Public (browser-facing)**: Proxy paths that the browser uses. The ingestion API embeds these into dataset responses so the frontend knows where to fetch tiles.
-   - `PUBLIC_RASTER_TILER_URL=/raster`
-   - `PUBLIC_VECTOR_TILER_URL=/vector`
+2. **API/tiles (browser → Cloudflare Tunnel → Caddy → Docker)**: Full URLs through the tunnel. Set via `PUBLIC_RASTER_TILER_URL` and `PUBLIC_VECTOR_TILER_URL`. The ingestion API embeds these in dataset responses so the frontend knows where to fetch tiles.
 
-The frontend's Vite dev server proxies `/api` → ingestion, `/raster` → titiler, `/vector` → tipg. This is configured via server-side env vars (NOT `VITE_` prefixed):
+3. **Storage (browser → R2 directly)**: Files (COGs, PMTiles, GeoParquet) are fetched directly from R2 using full `r2.dev` URLs. Set via `PUBLIC_STORAGE_URL`.
+
+In local dev, the Vite dev server proxies `/api` → ingestion, `/raster` → titiler, `/vector` → tipg. This uses server-side env vars (NOT `VITE_` prefixed):
 - `API_PROXY_TARGET=http://ingestion:8000`
 - `RASTER_TILER_PROXY_TARGET=http://raster-tiler:80`
 - `VECTOR_TILER_PROXY_TARGET=http://vector-tiler:80`
 
-**Key rule**: `VITE_*` env vars are baked into client-side JS at build time. Never set them to Docker-internal hostnames (like `http://ingestion:8000`) — the browser can't resolve those. Use empty strings and let the Vite proxy handle routing.
+**Key rule**: `VITE_*` env vars are baked into client-side JS at build time. Never set them to Docker-internal hostnames (like `http://ingestion:8000`) — the browser can't resolve those.
 
 ## Frontend
 

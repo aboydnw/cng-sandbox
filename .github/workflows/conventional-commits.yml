@@ -6,6 +6,6 @@ jobs:
   conventional-commits:
     runs-on: ubuntu-latest
     steps:
-      - uses: ytanikin/PRConventionalCommits@1.4.0
+      - uses: ytanikin/PRConventionalCommits@1.3.0
         with:
           task_types: '["feat","fix","docs","chore","refactor","test"]'

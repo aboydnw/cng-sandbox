@@ -42,7 +42,14 @@ interface DatasetWithStoryCount extends Dataset {
 }
 
 export default function DatasetsPage() {
-  const { workspacePath } = useWorkspace();
+  const { workspaceId, workspacePath } = useWorkspace();
+  const [shared, setShared] = useState(false);
+
+  const shareWorkspace = useCallback(() => {
+    navigator.clipboard.writeText(`${window.location.origin}/w/${workspaceId}`);
+    setShared(true);
+    setTimeout(() => setShared(false), 2000);
+  }, [workspaceId]);
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -90,11 +97,21 @@ export default function DatasetsPage() {
           <Heading size="lg" color="gray.800">
             Datasets
           </Heading>
-          <Link to={workspacePath("/")}>
-            <Button size="sm" colorScheme="orange">
-              Upload new
+          <Flex gap={2}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={shareWorkspace}
+              title="Anyone with this link can view and add to this workspace"
+            >
+              {shared ? "Link copied!" : "Share workspace"}
             </Button>
-          </Link>
+            <Link to={workspacePath("/")}>
+              <Button size="sm" colorScheme="orange">
+                Upload new
+              </Button>
+            </Link>
+          </Flex>
         </Flex>
 
         {loading ? (

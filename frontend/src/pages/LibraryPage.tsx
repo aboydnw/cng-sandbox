@@ -151,13 +151,13 @@ export default function LibraryPage() {
             </Link>
           </Flex>
         ) : (
-          <Table.Root size="sm">
+          <Table.Root size="sm" tableLayout="fixed">
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeader>Filename</Table.ColumnHeader>
-                <Table.ColumnHeader>Type</Table.ColumnHeader>
-                <Table.ColumnHeader>Uploaded</Table.ColumnHeader>
-                <Table.ColumnHeader>Size</Table.ColumnHeader>
+                <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Uploaded</Table.ColumnHeader>
+                <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
                 <Table.ColumnHeader w="80px" />
               </Table.Row>
             </Table.Header>
@@ -171,6 +171,8 @@ export default function LibraryPage() {
                         color="blue.600"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
+                        truncate
+                        title={ds.filename}
                       >
                         {ds.filename}
                       </Text>
@@ -237,13 +239,13 @@ export default function LibraryPage() {
             <Text>No stories yet.</Text>
           </Flex>
         ) : (
-          <Table.Root size="sm">
+          <Table.Root size="sm" tableLayout="fixed">
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeader>Name</Table.ColumnHeader>
-                <Table.ColumnHeader>Status</Table.ColumnHeader>
-                <Table.ColumnHeader>Chapters</Table.ColumnHeader>
-                <Table.ColumnHeader>Updated</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
                 <Table.ColumnHeader w="80px" />
               </Table.Row>
             </Table.Header>
@@ -256,6 +258,8 @@ export default function LibraryPage() {
                         color="blue.600"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
+                        truncate
+                        title={story.title}
                       >
                         {story.title}
                       </Text>

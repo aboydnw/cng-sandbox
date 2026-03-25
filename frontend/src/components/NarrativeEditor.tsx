@@ -1,9 +1,10 @@
 import { Box, Flex, Text, Textarea } from "@chakra-ui/react";
 import { Plus, Sparkle } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
 import type { Dataset } from "../types";
 import { ChapterTypePicker } from "./ChapterTypePicker";
+import { MarkdownToolbar } from "./MarkdownToolbar";
 
 interface NarrativeEditorProps {
   chapterType: ChapterType;
@@ -35,6 +36,7 @@ export function NarrativeEditor({
   const [showAiPrompt, setShowAiPrompt] = useState(false);
   const [roughNotes, setRoughNotes] = useState("");
   const [activeTab, setActiveTab] = useState<"content" | "style">("content");
+  const narrativeRef = useRef<HTMLTextAreaElement>(null);
 
   function handleChapterTypeChange(type: ChapterType) {
     if (type === "prose") {
@@ -116,29 +118,42 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
             }}
           />
 
-          <Flex justify="space-between" align="center">
-            <Text fontSize="10px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase">
-              Narrative
-            </Text>
-            <Text fontSize="10px" color="gray.400">
-              Markdown supported
-            </Text>
-          </Flex>
+          <Text fontSize="10px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase">
+            Narrative
+          </Text>
 
-          <Textarea
+          <Box
             flex={1}
-            value={narrative}
-            onChange={(e) => onNarrativeChange(e.target.value)}
-            placeholder="Write your narrative here... (markdown supported)"
-            fontFamily="mono"
-            fontSize="13px"
-            resize="none"
             border="1px solid"
             borderColor="gray.200"
             borderRadius="6px"
             p={3}
-            _focus={{ borderColor: "blue.300", boxShadow: "none" }}
-          />
+            display="flex"
+            flexDirection="column"
+            _focusWithin={{ borderColor: "blue.300" }}
+          >
+            <MarkdownToolbar
+              textareaRef={narrativeRef}
+              value={narrative}
+              onChange={onNarrativeChange}
+            />
+            <textarea
+              ref={narrativeRef}
+              value={narrative}
+              onChange={(e) => onNarrativeChange(e.target.value)}
+              placeholder="Write your narrative here..."
+              style={{
+                flex: 1,
+                fontFamily: "inherit",
+                fontSize: "13px",
+                resize: "none",
+                border: "none",
+                outline: "none",
+                background: "transparent",
+                minHeight: "120px",
+              }}
+            />
+          </Box>
 
           {showAiPrompt ? (
             <Box border="1px solid" borderColor="gray.200" borderRadius="6px" p={3}>

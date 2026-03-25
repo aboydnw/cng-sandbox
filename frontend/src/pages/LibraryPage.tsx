@@ -14,6 +14,8 @@ import { Header } from "../components/Header";
 import { config } from "../config";
 import { workspaceFetch } from "../lib/api";
 import type { Dataset } from "../types";
+import type { Story } from "../lib/story/types";
+import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return "\u2014";
@@ -46,6 +48,9 @@ export default function LibraryPage() {
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [storiesLoading, setStoriesLoading] = useState(true);
+  const [deletingStory, setDeletingStory] = useState<string | null>(null);
 
   useEffect(() => {
     workspaceFetch(`${config.apiBase}/api/datasets`)
@@ -56,6 +61,29 @@ export default function LibraryPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    listStoriesFromServer()
+      .then((data) => {
+        setStories(data);
+        setStoriesLoading(false);
+      })
+      .catch(() => setStoriesLoading(false));
+  }, []);
+
+  const handleDeleteStory = useCallback(
+    async (story: Story) => {
+      if (!window.confirm(`Delete "${story.title}"?`)) return;
+      setDeletingStory(story.id);
+      try {
+        await deleteStoryFromServer(story.id);
+        setStories((prev) => prev.filter((s) => s.id !== story.id));
+      } finally {
+        setDeletingStory(null);
+      }
+    },
+    [],
+  );
 
   const handleDelete = useCallback(
     async (ds: DatasetWithStoryCount) => {
@@ -179,6 +207,87 @@ export default function LibraryPage() {
                       colorScheme="red"
                       loading={deleting === ds.id}
                       onClick={() => handleDelete(ds)}
+                    >
+                      Delete
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        )}
+
+        <Flex justify="space-between" align="center" mt={10} mb={3}>
+          <Heading size="md" color="gray.700">
+            Stories
+          </Heading>
+          <Link to={workspacePath("/story/new")}>
+            <Button size="sm" colorScheme="orange">
+              New story
+            </Button>
+          </Link>
+        </Flex>
+
+        {storiesLoading ? (
+          <Flex justify="center" py={8}>
+            <SpinnerGap size={24} style={{ animation: "spin 1s linear infinite" }} />
+          </Flex>
+        ) : stories.length === 0 ? (
+          <Flex justify="center" py={12} color="gray.500">
+            <Text>No stories yet.</Text>
+          </Flex>
+        ) : (
+          <Table.Root size="sm">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader>Name</Table.ColumnHeader>
+                <Table.ColumnHeader>Status</Table.ColumnHeader>
+                <Table.ColumnHeader>Chapters</Table.ColumnHeader>
+                <Table.ColumnHeader>Updated</Table.ColumnHeader>
+                <Table.ColumnHeader w="80px" />
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {stories.map((story) => (
+                <Table.Row key={story.id}>
+                  <Table.Cell>
+                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
+                      <Text
+                        color="blue.600"
+                        _hover={{ textDecoration: "underline" }}
+                        fontWeight={500}
+                      >
+                        {story.title}
+                      </Text>
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text
+                      fontSize="xs"
+                      fontWeight={600}
+                      textTransform="uppercase"
+                      color={story.published ? "green.600" : "gray.500"}
+                    >
+                      {story.published ? "Published" : "Draft"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {story.chapters.length}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {story.updated_at ? timeAgo(story.updated_at) : "\u2014"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="red"
+                      loading={deletingStory === story.id}
+                      onClick={() => handleDeleteStory(story)}
                     >
                       Delete
                     </Button>

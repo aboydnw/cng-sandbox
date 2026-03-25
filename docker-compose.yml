@@ -157,6 +157,7 @@ services:
       RASTER_TILER_PROXY_TARGET: http://raster-tiler:80
       VECTOR_TILER_PROXY_TARGET: http://vector-tiler:80
       STORAGE_PROXY_TARGET: ${R2_PUBLIC_URL}
+      STAC_API_PROXY_TARGET: http://stac-api:8080
     depends_on:
       ingestion:
         condition: service_healthy

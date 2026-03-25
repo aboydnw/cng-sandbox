@@ -43,6 +43,12 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     timesteps: [],
     raster_min: null,
     raster_max: null,
+    crs: null,
+    crs_name: null,
+    pixel_width: null,
+    pixel_height: null,
+    resolution: null,
+    compression: null,
     ...overrides,
   };
 }
@@ -69,21 +75,20 @@ describe("ReportCard", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("shows transformation steps for shapefile-to-pmtiles path", () => {
+  it("renders pipeline timeline with all 4 steps", () => {
     renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
-    expect(screen.getByText(/.shp.*Shapefile/)).toBeTruthy();
-    expect(screen.getByText(/.parquet.*GeoParquet/)).toBeTruthy();
-    expect(screen.getByText(/.pmtiles.*PMTiles/)).toBeTruthy();
+    expect(screen.getByText("Convert")).toBeTruthy();
+    expect(screen.getByText("Catalog")).toBeTruthy();
+    expect(screen.getByText("Store")).toBeTruthy();
+    expect(screen.getByText("Display")).toBeTruthy();
   });
 
-  it("renders TechCards based on dataset credits", () => {
+  it("shows convert step content by default for pmtiles vector dataset", () => {
     renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
-    expect(screen.getByText("GeoPandas")).toBeTruthy();
-    expect(screen.getByText("tippecanoe")).toBeTruthy();
-    expect(screen.getByText("PMTiles + MapLibre")).toBeTruthy();
+    expect(screen.getByText("Converted to PMTiles vector tile archive")).toBeTruthy();
   });
 
-  it("renders raster tech cards for geotiff-to-cog datasets", () => {
+  it("shows convert step content for geotiff-to-cog datasets", () => {
     renderWithChakra(
       <ReportCard
         dataset={makeDataset({
@@ -98,32 +103,10 @@ describe("ReportCard", () => {
         onClose={() => {}}
       />
     );
-    expect(screen.getByText("rio-cogeo")).toBeTruthy();
-    expect(screen.getByText("Cloudflare R2")).toBeTruthy();
-    expect(screen.getByText("titiler + deck.gl")).toBeTruthy();
+    expect(screen.getByText("Converted to Cloud Optimized GeoTIFF (COG)")).toBeTruthy();
   });
 
-  it("shows deck.gl client-side card when renderMode is client", () => {
-    renderWithChakra(
-      <ReportCard
-        dataset={makeDataset({
-          dataset_type: "raster",
-          format_pair: "geotiff-to-cog",
-          tile_url: "/raster/datasets/test-id",
-          credits: [
-            { tool: "rio-cogeo", role: "Converted", url: "https://github.com/cogeotiff/rio-cogeo" },
-          ],
-        })}
-        isOpen={true}
-        onClose={() => {}}
-        renderMode="client"
-      />
-    );
-    expect(screen.getByText("deck.gl (client-side)")).toBeTruthy();
-    expect(screen.queryByText("titiler + deck.gl")).toBeNull();
-  });
-
-  it("renders vector/tipg tech cards for non-pmtiles vector datasets", () => {
+  it("shows convert step content for postgis vector datasets", () => {
     renderWithChakra(
       <ReportCard
         dataset={makeDataset({
@@ -136,9 +119,7 @@ describe("ReportCard", () => {
         onClose={() => {}}
       />
     );
-    expect(screen.getByText("GeoPandas")).toBeTruthy();
-    expect(screen.getByText("PostGIS")).toBeTruthy();
-    expect(screen.getByText("tipg + MapLibre")).toBeTruthy();
+    expect(screen.getByText("Converted to GeoParquet")).toBeTruthy();
   });
 });
 

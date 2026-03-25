@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/aboydnw/cng-sandbox/compare/v1.2.0...v1.3.0) (2026-03-25)
+
+
+### Features
+
+* story editor UX overhaul ([#27](https://github.com/aboydnw/cng-sandbox/issues/27)) ([bf1f9f2](https://github.com/aboydnw/cng-sandbox/commit/bf1f9f2d8dc59c43a00edf94e56c9dafe08b25ed))
+
+
+### Bug Fixes
+
+* extract CRS name from WKT instead of missing .name attribute ([#34](https://github.com/aboydnw/cng-sandbox/issues/34)) ([fec81f6](https://github.com/aboydnw/cng-sandbox/commit/fec81f6186a474698e87376f5eb8180e209ee207)), closes [#33](https://github.com/aboydnw/cng-sandbox/issues/33)
+* include pipeline error message in bug reports ([#32](https://github.com/aboydnw/cng-sandbox/issues/32)) ([cbc6c0a](https://github.com/aboydnw/cng-sandbox/commit/cbc6c0aa50211a6ccec09aa8437f468920cd55ee))
+* serialize Error objects in console capture (closes [#21](https://github.com/aboydnw/cng-sandbox/issues/21)) ([#29](https://github.com/aboydnw/cng-sandbox/issues/29)) ([cbb167d](https://github.com/aboydnw/cng-sandbox/commit/cbb167d82468458bfc5a67464dab69c92509b8f4))
+
 ## [1.2.0](https://github.com/aboydnw/cng-sandbox/compare/v1.1.0...v1.2.0) (2026-03-25)
 
 

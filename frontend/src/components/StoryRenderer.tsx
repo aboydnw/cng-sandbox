@@ -121,13 +121,13 @@ function ScrollytellingBlock({
               p={6}
               shadow="sm"
               border="1px solid"
-              borderColor={activeIndex === i ? "blue.200" : "gray.200"}
+              borderColor={activeIndex === i ? "brand.bgSubtle" : "gray.200"}
             >
               <Text
                 fontSize="10px"
                 textTransform="uppercase"
                 letterSpacing="1px"
-                color="blue.500"
+                color="brand.orange"
                 fontWeight={600}
                 mb={2}
               >

@@ -47,38 +47,71 @@ export function NarrativeEditor({
   const showStyleTab = chapterType !== "prose";
 
   return (
-    <Flex direction="column" h="100%" p={3} gap={2}>
+    <Flex direction="column" p={3} gap={2}>
       <ChapterTypePicker value={chapterType} onChange={handleChapterTypeChange} />
+
+      {showStyleTab && (
+        <Box>
+          <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase" mb={1}>
+            Dataset
+          </Text>
+          <Flex gap={1} align="center">
+            <select
+              value={layerConfig.dataset_id}
+              onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
+              style={{ fontSize: "13px", padding: "6px 8px", maxWidth: "220px", borderRadius: "4px", border: "1px solid #e8e5e0" }}
+            >
+              {datasets.map(ds => (
+                <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
+              ))}
+            </select>
+            {onAddDataset && (
+              <Text
+                as="button"
+                fontSize="12px"
+                color="brand.orange"
+                fontWeight={600}
+                cursor="pointer"
+                onClick={onAddDataset}
+                _hover={{ color: "brand.orangeHover" }}
+                whiteSpace="nowrap"
+              >
+                <Flex align="center" gap={1.5}><Plus size={12} weight="bold" /> Add</Flex>
+              </Text>
+            )}
+          </Flex>
+        </Box>
+      )}
 
       <Flex borderBottom="1px solid" borderColor="gray.200" gap={0}>
         <Box
           as="button"
-          fontSize="12px"
+          fontSize="13px"
           fontWeight={600}
           px={3}
           py={1.5}
-          color={activeTab === "content" ? "blue.500" : "gray.400"}
+          color={activeTab === "content" ? "brand.orange" : "gray.500"}
           borderBottom="2px solid"
-          borderColor={activeTab === "content" ? "blue.500" : "transparent"}
+          borderColor={activeTab === "content" ? "brand.orange" : "transparent"}
           cursor="pointer"
           onClick={() => setActiveTab("content")}
-          _hover={{ color: "blue.500" }}
+          _hover={{ color: "brand.orange" }}
         >
           Content
         </Box>
         {showStyleTab && (
           <Box
             as="button"
-            fontSize="12px"
+            fontSize="13px"
             fontWeight={600}
             px={3}
             py={1.5}
-            color={activeTab === "style" ? "blue.500" : "gray.400"}
+            color={activeTab === "style" ? "brand.orange" : "gray.500"}
             borderBottom="2px solid"
-            borderColor={activeTab === "style" ? "blue.500" : "transparent"}
+            borderColor={activeTab === "style" ? "brand.orange" : "transparent"}
             cursor="pointer"
             onClick={() => setActiveTab("style")}
-            _hover={{ color: "blue.500" }}
+            _hover={{ color: "brand.orange" }}
           >
             Style
           </Box>
@@ -103,7 +136,7 @@ export function NarrativeEditor({
             }}
           />
 
-          <Text fontSize="10px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase">
+          <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase">
             Narrative
           </Text>
 
@@ -115,7 +148,7 @@ export function NarrativeEditor({
             p={3}
             display="flex"
             flexDirection="column"
-            _focusWithin={{ borderColor: "blue.300" }}
+            _focusWithin={{ borderColor: "brand.border" }}
           >
             <MarkdownToolbar
               textareaRef={narrativeRef}
@@ -130,7 +163,7 @@ export function NarrativeEditor({
               style={{
                 flex: 1,
                 fontFamily: "inherit",
-                fontSize: "13px",
+                fontSize: "14px",
                 resize: "none",
                 border: "none",
                 outline: "none",
@@ -144,45 +177,17 @@ export function NarrativeEditor({
 
       {activeTab === "style" && showStyleTab && (
         <Flex direction="column" gap={4} px={1} py={2}>
-          <Box>
-            <Text fontSize="xs" color="gray.500" mb={1}>Dataset</Text>
-            <Flex gap={1} align="center">
-              <select
-                value={layerConfig.dataset_id}
-                onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
-                style={{ fontSize: "13px", padding: "4px 8px", maxWidth: "200px" }}
-              >
-                {datasets.map(ds => (
-                  <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
-                ))}
-              </select>
-              {onAddDataset && (
-                <Text
-                  as="button"
-                  fontSize="12px"
-                  color="blue.500"
-                  fontWeight={600}
-                  cursor="pointer"
-                  onClick={onAddDataset}
-                  _hover={{ color: "blue.600" }}
-                  whiteSpace="nowrap"
-                >
-                  <Flex align="center" gap={1.5}><Plus size={12} weight="bold" /> Add</Flex>
-                </Text>
-              )}
-            </Flex>
-          </Box>
           {datasetType === "raster" && (
             <>
               <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>Colormap</Text>
+                <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase" mb={1}>Colormap</Text>
                 <ColormapPicker
                   value={layerConfig.colormap}
                   onChange={(cm) => onLayerConfigChange({ ...layerConfig, colormap: cm })}
                 />
               </Box>
               <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>Opacity</Text>
+                <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase" mb={1}>Opacity</Text>
                 <input
                   type="range"
                   min={0} max={100}

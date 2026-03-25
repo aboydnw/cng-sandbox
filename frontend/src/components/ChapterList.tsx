@@ -57,7 +57,7 @@ export function ChapterList({
     <Flex direction="column" h="100%">
       <Box px={3} py={3} borderBottom="1px solid" borderColor="gray.200">
         <Text
-          fontSize="10px"
+          fontSize="12px"
           textTransform="uppercase"
           letterSpacing="1px"
           color="gray.500"
@@ -79,14 +79,16 @@ export function ChapterList({
               onDragStart={(e) => handleDragStart(e, i)}
               onDrop={(e) => handleDrop(e, i)}
               onDragOver={handleDragOver}
-              bg={isActive ? "blue.500" : "gray.50"}
-              color={isActive ? "white" : "gray.800"}
+              bg={isActive ? "brand.bgSubtle" : "white"}
+              color={isActive ? "brand.brown" : "gray.700"}
               borderRadius="6px"
               mb={1}
               cursor="pointer"
               onClick={() => onSelect(chapter.id)}
+              border="1px solid"
+              borderColor={isActive ? "brand.border" : "transparent"}
               _hover={{
-                bg: isActive ? "blue.500" : "gray.100",
+                bg: isActive ? "brand.bgSubtle" : "gray.50",
               }}
               position="relative"
             >
@@ -119,7 +121,7 @@ export function ChapterList({
                       minH="28px"
                       flex={1}
                       color={isActive ? "white" : "gray.600"}
-                      _hover={{ bg: isActive ? "blue.400" : "gray.200" }}
+                      _hover={{ bg: isActive ? "gray.200" : "gray.200" }}
                       onClick={() => setConfirmDeleteId(null)}
                     >
                       Cancel
@@ -136,15 +138,15 @@ export function ChapterList({
                     flexShrink={0}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <DotsSixVertical size={14} />
+                    <DotsSixVertical size={16} />
                   </Flex>
 
                   <Box flex={1} py={2} pr={1}>
-                    <Text fontSize="12px" fontWeight={600} lineClamp={1}>
+                    <Text fontSize="13px" fontWeight={600} lineClamp={1}>
                       {i + 1}. {chapter.title}
                     </Text>
-                    <Flex fontSize="10px" opacity={0.7} lineClamp={1} mt={0.5} align="center" gap={1}>
-                      {({ scrollytelling: <Scroll size={10} />, prose: <ListBullets size={10} />, map: <MapTrifold size={10} /> } as Record<ChapterType, React.ReactNode>)[chapter.type]}
+                    <Flex fontSize="11px" opacity={0.7} lineClamp={1} mt={0.5} align="center" gap={1}>
+                      {({ scrollytelling: <Scroll size={11} />, prose: <ListBullets size={11} />, map: <MapTrifold size={11} /> } as Record<ChapterType, React.ReactNode>)[chapter.type]}
                       {CHAPTER_TYPE_LABELS[chapter.type]}
                       {chapter.narrative.trim() ? (
                         <> · {chapter.narrative.trim().slice(0, 40)}</>
@@ -172,7 +174,7 @@ export function ChapterList({
                       lineHeight={1}
                       onClick={() => i > 0 && moveChapter(i, "up")}
                     >
-                      <CaretUp size={11} weight="bold" />
+                      <CaretUp size={13} weight="bold" />
                     </Box>
                     <Box
                       as="button"
@@ -183,7 +185,7 @@ export function ChapterList({
                       lineHeight={1}
                       onClick={() => i < sorted.length - 1 && moveChapter(i, "down")}
                     >
-                      <CaretDown size={11} weight="bold" />
+                      <CaretDown size={13} weight="bold" />
                     </Box>
                   </Flex>
 
@@ -201,7 +203,7 @@ export function ChapterList({
                         lineHeight={1}
                         onClick={() => setConfirmDeleteId(chapter.id)}
                       >
-                        <X size={12} weight="bold" />
+                        <X size={14} weight="bold" />
                       </Box>
                     </Flex>
                   )}
@@ -225,7 +227,7 @@ export function ChapterList({
           fontSize="12px"
           cursor="pointer"
           onClick={onAdd}
-          _hover={{ borderColor: "blue.300", color: "blue.500" }}
+          _hover={{ borderColor: "brand.orange", color: "brand.orange" }}
         >
           <Flex align="center" gap={1.5} justify="center"><Plus size={12} weight="bold" /> Add chapter</Flex>
         </Box>

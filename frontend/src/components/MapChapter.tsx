@@ -67,7 +67,7 @@ export function MapChapter({ chapter, chapterIndex, dataset }: MapChapterProps) 
           fontSize="10px"
           textTransform="uppercase"
           letterSpacing="1px"
-          color="blue.500"
+          color="brand.orange"
           fontWeight={600}
           mb={2}
         >

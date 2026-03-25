@@ -28,11 +28,11 @@ export function ColormapPicker({ value, onChange }: ColormapPickerProps) {
           py={1}
           borderRadius="4px"
           cursor="pointer"
-          bg={value === name ? "blue.50" : "transparent"}
+          bg={value === name ? "brand.bgSubtle" : "transparent"}
           border="1px solid"
-          borderColor={value === name ? "blue.300" : "transparent"}
+          borderColor={value === name ? "brand.border" : "transparent"}
           onClick={() => onChange(name)}
-          _hover={{ bg: value === name ? "blue.50" : "gray.50" }}
+          _hover={{ bg: value === name ? "brand.bgSubtle" : "gray.50" }}
         >
           <Box w="60px" h="12px" borderRadius="2px" bg={gradient} flexShrink={0} />
           <Text fontSize="12px" color="gray.700">{name}</Text>

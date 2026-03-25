@@ -470,7 +470,7 @@ export default function StoryEditorPage() {
             p={0}
             height="auto"
             _hover={{ borderColor: "gray.300" }}
-            _focusVisible={{ borderColor: "blue.400", boxShadow: "none" }}
+            _focusVisible={{ borderColor: "brand.orange", boxShadow: "none" }}
             _placeholder={{ color: "gray.400", fontWeight: 400 }}
           />
           <Box
@@ -521,10 +521,10 @@ export default function StoryEditorPage() {
           ) : (
             <Button
               size="sm"
-              bg="blue.500"
+              bg="brand.orange"
               color="white"
               onClick={() => setPublishDialogOpen(true)}
-              _hover={{ bg: "blue.600" }}
+              _hover={{ bg: "brand.orangeHover" }}
             >
               Publish
             </Button>
@@ -572,11 +572,11 @@ export default function StoryEditorPage() {
         </Flex>
       )}
 
-      {/* Three-panel layout */}
+      {/* Three-panel layout: Chapters | Map | Editor */}
       <Flex flex={1} overflow="hidden">
         {/* Left: chapter list */}
         <Box
-          w="220px"
+          w="200px"
           flexShrink={0}
           borderRight="1px solid"
           borderColor="gray.200"
@@ -599,114 +599,115 @@ export default function StoryEditorPage() {
           />
         </Box>
 
-        {/* Right: map + editor stacked */}
-        <Flex flex={1} direction="column" overflow="hidden">
-          {/* Map (top) — hidden for prose chapters */}
-          {activeChapter?.type !== "prose" && (
-            <Box flex={6} position="relative">
-              {firstUnseen === "map" && (
-                <TooltipCard
-                  text="Navigate the map to frame your view. It saves automatically as you go."
-                  onDismiss={() => dismiss("map")}
-                />
+        {/* Center: map (full height) — hidden for prose chapters */}
+        {activeChapter?.type !== "prose" ? (
+          <Box flex={1} position="relative">
+            {firstUnseen === "map" && (
+              <TooltipCard
+                text="Navigate the map to frame your view. It saves automatically as you go."
+                onDismiss={() => dismiss("map")}
+              />
+            )}
+            <UnifiedMap
+              camera={camera}
+              onCameraChange={handleCameraChange}
+              layers={layers}
+              basemap={basemap}
+              onBasemapChange={setBasemap}
+              transitionDuration={transitionDuration}
+              transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
+            >
+              {viewSavedFlash && (
+                <Flex
+                  position="absolute"
+                  bottom={4}
+                  left="50%"
+                  transform="translateX(-50%)"
+                  align="center"
+                  gap={1}
+                  bg="whiteAlpha.900"
+                  px={3}
+                  py={1.5}
+                  borderRadius="md"
+                  shadow="sm"
+                  fontSize="xs"
+                  color="green.600"
+                  fontWeight={500}
+                  pointerEvents="none"
+                >
+                  <Check size={12} /> View saved
+                </Flex>
               )}
-              <UnifiedMap
-                camera={camera}
-                onCameraChange={handleCameraChange}
-                layers={layers}
-                basemap={basemap}
-                onBasemapChange={setBasemap}
-                transitionDuration={transitionDuration}
-                transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
-              >
-                {viewSavedFlash && (
-                  <Flex
+              {!viewSavedFlash && activeChapter && (() => {
+                const ms = activeChapter.map_state;
+                const differs =
+                  Math.abs(camera.longitude - ms.center[0]) > 0.0001 ||
+                  Math.abs(camera.latitude - ms.center[1]) > 0.0001 ||
+                  Math.abs(camera.zoom - ms.zoom) > 0.01 ||
+                  Math.abs(camera.bearing - ms.bearing) > 0.1 ||
+                  Math.abs(camera.pitch - ms.pitch) > 0.1 ||
+                  basemap !== ms.basemap;
+                return differs ? (
+                  <Button
                     position="absolute"
                     bottom={4}
                     left="50%"
                     transform="translateX(-50%)"
-                    align="center"
-                    gap={1}
+                    size="sm"
+                    variant="outline"
                     bg="whiteAlpha.900"
-                    px={3}
-                    py={1.5}
-                    borderRadius="md"
-                    shadow="sm"
-                    fontSize="xs"
-                    color="green.600"
-                    fontWeight={500}
-                    pointerEvents="none"
+                    shadow="md"
+                    onClick={resetView}
+                    display="flex"
+                    alignItems="center"
+                    gap={1.5}
                   >
-                    <Check size={12} /> View saved
-                  </Flex>
-                )}
-                {!viewSavedFlash && activeChapter && (() => {
-                  const ms = activeChapter.map_state;
-                  const differs =
-                    Math.abs(camera.longitude - ms.center[0]) > 0.0001 ||
-                    Math.abs(camera.latitude - ms.center[1]) > 0.0001 ||
-                    Math.abs(camera.zoom - ms.zoom) > 0.01 ||
-                    Math.abs(camera.bearing - ms.bearing) > 0.1 ||
-                    Math.abs(camera.pitch - ms.pitch) > 0.1 ||
-                    basemap !== ms.basemap;
-                  return differs ? (
-                    <Button
-                      position="absolute"
-                      bottom={4}
-                      left="50%"
-                      transform="translateX(-50%)"
-                      size="sm"
-                      variant="outline"
-                      bg="whiteAlpha.900"
-                      shadow="md"
-                      onClick={resetView}
-                      display="flex"
-                      alignItems="center"
-                      gap={1.5}
-                    >
-                      <ArrowCounterClockwise size={14} /> Reset view
-                    </Button>
-                  ) : null;
-                })()}
-              </UnifiedMap>
-            </Box>
-          )}
-
-          {/* Editor (bottom) */}
-          <Box
-            flex={4}
-            borderTop="1px solid"
-            borderColor="gray.200"
-            bg="white"
-            position="relative"
-          >
-            {firstUnseen === "narrative" && (
-              <TooltipCard
-                text="Write what readers will see alongside the map. Use the toolbar for formatting."
-                onDismiss={() => dismiss("narrative")}
-              />
-            )}
-            {activeChapter ? (
-              <NarrativeEditor
-                chapterType={activeChapter.type}
-                onChapterTypeChange={updateChapterType}
-                title={activeChapter.title}
-                narrative={activeChapter.narrative}
-                onTitleChange={updateChapterTitle}
-                onNarrativeChange={updateChapterNarrative}
-                layerConfig={activeChapter.layer_config}
-                onLayerConfigChange={updateChapterLayerConfig}
-                datasetType={activeDataset?.dataset_type ?? "raster"}
-                datasets={allDatasets}
-                onAddDataset={() => setUploadModalOpen(true)}
-              />
-            ) : (
-              <Flex h="100%" align="center" justify="center">
-                <Text color="gray.400">Select a chapter to edit</Text>
-              </Flex>
-            )}
+                    <ArrowCounterClockwise size={14} /> Reset view
+                  </Button>
+                ) : null;
+              })()}
+            </UnifiedMap>
           </Box>
-        </Flex>
+        ) : (
+          <Box flex={1} />
+        )}
+
+        {/* Right: editor panel */}
+        <Box
+          w="340px"
+          flexShrink={0}
+          borderLeft="1px solid"
+          borderColor="gray.200"
+          bg="white"
+          overflowY="auto"
+          position="relative"
+        >
+          {firstUnseen === "narrative" && (
+            <TooltipCard
+              text="Write what readers will see alongside the map. Use the toolbar for formatting."
+              onDismiss={() => dismiss("narrative")}
+            />
+          )}
+          {activeChapter ? (
+            <NarrativeEditor
+              chapterType={activeChapter.type}
+              onChapterTypeChange={updateChapterType}
+              title={activeChapter.title}
+              narrative={activeChapter.narrative}
+              onTitleChange={updateChapterTitle}
+              onNarrativeChange={updateChapterNarrative}
+              layerConfig={activeChapter.layer_config}
+              onLayerConfigChange={updateChapterLayerConfig}
+              datasetType={activeDataset?.dataset_type ?? "raster"}
+              datasets={allDatasets}
+              onAddDataset={() => setUploadModalOpen(true)}
+            />
+          ) : (
+            <Flex h="100%" align="center" justify="center">
+              <Text color="gray.400">Select a chapter to edit</Text>
+            </Flex>
+          )}
+        </Box>
       </Flex>
       <UploadModal
         open={uploadModalOpen}

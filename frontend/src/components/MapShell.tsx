@@ -33,7 +33,7 @@ export function BasemapPicker({ value, onChange }: BasemapPickerProps) {
           borderRadius="4px"
           bg={opt.bg}
           border="2px solid"
-          borderColor={value === opt.key ? "blue.500" : "transparent"}
+          borderColor={value === opt.key ? "brand.orange" : "transparent"}
           onClick={() => onChange(opt.key)}
           title={opt.label}
         />

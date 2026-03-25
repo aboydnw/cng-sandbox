@@ -189,9 +189,9 @@ export function PublishDialog({
               </Button>
               <Button
                 size="sm"
-                bg="blue.500"
+                bg="brand.orange"
                 color="white"
-                _hover={{ bg: "blue.600" }}
+                _hover={{ bg: "brand.orangeHover" }}
                 onClick={handlePublish}
               >
                 Publish

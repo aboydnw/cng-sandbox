@@ -35,8 +35,7 @@ import {
 import type { Dataset } from "../types";
 import { config } from "../config";
 import { workspaceFetch } from "../lib/api";
-import { Check, MapPin, SpinnerGap } from "@phosphor-icons/react";
-import { transition } from "../lib/interactionStyles";
+import { ArrowCounterClockwise, Check, SpinnerGap } from "@phosphor-icons/react";
 
 
 export default function StoryEditorPage() {
@@ -53,11 +52,12 @@ export default function StoryEditorPage() {
   const [activeChapterId, setActiveChapterId] = useState<string>("");
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [basemap, setBasemap] = useState("streets");
-  const [captureFlash, setCaptureFlash] = useState(false);
+  const [viewSavedFlash, setViewSavedFlash] = useState(false);
   const [publishFeedback, setPublishFeedback] = useState<string | null>(null);
   const [transitionDuration, setTransitionDuration] = useState<number | undefined>(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { saveState, markSaving, markSaved, markError } = useSaveStatus();
@@ -228,28 +228,46 @@ export default function StoryEditorPage() {
     }
   }
 
-  // Capture current view into active chapter
-  function captureView() {
-    if (!activeChapterId) return;
-    updateStory((s) => ({
-      ...s,
-      chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId
-          ? {
-              ...ch,
-              map_state: {
-                center: [camera.longitude, camera.latitude] as [number, number],
-                zoom: camera.zoom,
-                bearing: camera.bearing,
-                pitch: camera.pitch,
-                basemap,
-              },
-            }
-          : ch,
-      ),
-    }));
-    setCaptureFlash(true);
-    setTimeout(() => setCaptureFlash(false), 600);
+  function handleCameraChange(c: CameraState) {
+    setCamera(c);
+    setTransitionDuration(undefined);
+
+    if (autoCaptureRef.current) clearTimeout(autoCaptureRef.current);
+    autoCaptureRef.current = setTimeout(() => {
+      if (!activeChapterId) return;
+      updateStory((s) => ({
+        ...s,
+        chapters: s.chapters.map((ch) =>
+          ch.id === activeChapterId
+            ? {
+                ...ch,
+                map_state: {
+                  center: [c.longitude, c.latitude] as [number, number],
+                  zoom: c.zoom,
+                  bearing: c.bearing,
+                  pitch: c.pitch,
+                  basemap,
+                },
+              }
+            : ch,
+        ),
+      }));
+      setViewSavedFlash(true);
+      setTimeout(() => setViewSavedFlash(false), 1500);
+    }, 800);
+  }
+
+  function resetView() {
+    if (!activeChapter) return;
+    setBasemap(activeChapter.map_state.basemap);
+    setTransitionDuration(1000);
+    setCamera({
+      longitude: activeChapter.map_state.center[0],
+      latitude: activeChapter.map_state.center[1],
+      zoom: activeChapter.map_state.zoom,
+      bearing: activeChapter.map_state.bearing,
+      pitch: activeChapter.map_state.pitch,
+    });
   }
 
   // Add chapter
@@ -481,31 +499,62 @@ export default function StoryEditorPage() {
             <Box flex={6} position="relative">
               <UnifiedMap
                 camera={camera}
-                onCameraChange={(c) => { setCamera(c); setTransitionDuration(undefined); }}
+                onCameraChange={handleCameraChange}
                 layers={layers}
                 basemap={basemap}
                 onBasemapChange={setBasemap}
                 transitionDuration={transitionDuration}
                 transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
               >
-                <Button
-                  position="absolute"
-                  bottom={4}
-                  left="50%"
-                  transform="translateX(-50%)"
-                  size="sm"
-                  bg={captureFlash ? "green.500" : "blue.500"}
-                  color="white"
-                  shadow="md"
-                  onClick={captureView}
-                  transition={transition(300)}
-                  display="flex"
-                  alignItems="center"
-                  gap={1.5}
-                  _hover={{ bg: captureFlash ? "green.500" : "blue.600" }}
-                >
-                  {captureFlash ? <><Check size={14} /> Captured!</> : <><MapPin size={14} /> Capture this view</>}
-                </Button>
+                {viewSavedFlash && (
+                  <Flex
+                    position="absolute"
+                    bottom={4}
+                    left="50%"
+                    transform="translateX(-50%)"
+                    align="center"
+                    gap={1}
+                    bg="whiteAlpha.900"
+                    px={3}
+                    py={1.5}
+                    borderRadius="md"
+                    shadow="sm"
+                    fontSize="xs"
+                    color="green.600"
+                    fontWeight={500}
+                    pointerEvents="none"
+                  >
+                    <Check size={12} /> View saved
+                  </Flex>
+                )}
+                {!viewSavedFlash && activeChapter && (() => {
+                  const ms = activeChapter.map_state;
+                  const differs =
+                    Math.abs(camera.longitude - ms.center[0]) > 0.0001 ||
+                    Math.abs(camera.latitude - ms.center[1]) > 0.0001 ||
+                    Math.abs(camera.zoom - ms.zoom) > 0.01 ||
+                    Math.abs(camera.bearing - ms.bearing) > 0.1 ||
+                    Math.abs(camera.pitch - ms.pitch) > 0.1 ||
+                    basemap !== ms.basemap;
+                  return differs ? (
+                    <Button
+                      position="absolute"
+                      bottom={4}
+                      left="50%"
+                      transform="translateX(-50%)"
+                      size="sm"
+                      variant="outline"
+                      bg="whiteAlpha.900"
+                      shadow="md"
+                      onClick={resetView}
+                      display="flex"
+                      alignItems="center"
+                      gap={1.5}
+                    >
+                      <ArrowCounterClockwise size={14} /> Reset view
+                    </Button>
+                  ) : null;
+                })()}
               </UnifiedMap>
             </Box>
           )}

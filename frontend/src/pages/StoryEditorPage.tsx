@@ -477,6 +477,7 @@ export default function StoryEditorPage() {
             color="gray.400"
             opacity={0}
             _groupHover={{ opacity: 1 }}
+            _groupFocusWithin={{ opacity: 1 }}
             pointerEvents="none"
             flexShrink={0}
           >

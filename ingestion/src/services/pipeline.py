@@ -140,7 +140,7 @@ def _extract_raster_geo_metadata(output_path: str) -> RasterGeoMetadata:
     with rasterio.open(output_path) as src:
         return RasterGeoMetadata(
             crs=str(src.crs) if src.crs else None,
-            crs_name=src.crs.name if src.crs else None,
+            crs_name=src.crs.to_wkt().split('"')[1] if src.crs else None,
             pixel_width=src.width,
             pixel_height=src.height,
             resolution=abs(src.res[0]) if src.res else None,

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { Plus, X } from "@phosphor-icons/react";
 import type { Chapter } from "../lib/story";
+import { CHAPTER_TYPE_LABELS } from "../lib/story/labels";
 
 interface ChapterListProps {
   chapters: Chapter[];
@@ -81,12 +82,13 @@ export function ChapterList({
               {i + 1}. {chapter.title}
             </Text>
             <Flex justify="space-between" align="center" mt={1}>
-              <Text fontSize="10px" opacity={0.7}>
-                {chapter.type === "prose"
-                  ? "prose"
-                  : chapter.type === "map"
-                    ? "map · zoom " + chapter.map_state.zoom.toFixed(0)
-                    : "zoom " + chapter.map_state.zoom.toFixed(0) + " · " + chapter.transition}
+              <Text fontSize="10px" opacity={0.7} lineClamp={1}>
+                {CHAPTER_TYPE_LABELS[chapter.type]}
+                {chapter.narrative.trim() ? (
+                  <> · {chapter.narrative.trim().slice(0, 40)}</>
+                ) : (
+                  <Text as="span" fontStyle="italic"> · No narrative yet</Text>
+                )}
               </Text>
               {confirmDeleteId === chapter.id ? (
                 <Flex gap={1}>

@@ -124,6 +124,47 @@ def _extract_feature_stats(parquet_path: str) -> tuple[int, list[str]]:
     return feature_count, geometry_types
 
 
+@dataclass
+class RasterGeoMetadata:
+    crs: str | None
+    crs_name: str | None
+    pixel_width: int
+    pixel_height: int
+    resolution: float | None
+    compression: str | None
+
+
+def _extract_raster_geo_metadata(output_path: str) -> RasterGeoMetadata:
+    """Extract CRS, dimensions, resolution, and compression from a raster file."""
+    import rasterio
+    with rasterio.open(output_path) as src:
+        return RasterGeoMetadata(
+            crs=str(src.crs) if src.crs else None,
+            crs_name=src.crs.name if src.crs else None,
+            pixel_width=src.width,
+            pixel_height=src.height,
+            resolution=abs(src.res[0]) if src.res else None,
+            compression=src.profile.get("compress", None),
+        )
+
+
+@dataclass
+class VectorGeoMetadata:
+    crs: str | None
+    crs_name: str | None
+
+
+def _extract_vector_geo_metadata(parquet_path: str) -> VectorGeoMetadata:
+    """Extract CRS from a GeoParquet file."""
+    import geopandas as gpd
+    gdf = gpd.read_parquet(parquet_path)
+    crs = gdf.crs
+    return VectorGeoMetadata(
+        crs=str(crs) if crs else None,
+        crs_name=crs.name if crs else None,
+    )
+
+
 def _extract_zoom_range_raster(cog_path: str) -> tuple[int, int]:
     """Derive min/max tile zoom from a COG's native resolution and overview count."""
     import math
@@ -262,8 +303,10 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
             # Extract band metadata for rasters (used by the frontend to determine colormap eligibility)
             band_meta = None
+            raster_geo_meta = None
             if format_pair.dataset_type == DatasetType.RASTER:
                 band_meta = await asyncio.to_thread(_extract_band_metadata, output_path)
+                raster_geo_meta = await asyncio.to_thread(_extract_raster_geo_metadata, output_path)
 
             # Raster converted_file_size: output_path IS the COG at this point
             converted_file_size = os.path.getsize(output_path) if format_pair.dataset_type == DatasetType.RASTER else None
@@ -272,10 +315,12 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             feature_count = None
             geometry_types = None
             geoparquet_file_size = None
+            vector_geo_meta = None
             if format_pair.dataset_type == DatasetType.VECTOR:
                 feature_count, geometry_types = await asyncio.to_thread(
                     _extract_feature_stats, output_path
                 )
+                vector_geo_meta = await asyncio.to_thread(_extract_vector_geo_metadata, output_path)
 
             # Extract zoom range (vector PMTiles path sets these below via ingest_pmtiles)
             min_zoom = None
@@ -351,6 +396,12 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             created_at=job.created_at,
             raster_min=raster_min,
             raster_max=raster_max,
+            crs=raster_geo_meta.crs if raster_geo_meta else (vector_geo_meta.crs if vector_geo_meta else None),
+            crs_name=raster_geo_meta.crs_name if raster_geo_meta else (vector_geo_meta.crs_name if vector_geo_meta else None),
+            pixel_width=raster_geo_meta.pixel_width if raster_geo_meta else None,
+            pixel_height=raster_geo_meta.pixel_height if raster_geo_meta else None,
+            resolution=raster_geo_meta.resolution if raster_geo_meta else None,
+            compression=raster_geo_meta.compression if raster_geo_meta else None,
         )
         from src.models.dataset import persist_dataset
         persist_dataset(db_session_factory, dataset)

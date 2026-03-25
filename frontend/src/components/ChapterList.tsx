@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
-import { Plus, X } from "@phosphor-icons/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { CaretDown, CaretUp, DotsSixVertical, ListBullets, MapTrifold, Scroll, Plus, X } from "@phosphor-icons/react";
+import type { ChapterType } from "../lib/story";
 import type { Chapter } from "../lib/story";
 import { CHAPTER_TYPE_LABELS } from "../lib/story/labels";
 
@@ -45,6 +46,13 @@ export function ChapterList({
     e.dataTransfer.dropEffect = "move";
   }
 
+  function moveChapter(index: number, direction: "up" | "down") {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    const reordered = [...sorted];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    onReorder(reordered.map((ch, i) => ({ ...ch, order: i })));
+  }
+
   return (
     <Flex direction="column" h="100%">
       <Box px={3} py={3} borderBottom="1px solid" borderColor="gray.200">
@@ -60,81 +68,148 @@ export function ChapterList({
       </Box>
 
       <Box flex={1} overflowY="auto" p={2}>
-        {sorted.map((chapter, i) => (
-          <Box
-            key={chapter.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, i)}
-            onDrop={(e) => handleDrop(e, i)}
-            onDragOver={handleDragOver}
-            bg={chapter.id === activeChapterId ? "blue.500" : "gray.50"}
-            color={chapter.id === activeChapterId ? "white" : "gray.800"}
-            borderRadius="6px"
-            p={2}
-            mb={1}
-            cursor="pointer"
-            onClick={() => onSelect(chapter.id)}
-            _hover={{
-              bg: chapter.id === activeChapterId ? "blue.500" : "gray.100",
-            }}
-          >
-            <Text fontSize="12px" fontWeight={600} lineClamp={1}>
-              {i + 1}. {chapter.title}
-            </Text>
-            <Flex justify="space-between" align="center" mt={1}>
-              <Text fontSize="10px" opacity={0.7} lineClamp={1}>
-                {CHAPTER_TYPE_LABELS[chapter.type]}
-                {chapter.narrative.trim() ? (
-                  <> · {chapter.narrative.trim().slice(0, 40)}</>
-                ) : (
-                  <Text as="span" fontStyle="italic"> · No narrative yet</Text>
-                )}
-              </Text>
-              {confirmDeleteId === chapter.id ? (
-                <Flex gap={1}>
-                  <Text
-                    as="button"
-                    fontSize="10px"
-                    color={chapter.id === activeChapterId ? "white" : "red.500"}
-                    fontWeight={600}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(chapter.id);
-                      setConfirmDeleteId(null);
-                    }}
-                  >
-                    Delete
+        {sorted.map((chapter, i) => {
+          const isActive = chapter.id === activeChapterId;
+          const isConfirming = confirmDeleteId === chapter.id;
+
+          return (
+            <Box
+              key={chapter.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, i)}
+              onDrop={(e) => handleDrop(e, i)}
+              onDragOver={handleDragOver}
+              bg={isActive ? "blue.500" : "gray.50"}
+              color={isActive ? "white" : "gray.800"}
+              borderRadius="6px"
+              mb={1}
+              cursor="pointer"
+              onClick={() => onSelect(chapter.id)}
+              _hover={{
+                bg: isActive ? "blue.500" : "gray.100",
+              }}
+              position="relative"
+            >
+              {isConfirming ? (
+                <Flex
+                  direction="column"
+                  gap={2}
+                  p={2}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Text fontSize="12px" fontWeight={600}>
+                    Delete this chapter?
                   </Text>
-                  <Text
-                    as="button"
-                    fontSize="10px"
-                    opacity={0.7}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDeleteId(null);
-                    }}
-                  >
-                    Cancel
-                  </Text>
+                  <Flex gap={1.5}>
+                    <Button
+                      size="xs"
+                      colorScheme="red"
+                      minH="28px"
+                      flex={1}
+                      onClick={() => {
+                        onDelete(chapter.id);
+                        setConfirmDeleteId(null);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      minH="28px"
+                      flex={1}
+                      color={isActive ? "white" : "gray.600"}
+                      _hover={{ bg: isActive ? "blue.400" : "gray.200" }}
+                      onClick={() => setConfirmDeleteId(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </Flex>
                 </Flex>
               ) : (
-                chapters.length > 1 && (
-                  <Text
-                    as="button"
-                    fontSize="10px"
-                    opacity={0.5}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDeleteId(chapter.id);
-                    }}
+                <Flex align="stretch">
+                  <Flex
+                    align="center"
+                    px={1}
+                    opacity={0.4}
+                    cursor="grab"
+                    flexShrink={0}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <X size={12} weight="bold" />
-                  </Text>
-                )
+                    <DotsSixVertical size={14} />
+                  </Flex>
+
+                  <Box flex={1} py={2} pr={1}>
+                    <Text fontSize="12px" fontWeight={600} lineClamp={1}>
+                      {i + 1}. {chapter.title}
+                    </Text>
+                    <Flex fontSize="10px" opacity={0.7} lineClamp={1} mt={0.5} align="center" gap={1}>
+                      {({ scrollytelling: <Scroll size={10} />, prose: <ListBullets size={10} />, map: <MapTrifold size={10} /> } as Record<ChapterType, React.ReactNode>)[chapter.type]}
+                      {CHAPTER_TYPE_LABELS[chapter.type]}
+                      {chapter.narrative.trim() ? (
+                        <> · {chapter.narrative.trim().slice(0, 40)}</>
+                      ) : (
+                        <Text as="span" fontStyle="italic"> · No narrative yet</Text>
+                      )}
+                    </Flex>
+                  </Box>
+
+                  <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    gap={0.5}
+                    px={1}
+                    flexShrink={0}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Box
+                      as="button"
+                      opacity={i === 0 ? 0.2 : 0.5}
+                      cursor={i === 0 ? "default" : "pointer"}
+                      disabled={i === 0}
+                      _hover={i === 0 ? {} : { opacity: 1 }}
+                      lineHeight={1}
+                      onClick={() => i > 0 && moveChapter(i, "up")}
+                    >
+                      <CaretUp size={11} weight="bold" />
+                    </Box>
+                    <Box
+                      as="button"
+                      opacity={i === sorted.length - 1 ? 0.2 : 0.5}
+                      cursor={i === sorted.length - 1 ? "default" : "pointer"}
+                      disabled={i === sorted.length - 1}
+                      _hover={i === sorted.length - 1 ? {} : { opacity: 1 }}
+                      lineHeight={1}
+                      onClick={() => i < sorted.length - 1 && moveChapter(i, "down")}
+                    >
+                      <CaretDown size={11} weight="bold" />
+                    </Box>
+                  </Flex>
+
+                  {chapters.length > 1 && (
+                    <Flex
+                      align="center"
+                      px={1}
+                      flexShrink={0}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Box
+                        as="button"
+                        opacity={0.4}
+                        _hover={{ opacity: 0.8 }}
+                        lineHeight={1}
+                        onClick={() => setConfirmDeleteId(chapter.id)}
+                      >
+                        <X size={12} weight="bold" />
+                      </Box>
+                    </Flex>
+                  )}
+                </Flex>
               )}
-            </Flex>
-          </Box>
-        ))}
+            </Box>
+          );
+        })}
       </Box>
 
       <Box p={2} borderTop="1px solid" borderColor="gray.200">

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
+import { useTooltipDismiss } from "../hooks/useTooltipDismiss";
 import { Box, Button, Flex, Input, Text, Link } from "@chakra-ui/react";
-import { PencilSimple } from "@phosphor-icons/react";
+import { PencilSimple, X as XIcon } from "@phosphor-icons/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
@@ -39,6 +40,38 @@ import { workspaceFetch } from "../lib/api";
 import { ArrowCounterClockwise, Check, SpinnerGap } from "@phosphor-icons/react";
 
 
+function TooltipCard({ text, onDismiss }: { text: string; onDismiss: () => void }) {
+  return (
+    <Box
+      position="absolute"
+      zIndex={100}
+      bg="gray.900"
+      color="white"
+      borderRadius="md"
+      px={3}
+      py={2}
+      fontSize="12px"
+      maxW="200px"
+      shadow="lg"
+      pointerEvents="all"
+    >
+      <Flex gap={2} align="flex-start">
+        <Text flex={1} lineHeight="1.4">{text}</Text>
+        <Box
+          as="button"
+          flexShrink={0}
+          opacity={0.7}
+          _hover={{ opacity: 1 }}
+          mt="1px"
+          onClick={onDismiss}
+        >
+          <XIcon size={12} weight="bold" />
+        </Box>
+      </Flex>
+    </Box>
+  );
+}
+
 export default function StoryEditorPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -62,6 +95,10 @@ export default function StoryEditorPage() {
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { saveState, markSaving, markSaved, markError } = useSaveStatus();
+  const { shouldShow, dismiss } = useTooltipDismiss();
+
+  const TOOLTIP_KEYS = ["chapters", "map", "narrative"] as const;
+  const firstUnseen = TOOLTIP_KEYS.find((k) => shouldShow(k)) ?? null;
 
   useEffect(() => {
     async function fetchAllDatasets() {
@@ -543,7 +580,14 @@ export default function StoryEditorPage() {
           borderRight="1px solid"
           borderColor="gray.200"
           bg="white"
+          position="relative"
         >
+          {firstUnseen === "chapters" && (
+            <TooltipCard
+              text="Each chapter is a section of your story. Readers see them in this order."
+              onDismiss={() => dismiss("chapters")}
+            />
+          )}
           <ChapterList
             chapters={story.chapters}
             activeChapterId={activeChapterId}
@@ -559,6 +603,12 @@ export default function StoryEditorPage() {
           {/* Map (top) — hidden for prose chapters */}
           {activeChapter?.type !== "prose" && (
             <Box flex={6} position="relative">
+              {firstUnseen === "map" && (
+                <TooltipCard
+                  text="Navigate the map to frame your view. It saves automatically as you go."
+                  onDismiss={() => dismiss("map")}
+                />
+              )}
               <UnifiedMap
                 camera={camera}
                 onCameraChange={handleCameraChange}
@@ -627,7 +677,14 @@ export default function StoryEditorPage() {
             borderTop="1px solid"
             borderColor="gray.200"
             bg="white"
+            position="relative"
           >
+            {firstUnseen === "narrative" && (
+              <TooltipCard
+                text="Write what readers will see alongside the map. Use the toolbar for formatting."
+                onDismiss={() => dismiss("narrative")}
+              />
+            )}
             {activeChapter ? (
               <NarrativeEditor
                 chapterType={activeChapter.type}

@@ -20,6 +20,7 @@ class DatasetRow(Base):
     bounds_json = Column(Text, nullable=True)
     metadata_json = Column(Text, nullable=False, default="{}")
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    workspace_id = Column(String, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Dataset API response format."""
@@ -34,11 +35,12 @@ class DatasetRow(Base):
             "tile_url": self.tile_url,
             "bounds": bounds,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "workspace_id": self.workspace_id,
         }
 
 
 _TOP_LEVEL_COLUMNS = frozenset(
-    ("id", "filename", "dataset_type", "format_pair", "tile_url", "bounds", "created_at")
+    ("id", "filename", "dataset_type", "format_pair", "tile_url", "bounds", "created_at", "workspace_id")
 )
 
 
@@ -58,6 +60,7 @@ def persist_dataset(db_session_factory, dataset) -> None:
                 if k not in _TOP_LEVEL_COLUMNS
             }, default=str),
             created_at=dataset.created_at,
+            workspace_id=getattr(dataset, "workspace_id", None),
         )
         session.add(row)
         session.commit()

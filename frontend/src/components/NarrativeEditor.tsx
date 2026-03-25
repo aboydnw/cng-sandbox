@@ -1,5 +1,5 @@
-import { Box, Flex, Text, Textarea } from "@chakra-ui/react";
-import { Plus, Sparkle } from "@phosphor-icons/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
+import { Plus } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
 import type { Dataset } from "../types";
@@ -34,8 +34,6 @@ export function NarrativeEditor({
   datasets,
   onAddDataset,
 }: NarrativeEditorProps) {
-  const [showAiPrompt, setShowAiPrompt] = useState(false);
-  const [roughNotes, setRoughNotes] = useState("");
   const [activeTab, setActiveTab] = useState<"content" | "style">("content");
   const narrativeRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,20 +42,6 @@ export function NarrativeEditor({
       setActiveTab("content");
     }
     onChapterTypeChange(type);
-  }
-
-  function generatePrompt() {
-    const prompt = `Context:
-- This is a chapter titled "${title}" in a scrollytelling map story.
-
-My rough notes:
-"${roughNotes}"
-
-Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytelling story about geospatial data. Use clear, accessible language suitable for a non-technical audience. Write in the style of a scientific narrative, not marketing copy. Output as markdown.`;
-
-    navigator.clipboard?.writeText(prompt);
-    setShowAiPrompt(false);
-    setRoughNotes("");
   }
 
   const showStyleTab = chapterType !== "prose";
@@ -155,56 +139,6 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
               }}
             />
           </Box>
-
-          {showAiPrompt ? (
-            <Box border="1px solid" borderColor="gray.200" borderRadius="6px" p={3}>
-              <Text fontSize="12px" color="gray.600" mb={2}>
-                What's the story here? (rough notes)
-              </Text>
-              <Textarea
-                value={roughNotes}
-                onChange={(e) => setRoughNotes(e.target.value)}
-                placeholder="deforestation got way worse after 2015, especially near palm oil plantations..."
-                fontSize="12px"
-                rows={3}
-                resize="none"
-                mb={2}
-              />
-              <Flex gap={2} justify="flex-end">
-                <Text
-                  as="button"
-                  fontSize="11px"
-                  color="gray.500"
-                  onClick={() => setShowAiPrompt(false)}
-                  cursor="pointer"
-                >
-                  Cancel
-                </Text>
-                <Text
-                  as="button"
-                  fontSize="11px"
-                  color="blue.500"
-                  fontWeight={600}
-                  onClick={generatePrompt}
-                  cursor="pointer"
-                >
-                  Copy prompt to clipboard
-                </Text>
-              </Flex>
-            </Box>
-          ) : (
-            <Text
-              as="button"
-              fontSize="11px"
-              color="gray.500"
-              cursor="pointer"
-              textAlign="left"
-              onClick={() => setShowAiPrompt(true)}
-              _hover={{ color: "blue.500" }}
-            >
-              <Flex align="center" gap={1.5} display="inline-flex"><Sparkle size={14} /> Draft with AI</Flex>
-            </Text>
-          )}
         </>
       )}
 

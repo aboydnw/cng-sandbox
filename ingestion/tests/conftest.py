@@ -45,7 +45,7 @@ def app(db_engine):
 
 @pytest.fixture
 def client(app):
-    return TestClient(app, raise_server_exceptions=False)
+    return TestClient(app, raise_server_exceptions=False, headers={"X-Workspace-Id": "testABCD"})
 
 
 @pytest.fixture

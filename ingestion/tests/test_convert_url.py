@@ -21,7 +21,7 @@ def client():
         postgres_dsn="sqlite:///:memory:",
     )
     app = create_app(settings=settings, lifespan=_noop_lifespan)
-    with TestClient(app) as c:
+    with TestClient(app, headers={"X-Workspace-Id": "testABCD"}) as c:
         yield c
 
 

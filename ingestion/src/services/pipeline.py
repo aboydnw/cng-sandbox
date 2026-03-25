@@ -347,6 +347,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             cog_url=f"/storage/{converted_key}" if format_pair.dataset_type == DatasetType.RASTER else None,
             validation_results=job.validation_results,
             credits=get_credits(format_pair, use_pmtiles=use_pmtiles),
+            workspace_id=job.workspace_id,
             created_at=job.created_at,
             raster_min=raster_min,
             raster_max=raster_max,

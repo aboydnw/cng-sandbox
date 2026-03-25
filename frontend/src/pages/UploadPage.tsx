@@ -153,6 +153,7 @@ export default function UploadPage() {
         open={reportOpen}
         onClose={() => setReportOpen(false)}
         jobId={state.jobId ?? undefined}
+        errorMessage={state.error ?? undefined}
       />
     </Flex>
   );

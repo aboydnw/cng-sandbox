@@ -4,7 +4,7 @@ import { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "../lib/story/lab
 
 const TYPES: ChapterType[] = ["scrollytelling", "prose", "map"];
 
-const ICONS: Record<ChapterType, JSX.Element> = {
+const ICONS: Record<ChapterType, React.ReactNode> = {
   scrollytelling: (
     <svg width="100%" height="32" viewBox="0 0 80 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="1" y="1" width="30" height="30" rx="2" fill="#e2e8f0" stroke="#cbd5e0" strokeWidth="1"/>

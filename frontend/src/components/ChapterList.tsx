@@ -167,7 +167,7 @@ export function ChapterList({
                       as="button"
                       opacity={i === 0 ? 0.2 : 0.5}
                       cursor={i === 0 ? "default" : "pointer"}
-                      disabled={i === 0}
+                      aria-disabled={i === 0}
                       _hover={i === 0 ? {} : { opacity: 1 }}
                       lineHeight={1}
                       onClick={() => i > 0 && moveChapter(i, "up")}
@@ -178,7 +178,7 @@ export function ChapterList({
                       as="button"
                       opacity={i === sorted.length - 1 ? 0.2 : 0.5}
                       cursor={i === sorted.length - 1 ? "default" : "pointer"}
-                      disabled={i === sorted.length - 1}
+                      aria-disabled={i === sorted.length - 1}
                       _hover={i === sorted.length - 1 ? {} : { opacity: 1 }}
                       lineHeight={1}
                       onClick={() => i < sorted.length - 1 && moveChapter(i, "down")}

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from src.models.story import StoryRow, StoryCreate, StoryUpdate, StoryResponse, ChapterPayload
+from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
 
@@ -40,6 +41,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
 
 @router.post("/stories", status_code=201)
 async def create_story(body: StoryCreate, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
     session = _get_session(request)
     try:
         row = StoryRow(
@@ -51,6 +53,7 @@ async def create_story(body: StoryCreate, request: Request):
             published=body.published,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
+            workspace_id=workspace_id if workspace_id else None,
         )
         session.add(row)
         session.commit()
@@ -62,9 +65,18 @@ async def create_story(body: StoryCreate, request: Request):
 
 @router.get("/stories")
 async def list_stories(request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    if not workspace_id:
+        return []
+    validate_workspace_id(workspace_id)
     session = _get_session(request)
     try:
-        rows = session.query(StoryRow).order_by(StoryRow.created_at.desc()).all()
+        rows = (
+            session.query(StoryRow)
+            .filter(StoryRow.workspace_id == workspace_id)
+            .order_by(StoryRow.created_at.desc())
+            .all()
+        )
         return [_row_to_response(r) for r in rows]
     finally:
         session.close()
@@ -84,11 +96,15 @@ async def get_story(story_id: str, request: Request):
 
 @router.patch("/stories/{story_id}")
 async def update_story(story_id: str, body: StoryUpdate, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
     session = _get_session(request)
     try:
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
         if body.title is not None:
             row.title = body.title
         if body.description is not None:
@@ -107,11 +123,15 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
 
 @router.delete("/stories/{story_id}", status_code=204)
 async def delete_story(story_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
     session = _get_session(request)
     try:
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
         session.delete(row)
         session.commit()
     finally:

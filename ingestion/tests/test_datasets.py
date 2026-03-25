@@ -26,6 +26,7 @@ def test_list_datasets_with_data(client, db_engine):
         tile_url="/raster/collections/sandbox-ds-001/tiles/{z}/{x}/{y}",
         metadata_json="{}",
         created_at=datetime.now(timezone.utc),
+        workspace_id="testABCD",
     )
     session.add(row)
     session.commit()
@@ -59,6 +60,7 @@ def test_delete_dataset_endpoint(client, db_engine):
         tile_url="/raster/collections/sandbox-ds-del/tiles/{z}/{x}/{y}",
         metadata_json='{"stac_collection_id": "sandbox-ds-del"}',
         created_at=datetime.now(timezone.utc),
+        workspace_id="testABCD",
     )
     session.add(row)
     session.commit()
@@ -94,6 +96,7 @@ def test_delete_dataset_reports_affected_stories(client, db_engine):
         tile_url="/raster/tiles/{z}/{x}/{y}",
         metadata_json="{}",
         created_at=datetime.now(timezone.utc),
+        workspace_id="testABCD",
     ))
     session.add(StoryRow(
         id="story-1",

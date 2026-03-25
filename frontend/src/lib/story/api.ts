@@ -1,10 +1,11 @@
 import type { Story } from "./types";
 import { config } from "../../config";
+import { workspaceFetch } from "../api";
 
 const BASE = `${config.apiBase}/api/stories`;
 
 export async function createStoryOnServer(story: Omit<Story, "id" | "created_at">): Promise<Story> {
-  const resp = await fetch(BASE, {
+  const resp = await workspaceFetch(BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -20,20 +21,20 @@ export async function createStoryOnServer(story: Omit<Story, "id" | "created_at"
 }
 
 export async function getStoryFromServer(id: string): Promise<Story | null> {
-  const resp = await fetch(`${BASE}/${id}`);
+  const resp = await workspaceFetch(`${BASE}/${id}`);
   if (resp.status === 404) return null;
   if (!resp.ok) throw new Error(`Failed to load story: ${resp.status}`);
   return resp.json();
 }
 
 export async function listStoriesFromServer(): Promise<Story[]> {
-  const resp = await fetch(BASE);
+  const resp = await workspaceFetch(BASE);
   if (!resp.ok) throw new Error(`Failed to list stories: ${resp.status}`);
   return resp.json();
 }
 
 export async function saveStoryToServer(story: Story): Promise<Story> {
-  const resp = await fetch(`${BASE}/${story.id}`, {
+  const resp = await workspaceFetch(`${BASE}/${story.id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -48,6 +49,6 @@ export async function saveStoryToServer(story: Story): Promise<Story> {
 }
 
 export async function deleteStoryFromServer(id: string): Promise<void> {
-  const resp = await fetch(`${BASE}/${id}`, { method: "DELETE" });
+  const resp = await workspaceFetch(`${BASE}/${id}`, { method: "DELETE" });
   if (!resp.ok) throw new Error(`Failed to delete story: ${resp.status}`);
 }

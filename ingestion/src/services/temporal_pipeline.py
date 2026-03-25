@@ -169,6 +169,7 @@ async def run_temporal_pipeline(
                 stac_collection_id=f"sandbox-{job.dataset_id}",
                 validation_results=last_validation_results,
                 credits=get_credits(format_pair),
+                workspace_id=job.workspace_id,
                 is_temporal=True,
                 timesteps=timesteps,
                 raster_min=raster_min,

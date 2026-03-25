@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import {
   Box,
   Button,
@@ -11,6 +12,7 @@ import {
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { config } from "../config";
+import { workspaceFetch } from "../lib/api";
 import type { Dataset } from "../types";
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -40,12 +42,20 @@ interface DatasetWithStoryCount extends Dataset {
 }
 
 export default function DatasetsPage() {
+  const { workspaceId, workspacePath } = useWorkspace();
+  const [shared, setShared] = useState(false);
+
+  const shareWorkspace = useCallback(() => {
+    navigator.clipboard.writeText(`${window.location.origin}/w/${workspaceId}`);
+    setShared(true);
+    setTimeout(() => setShared(false), 2000);
+  }, [workspaceId]);
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${config.apiBase}/api/datasets`)
+    workspaceFetch(`${config.apiBase}/api/datasets`)
       .then((r) => r.json())
       .then((data) => {
         setDatasets(data);
@@ -65,7 +75,7 @@ export default function DatasetsPage() {
 
       setDeleting(ds.id);
       try {
-        const resp = await fetch(
+        const resp = await workspaceFetch(
           `${config.apiBase}/api/datasets/${ds.id}`,
           { method: "DELETE" },
         );
@@ -87,11 +97,21 @@ export default function DatasetsPage() {
           <Heading size="lg" color="gray.800">
             Datasets
           </Heading>
-          <Link to="/">
-            <Button size="sm" colorScheme="orange">
-              Upload new
+          <Flex gap={2}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={shareWorkspace}
+              title="Anyone with this link can view and add to this workspace"
+            >
+              {shared ? "Link copied!" : "Share workspace"}
             </Button>
-          </Link>
+            <Link to={workspacePath("/")}>
+              <Button size="sm" colorScheme="orange">
+                Upload new
+              </Button>
+            </Link>
+          </Flex>
         </Flex>
 
         {loading ? (
@@ -107,7 +127,7 @@ export default function DatasetsPage() {
             color="gray.500"
           >
             <Text>No datasets uploaded yet.</Text>
-            <Link to="/">
+            <Link to={workspacePath("/")}>
               <Text color="brand.orange" fontWeight={600}>
                 Upload your first file
               </Text>
@@ -128,7 +148,8 @@ export default function DatasetsPage() {
               {datasets.map((ds) => (
                 <Table.Row key={ds.id}>
                   <Table.Cell>
-                    <Link to={`/map/${ds.id}`}>
+                    <Link to={workspacePath(`/map/${ds.id}`)}>
+
                       <Text
                         color="blue.600"
                         _hover={{ textDecoration: "underline" }}

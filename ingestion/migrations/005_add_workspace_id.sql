@@ -1,0 +1,2 @@
+ALTER TABLE datasets ADD COLUMN IF NOT EXISTS workspace_id TEXT;
+ALTER TABLE stories ADD COLUMN IF NOT EXISTS workspace_id TEXT;

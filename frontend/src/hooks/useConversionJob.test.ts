@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { fetchWithRetry } from "./useConversionJob";
 import { useConversionJob } from "./useConversionJob";
+import { setWorkspaceId } from "../lib/api";
 
 const mockFetch = vi.fn();
 
@@ -9,6 +10,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", mockFetch);
   mockFetch.mockReset();
   vi.useFakeTimers();
+  setWorkspaceId("test1234");
 });
 
 afterEach(() => {
@@ -80,7 +82,7 @@ describe("fetchWithRetry", () => {
     const init = { method: "POST", body: "data" };
     await fetchWithRetry("/api/test", init);
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/test", init);
+    expect(mockFetch).toHaveBeenCalledWith("/api/test", expect.objectContaining({ method: "POST", body: "data" }));
   });
 });
 

@@ -84,6 +84,7 @@ class Job(BaseModel):
     group: str | None = None
     scan_event: asyncio.Event | None = Field(default=None, exclude=True)
     scan_result: dict | None = Field(default=None, exclude=True)
+    workspace_id: str | None = None
 
 
 class Dataset(BaseModel):
@@ -115,3 +116,4 @@ class Dataset(BaseModel):
     raster_min: float | None = None
     raster_max: float | None = None
     created_at: datetime
+    workspace_id: str | None = None

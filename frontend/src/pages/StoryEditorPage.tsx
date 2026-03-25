@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
@@ -30,6 +31,7 @@ import {
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
+import { workspaceFetch } from "../lib/api";
 import { Check, MapPin, SpinnerGap } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
 
@@ -38,6 +40,7 @@ export default function StoryEditorPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
   const datasetIdParam = searchParams.get("dataset");
 
   const [story, setStory] = useState<Story | null>(null);
@@ -58,7 +61,7 @@ export default function StoryEditorPage() {
   useEffect(() => {
     async function fetchAllDatasets() {
       try {
-        const resp = await fetch(`${config.apiBase}/api/datasets`);
+        const resp = await workspaceFetch(`${config.apiBase}/api/datasets`);
         if (resp.ok) setAllDatasets(await resp.json());
       } catch {
         // ignore fetch errors
@@ -94,7 +97,7 @@ export default function StoryEditorPage() {
       try {
         const draft = createStory(datasetIdParam);
         if (datasetIdParam) {
-          const resp = await fetch(`${config.apiBase}/api/datasets/${datasetIdParam}`);
+          const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${datasetIdParam}`);
           if (resp.ok) {
             const data: Dataset = await resp.json();
             setDataset(data);
@@ -114,7 +117,7 @@ export default function StoryEditorPage() {
         const saved = await createStoryOnServer(draft);
         setStory(saved);
         setActiveChapterId(saved.chapters[0]?.id ?? "");
-        navigate(`/story/${saved.id}/edit`, { replace: true });
+        navigate(workspacePath(`/story/${saved.id}/edit`), { replace: true });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to create story");
       } finally {
@@ -122,7 +125,7 @@ export default function StoryEditorPage() {
       }
     }
     createNew();
-  }, [id, story, datasetIdParam, navigate]);
+  }, [id, story, datasetIdParam, navigate, workspacePath]);
 
   // Fetch primary dataset for existing stories
   useEffect(() => {
@@ -134,7 +137,7 @@ export default function StoryEditorPage() {
     if (dataset?.id === dsId) return;
     async function fetchDataset() {
       try {
-        const resp = await fetch(`${config.apiBase}/api/datasets/${dsId}`);
+        const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${dsId}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data: Dataset = await resp.json();
         setDataset(data);
@@ -160,7 +163,7 @@ export default function StoryEditorPage() {
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
     try {
-      const resp = await fetch(`${config.apiBase}/api/datasets/${datasetId}`);
+      const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${datasetId}`);
       if (!resp.ok) return;
       const ds: Dataset = await resp.json();
       setAllDatasets((prev) =>
@@ -325,7 +328,7 @@ export default function StoryEditorPage() {
     const published = { ...story, published: true };
     setStory(published);
     saveStoryToServer(published);
-    const url = `${window.location.origin}/story/${story.id}`;
+    const url = `${window.location.origin}${workspacePath(`/story/${story.id}`)}`;
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url);
       setPublishFeedback("Published! URL copied to clipboard.");
@@ -403,7 +406,7 @@ export default function StoryEditorPage() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => window.open(`/story/${story.id}`, "_blank")}
+            onClick={() => window.open(workspacePath(`/story/${story.id}`), "_blank")}
           >
             Preview
           </Button>

@@ -12,7 +12,10 @@ from sqlalchemy.orm import sessionmaker
 from src.config import get_settings
 from src.models.base import Base
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
+from src.services.cleanup import cleanup_expired_rows
 from src.state import scan_store, scan_store_lock
+
+logger = logging.getLogger(__name__)
 
 
 async def _cleanup_scans():
@@ -30,12 +33,27 @@ async def _cleanup_scans():
                 del scan_store[sid]
 
 
+async def _cleanup_expired(app):
+    while True:
+        await asyncio.sleep(6 * 3600)
+        try:
+            session = app.state.db_session_factory()
+            try:
+                cleanup_expired_rows(session)
+            finally:
+                session.close()
+        except Exception:
+            logger.exception("Cleanup task failed")
+
+
 @asynccontextmanager
 async def _default_lifespan(app: FastAPI):
     Base.metadata.create_all(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
+    expired_task = asyncio.create_task(_cleanup_expired(app))
     yield
     cleanup_task.cancel()
+    expired_task.cancel()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

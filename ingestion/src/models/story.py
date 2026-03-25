@@ -21,6 +21,7 @@ class StoryRow(Base):
     published = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    workspace_id = Column(String, nullable=True)
 
 
 class ChapterPayload(BaseModel):

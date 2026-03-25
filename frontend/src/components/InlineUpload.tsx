@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { FileUploader } from "./FileUploader";
@@ -14,6 +15,7 @@ interface InlineUploadProps {
 
 export function InlineUpload({ onCancel }: InlineUploadProps) {
   const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
   const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } =
     useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
@@ -23,9 +25,9 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
   // Navigate on success
   useEffect(() => {
     if (state.status === "ready" && state.datasetId) {
-      navigate(`/map/${state.datasetId}`);
+      navigate(workspacePath(`/map/${state.datasetId}`));
     }
-  }, [state.status, state.datasetId, navigate]);
+  }, [state.status, state.datasetId, navigate, workspacePath]);
 
   const handleFile = useCallback(
     (file: File) => {

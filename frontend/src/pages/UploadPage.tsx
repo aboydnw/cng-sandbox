@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Flex } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
@@ -16,6 +17,7 @@ type PageMode = "initial" | "upload-idle" | "uploading" | "error" | "variable-pi
 
 export default function UploadPage() {
   const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
   const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } =
     useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
@@ -38,9 +40,9 @@ export default function UploadPage() {
   // Navigate on success
   useEffect(() => {
     if (state.status === "ready" && state.datasetId) {
-      navigate(`/map/${state.datasetId}`);
+      navigate(workspacePath(`/map/${state.datasetId}`));
     }
-  }, [state.status, state.datasetId, navigate]);
+  }, [state.status, state.datasetId, navigate, workspacePath]);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -141,7 +143,7 @@ export default function UploadPage() {
           title="Build a story"
           description="Create a scrollytelling narrative with your data or from our public library"
           ctaLabel="Start building"
-          onClick={() => navigate("/story/new")}
+          onClick={() => navigate(workspacePath("/story/new"))}
           expanded={false}
           faded={uploadCardExpanded}
         />

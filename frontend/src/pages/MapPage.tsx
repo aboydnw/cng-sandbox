@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
@@ -39,6 +40,7 @@ type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
 export default function MapPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +88,7 @@ export default function MapPage() {
       try {
         const resp = await fetch(`${config.apiBase}/api/datasets/${id}`);
         if (resp.status === 404) {
-          navigate(`/expired/${id}`, { replace: true });
+          navigate(workspacePath(`/expired/${id}`), { replace: true });
           return;
         }
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -95,7 +97,7 @@ export default function MapPage() {
         const created = new Date(data.created_at);
         const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
         if (new Date() > expiry) {
-          navigate(`/expired/${id}`, { replace: true });
+          navigate(workspacePath(`/expired/${id}`), { replace: true });
           return;
         }
 
@@ -107,7 +109,7 @@ export default function MapPage() {
       }
     }
     fetchDataset();
-  }, [id, navigate]);
+  }, [id, navigate, workspacePath]);
 
   // --- Raster band logic ---
   const isSingleBand = dataset?.band_count === 1;

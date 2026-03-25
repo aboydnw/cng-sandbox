@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { ConversionJobState, StageInfo, JobStatus, ScanResult } from "../types";
 import { config } from "../config";
+import { workspaceFetch } from "../lib/api";
 
 export async function fetchWithRetry(
   input: RequestInfo,
@@ -9,7 +10,7 @@ export async function fetchWithRetry(
 ): Promise<Response> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const resp = await fetch(input, init);
+      const resp = await workspaceFetch(input, init);
       if (resp.status >= 500 && attempt < maxRetries) {
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
         continue;

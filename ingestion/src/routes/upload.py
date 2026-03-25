@@ -8,12 +8,13 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile
 from pydantic import BaseModel as PydanticBaseModel, field_validator
 
 from src.state import jobs, scan_store, scan_store_lock
 from src.config import get_settings
 from src.models import Job
+from src.workspace import get_workspace_id
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
 
@@ -84,6 +85,7 @@ async def upload_file(
     request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
+    workspace_id: str = Depends(get_workspace_id),
 ):
     """Accept a file upload and start the conversion pipeline."""
     if not file.filename:
@@ -95,6 +97,7 @@ async def upload_file(
             await write(chunk)
 
     job = Job(filename=file.filename)
+    job.workspace_id = workspace_id
     jobs[job.id] = job
 
     background_tasks.add_task(_run_and_cleanup, job, tmp_path, request.app.state.db_session_factory)
@@ -106,6 +109,7 @@ async def convert_url(
     request: Request,
     body: ConvertUrlRequest,
     background_tasks: BackgroundTasks,
+    workspace_id: str = Depends(get_workspace_id),
 ):
     """Fetch a file from a URL and start the conversion pipeline."""
     parsed = urlparse(body.url)
@@ -125,6 +129,7 @@ async def convert_url(
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}")
 
     job = Job(filename=filename)
+    job.workspace_id = workspace_id
     jobs[job.id] = job
 
     background_tasks.add_task(_run_and_cleanup, job, tmp_path, request.app.state.db_session_factory)
@@ -179,6 +184,7 @@ async def upload_temporal(
     request: Request,
     files: list[UploadFile],
     background_tasks: BackgroundTasks,
+    workspace_id: str = Depends(get_workspace_id),
 ):
     """Accept multiple raster files and start the temporal conversion pipeline."""
     if len(files) < 2:
@@ -222,6 +228,7 @@ async def upload_temporal(
         raise
 
     job = Job(filename=filenames[0])
+    job.workspace_id = workspace_id
     jobs[job.id] = job
 
     background_tasks.add_task(_run_temporal_and_cleanup, job, tmp_paths, filenames, request.app.state.db_session_factory)

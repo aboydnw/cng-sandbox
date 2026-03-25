@@ -41,15 +41,8 @@ interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
 }
 
-export default function DatasetsPage() {
-  const { workspaceId, workspacePath } = useWorkspace();
-  const [shared, setShared] = useState(false);
-
-  const shareWorkspace = useCallback(() => {
-    navigator.clipboard.writeText(`${window.location.origin}/w/${workspaceId}`);
-    setShared(true);
-    setTimeout(() => setShared(false), 2000);
-  }, [workspaceId]);
+export default function LibraryPage() {
+  const { workspacePath } = useWorkspace();
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -95,17 +88,9 @@ export default function DatasetsPage() {
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Flex justify="space-between" align="center" mb={6}>
           <Heading size="lg" color="gray.800">
-            Datasets
+            Library
           </Heading>
           <Flex gap={2}>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={shareWorkspace}
-              title="Anyone with this link can view and add to this workspace"
-            >
-              {shared ? "Link copied!" : "Share workspace"}
-            </Button>
             <Link to={workspacePath("/")}>
               <Button size="sm" colorScheme="orange">
                 Upload new
@@ -113,6 +98,10 @@ export default function DatasetsPage() {
             </Link>
           </Flex>
         </Flex>
+
+        <Heading size="md" color="gray.700" mb={3}>
+          Datasets
+        </Heading>
 
         {loading ? (
           <Flex justify="center" py={12}>

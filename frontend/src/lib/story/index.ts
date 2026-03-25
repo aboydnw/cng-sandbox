@@ -3,3 +3,6 @@ export { DEFAULT_MAP_STATE, DEFAULT_LAYER_CONFIG, createChapter, createStory } f
 export { listStories, getStory, saveStory, deleteStory } from "./storage";
 export { createStoryOnServer, getStoryFromServer, saveStoryToServer } from "./api";
 export { migrateStory } from "./migration";
+export { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "./labels";
+export type { ContentBlock } from "./rendering";
+export { groupChaptersIntoBlocks, buildLayersForChapter } from "./rendering";

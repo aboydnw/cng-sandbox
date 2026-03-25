@@ -1,4 +1,4 @@
-import { NativeSelect } from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 export const BASEMAPS: Record<string, string> = {
@@ -15,20 +15,29 @@ interface BasemapPickerProps {
   onChange: (value: string) => void;
 }
 
+const BASEMAP_OPTIONS = [
+  { key: "streets", label: "Light", bg: "#e8e8e8" },
+  { key: "satellite", label: "Color", bg: "#a8c8e8" },
+  { key: "dark", label: "Dark", bg: "#2d2d2d" },
+];
+
 export function BasemapPicker({ value, onChange }: BasemapPickerProps) {
   return (
-    <NativeSelect.Root size="xs">
-      <NativeSelect.Field
-        value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-          onChange(e.target.value)
-        }
-      >
-        <option value="streets">Streets</option>
-        <option value="satellite">Satellite</option>
-        <option value="dark">Dark</option>
-      </NativeSelect.Field>
-      <NativeSelect.Indicator />
-    </NativeSelect.Root>
+    <Flex gap={1}>
+      {BASEMAP_OPTIONS.map((opt) => (
+        <Box
+          key={opt.key}
+          as="button"
+          w="36px"
+          h="36px"
+          borderRadius="4px"
+          bg={opt.bg}
+          border="2px solid"
+          borderColor={value === opt.key ? "brand.orange" : "transparent"}
+          onClick={() => onChange(opt.key)}
+          title={opt.label}
+        />
+      ))}
+    </Flex>
   );
 }

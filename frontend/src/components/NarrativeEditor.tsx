@@ -2,8 +2,8 @@ import { Box, Flex, Text, Textarea } from "@chakra-ui/react";
 import { Plus, Sparkle } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
-import { CHAPTER_TYPE_LABELS } from "../lib/story/labels";
 import type { Dataset } from "../types";
+import { ChapterTypePicker } from "./ChapterTypePicker";
 
 interface NarrativeEditorProps {
   chapterType: ChapterType;
@@ -51,19 +51,7 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
 
   return (
     <Flex direction="column" h="100%" p={3} gap={2}>
-      {/* Type selector */}
-      <Flex gap={2} align="center">
-        <Text fontSize="xs" color="gray.500" fontWeight={600}>Type</Text>
-        <select
-          value={chapterType}
-          onChange={(e) => onChapterTypeChange(e.target.value as ChapterType)}
-          style={{ fontSize: "13px", padding: "4px 8px" }}
-        >
-          {(Object.entries(CHAPTER_TYPE_LABELS) as [ChapterType, string][]).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </Flex>
+      <ChapterTypePicker value={chapterType} onChange={onChapterTypeChange} />
 
       <input
         type="text"

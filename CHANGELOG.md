@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/aboydnw/cng-sandbox/compare/v1.1.0...v1.2.0) (2026-03-25)
+
+
+### Features
+
+* add workspace-based data isolation ([#26](https://github.com/aboydnw/cng-sandbox/issues/26)) ([c776754](https://github.com/aboydnw/cng-sandbox/commit/c77675485bed79ec0e67be89e659baf48111e438))
+* details drawer redesign with interactive pipeline timeline ([#24](https://github.com/aboydnw/cng-sandbox/issues/24)) ([f3eb798](https://github.com/aboydnw/cng-sandbox/commit/f3eb798781d3b176e49fa9c9f4e4db986b4d40f7))
+
+
+### Bug Fixes
+
+* center homepage subtitle text ([#14](https://github.com/aboydnw/cng-sandbox/issues/14)) ([a572432](https://github.com/aboydnw/cng-sandbox/commit/a57243223d6c1ebe1f4a5e7d133783279e0eb978))
+
 ## [1.1.0](https://github.com/aboydnw/cng-sandbox/compare/v1.0.0...v1.1.0) (2026-03-24)
 
 

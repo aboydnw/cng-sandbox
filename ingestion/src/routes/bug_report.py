@@ -22,6 +22,7 @@ class BugReportRequest(BaseModel):
     story_id: str | None = None
     job_id: str | None = None
     dataset_ids: list[str] | None = None
+    error_message: str | None = None
     console_logs: list[LogEntry] = []
 
     @model_validator(mode="after")
@@ -54,6 +55,9 @@ def _build_issue_body(req: BugReportRequest) -> str:
     if req.job_id:
         lines.append(f"- **Job ID:** {req.job_id}")
     lines.append(f"- **Reported at:** {datetime.now(timezone.utc).isoformat()}")
+
+    if req.error_message:
+        lines.extend(["", "## Error", "", f"```\n{req.error_message}\n```"])
 
     if req.console_logs:
         log_text = "\n".join(f"[{e.timestamp}] {e.level.upper()}: {e.message}" for e in req.console_logs)

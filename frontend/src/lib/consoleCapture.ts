@@ -23,6 +23,7 @@ export function initConsoleCapture(): () => void {
     const message = args
       .map((a) => {
         if (typeof a === "string") return a;
+        if (a instanceof Error) return a.stack ?? a.message;
         try { return JSON.stringify(a); } catch { return String(a); }
       })
       .join(" ");

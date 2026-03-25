@@ -46,6 +46,7 @@ export interface Story {
   dataset_ids: string[];
   chapters: Chapter[];
   created_at: string;
+  updated_at: string;
   published: boolean;
 }
 
@@ -111,6 +112,7 @@ export function createStory(
     dataset_ids: datasetId ? [datasetId] : [],
     chapters: [chapter],
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     published: false,
     ...overrides,
   };

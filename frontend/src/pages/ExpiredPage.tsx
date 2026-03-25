@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
+import { useWorkspace } from "../hooks/useWorkspace";
 
 export default function ExpiredPage() {
+  const { workspacePath } = useWorkspace();
+
   return (
     <Box minH="100vh" bg="white">
       <Header />
@@ -48,7 +51,7 @@ export default function ExpiredPage() {
             _hover={{ bg: "brand.orangeHover" }}
             asChild
           >
-            <Link to="/">Upload again</Link>
+            <Link to={workspacePath("/")}>Upload again</Link>
           </Button>
           <Button
             bg="brand.bgSubtle"

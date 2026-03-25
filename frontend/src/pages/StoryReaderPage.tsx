@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
 import Markdown from "react-markdown";
@@ -259,6 +260,7 @@ function ScrollytellingBlock({
 
 export default function StoryReaderPage({ embed = false }: { embed?: boolean }) {
   const { id } = useParams<{ id: string }>();
+  const { workspacePath } = useWorkspace();
   const [story, setStory] = useState<Story | null>(null);
   const [datasetMap, setDatasetMap] = useState<Map<string, Dataset | null>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -339,7 +341,7 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         <Text color="gray.600" fontSize="lg">
           {error}
         </Text>
-        <Link to="/">
+        <Link to={workspacePath("/")}>
           <Text color="brand.orange" fontWeight={600}>
             <Flex align="center" gap={1.5}><ArrowLeft size={14} /> Back to sandbox</Flex>
           </Text>

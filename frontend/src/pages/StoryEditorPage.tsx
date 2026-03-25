@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
@@ -38,6 +39,7 @@ export default function StoryEditorPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
   const datasetIdParam = searchParams.get("dataset");
 
   const [story, setStory] = useState<Story | null>(null);
@@ -114,7 +116,7 @@ export default function StoryEditorPage() {
         const saved = await createStoryOnServer(draft);
         setStory(saved);
         setActiveChapterId(saved.chapters[0]?.id ?? "");
-        navigate(`/story/${saved.id}/edit`, { replace: true });
+        navigate(workspacePath(`/story/${saved.id}/edit`), { replace: true });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to create story");
       } finally {
@@ -122,7 +124,7 @@ export default function StoryEditorPage() {
       }
     }
     createNew();
-  }, [id, story, datasetIdParam, navigate]);
+  }, [id, story, datasetIdParam, navigate, workspacePath]);
 
   // Fetch primary dataset for existing stories
   useEffect(() => {
@@ -325,7 +327,7 @@ export default function StoryEditorPage() {
     const published = { ...story, published: true };
     setStory(published);
     saveStoryToServer(published);
-    const url = `${window.location.origin}/story/${story.id}`;
+    const url = `${window.location.origin}${workspacePath(`/story/${story.id}`)}`;
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(url);
       setPublishFeedback("Published! URL copied to clipboard.");

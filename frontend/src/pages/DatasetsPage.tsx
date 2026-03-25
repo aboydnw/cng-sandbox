@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import {
   Box,
   Button,
@@ -41,6 +42,7 @@ interface DatasetWithStoryCount extends Dataset {
 }
 
 export default function DatasetsPage() {
+  const { workspacePath } = useWorkspace();
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export default function DatasetsPage() {
           <Heading size="lg" color="gray.800">
             Datasets
           </Heading>
-          <Link to="/">
+          <Link to={workspacePath("/")}>
             <Button size="sm" colorScheme="orange">
               Upload new
             </Button>
@@ -108,7 +110,7 @@ export default function DatasetsPage() {
             color="gray.500"
           >
             <Text>No datasets uploaded yet.</Text>
-            <Link to="/">
+            <Link to={workspacePath("/")}>
               <Text color="brand.orange" fontWeight={600}>
                 Upload your first file
               </Text>
@@ -129,7 +131,8 @@ export default function DatasetsPage() {
               {datasets.map((ds) => (
                 <Table.Row key={ds.id}>
                   <Table.Cell>
-                    <Link to={`/map/${ds.id}`}>
+                    <Link to={workspacePath(`/map/${ds.id}`)}>
+
                       <Text
                         color="blue.600"
                         _hover={{ textDecoration: "underline" }}

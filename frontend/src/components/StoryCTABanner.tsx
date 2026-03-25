@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { ArrowRight } from "@phosphor-icons/react";
 import { transition, cardHover, cardActive, focusRing } from "../lib/interactionStyles";
@@ -14,6 +15,7 @@ interface StoryCTABannerProps {
 
 export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
   const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
 
   const handleCreate = useCallback(async () => {
     const cam = dataset.bounds ? cameraFromBounds(dataset.bounds) : null;
@@ -41,8 +43,8 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
     });
 
     const created = await createStoryOnServer(story);
-    navigate(`/story/${created.id}/edit`);
-  }, [dataset, navigate]);
+    navigate(workspacePath(`/story/${created.id}/edit`));
+  }, [dataset, navigate, workspacePath]);
 
   return (
     <Box

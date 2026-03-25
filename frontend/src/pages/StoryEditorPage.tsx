@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Text, Link } from "@chakra-ui/react";
 import { PencilSimple } from "@phosphor-icons/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
 import { UploadModal } from "../components/UploadModal";
+import { PublishDialog } from "../components/PublishDialog";
 import { Header } from "../components/Header";
 import { BugReportLink } from "../components/BugReportLink";
 import { SaveStatus } from "../components/SaveStatus";
@@ -53,7 +54,7 @@ export default function StoryEditorPage() {
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [basemap, setBasemap] = useState("streets");
   const [viewSavedFlash, setViewSavedFlash] = useState(false);
-  const [publishFeedback, setPublishFeedback] = useState<string | null>(null);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [transitionDuration, setTransitionDuration] = useState<number | undefined>(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -351,14 +352,14 @@ export default function StoryEditorPage() {
     const published = { ...story, published: true };
     setStory(published);
     saveStoryToServer(published);
-    const url = `${window.location.origin}${workspacePath(`/story/${story.id}`)}`;
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(url);
-      setPublishFeedback("Published! URL copied to clipboard.");
-    } else {
-      setPublishFeedback(`Published! Reader URL: ${url}`);
-    }
-    setTimeout(() => setPublishFeedback(null), 5000);
+  }
+
+  function handleUnpublish() {
+    if (!story) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    const unpublished = { ...story, published: false };
+    setStory(unpublished);
+    saveStoryToServer(unpublished);
   }
 
   // Build layers
@@ -455,22 +456,83 @@ export default function StoryEditorPage() {
           >
             Preview
           </Button>
-          <Button
-            size="sm"
-            bg="blue.500"
-            color="white"
-            onClick={handlePublish}
-            _hover={{ bg: "blue.600" }}
-          >
-            Publish
-          </Button>
-          {publishFeedback && (
-            <Text fontSize="xs" color="green.600" fontWeight={500}>
-              {publishFeedback}
-            </Text>
+          {story.published ? (
+            <Flex align="center" gap={2}>
+              <Flex align="center" gap={1.5}>
+                <Box w={2} h={2} borderRadius="full" bg="green.500" />
+                <Button
+                  size="sm"
+                  bg="green.500"
+                  color="white"
+                  _hover={{ bg: "green.600" }}
+                  onClick={() => setPublishDialogOpen(true)}
+                >
+                  Published
+                </Button>
+              </Flex>
+              <Link
+                fontSize="xs"
+                color="gray.500"
+                textDecoration="underline"
+                cursor="pointer"
+                onClick={handleUnpublish}
+              >
+                Unpublish
+              </Link>
+            </Flex>
+          ) : (
+            <Button
+              size="sm"
+              bg="blue.500"
+              color="white"
+              onClick={() => setPublishDialogOpen(true)}
+              _hover={{ bg: "blue.600" }}
+            >
+              Publish
+            </Button>
           )}
         </Flex>
       </Header>
+
+      {/* Published URL bar */}
+      {story.published && (
+        <Flex
+          align="center"
+          gap={2}
+          px={4}
+          py={1.5}
+          bg="green.50"
+          borderBottom="1px solid"
+          borderColor="green.100"
+          fontSize="xs"
+          color="green.700"
+        >
+          <Box w={1.5} h={1.5} borderRadius="full" bg="green.500" flexShrink={0} />
+          <Text fontWeight={500}>Published —</Text>
+          <Text
+            color="green.600"
+            fontFamily="mono"
+            truncate
+            maxW="400px"
+          >
+            {`${window.location.origin}${workspacePath(`/story/${story.id}`)}`}
+          </Text>
+          <Button
+            size="xs"
+            variant="ghost"
+            color="green.600"
+            _hover={{ bg: "green.100" }}
+            px={2}
+            h={5}
+            onClick={() => {
+              const url = `${window.location.origin}${workspacePath(`/story/${story.id}`)}`;
+              navigator.clipboard?.writeText(url);
+            }}
+          >
+            Copy
+          </Button>
+        </Flex>
+      )}
 
       {/* Three-panel layout */}
       <Flex flex={1} overflow="hidden">
@@ -592,6 +654,13 @@ export default function StoryEditorPage() {
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onDatasetReady={handleDatasetReady}
+      />
+      <PublishDialog
+        open={publishDialogOpen}
+        story={story}
+        shareUrl={`${window.location.origin}${workspacePath(`/story/${story.id}`)}`}
+        onPublish={handlePublish}
+        onClose={() => setPublishDialogOpen(false)}
       />
     </Box>
   );

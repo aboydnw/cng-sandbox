@@ -1,12 +1,7 @@
-import re
-
 import pytest
 from fastapi import HTTPException
 
-from src.workspace import validate_workspace_id, get_workspace_id
-
-
-VALID_PATTERN = re.compile(r"^[a-zA-Z0-9]{8}$")
+from src.workspace import validate_workspace_id
 
 
 def test_valid_workspace_id():

@@ -31,6 +31,7 @@ import {
 } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
+import { workspaceFetch } from "../lib/api";
 import { Check, MapPin, SpinnerGap } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
 
@@ -60,7 +61,7 @@ export default function StoryEditorPage() {
   useEffect(() => {
     async function fetchAllDatasets() {
       try {
-        const resp = await fetch(`${config.apiBase}/api/datasets`);
+        const resp = await workspaceFetch(`${config.apiBase}/api/datasets`);
         if (resp.ok) setAllDatasets(await resp.json());
       } catch {
         // ignore fetch errors
@@ -96,7 +97,7 @@ export default function StoryEditorPage() {
       try {
         const draft = createStory(datasetIdParam);
         if (datasetIdParam) {
-          const resp = await fetch(`${config.apiBase}/api/datasets/${datasetIdParam}`);
+          const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${datasetIdParam}`);
           if (resp.ok) {
             const data: Dataset = await resp.json();
             setDataset(data);
@@ -136,7 +137,7 @@ export default function StoryEditorPage() {
     if (dataset?.id === dsId) return;
     async function fetchDataset() {
       try {
-        const resp = await fetch(`${config.apiBase}/api/datasets/${dsId}`);
+        const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${dsId}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data: Dataset = await resp.json();
         setDataset(data);
@@ -162,7 +163,7 @@ export default function StoryEditorPage() {
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
     try {
-      const resp = await fetch(`${config.apiBase}/api/datasets/${datasetId}`);
+      const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${datasetId}`);
       if (!resp.ok) return;
       const ds: Dataset = await resp.json();
       setAllDatasets((prev) =>
@@ -405,7 +406,7 @@ export default function StoryEditorPage() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => window.open(`/story/${story.id}`, "_blank")}
+            onClick={() => window.open(workspacePath(`/story/${story.id}`), "_blank")}
           >
             Preview
           </Button>

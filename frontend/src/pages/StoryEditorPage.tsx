@@ -9,6 +9,8 @@ import { NarrativeEditor } from "../components/NarrativeEditor";
 import { UploadModal } from "../components/UploadModal";
 import { Header } from "../components/Header";
 import { BugReportLink } from "../components/BugReportLink";
+import { SaveStatus } from "../components/SaveStatus";
+import { useSaveStatus } from "../hooks/useSaveStatus";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -57,6 +59,7 @@ export default function StoryEditorPage() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const { saveState, markSaving, markSaved, markError } = useSaveStatus();
 
   useEffect(() => {
     async function fetchAllDatasets() {
@@ -184,11 +187,12 @@ export default function StoryEditorPage() {
   const debouncedSave = useCallback(
     (updated: Story) => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      markSaving();
       saveTimerRef.current = setTimeout(() => {
-        saveStoryToServer(updated);
+        saveStoryToServer(updated).then(markSaved).catch(markError);
       }, 500);
     },
-    [],
+    [markSaving, markSaved, markError],
   );
 
   // Update story helper
@@ -401,6 +405,7 @@ export default function StoryEditorPage() {
           }}
           placeholder="Story title"
         />
+        <SaveStatus state={saveState} />
         <Flex gap={2} align="center">
           <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
           <Button

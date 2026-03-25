@@ -4,6 +4,14 @@ import type { Dataset } from "../types";
 import { formatBytes } from "../utils/format";
 import { transition, cardHover, cardActive, focusRing } from "../lib/interactionStyles";
 
+function formatPct(transferred: number, total: number): string {
+  const pct = (transferred / total) * 100;
+  if (pct >= 100) return "100%";
+  if (pct >= 1) return `${Math.round(pct)}%`;
+  if (pct >= 0.1) return `${pct.toFixed(1)}%`;
+  return "<0.1%";
+}
+
 interface ConversionSummaryCardProps {
   dataset: Dataset;
   bytesTransferred: number | null;
@@ -62,13 +70,17 @@ export function ConversionSummaryCard({ dataset, bytesTransferred, onDetailsClic
             <Text fontSize="11px" color="brand.success">{pctSmaller}% smaller</Text>
           )}
         </Box>
-        {bytesTransferred !== null && bytesTransferred > 0 && (
+        {convertedSize != null && convertedSize > 0 && (
           <Box>
             <Text fontSize="13px" color="brand.orange" fontWeight={700}>
-              {formatBytes(bytesTransferred)} fetched
+              {bytesTransferred != null && bytesTransferred > 0
+                ? `${formatBytes(bytesTransferred)} fetched`
+                : "0 B fetched"}
             </Text>
             <Text fontSize="11px" color="brand.textSecondary">
-              of {convertedSize ? formatBytes(convertedSize) : "—"} total
+              {bytesTransferred != null && bytesTransferred > 0
+                ? `${formatPct(bytesTransferred, convertedSize)} of ${formatBytes(convertedSize)}`
+                : `of ${formatBytes(convertedSize)} total`}
             </Text>
           </Box>
         )}

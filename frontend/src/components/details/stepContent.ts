@@ -1,4 +1,5 @@
 import type { Dataset } from "../../types";
+import { formatBytes as formatBytesRaw } from "../../utils/format";
 import type {
   StepContent,
   MetadataTileData,
@@ -20,9 +21,7 @@ export function getStepCount(_dataset: Dataset): number {
 
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return "—";
-  if (bytes < 1000) return `${bytes} B`;
-  if (bytes < 1000 * 1000) return `${(bytes / 1000).toFixed(1)} KB`;
-  return `${(bytes / (1000 * 1000)).toFixed(1)} MB`;
+  return formatBytesRaw(bytes);
 }
 
 function formatBounds(bounds: readonly number[] | null | undefined): string {
@@ -253,18 +252,29 @@ function getConvertStep(dataset: Dataset, pipeline: PipelineType): StepContent {
 
 function getCatalogStep(dataset: Dataset, pipeline: PipelineType): StepContent {
   if (pipeline === "raster") {
+    const collectionId = dataset.stac_collection_id;
+    const stacCollectionUrl = collectionId
+      ? `/stac/collections/${collectionId}`
+      : null;
+    const stacItemsUrl = collectionId
+      ? `/stac/collections/${collectionId}/items`
+      : null;
+
     const metadata: MetadataTileData[] = [
       {
         label: "Collection ID",
-        value: dataset.stac_collection_id ?? "—",
+        value: collectionId ?? "—",
         colSpan: 2,
       },
       {
-        label: "Zoom Range",
-        value:
-          dataset.min_zoom != null && dataset.max_zoom != null
-            ? `${dataset.min_zoom} – ${dataset.max_zoom}`
-            : "—",
+        label: "Items",
+        value: dataset.is_temporal
+          ? `${dataset.timesteps?.length ?? 1} timesteps`
+          : "1 item",
+      },
+      {
+        label: "Asset Type",
+        value: "Cloud Optimized GeoTIFF",
       },
       {
         label: "Bounding Box",
@@ -288,15 +298,23 @@ function getCatalogStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       },
     ];
 
+    const explanation = [
+      "The COG was registered as a <strong>STAC item</strong> in a spatiotemporal asset catalog (STAC) — an open standard for describing geospatial data.",
+      "STAC makes assets discoverable and queryable by time, location, and metadata, enabling interoperability with the broader geospatial ecosystem.",
+    ];
+
+    if (stacCollectionUrl) {
+      explanation.push(
+        `Browse the raw STAC JSON: <a href="${stacCollectionUrl}" target="_blank" rel="noopener" style="color: var(--chakra-colors-brand-orange); text-decoration: underline;">collection</a>${stacItemsUrl ? ` · <a href="${stacItemsUrl}" target="_blank" rel="noopener" style="color: var(--chakra-colors-brand-orange); text-decoration: underline;">items</a>` : ""}`
+      );
+    }
+
     return {
       label: "Catalog",
       subtitle: "searchable",
       badge: "Step 2 of 4",
       title: "Registered in a STAC catalog",
-      explanation: [
-        "The COG was registered as a <strong>STAC item</strong> in a spatiotemporal asset catalog (STAC) — an open standard for describing geospatial data.",
-        "STAC makes assets discoverable and queryable by time, location, and metadata, enabling interoperability with the broader geospatial ecosystem.",
-      ],
+      explanation,
       beforeAfter: undefined,
       metadata,
       tools,
@@ -329,7 +347,7 @@ function getCatalogStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       },
       {
         name: "PMTiles",
-        url: "https://protomaps.com/pmtiles",
+        url: "https://docs.protomaps.com/pmtiles/",
         description:
           "Single-file tile archive with a built-in directory that maps tile coordinates to byte ranges for efficient HTTP range requests.",
       },
@@ -548,6 +566,23 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         label: "Tile Format",
         value: "PNG / WebP",
       },
+      {
+        label: "Tile Size",
+        value: "256 × 256 px",
+      },
+      {
+        label: "Basemap",
+        value: "Carto Positron",
+        subValue: "OpenStreetMap data",
+      },
+      {
+        label: "Renderer",
+        value: "WebGL (deck.gl)",
+      },
+      {
+        label: "Colormap",
+        value: dataset.band_count === 1 ? "viridis (dynamic)" : "RGB composite",
+      },
     ];
 
     const tools: ToolCardData[] = [
@@ -555,13 +590,13 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         name: "titiler-pgstac",
         url: "https://github.com/stac-utils/titiler-pgstac",
         description:
-          "Dynamic raster tile server for STAC items, generating tiles on demand from COGs stored in object storage.",
+          "Dynamic raster tile server backed by pgSTAC. For each tile request, it reads the COG's internal index to fetch only the needed pixels from R2 — no full download required.",
       },
       {
         name: "deck.gl",
         url: "https://deck.gl/",
         description:
-          "WebGL-powered visualization framework for large-scale geospatial data, used to render raster tiles in the browser.",
+          "WebGL-powered visualization framework for large-scale geospatial data, rendering raster tiles as GPU-accelerated layers in the browser.",
       },
     ];
 
@@ -571,8 +606,8 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       badge: "Step 4 of 4",
       title: "Served as dynamic raster map tiles",
       explanation: [
-        "<strong>titiler-pgstac</strong> generates raster tiles on demand from the COG, reading only the necessary pixels from R2 for each tile request.",
-        "Tiles are rendered in the browser using <strong>deck.gl</strong>, enabling smooth pan and zoom across the dataset.",
+        "When you pan or zoom the map, <strong>titiler-pgstac</strong> generates tiles on demand by reading only the necessary bytes from the COG in R2 — the full file is never downloaded.",
+        "The tiler applies rescaling and colormap rendering server-side, returning ready-to-display PNG tiles. <strong>deck.gl</strong> composites them as a WebGL layer over the basemap.",
       ],
       beforeAfter: undefined,
       metadata,
@@ -594,20 +629,34 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         label: "Tile Format",
         value: "MVT (Mapbox Vector Tiles)",
       },
+      {
+        label: "Tile Server",
+        value: "None (serverless)",
+        subValue: "HTTP range requests",
+      },
+      {
+        label: "Basemap",
+        value: "Carto Positron",
+        subValue: "OpenStreetMap data",
+      },
+      {
+        label: "Renderer",
+        value: "WebGL (MapLibre GL JS)",
+      },
     ];
 
     const tools: ToolCardData[] = [
       {
         name: "PMTiles",
-        url: "https://protomaps.com/pmtiles",
+        url: "https://docs.protomaps.com/pmtiles/",
         description:
-          "Single-file archive format for pyramid vector tiles, served directly from object storage without a tile server.",
+          "Single-file tile archive with a built-in directory. The browser reads the directory first, then fetches individual tiles via HTTP range requests — no tile server needed.",
       },
       {
         name: "MapLibre GL JS",
         url: "https://maplibre.org/",
         description:
-          "Open source map rendering library for the browser, used to display vector tiles with custom styles.",
+          "Open source map rendering library that draws vector tiles as GPU-accelerated geometry, enabling smooth pan/zoom and client-side styling.",
       },
     ];
 
@@ -615,10 +664,10 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       label: "Display",
       subtitle: "map tiles",
       badge: "Step 4 of 4",
-      title: "Served as dynamic vector map tiles from PMTiles",
+      title: "Served as vector map tiles from PMTiles",
       explanation: [
-        "The <strong>PMTiles</strong> archive is read directly in the browser — no tile server required. The protocol handler fetches only the relevant byte ranges.",
-        "Tiles are rendered with <strong>MapLibre GL JS</strong>, providing smooth vector map rendering with full style control.",
+        "The <strong>PMTiles</strong> archive is read directly by the browser — no tile server required. A protocol handler reads the archive's internal directory, then fetches only the tiles needed for the current viewport via HTTP range requests.",
+        "Tiles are rendered with <strong>MapLibre GL JS</strong> as GPU-accelerated vector geometry, enabling smooth zoom transitions and full client-side style control.",
       ],
       beforeAfter: undefined,
       metadata,
@@ -640,6 +689,20 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       label: "Tile Format",
       value: "MVT (Mapbox Vector Tiles)",
     },
+    {
+      label: "Tile Server",
+      value: "tipg (dynamic)",
+      subValue: "Generated per request",
+    },
+    {
+      label: "Basemap",
+      value: "Carto Positron",
+      subValue: "OpenStreetMap data",
+    },
+    {
+      label: "Renderer",
+      value: "WebGL (MapLibre GL JS)",
+    },
   ];
 
   const tools: ToolCardData[] = [
@@ -647,13 +710,13 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       name: "tipg",
       url: "https://developmentseed.org/tipg/",
       description:
-        "OGC Features and Tiles API generating MVT tiles dynamically from PostGIS, supporting attribute filtering.",
+        "OGC Features and Tiles API that generates MVT tiles dynamically from PostGIS, querying only the features in the requested tile extent.",
     },
     {
       name: "MapLibre GL JS",
       url: "https://maplibre.org/",
       description:
-        "Open source map rendering library for the browser, used to display vector tiles with custom styles.",
+        "Open source map rendering library that draws vector tiles as GPU-accelerated geometry, enabling smooth pan/zoom and client-side styling.",
     },
   ];
 
@@ -663,8 +726,8 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
     badge: "Step 4 of 4",
     title: "Served as dynamic vector map tiles",
     explanation: [
-      "<strong>tipg</strong> generates MVT vector tiles on demand from PostGIS, querying only the features visible in the current map viewport.",
-      "Tiles are rendered in the browser with <strong>MapLibre GL JS</strong>, enabling interactive filtering and custom styling.",
+      "<strong>tipg</strong> generates MVT vector tiles on demand from PostGIS, running a spatial query for each tile to return only the features visible in that extent.",
+      "Tiles are rendered in the browser with <strong>MapLibre GL JS</strong> as GPU-accelerated vector geometry, enabling interactive filtering, hover effects, and custom styling.",
     ],
     beforeAfter: undefined,
     metadata,

@@ -128,8 +128,8 @@ describe("getStepContent", () => {
   it("includes before/after for Convert step", () => {
     const content = getStepContent(rasterDataset as Dataset, 1);
     expect(content.beforeAfter).toBeDefined();
-    expect(content.beforeAfter!.beforeValue).toBe("11.6 MB");
-    expect(content.beforeAfter!.afterValue).toBe("11.6 MB");
+    expect(content.beforeAfter!.beforeValue).toBe("11.1 MB");
+    expect(content.beforeAfter!.afterValue).toBe("11.1 MB");
   });
 
   it("includes before/after for vector Convert step", () => {

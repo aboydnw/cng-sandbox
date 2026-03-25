@@ -22,7 +22,7 @@ export function PipelineTimeline({ steps, activeStep, onStepClick }: PipelineTim
                 flex={1}
                 h="2px"
                 bg={stepNum <= activeStep ? "brand.orange" : "brand.border"}
-                mt="17px"
+                mt="19px"
                 transition="background 0.3s"
               />
             )}
@@ -35,14 +35,14 @@ export function PipelineTimeline({ steps, activeStep, onStepClick }: PipelineTim
               onClick={() => onStepClick(stepNum)}
             >
               <Flex
-                w="36px"
-                h="36px"
+                w="40px"
+                h="40px"
                 borderRadius="50%"
                 bg={isActive ? "brand.orange" : "brand.border"}
                 color={isActive ? "white" : "brand.textSecondary"}
                 align="center"
                 justify="center"
-                fontSize="11px"
+                fontSize="14px"
                 fontWeight={700}
                 boxShadow={isActive ? "0 0 0 4px rgba(207,63,2,0.15)" : "none"}
                 transition="all 0.3s"
@@ -50,7 +50,7 @@ export function PipelineTimeline({ steps, activeStep, onStepClick }: PipelineTim
                 {stepNum}
               </Flex>
               <Text
-                fontSize="11px"
+                fontSize="13px"
                 fontWeight={600}
                 color={isActive ? "brand.orange" : "brand.brown"}
                 mt="6px"
@@ -59,7 +59,7 @@ export function PipelineTimeline({ steps, activeStep, onStepClick }: PipelineTim
                 {step.label}
               </Text>
               <Text
-                fontSize="9px"
+                fontSize="11px"
                 color={isActive ? "brand.orange" : "brand.textSecondary"}
                 mt="1px"
                 transition="color 0.3s"

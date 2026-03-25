@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
+import { PencilSimple } from "@phosphor-icons/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
@@ -391,20 +392,41 @@ export default function StoryEditorPage() {
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
-        <input
-          type="text"
-          value={story.title}
-          onChange={(e) => updateStory((s) => ({ ...s, title: e.target.value }))}
-          style={{
-            fontSize: "14px",
-            fontWeight: 600,
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            width: "300px",
-          }}
-          placeholder="Story title"
-        />
+        <Flex
+          align="center"
+          gap={1}
+          role="group"
+          position="relative"
+        >
+          <Input
+            value={story.title}
+            onChange={(e) => updateStory((s) => ({ ...s, title: e.target.value }))}
+            placeholder="Click to name your story"
+            fontSize="15px"
+            fontWeight={600}
+            border="none"
+            borderBottom="2px solid"
+            borderColor="transparent"
+            borderRadius={0}
+            outline="none"
+            background="transparent"
+            width="300px"
+            p={0}
+            height="auto"
+            _hover={{ borderColor: "gray.300" }}
+            _focusVisible={{ borderColor: "blue.400", boxShadow: "none" }}
+            _placeholder={{ color: "gray.400", fontWeight: 400 }}
+          />
+          <Box
+            color="gray.400"
+            opacity={0}
+            _groupHover={{ opacity: 1 }}
+            pointerEvents="none"
+            flexShrink={0}
+          >
+            <PencilSimple size={14} />
+          </Box>
+        </Flex>
         <SaveStatus state={saveState} />
         <Flex gap={2} align="center">
           <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />

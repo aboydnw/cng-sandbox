@@ -34,10 +34,10 @@ describe("useTileTransferSize", () => {
     expect(result.current).toBeNull();
   });
 
-  it("sums transferSize for entries matching the prefix", () => {
+  it("sums transferSize for unique entries matching the prefix", () => {
     vi.spyOn(performance, "getEntriesByType").mockReturnValue([
-      makeEntry("http://localhost/pmtiles/datasets/abc/data.pmtiles", 1024),
-      makeEntry("http://localhost/pmtiles/datasets/abc/data.pmtiles", 512),
+      makeEntry("http://localhost/pmtiles/datasets/abc/tile-a", 1024),
+      makeEntry("http://localhost/pmtiles/datasets/abc/tile-b", 512),
       makeEntry("http://localhost/raster/tiles/0/0/0.png", 2048),
     ]);
     const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
@@ -46,18 +46,38 @@ describe("useTileTransferSize", () => {
 
   it("updates when the observer fires with new entries", () => {
     vi.spyOn(performance, "getEntriesByType")
-      .mockReturnValueOnce([makeEntry("http://localhost/pmtiles/x", 100)])
-      .mockReturnValueOnce([
-        makeEntry("http://localhost/pmtiles/x", 100),
-        makeEntry("http://localhost/pmtiles/x", 200),
-      ]);
+      .mockReturnValue([makeEntry("http://localhost/pmtiles/tile-a", 100)]);
 
     const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
     expect(result.current).toBe(100);
 
     act(() => {
-      observerCallback({ getEntries: () => [] } as unknown as PerformanceObserverEntryList, {} as PerformanceObserver);
+      observerCallback(
+        { getEntries: () => [makeEntry("http://localhost/pmtiles/tile-b", 200)] } as unknown as PerformanceObserverEntryList,
+        {} as PerformanceObserver,
+      );
     });
+    expect(result.current).toBe(300);
+  });
+
+  it("deduplicates repeated fetches of the same tile URL", () => {
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+      makeEntry("http://localhost/pmtiles/tile-a", 100),
+    ]);
+
+    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    expect(result.current).toBe(100);
+
+    act(() => {
+      observerCallback(
+        { getEntries: () => [
+          makeEntry("http://localhost/pmtiles/tile-a", 100),
+          makeEntry("http://localhost/pmtiles/tile-b", 200),
+        ] } as unknown as PerformanceObserverEntryList,
+        {} as PerformanceObserver,
+      );
+    });
+    // tile-a was already counted, only tile-b is new
     expect(result.current).toBe(300);
   });
 

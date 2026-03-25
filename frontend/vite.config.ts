@@ -24,6 +24,7 @@ export default defineConfig({
         configure: (proxy) => {
           proxy.on("proxyRes", (proxyRes) => {
             proxyRes.headers["cache-control"] = "no-store";
+            proxyRes.headers["timing-allow-origin"] = "*";
           });
         },
       },
@@ -36,13 +37,23 @@ export default defineConfig({
             // tipg sets max-age=3600 which causes MapLibre to serve stale 404s
             // for tiles that weren't found during the catalog refresh window.
             proxyRes.headers["cache-control"] = "no-store";
+            proxyRes.headers["timing-allow-origin"] = "*";
           });
         },
+      },
+      "/stac": {
+        target: process.env.STAC_API_PROXY_TARGET || "http://localhost:8081",
+        rewrite: (path: string) => path.replace(/^\/stac/, ""),
       },
       "/pmtiles": {
         target: process.env.STORAGE_PROXY_TARGET || "",
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/pmtiles/, ""),
+        configure: (proxy) => {
+          proxy.on("proxyRes", (proxyRes) => {
+            proxyRes.headers["timing-allow-origin"] = "*";
+          });
+        },
       },
       "/storage": {
         target: process.env.STORAGE_PROXY_TARGET || "",

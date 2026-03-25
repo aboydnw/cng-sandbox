@@ -1,8 +1,10 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { X } from "@phosphor-icons/react";
 import type { Dataset } from "../types";
-import { getTechCards } from "../lib/techDescriptions";
-import { TechCard } from "./TechCard";
+import { PipelineTimeline } from "./details/PipelineTimeline";
+import { StepCard } from "./details/StepCard";
+import { getStepContent, getStepCount } from "./details/stepContent";
 
 interface ReportCardProps {
   dataset: Dataset;
@@ -16,69 +18,42 @@ export function getTileUrlPrefix(tileUrl: string): string {
   return "/" + parts[1] + "/";
 }
 
-// --- Transformation bar ---
+export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
+  const [activeStep, setActiveStep] = useState(1);
+  const totalSteps = getStepCount(dataset);
 
-interface TransformStep {
-  label: string;
-  tools: string;
-}
+  // Reset to step 1 when drawer opens or dataset changes
+  useEffect(() => {
+    if (isOpen) setActiveStep(1);
+  }, [isOpen, dataset.id]);
 
-function getTransformationSteps(dataset: Dataset): {
-  steps: TransformStep[];
-  final: string;
-} {
-  const isPmtiles = dataset.tile_url?.startsWith("/pmtiles/");
-  switch (dataset.format_pair) {
-    case "geotiff-to-cog":
-      return {
-        steps: [{ label: ".tif  GeoTIFF", tools: "rio-cogeo" }],
-        final: ".tif  COG",
-      };
-    case "netcdf-to-cog":
-      return {
-        steps: [{ label: ".nc  NetCDF", tools: "xarray → rio-cogeo" }],
-        final: ".tif  COG",
-      };
-    case "shapefile-to-geoparquet":
-      return isPmtiles
-        ? {
-            steps: [
-              { label: ".shp  Shapefile", tools: "GeoPandas" },
-              { label: ".parquet  GeoParquet", tools: "tippecanoe" },
-            ],
-            final: ".pmtiles  PMTiles",
-          }
-        : {
-            steps: [{ label: ".shp  Shapefile", tools: "GeoPandas → PostGIS" }],
-            final: "MVT  tiles via tipg",
-          };
-    case "geojson-to-geoparquet":
-      return isPmtiles
-        ? {
-            steps: [
-              { label: ".geojson  GeoJSON", tools: "GeoPandas" },
-              { label: ".parquet  GeoParquet", tools: "tippecanoe" },
-            ],
-            final: ".pmtiles  PMTiles",
-          }
-        : {
-            steps: [{ label: ".geojson  GeoJSON", tools: "GeoPandas → PostGIS" }],
-            final: "MVT  tiles via tipg",
-          };
-    default:
-      return {
-        steps: [{ label: dataset.format_pair, tools: "→" }],
-        final: "cloud-native",
-      };
-  }
-}
+  // Keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      if (e.key === "ArrowRight" && activeStep < totalSteps) setActiveStep((s) => s + 1);
+      if (e.key === "ArrowLeft" && activeStep > 1) setActiveStep((s) => s - 1);
+      if (e.key === "Escape") onClose();
+    },
+    [isOpen, activeStep, totalSteps, onClose],
+  );
 
-// --- Main component ---
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
-export function ReportCard({ dataset, isOpen, onClose, renderMode }: ReportCardProps) {
+  const allSteps = useMemo(
+    () => Array.from({ length: totalSteps }, (_, i) => getStepContent(dataset, i + 1)),
+    [dataset, totalSteps],
+  );
+
   if (!isOpen) return null;
 
-  const techCards = getTechCards(dataset.credits, dataset.format_pair, dataset.tile_url, renderMode);
+  const stepSummaries = allSteps.map((s) => ({ label: s.label, subtitle: s.subtitle }));
+  const currentContent = allSteps[activeStep - 1];
+  const prevContent = activeStep > 1 ? allSteps[activeStep - 2] : null;
+  const nextContent = activeStep < totalSteps ? allSteps[activeStep] : null;
 
   return (
     <Box
@@ -98,59 +73,52 @@ export function ReportCard({ dataset, isOpen, onClose, renderMode }: ReportCardP
         {/* Header */}
         <Flex justify="space-between" align="flex-start" mb={6}>
           <Box>
-            <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" fontWeight={600} mb={1}>
+            <Text
+              fontSize="11px"
+              textTransform="uppercase"
+              letterSpacing="1px"
+              color="brand.textSecondary"
+              fontWeight={600}
+              mb={1}
+            >
               Your data, transformed
             </Text>
-            <Text fontSize="18px" fontWeight={700} color="brand.brown">{dataset.filename}</Text>
+            <Text fontSize="18px" fontWeight={700} color="brand.brown">
+              {dataset.filename}
+            </Text>
           </Box>
-          <Text
-            fontSize="20px" color="brand.textSecondary" cursor="pointer" lineHeight="1"
-            onClick={onClose} aria-label="Close report card"
+          <Box
+            as="button"
+            aria-label="Close report card"
+            onClick={onClose}
+            cursor="pointer"
+            p={1}
+            display="flex"
+            alignItems="center"
+            color="brand.textSecondary"
             _hover={{ color: "brand.brown" }}
-            display="flex" alignItems="center"
           >
-            <X size={14} />
-          </Text>
+            <X size={16} />
+          </Box>
         </Flex>
 
-        {/* Transformation bar */}
-        {(() => {
-          const { steps, final } = getTransformationSteps(dataset);
-          return (
-            <Flex align="center" gap={3} mb={6} p={4} bg="white" borderRadius="8px" border="1px solid" borderColor="brand.border">
-              {steps.map((step, i) => (
-                <Box key={i} display="contents">
-                  <Box textAlign="center" minW="110px">
-                    <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" mb={1}>
-                      {i === 0 ? "Was" : "→"}
-                    </Text>
-                    <Box bg="brand.bgSubtle" borderRadius="4px" px={3} py={1} display="inline-block">
-                      <Text fontSize="12px" fontWeight={700} color="brand.textSecondary">{step.label}</Text>
-                    </Box>
-                  </Box>
-                  <Box flex={1} display="flex" alignItems="center" gap={2}>
-                    <Box flex={1} h="2px" bgGradient="to-r" gradientFrom="brand.border" gradientTo="brand.orange" />
-                    <Text fontSize="11px" color="brand.orange" fontWeight={600} whiteSpace="nowrap">→ {step.tools} →</Text>
-                    <Box flex={1} h="2px" bg="brand.orange" />
-                  </Box>
-                </Box>
-              ))}
-              <Box textAlign="center" minW="110px">
-                <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" mb={1}>Is now</Text>
-                <Box bg="brand.orange" borderRadius="4px" px={3} py={1} display="inline-block">
-                  <Text fontSize="12px" fontWeight={700} color="white">{final}</Text>
-                </Box>
-              </Box>
-            </Flex>
-          );
-        })()}
+        {/* Timeline */}
+        <PipelineTimeline
+          steps={stepSummaries}
+          activeStep={activeStep}
+          onStepClick={setActiveStep}
+        />
 
-        {/* Tech cards */}
-        <Flex gap={4} mt={6}>
-          {techCards.map((tech) => (
-            <TechCard key={tech.name} tech={tech} />
-          ))}
-        </Flex>
+        {/* Step Card */}
+        <StepCard
+          content={currentContent}
+          stepNumber={activeStep}
+          totalSteps={totalSteps}
+          onPrev={activeStep > 1 ? () => setActiveStep((s) => s - 1) : null}
+          onNext={activeStep < totalSteps ? () => setActiveStep((s) => s + 1) : null}
+          prevLabel={prevContent?.label ?? null}
+          nextLabel={nextContent?.label ?? null}
+        />
       </Box>
     </Box>
   );

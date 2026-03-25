@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
 import type { Dataset } from "../types";
 import { ChapterTypePicker } from "./ChapterTypePicker";
+import { ColormapPicker } from "./ColormapPicker";
 import { MarkdownToolbar } from "./MarkdownToolbar";
 
 interface NarrativeEditorProps {
@@ -241,15 +242,10 @@ Task: Write 2-3 paragraphs of narrative text for this chapter of a scrollytellin
             <>
               <Box>
                 <Text fontSize="xs" color="gray.500" mb={1}>Colormap</Text>
-                <select
+                <ColormapPicker
                   value={layerConfig.colormap}
-                  onChange={(e) => onLayerConfigChange({ ...layerConfig, colormap: e.target.value })}
-                  style={{ fontSize: "13px", padding: "4px 8px" }}
-                >
-                  {["viridis", "plasma", "inferno", "magma", "cividis", "terrain", "blues", "reds"].map(cm => (
-                    <option key={cm} value={cm}>{cm}</option>
-                  ))}
-                </select>
+                  onChange={(cm) => onLayerConfigChange({ ...layerConfig, colormap: cm })}
+                />
               </Box>
               <Box>
                 <Text fontSize="xs" color="gray.500" mb={1}>Opacity</Text>

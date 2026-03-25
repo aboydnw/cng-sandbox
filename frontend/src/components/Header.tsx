@@ -39,9 +39,9 @@ export function Header({ children }: HeaderProps) {
             </Text>
           </Flex>
         </Link>
-        <Link to={workspacePath("/datasets")} style={{ textDecoration: "none" }}>
+        <Link to={workspacePath("/library")} style={{ textDecoration: "none" }}>
           <Text fontSize="sm" fontWeight={500} color="gray.600" _hover={{ color: "gray.800" }}>
-            Datasets
+            Library
           </Text>
         </Link>
       </Flex>

@@ -14,6 +14,8 @@ import { Header } from "../components/Header";
 import { config } from "../config";
 import { workspaceFetch } from "../lib/api";
 import type { Dataset } from "../types";
+import type { Story } from "../lib/story/types";
+import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return "\u2014";
@@ -41,18 +43,14 @@ interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
 }
 
-export default function DatasetsPage() {
-  const { workspaceId, workspacePath } = useWorkspace();
-  const [shared, setShared] = useState(false);
-
-  const shareWorkspace = useCallback(() => {
-    navigator.clipboard.writeText(`${window.location.origin}/w/${workspaceId}`);
-    setShared(true);
-    setTimeout(() => setShared(false), 2000);
-  }, [workspaceId]);
+export default function LibraryPage() {
+  const { workspacePath } = useWorkspace();
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [storiesLoading, setStoriesLoading] = useState(true);
+  const [deletingStory, setDeletingStory] = useState<string | null>(null);
 
   useEffect(() => {
     workspaceFetch(`${config.apiBase}/api/datasets`)
@@ -63,6 +61,29 @@ export default function DatasetsPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    listStoriesFromServer()
+      .then((data) => {
+        setStories(data);
+        setStoriesLoading(false);
+      })
+      .catch(() => setStoriesLoading(false));
+  }, []);
+
+  const handleDeleteStory = useCallback(
+    async (story: Story) => {
+      if (!window.confirm(`Delete "${story.title}"?`)) return;
+      setDeletingStory(story.id);
+      try {
+        await deleteStoryFromServer(story.id);
+        setStories((prev) => prev.filter((s) => s.id !== story.id));
+      } finally {
+        setDeletingStory(null);
+      }
+    },
+    [],
+  );
 
   const handleDelete = useCallback(
     async (ds: DatasetWithStoryCount) => {
@@ -95,17 +116,9 @@ export default function DatasetsPage() {
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Flex justify="space-between" align="center" mb={6}>
           <Heading size="lg" color="gray.800">
-            Datasets
+            Library
           </Heading>
           <Flex gap={2}>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={shareWorkspace}
-              title="Anyone with this link can view and add to this workspace"
-            >
-              {shared ? "Link copied!" : "Share workspace"}
-            </Button>
             <Link to={workspacePath("/")}>
               <Button size="sm" colorScheme="orange">
                 Upload new
@@ -113,6 +126,10 @@ export default function DatasetsPage() {
             </Link>
           </Flex>
         </Flex>
+
+        <Heading size="md" color="gray.700" mb={3}>
+          Datasets
+        </Heading>
 
         {loading ? (
           <Flex justify="center" py={12}>
@@ -134,13 +151,13 @@ export default function DatasetsPage() {
             </Link>
           </Flex>
         ) : (
-          <Table.Root size="sm">
+          <Table.Root size="sm" tableLayout="fixed">
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeader>Filename</Table.ColumnHeader>
-                <Table.ColumnHeader>Type</Table.ColumnHeader>
-                <Table.ColumnHeader>Uploaded</Table.ColumnHeader>
-                <Table.ColumnHeader>Size</Table.ColumnHeader>
+                <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Uploaded</Table.ColumnHeader>
+                <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
                 <Table.ColumnHeader w="80px" />
               </Table.Row>
             </Table.Header>
@@ -154,6 +171,8 @@ export default function DatasetsPage() {
                         color="blue.600"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
+                        truncate
+                        title={ds.filename}
                       >
                         {ds.filename}
                       </Text>
@@ -190,6 +209,89 @@ export default function DatasetsPage() {
                       colorScheme="red"
                       loading={deleting === ds.id}
                       onClick={() => handleDelete(ds)}
+                    >
+                      Delete
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        )}
+
+        <Flex justify="space-between" align="center" mt={10} mb={3}>
+          <Heading size="md" color="gray.700">
+            Stories
+          </Heading>
+          <Link to={workspacePath("/story/new")}>
+            <Button size="sm" colorScheme="orange">
+              New story
+            </Button>
+          </Link>
+        </Flex>
+
+        {storiesLoading ? (
+          <Flex justify="center" py={8}>
+            <SpinnerGap size={24} style={{ animation: "spin 1s linear infinite" }} />
+          </Flex>
+        ) : stories.length === 0 ? (
+          <Flex justify="center" py={12} color="gray.500">
+            <Text>No stories yet.</Text>
+          </Flex>
+        ) : (
+          <Table.Root size="sm" tableLayout="fixed">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader>Name</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
+                <Table.ColumnHeader w="80px" />
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {stories.map((story) => (
+                <Table.Row key={story.id}>
+                  <Table.Cell>
+                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
+                      <Text
+                        color="blue.600"
+                        _hover={{ textDecoration: "underline" }}
+                        fontWeight={500}
+                        truncate
+                        title={story.title}
+                      >
+                        {story.title}
+                      </Text>
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text
+                      fontSize="xs"
+                      fontWeight={600}
+                      textTransform="uppercase"
+                      color={story.published ? "green.600" : "gray.500"}
+                    >
+                      {story.published ? "Published" : "Draft"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {story.chapters.length}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {story.updated_at ? timeAgo(story.updated_at) : "\u2014"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="red"
+                      loading={deletingStory === story.id}
+                      onClick={() => handleDeleteStory(story)}
                     >
                       Delete
                     </Button>

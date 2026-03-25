@@ -1,6 +1,7 @@
 import { Flex, Text } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
+import { useState, useCallback } from "react";
 import { useWorkspace } from "../hooks/useWorkspace";
 
 interface HeaderProps {
@@ -8,7 +9,15 @@ interface HeaderProps {
 }
 
 export function Header({ children }: HeaderProps) {
-  const { workspacePath } = useWorkspace();
+  const { workspaceId, workspacePath } = useWorkspace();
+  const [copied, setCopied] = useState(false);
+
+  const copyWorkspaceUrl = useCallback(() => {
+    const url = `${window.location.origin}/w/${workspaceId}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [workspaceId]);
 
   return (
     <Flex
@@ -35,6 +44,21 @@ export function Header({ children }: HeaderProps) {
             Datasets
           </Text>
         </Link>
+      </Flex>
+      <Flex
+        align="center"
+        gap={1}
+        px={2}
+        py={1}
+        borderRadius="md"
+        bg="gray.100"
+        cursor="pointer"
+        onClick={copyWorkspaceUrl}
+        title="Click to copy workspace link"
+        fontSize="xs"
+        color="gray.500"
+      >
+        <Text>{copied ? "Copied!" : `Workspace ${workspaceId}`}</Text>
       </Flex>
       {children && <Flex gap={2}>{children}</Flex>}
     </Flex>

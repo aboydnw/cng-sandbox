@@ -7,10 +7,12 @@ import DatasetsPage from "./pages/DatasetsPage";
 import StoryReaderPage from "./pages/StoryReaderPage";
 import StoryEditorPage from "./pages/StoryEditorPage";
 import StoryEmbedPage from "./pages/StoryEmbedPage";
+import { WelcomeToast } from "./components/WelcomeToast";
 
 function WorkspaceRoutes() {
   return (
     <WorkspaceProvider>
+      <WelcomeToast />
       <Routes>
         <Route path="/" element={<UploadPage />} />
         <Route path="/map/:id" element={<MapPage />} />

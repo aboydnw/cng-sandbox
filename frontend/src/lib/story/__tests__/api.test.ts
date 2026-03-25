@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createStoryOnServer, getStoryFromServer, saveStoryToServer, deleteStoryFromServer } from "../api";
+import { setWorkspaceId } from "../../api";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
+  setWorkspaceId("test1234");
 });
 
 describe("createStoryOnServer", () => {
@@ -26,7 +28,7 @@ describe("getStoryFromServer", () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(story) });
 
     const result = await getStoryFromServer("s-1");
-    expect(mockFetch).toHaveBeenCalledWith("/api/stories/s-1");
+    expect(mockFetch).toHaveBeenCalledWith("/api/stories/s-1", expect.objectContaining({}));
     expect(result?.id).toBe("s-1");
   });
 

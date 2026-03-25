@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useConversionJob } from "../src/hooks/useConversionJob";
+import { setWorkspaceId } from "../src/lib/api";
 
 class MockEventSource {
   onerror: (() => void) | null = null;
@@ -29,6 +30,7 @@ beforeEach(() => {
   vi.stubGlobal("EventSource", MockEventSource);
   vi.stubGlobal("fetch", mockFetch);
   mockFetch.mockReset();
+  setWorkspaceId("test1234");
 });
 
 describe("useConversionJob", () => {
@@ -167,7 +169,6 @@ describe("useConversionJob", () => {
       "/api/convert-url",
       expect.objectContaining({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: "https://example.com/data.tif" }),
       }),
     );

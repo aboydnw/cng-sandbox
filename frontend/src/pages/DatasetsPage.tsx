@@ -11,6 +11,7 @@ import {
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { config } from "../config";
+import { workspaceFetch } from "../lib/api";
 import type { Dataset } from "../types";
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -45,7 +46,7 @@ export default function DatasetsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${config.apiBase}/api/datasets`)
+    workspaceFetch(`${config.apiBase}/api/datasets`)
       .then((r) => r.json())
       .then((data) => {
         setDatasets(data);
@@ -65,7 +66,7 @@ export default function DatasetsPage() {
 
       setDeleting(ds.id);
       try {
-        const resp = await fetch(
+        const resp = await workspaceFetch(
           `${config.apiBase}/api/datasets/${ds.id}`,
           { method: "DELETE" },
         );

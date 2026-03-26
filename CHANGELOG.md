@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/aboydnw/cng-sandbox/compare/v1.4.0...v1.5.0) (2026-03-26)
+
+
+### Features
+
+* improve homepage cards with descriptive content and story expansion ([#43](https://github.com/aboydnw/cng-sandbox/issues/43)) ([2907caf](https://github.com/aboydnw/cng-sandbox/commit/2907caf547916febd8ef4bd811f813f2220142e4))
+
 ## [1.4.0](https://github.com/aboydnw/cng-sandbox/compare/v1.3.0...v1.4.0) (2026-03-26)
 
 

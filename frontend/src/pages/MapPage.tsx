@@ -8,6 +8,7 @@ import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
 import { SidePanel } from "../components/SidePanel";
 import { RasterSidebarControls } from "../components/RasterSidebarControls";
+import { VectorSidebarControls } from "../components/VectorSidebarControls";
 import { ExploreTab } from "../components/ExploreTab";
 import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
 import { UnifiedMap } from "../components/UnifiedMap";
@@ -502,12 +503,26 @@ export default function MapPage() {
                   onRenderModeChange={(mode) => setRenderMode(mode)}
                 />
               )}
-              {dataset.dataset_type === "vector" && dataset.parquet_url && (
-                <ExploreTab
-                  dataset={dataset}
-                  active={true}
-                  onTableChange={handleTableChange}
-                />
+              {dataset.dataset_type === "vector" && (
+                <>
+                  <VectorSidebarControls
+                    renderMode={
+                      renderMode === "geojson" ? "geojson" : "vector-tiles"
+                    }
+                    onRenderModeChange={(mode) => {
+                      setRenderMode(mode);
+                      if (mode === "vector-tiles") setArrowTable(null);
+                    }}
+                    hasParquet={!!dataset.parquet_url}
+                  />
+                  {renderMode === "geojson" && dataset.parquet_url && (
+                    <ExploreTab
+                      dataset={dataset}
+                      active={true}
+                      onTableChange={handleTableChange}
+                    />
+                  )}
+                </>
               )}
             </SidePanel>
           </Box>

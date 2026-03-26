@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { Flex } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
@@ -35,6 +35,7 @@ export default function UploadPage() {
     size: "",
   });
   const [mode, setMode] = useState<PageMode>("initial");
+  const [storyExpanded, setStoryExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
 
   const isProcessing =
@@ -98,6 +99,17 @@ export default function UploadPage() {
   }, []);
 
   const uploadCardExpanded = mode !== "initial";
+  const anyCardExpanded = uploadCardExpanded || storyExpanded;
+
+  const handleUploadCardClick = () => {
+    setStoryExpanded(false);
+    setMode("upload-idle");
+  };
+
+  const handleStoryCardClick = () => {
+    setMode("initial");
+    setStoryExpanded(true);
+  };
 
   return (
     <Flex direction="column" h="100vh" bg="white" overflow="hidden">
@@ -120,13 +132,27 @@ export default function UploadPage() {
           title="Convert a file"
           description="Upload a geospatial file and we'll convert it to a shareable web map"
           ctaLabel="Browse files"
-          onClick={() => setMode("upload-idle")}
+          onClick={handleUploadCardClick}
           expanded={uploadCardExpanded}
-          faded={false}
+          faded={!uploadCardExpanded && storyExpanded}
           onCollapse={
             mode === "upload-idle" ? () => setMode("initial") : undefined
           }
         >
+          <Box
+            as="ul"
+            mb={4}
+            pl={4}
+            fontSize="13px"
+            color="brand.textSecondary"
+            lineHeight={1.8}
+            listStyleType="disc"
+          >
+            <li>Automatically converts your file to a cloud-optimized format</li>
+            <li>Data is private to your workspace</li>
+            <li>Files up to 15 GB accepted</li>
+            <li>Hosted for 30 days, then automatically removed</li>
+          </Box>
           {mode === "upload-idle" && (
             <FileUploader
               onFileSelected={handleFile}
@@ -160,12 +186,44 @@ export default function UploadPage() {
         <PathCard
           icon={<GlobeHemisphereWest size={36} />}
           title="Build a story"
-          description="Create a scrollytelling narrative with your data or from our public library"
+          description="Create a storytelling narrative with your data or from our public library"
           ctaLabel="Start building"
-          onClick={() => navigate(workspacePath("/story/new"))}
-          expanded={false}
-          faded={uploadCardExpanded}
-        />
+          onClick={handleStoryCardClick}
+          expanded={storyExpanded}
+          faded={!storyExpanded && uploadCardExpanded}
+          onCollapse={() => setStoryExpanded(false)}
+        >
+          <Box
+            as="ul"
+            mb={5}
+            pl={4}
+            fontSize="13px"
+            color="brand.textSecondary"
+            lineHeight={1.8}
+            listStyleType="disc"
+          >
+            <li>Combine maps, text, and media into a shareable narrative</li>
+            <li>Add datasets from your workspace or our public library</li>
+            <li>Publish a live URL anyone can view</li>
+            <li>Data is hosted for 30 days — map layers may stop loading after that, but the story URL stays accessible</li>
+          </Box>
+          <Box
+            as="button"
+            onClick={() => navigate(workspacePath("/story/new"))}
+            bg="brand.orange"
+            color="white"
+            px={5}
+            py={2.5}
+            borderRadius="10px"
+            fontSize="14px"
+            fontWeight={600}
+            cursor="pointer"
+            _hover={{ bg: "brand.orangeHover" }}
+            transition="background 150ms ease"
+          >
+            Start building
+          </Box>
+        </PathCard>
       </Flex>
 
       <BugReportModal

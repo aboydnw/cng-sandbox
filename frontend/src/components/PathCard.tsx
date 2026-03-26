@@ -47,15 +47,15 @@ export function PathCard({
       borderRadius="16px"
       overflow="hidden"
       bg="white"
-      _hover={!expanded && !faded ? cardHover : undefined}
-      _active={!expanded && !faded ? cardActive : undefined}
-      _focusVisible={!expanded && !faded ? focusRing : undefined}
-      cursor={!expanded && !faded ? "pointer" : undefined}
-      onClick={!expanded && !faded ? onClick : undefined}
-      tabIndex={!expanded && !faded ? 0 : undefined}
+      _hover={!expanded ? cardHover : undefined}
+      _active={!expanded ? cardActive : undefined}
+      _focusVisible={!expanded ? focusRing : undefined}
+      cursor={!expanded ? "pointer" : undefined}
+      onClick={!expanded ? onClick : undefined}
+      tabIndex={!expanded ? 0 : undefined}
     >
       {expanded ? (
-        <Box p={5} overflow="auto" maxH="calc(100vh - 200px)">
+        <Box p={5} overflow="auto" maxH="calc(100vh - 260px)">
           <Flex align="center" gap={2} mb={4}>
             {onCollapse && (
               <Box

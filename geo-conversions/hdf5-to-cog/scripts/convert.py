@@ -36,25 +36,51 @@ _X_NAMES = ["xcoordinates", "x", "longitude", "lon"]
 _Y_NAMES = ["ycoordinates", "y", "latitude", "lat"]
 
 
+def _ancestor_groups(group):
+    """Yield the group itself, then each parent up to (but not including) the root."""
+    yield group
+    current = group
+    while current.parent is not None and current.parent != current:
+        current = current.parent
+        yield current
+
+
 def _find_dataset(group, candidates):
-    """Find a dataset in the group matching one of the candidate names (case-insensitive)."""
-    keys_lower = {k.lower(): k for k in group.keys()}
-    for name in candidates:
-        if name in keys_lower:
-            return group[keys_lower[name]][:]
+    """Find a dataset matching one of the candidate names (case-insensitive).
+
+    Searches the given group first, then walks up to parent groups so that
+    coordinate arrays stored at a higher level (common in NISAR products) are
+    still discovered.
+    """
+    for grp in _ancestor_groups(group):
+        keys_lower = {k.lower(): k for k in grp.keys()}
+        for name in candidates:
+            if name in keys_lower:
+                return grp[keys_lower[name]][:]
     return None
 
 
 def _detect_crs(group, root, x_coords, y_coords):
-    """Detect CRS from group metadata, falling back to coordinate heuristics."""
-    if "projection" in group:
-        epsg = int(np.asarray(group["projection"]))
-        return CRS.from_epsg(epsg)
+    """Detect CRS from group metadata, falling back to coordinate heuristics.
 
-    for obj in (group, root):
+    Searches the given group and its ancestors for a 'projection' dataset or
+    'crs'/'spatial_ref' attribute before falling back to coordinate-range
+    heuristics.
+    """
+    for grp in _ancestor_groups(group):
+        if "projection" in grp:
+            epsg = int(np.asarray(grp["projection"]))
+            return CRS.from_epsg(epsg)
+
+    for obj in _ancestor_groups(group):
         for attr_name in ("crs", "spatial_ref"):
             if attr_name in obj.attrs:
                 return CRS.from_user_input(obj.attrs[attr_name])
+
+    # Also check root explicitly (visititems skips the root)
+    for attr_name in ("crs", "spatial_ref"):
+        if attr_name in root.attrs:
+            return CRS.from_user_input(root.attrs[attr_name])
 
     if (np.all(x_coords >= -180) and np.all(x_coords <= 180)
             and np.all(y_coords >= -90) and np.all(y_coords <= 90)):
@@ -85,7 +111,13 @@ def convert(input_path: str, output_path: str, variable: str = "",
             )
 
         ds = grp[variable]
-        data = ds[:].astype(np.float32)
+        raw = ds[:]
+        if np.iscomplexobj(raw):
+            if verbose:
+                print(f"Complex dtype ({raw.dtype}) — converting to magnitude")
+            data = np.abs(raw).astype(np.float32)
+        else:
+            data = raw.astype(np.float32)
         if data.ndim != 2:
             raise ValueError(f"Expected 2D variable, got shape {data.shape}")
 

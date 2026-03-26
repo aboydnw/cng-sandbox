@@ -31,6 +31,7 @@ def scan_hdf5(path: str) -> list[dict]:
                 return
             if obj.dtype.kind in ("S", "U", "O"):
                 return
+            is_complex = obj.dtype.kind == "c"
             basename = name.rsplit("/", 1)[-1]
             if basename.lower() in _COORD_NAMES:
                 return
@@ -41,6 +42,7 @@ def scan_hdf5(path: str) -> list[dict]:
                     "group": group,
                     "shape": list(obj.shape),
                     "dtype": str(obj.dtype),
+                    "is_complex": is_complex,
                 }
             )
 

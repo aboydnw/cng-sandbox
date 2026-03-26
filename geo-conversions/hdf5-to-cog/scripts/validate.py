@@ -102,27 +102,43 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str = "",
         grp = f[group] if group else f
 
         ds = grp[variable]
-        src_data = ds[:].astype(np.float32)
+        raw = ds[:]
+        if np.iscomplexobj(raw):
+            src_data = np.abs(raw).astype(np.float32)
+        else:
+            src_data = raw.astype(np.float32)
         nodata_val = float(ds.attrs.get("_FillValue", -9999.0))
 
-        keys_lower = {k.lower(): k for k in grp.keys()}
-        x_coords = y_coords = None
-        for name in _X_NAMES:
-            if name in keys_lower:
-                x_coords = grp[keys_lower[name]][:]
-                break
-        for name in _Y_NAMES:
-            if name in keys_lower:
-                y_coords = grp[keys_lower[name]][:]
-                break
+        def _search_ancestors(grp, candidates):
+            """Search group and its ancestors for a dataset matching candidates."""
+            current = grp
+            while True:
+                keys_lower = {k.lower(): k for k in current.keys()}
+                for name in candidates:
+                    if name in keys_lower:
+                        return current[keys_lower[name]][:]
+                if current.parent is None or current.parent == current:
+                    break
+                current = current.parent
+            return None
+
+        x_coords = _search_ancestors(grp, _X_NAMES)
+        y_coords = _search_ancestors(grp, _Y_NAMES)
 
         if x_coords is None or y_coords is None:
             return CheckResult("Pixel fidelity", False, "Cannot find coordinate arrays")
 
-        # Detect native CRS
-        if "projection" in grp:
-            src_crs = CRS.from_epsg(int(np.asarray(grp["projection"])))
-        else:
+        # Detect native CRS — search current group and ancestors
+        src_crs = None
+        current = grp
+        while True:
+            if "projection" in current:
+                src_crs = CRS.from_epsg(int(np.asarray(current["projection"])))
+                break
+            if current.parent is None or current.parent == current:
+                break
+            current = current.parent
+        if src_crs is None:
             src_crs = CRS.from_epsg(4326)
 
     # Ensure north-to-south

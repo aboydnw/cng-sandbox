@@ -241,7 +241,7 @@ def _extract_vector_geo_metadata(parquet_path: str) -> VectorGeoMetadata:
     crs = gdf.crs
     return VectorGeoMetadata(
         crs=str(crs) if crs else None,
-        crs_name=crs.name if crs else None,
+        crs_name=crs.to_wkt().split('"')[1] if crs else None,
     )
 
 

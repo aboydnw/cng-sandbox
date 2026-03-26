@@ -10,6 +10,6 @@ export function createPMTilesProtocol(): PMTilesProtocolResult {
 
   return {
     protocol,
-    cleanup: () => {}
+    cleanup: () => {},
   };
 }

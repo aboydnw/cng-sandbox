@@ -3,7 +3,16 @@ import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { CloudArrowUp } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
 
-const ALLOWED_EXTENSIONS = [".tif", ".tiff", ".zip", ".geojson", ".json", ".nc", ".h5", ".hdf5"];
+const ALLOWED_EXTENSIONS = [
+  ".tif",
+  ".tiff",
+  ".zip",
+  ".geojson",
+  ".json",
+  ".nc",
+  ".h5",
+  ".hdf5",
+];
 const RASTER_EXTENSIONS = [".tif", ".tiff", ".nc", ".h5", ".hdf5"];
 
 interface FileUploaderProps {
@@ -14,7 +23,9 @@ interface FileUploaderProps {
   embedded?: boolean;
 }
 
-const extractFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> => {
+const extractFilesFromEntry = async (
+  entry: FileSystemEntry
+): Promise<File[]> => {
   if (entry.isFile) {
     return new Promise((resolve) => {
       (entry as FileSystemFileEntry).file((f) => resolve([f]));
@@ -23,7 +34,7 @@ const extractFilesFromEntry = async (entry: FileSystemEntry): Promise<File[]> =>
   if (entry.isDirectory) {
     const reader = (entry as FileSystemDirectoryEntry).createReader();
     const entries: FileSystemEntry[] = await new Promise((resolve) =>
-      reader.readEntries((e) => resolve(e)),
+      reader.readEntries((e) => resolve(e))
     );
     const nested = await Promise.all(entries.map(extractFilesFromEntry));
     return nested.flat();
@@ -57,7 +68,7 @@ export function FileUploader({
       setError(null);
       onFileSelected(file);
     },
-    [onFileSelected],
+    [onFileSelected]
   );
 
   const handleDrop = useCallback(
@@ -71,9 +82,11 @@ export function FileUploader({
         .filter((entry): entry is FileSystemEntry => entry !== null);
 
       if (entries.length > 0) {
-        const allFiles = (await Promise.all(entries.map(extractFilesFromEntry))).flat();
+        const allFiles = (
+          await Promise.all(entries.map(extractFilesFromEntry))
+        ).flat();
         const rasterFiles = allFiles.filter((f) =>
-          RASTER_EXTENSIONS.includes(getExtension(f.name)),
+          RASTER_EXTENSIONS.includes(getExtension(f.name))
         );
         if (rasterFiles.length > 1) {
           setError(null);
@@ -87,7 +100,7 @@ export function FileUploader({
       const file = e.dataTransfer.files[0];
       if (file) handleFile(file);
     },
-    [handleFile, onFilesSelected],
+    [handleFile, onFilesSelected]
   );
 
   const handleUrlSubmit = useCallback(() => {
@@ -98,7 +111,12 @@ export function FileUploader({
   }, [url, onUrlSubmitted]);
 
   return (
-    <Flex direction="column" align="center" py={embedded ? 0 : 16} px={embedded ? 0 : 8}>
+    <Flex
+      direction="column"
+      align="center"
+      py={embedded ? 0 : 16}
+      px={embedded ? 0 : 8}
+    >
       {!embedded && (
         <>
           <Text color="brand.brown" fontSize="22px" fontWeight={700} mb={1}>
@@ -138,7 +156,12 @@ export function FileUploader({
             <CloudArrowUp size={40} />
           </Box>
         )}
-        <Text color="brand.brown" fontSize={embedded ? "14px" : "16px"} fontWeight={600} mb={embedded ? 1 : 2}>
+        <Text
+          color="brand.brown"
+          fontSize={embedded ? "14px" : "16px"}
+          fontWeight={600}
+          mb={embedded ? 1 : 2}
+        >
           Drop your file here
         </Text>
         <Text color="brand.textSecondary" fontSize="13px" mb={embedded ? 2 : 5}>
@@ -171,7 +194,7 @@ export function FileUploader({
             const files = Array.from(e.target.files ?? []);
             if (files.length === 0) return;
             const rasterFiles = files.filter((f) =>
-              RASTER_EXTENSIONS.includes(getExtension(f.name)),
+              RASTER_EXTENSIONS.includes(getExtension(f.name))
             );
             if (rasterFiles.length > 1) {
               setError(null);
@@ -190,15 +213,31 @@ export function FileUploader({
         </Text>
       )}
 
-      <Flex align="center" gap={4} w="100%" maxW={embedded ? "100%" : "480px"} mt={embedded ? 3 : 6}>
+      <Flex
+        align="center"
+        gap={4}
+        w="100%"
+        maxW={embedded ? "100%" : "480px"}
+        mt={embedded ? 3 : 6}
+      >
         <Box flex={1} h="1px" bg="brand.border" />
-        <Text color="#aaa" fontSize="12px" textTransform="uppercase" letterSpacing="1px">
+        <Text
+          color="#aaa"
+          fontSize="12px"
+          textTransform="uppercase"
+          letterSpacing="1px"
+        >
           or
         </Text>
         <Box flex={1} h="1px" bg="brand.border" />
       </Flex>
 
-      <Flex gap={2} mt={embedded ? 3 : 5} w="100%" maxW={embedded ? "100%" : "480px"}>
+      <Flex
+        gap={2}
+        mt={embedded ? 3 : 5}
+        w="100%"
+        maxW={embedded ? "100%" : "480px"}
+      >
         <Input
           flex={1}
           placeholder="Paste an S3, GCS, or HTTP URL"

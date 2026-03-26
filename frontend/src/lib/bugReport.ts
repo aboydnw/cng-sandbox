@@ -15,7 +15,9 @@ interface BugReportResponse {
   issue_url: string;
 }
 
-export async function submitBugReport(payload: BugReportPayload): Promise<BugReportResponse> {
+export async function submitBugReport(
+  payload: BugReportPayload
+): Promise<BugReportResponse> {
   const resp = await fetch("/api/bug-report", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

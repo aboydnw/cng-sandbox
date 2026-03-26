@@ -1,6 +1,6 @@
 """STAC collection/item construction and ingestion via Transaction API."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 import pystac
@@ -8,7 +8,6 @@ from geojson_pydantic import Polygon as GeoJsonPolygon
 from rio_stac import create_stac_item
 
 from src.config import get_settings
-
 
 COG_MEDIA_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
@@ -30,7 +29,7 @@ def build_stac_item(
         asset_href=s3_href,
         asset_media_type=COG_MEDIA_TYPE,
         asset_roles=["data"],
-        input_datetime=input_datetime or datetime.now(timezone.utc),
+        input_datetime=input_datetime or datetime.now(UTC),
     )
     GeoJsonPolygon.model_validate(item.geometry)
     return item
@@ -51,7 +50,7 @@ def build_stac_collection(
     """
     if item is not None:
         spatial_bbox = list(item.bbox)
-        dt = item.datetime or datetime.now(timezone.utc)
+        dt = item.datetime or datetime.now(UTC)
         interval = [[dt, None]]
     else:
         spatial_bbox = bbox
@@ -71,7 +70,9 @@ def build_stac_collection(
     return collection
 
 
-async def ingest_raster(dataset_id: str, cog_path: str, s3_href: str, filename: str) -> str:
+async def ingest_raster(
+    dataset_id: str, cog_path: str, s3_href: str, filename: str
+) -> str:
     """Ingest a COG into eoAPI: create collection + item via Transaction API.
 
     Returns the tile URL template for the ingested item.
@@ -92,14 +93,22 @@ async def ingest_raster(dataset_id: str, cog_path: str, s3_href: str, filename: 
         item=item,
     )
 
-    async with httpx.AsyncClient(base_url=settings.stac_api_url, timeout=30.0) as client:
+    async with httpx.AsyncClient(
+        base_url=settings.stac_api_url, timeout=30.0
+    ) as client:
         resp = await client.post("/collections", json=collection.to_dict())
         if resp.status_code not in (200, 201, 409):
-            raise RuntimeError(f"Failed to create STAC collection: {resp.status_code} {resp.text}")
+            raise RuntimeError(
+                f"Failed to create STAC collection: {resp.status_code} {resp.text}"
+            )
 
-        resp = await client.post(f"/collections/{collection_id}/items", json=item.to_dict())
+        resp = await client.post(
+            f"/collections/{collection_id}/items", json=item.to_dict()
+        )
         if resp.status_code not in (200, 201):
-            raise RuntimeError(f"Failed to create STAC item: {resp.status_code} {resp.text}")
+            raise RuntimeError(
+                f"Failed to create STAC item: {resp.status_code} {resp.text}"
+            )
 
     tile_url = (
         f"{settings.public_raster_tiler_url}/collections/{collection_id}"
@@ -123,7 +132,9 @@ async def ingest_temporal_raster(
     collection_id = f"sandbox-{dataset_id}"
 
     items: list[pystac.Item] = []
-    for i, (cog_path, s3_href, dt) in enumerate(zip(cog_paths, s3_hrefs, datetimes)):
+    for i, (cog_path, s3_href, dt) in enumerate(
+        zip(cog_paths, s3_hrefs, datetimes, strict=False)
+    ):
         item = build_stac_item(
             cog_path=cog_path,
             dataset_id=dataset_id,
@@ -142,15 +153,23 @@ async def ingest_temporal_raster(
         temporal_end=datetimes[-1],
     )
 
-    async with httpx.AsyncClient(base_url=settings.stac_api_url, timeout=30.0) as client:
+    async with httpx.AsyncClient(
+        base_url=settings.stac_api_url, timeout=30.0
+    ) as client:
         resp = await client.post("/collections", json=collection.to_dict())
         if resp.status_code not in (200, 201, 409):
-            raise RuntimeError(f"Failed to create STAC collection: {resp.status_code} {resp.text}")
+            raise RuntimeError(
+                f"Failed to create STAC collection: {resp.status_code} {resp.text}"
+            )
 
         for i, item in enumerate(items):
-            resp = await client.post(f"/collections/{collection_id}/items", json=item.to_dict())
+            resp = await client.post(
+                f"/collections/{collection_id}/items", json=item.to_dict()
+            )
             if resp.status_code not in (200, 201):
-                raise RuntimeError(f"Failed to create STAC item {i}: {resp.status_code} {resp.text}")
+                raise RuntimeError(
+                    f"Failed to create STAC item {i}: {resp.status_code} {resp.text}"
+                )
 
     tile_url = (
         f"{settings.public_raster_tiler_url}/collections/{collection_id}"

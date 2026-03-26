@@ -37,21 +37,27 @@ def validate_cross_file_compatibility(cog_paths: list[str]) -> list[str]:
         meta = _read_cog_metadata(path)
 
         if meta["crs"] != reference["crs"]:
-            errors.append(f"CRS mismatch: {name} has {meta['crs']}, expected {reference['crs']} (from {ref_name})")
+            errors.append(
+                f"CRS mismatch: {name} has {meta['crs']}, expected {reference['crs']} (from {ref_name})"
+            )
 
         if meta["width"] != reference["width"] or meta["height"] != reference["height"]:
             errors.append(
-                f"Pixel dimensions mismatch: {name} is {meta['width']}×{meta['height']}, "
-                f"expected {reference['width']}×{reference['height']} (from {ref_name})"
+                f"Pixel dimensions mismatch: {name} is {meta['width']}x{meta['height']}, "
+                f"expected {reference['width']}x{reference['height']} (from {ref_name})"
             )
 
         if meta["bands"] != reference["bands"]:
-            errors.append(f"Band count mismatch: {name} has {meta['bands']} bands, expected {reference['bands']} (from {ref_name})")
+            errors.append(
+                f"Band count mismatch: {name} has {meta['bands']} bands, expected {reference['bands']} (from {ref_name})"
+            )
 
         # Bounds tolerance: 1e-4 degrees (~11m)
         for i, label in enumerate(["west", "south", "east", "north"]):
             if abs(meta["bounds"][i] - reference["bounds"][i]) > 1e-4:
-                errors.append(f"Bounding box mismatch ({label}): {name} differs from {ref_name}")
+                errors.append(
+                    f"Bounding box mismatch ({label}): {name} differs from {ref_name}"
+                )
                 break
 
     return errors

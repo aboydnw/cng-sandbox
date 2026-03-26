@@ -12,7 +12,7 @@ export function useTemporalAnimation(
   totalFrames: number,
   gapIndices: Set<number>,
   isReady: boolean,
-  initialIndex: number = 0,
+  initialIndex: number = 0
 ) {
   const [state, setState] = useState<AnimationState>({
     isPlaying: false,
@@ -55,7 +55,10 @@ export function useTemporalAnimation(
   useEffect(() => {
     clearTimer();
     if (state.isPlaying && isReady) {
-      timerRef.current = setInterval(advanceFrame, SPEED_MS[state.speed] ?? 800);
+      timerRef.current = setInterval(
+        advanceFrame,
+        SPEED_MS[state.speed] ?? 800
+      );
     }
     return clearTimer;
   }, [state.isPlaying, state.speed, isReady, advanceFrame, clearTimer]);

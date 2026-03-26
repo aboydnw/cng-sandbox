@@ -37,8 +37,13 @@ export function createCOGLayer({
       return new BitmapLayer(props, {
         data: undefined,
         image: props.data,
-        bounds: [boundingBox[0][0], boundingBox[0][1], boundingBox[1][0], boundingBox[1][1]]
+        bounds: [
+          boundingBox[0][0],
+          boundingBox[0][1],
+          boundingBox[1][0],
+          boundingBox[1][1],
+        ],
       });
-    }
+    },
   });
 }

@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "format": "prettier --write 'src/**/*.{ts,tsx,css}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,css}'",
     "postinstall": "mkdir -p public && test -f node_modules/gif.js/dist/gif.worker.js && cp node_modules/gif.js/dist/gif.worker.js public/gif.worker.js || true"
   },
   "dependencies": {
@@ -54,6 +56,7 @@
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.0",
     "jsdom": "^25.0.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.0.0",
     "vite": "^4.5.14",

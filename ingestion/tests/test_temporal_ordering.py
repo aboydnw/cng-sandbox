@@ -10,15 +10,21 @@ def test_extract_year_month():
 
 
 def test_extract_full_date_dashes():
-    assert extract_timestamp_from_filename("fire_2023-11-01.tif") == "2023-11-01T00:00:00Z"
+    assert (
+        extract_timestamp_from_filename("fire_2023-11-01.tif") == "2023-11-01T00:00:00Z"
+    )
 
 
 def test_extract_full_date_compact():
-    assert extract_timestamp_from_filename("fire_20231101.tif") == "2023-11-01T00:00:00Z"
+    assert (
+        extract_timestamp_from_filename("fire_20231101.tif") == "2023-11-01T00:00:00Z"
+    )
 
 
 def test_extract_date_underscores():
-    assert extract_timestamp_from_filename("temp_2021_01_15.tif") == "2021-01-15T00:00:00Z"
+    assert (
+        extract_timestamp_from_filename("temp_2021_01_15.tif") == "2021-01-15T00:00:00Z"
+    )
 
 
 def test_extract_no_date_returns_none():
@@ -28,7 +34,11 @@ def test_extract_no_date_returns_none():
 def test_order_files_by_filename():
     files = ["sst_2018.tif", "sst_2015.tif", "sst_2020.tif"]
     result = order_files(files)
-    assert [r.filename for r in result] == ["sst_2015.tif", "sst_2018.tif", "sst_2020.tif"]
+    assert [r.filename for r in result] == [
+        "sst_2015.tif",
+        "sst_2018.tif",
+        "sst_2020.tif",
+    ]
     assert [r.datetime for r in result] == [
         "2015-01-01T00:00:00Z",
         "2018-01-01T00:00:00Z",
@@ -47,5 +57,11 @@ def test_order_files_alphabetical_fallback():
 
 def test_common_prefix():
     from src.services.temporal_ordering import common_filename_prefix
-    assert common_filename_prefix(["sst_2014.tif", "sst_2015.tif", "sst_2016.tif"]) == "sst"
-    assert common_filename_prefix(["a.tif", "b.tif"]) == "a"  # fallback to first filename stem
+
+    assert (
+        common_filename_prefix(["sst_2014.tif", "sst_2015.tif", "sst_2016.tif"])
+        == "sst"
+    )
+    assert (
+        common_filename_prefix(["a.tif", "b.tif"]) == "a"
+    )  # fallback to first filename stem

@@ -7,7 +7,10 @@ import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
 import { type CameraState, cameraFromBounds } from "../lib/layers";
-import { groupChaptersIntoBlocks, buildLayersForChapter } from "../lib/story/rendering";
+import {
+  groupChaptersIntoBlocks,
+  buildLayersForChapter,
+} from "../lib/story/rendering";
 import type { Story, Chapter } from "../lib/story";
 import type { Dataset } from "../types";
 
@@ -31,7 +34,9 @@ function ScrollytellingBlock({
     pitch: chapters[0].map_state.pitch,
   });
   const [basemap, setBasemap] = useState(chapters[0].map_state.basemap);
-  const [transitionDuration, setTransitionDuration] = useState<number | undefined>(undefined);
+  const [transitionDuration, setTransitionDuration] = useState<
+    number | undefined
+  >(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
@@ -40,7 +45,11 @@ function ScrollytellingBlock({
     if (datasetMap.size === 0) return;
     const firstChapter = chapters[0];
     const ds = datasetMap.get(firstChapter.layer_config.dataset_id);
-    if (ds?.bounds && firstChapter.map_state.center[0] === 0 && firstChapter.map_state.center[1] === 0) {
+    if (
+      ds?.bounds &&
+      firstChapter.map_state.center[0] === 0 &&
+      firstChapter.map_state.center[1] === 0
+    ) {
       setCamera(cameraFromBounds(ds.bounds));
     }
   }, [datasetMap, chapters]);
@@ -53,7 +62,9 @@ function ScrollytellingBlock({
 
     scroller
       .setup({
-        step: stepsRef.current.querySelectorAll("[data-step]") as unknown as HTMLElement[],
+        step: stepsRef.current.querySelectorAll(
+          "[data-step]"
+        ) as unknown as HTMLElement[],
         offset: 0.8,
       })
       .onStepEnter(({ index }) => {
@@ -83,7 +94,7 @@ function ScrollytellingBlock({
 
   const layers = useMemo(
     () => buildLayersForChapter(chapters[activeIndex], datasetMap),
-    [datasetMap, activeIndex, chapters],
+    [datasetMap, activeIndex, chapters]
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
@@ -97,12 +108,7 @@ function ScrollytellingBlock({
 
   return (
     <Flex h="100vh" overflow="hidden" position="relative">
-      <Box
-        w="40%"
-        overflowY="auto"
-        bg="gray.50"
-        ref={stepsRef}
-      >
+      <Box w="40%" overflowY="auto" bg="gray.50" ref={stepsRef}>
         {chapters.map((chapter, i) => (
           <Box
             key={chapter.id}
@@ -112,7 +118,9 @@ function ScrollytellingBlock({
             pb="80vh"
             opacity={activeIndex === i ? 1 : 0.3}
             transition="opacity 400ms cubic-bezier(0.32, 0.72, 0, 1)"
-            onClick={onChapterClick ? () => onChapterClick(chapter.id) : undefined}
+            onClick={
+              onChapterClick ? () => onChapterClick(chapter.id) : undefined
+            }
             cursor={onChapterClick ? "pointer" : undefined}
           >
             <Box
@@ -165,7 +173,9 @@ function ScrollytellingBlock({
             basemap={basemap}
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
-            transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
+            transitionInterpolator={
+              transitionDuration ? flyToRef.current : undefined
+            }
             interactive={false}
           />
         )}
@@ -199,12 +209,12 @@ export function StoryRenderer({
 }) {
   const sortedChapters = useMemo(
     () => [...story.chapters].sort((a, b) => a.order - b.order),
-    [story],
+    [story]
   );
 
   const contentBlocks = useMemo(
     () => groupChaptersIntoBlocks(sortedChapters),
-    [sortedChapters],
+    [sortedChapters]
   );
 
   return (
@@ -214,7 +224,11 @@ export function StoryRenderer({
           return (
             <Box
               key={block.chapter.id}
-              onClick={onChapterClick ? () => onChapterClick(block.chapter.id) : undefined}
+              onClick={
+                onChapterClick
+                  ? () => onChapterClick(block.chapter.id)
+                  : undefined
+              }
               cursor={onChapterClick ? "pointer" : undefined}
             >
               <ProseChapter
@@ -226,11 +240,16 @@ export function StoryRenderer({
         }
 
         if (block.type === "map") {
-          const ds = datasetMap.get(block.chapter.layer_config.dataset_id) ?? null;
+          const ds =
+            datasetMap.get(block.chapter.layer_config.dataset_id) ?? null;
           return (
             <Box
               key={block.chapter.id}
-              onClick={onChapterClick ? () => onChapterClick(block.chapter.id) : undefined}
+              onClick={
+                onChapterClick
+                  ? () => onChapterClick(block.chapter.id)
+                  : undefined
+              }
               cursor={onChapterClick ? "pointer" : undefined}
             >
               <MapChapter

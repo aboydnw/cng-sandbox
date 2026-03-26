@@ -11,7 +11,10 @@ import { RasterSidebarControls } from "../components/RasterSidebarControls";
 import { ExploreTab } from "../components/ExploreTab";
 import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
 import { UnifiedMap } from "../components/UnifiedMap";
-import { PixelInspectorTooltip, usePixelInspector } from "../components/PixelInspector";
+import {
+  PixelInspectorTooltip,
+  usePixelInspector,
+} from "../components/PixelInspector";
 import { VectorPopupOverlay, useVectorPopup } from "../components/VectorPopup";
 import {
   type CameraState,
@@ -60,17 +63,24 @@ export default function MapPage() {
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
 
   const vectorPopup = useVectorPopup();
-  const pixelInspector = usePixelInspector(tileCacheRef, dataset?.band_names ?? null);
+  const pixelInspector = usePixelInspector(
+    tileCacheRef,
+    dataset?.band_names ?? null
+  );
 
   // --- Initialize renderMode based on dataset type ---
   useEffect(() => {
     if (dataset) {
-      setRenderMode(dataset.dataset_type === "vector" ? "vector-tiles" : "server");
+      setRenderMode(
+        dataset.dataset_type === "vector" ? "vector-tiles" : "server"
+      );
     }
   }, [dataset]);
 
   // --- Tile transfer size ---
-  const tileUrlPrefix = dataset?.tile_url ? getTileUrlPrefix(dataset.tile_url) : "";
+  const tileUrlPrefix = dataset?.tile_url
+    ? getTileUrlPrefix(dataset.tile_url)
+    : "";
   const bytesTransferred = useTileTransferSize(tileUrlPrefix);
 
   useEffect(() => {
@@ -115,14 +125,17 @@ export default function MapPage() {
   const isSingleBand = dataset?.band_count === 1;
   const isMultiBand = (dataset?.band_count ?? 0) > 1;
   const ci = dataset?.color_interpretation ?? [];
-  const hasRgb = ci.length >= 3 && ci[0] === "red" && ci[1] === "green" && ci[2] === "blue";
+  const hasRgb =
+    ci.length >= 3 && ci[0] === "red" && ci[1] === "green" && ci[2] === "blue";
 
   const selectableBands = (dataset?.band_names ?? [])
     .map((name, i) => ({ name, index: i }))
     .filter((_, i) => ci[i] !== "alpha");
 
-  const effectiveBand = isMultiBand && !hasRgb && selectedBand === "rgb" ? 0 : selectedBand;
-  const showingColormap = isSingleBand || (isMultiBand && effectiveBand !== "rgb");
+  const effectiveBand =
+    isMultiBand && !hasRgb && selectedBand === "rgb" ? 0 : selectedBand;
+  const showingColormap =
+    isSingleBand || (isMultiBand && effectiveBand !== "rgb");
 
   // --- Tile URL computation ---
   const tileUrl = useMemo(() => {
@@ -185,26 +198,35 @@ export default function MapPage() {
 
   const frameCount = dataset?.timesteps?.length ?? 0;
   const isPreloaded = !dataset?.is_temporal || loadedCount >= frameCount;
-  const preloadProgress = dataset?.is_temporal && !isPreloaded
-    ? { current: loadedCount, total: frameCount }
-    : null;
+  const preloadProgress =
+    dataset?.is_temporal && !isPreloaded
+      ? { current: loadedCount, total: frameCount }
+      : null;
 
   const gapIndices = useMemo(() => new Set<number>(), []);
 
   const cadence = useMemo(
-    () => dataset?.is_temporal ? detectCadence(dataset.timesteps.map((t) => t.datetime)) : "irregular" as const,
-    [dataset],
+    () =>
+      dataset?.is_temporal
+        ? detectCadence(dataset.timesteps.map((t) => t.datetime))
+        : ("irregular" as const),
+    [dataset]
   );
 
   const animation = useTemporalAnimation(
     frameCount,
     gapIndices,
     isPreloaded,
-    initialTimestep,
+    initialTimestep
   );
 
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;
-  const exportHook = useTemporalExport(deckRef, dataset?.timesteps ?? [], gapIndices, speedMs);
+  const exportHook = useTemporalExport(
+    deckRef,
+    dataset?.timesteps ?? [],
+    gapIndices,
+    speedMs
+  );
 
   useEffect(() => {
     if (dataset?.is_temporal) {
@@ -214,7 +236,7 @@ export default function MapPage() {
           next.set("t", String(animation.activeIndex));
           return next;
         },
-        { replace: true },
+        { replace: true }
       );
     }
   }, [animation.activeIndex, dataset?.is_temporal, setSearchParams]);
@@ -230,17 +252,20 @@ export default function MapPage() {
 
   // --- GeoJSON from arrow table ---
   const geojson = useMemo(
-    () => arrowTable ? arrowTableToGeoJSON(arrowTable) : null,
-    [arrowTable],
+    () => (arrowTable ? arrowTableToGeoJSON(arrowTable) : null),
+    [arrowTable]
   );
 
   // --- Handle table change from ExploreTab ---
-  const handleTableChange = useCallback((table: Table | null) => {
-    setArrowTable(table);
-    if (dataset?.dataset_type === "vector") {
-      setRenderMode(table ? "geojson" : "vector-tiles");
-    }
-  }, [dataset]);
+  const handleTableChange = useCallback(
+    (table: Table | null) => {
+      setArrowTable(table);
+      if (dataset?.dataset_type === "vector") {
+        setRenderMode(table ? "geojson" : "vector-tiles");
+      }
+    },
+    [dataset]
+  );
 
   // --- Build deck.gl layers ---
   const layers = useMemo(() => {
@@ -272,23 +297,43 @@ export default function MapPage() {
       return buildGeoJsonLayer({ geojson });
     }
 
-    return [buildVectorLayer({
-      tileUrl: dataset.tile_url,
-      isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
-      opacity: 1,
-      minZoom: dataset.min_zoom ?? undefined,
-      maxZoom: dataset.max_zoom ?? undefined,
-      onClick: vectorPopup.onClick,
-    })];
-  }, [dataset, renderMode, canClientRender, tileUrl, opacity, colormapName,
-      effectiveBand, animation.activeIndex, geojson, vectorPopup.onClick, getLoadCallback]);
+    return [
+      buildVectorLayer({
+        tileUrl: dataset.tile_url,
+        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
+        opacity: 1,
+        minZoom: dataset.min_zoom ?? undefined,
+        maxZoom: dataset.max_zoom ?? undefined,
+        onClick: vectorPopup.onClick,
+      }),
+    ];
+  }, [
+    dataset,
+    renderMode,
+    canClientRender,
+    tileUrl,
+    opacity,
+    colormapName,
+    effectiveBand,
+    animation.activeIndex,
+    geojson,
+    vectorPopup.onClick,
+    getLoadCallback,
+  ]);
 
   // --- Event handlers ---
-  const onHover = renderMode === "client" && canClientRender ? pixelInspector.onHover : undefined;
-  const onMapClick = dataset?.dataset_type === "vector" && renderMode !== "geojson" ? vectorPopup.onClick : undefined;
+  const onHover =
+    renderMode === "client" && canClientRender
+      ? pixelInspector.onHover
+      : undefined;
+  const onMapClick =
+    dataset?.dataset_type === "vector" && renderMode !== "geojson"
+      ? vectorPopup.onClick
+      : undefined;
 
   const getTooltip = useMemo(() => {
-    if (dataset?.dataset_type !== "vector" || renderMode !== "geojson") return undefined;
+    if (dataset?.dataset_type !== "vector" || renderMode !== "geojson")
+      return undefined;
     return ({ object }: { object?: Record<string, unknown> }) => {
       if (!object) return null;
       const props = Object.entries(object)
@@ -305,7 +350,11 @@ export default function MapPage() {
       <Box minH="100vh" bg="white">
         <Header />
         <Flex align="center" justify="center" h="calc(100vh - 56px)">
-          <SpinnerGap size={32} color="#CF3F02" style={{ animation: "spin 1s linear infinite" }} />
+          <SpinnerGap
+            size={32}
+            color="#CF3F02"
+            style={{ animation: "spin 1s linear infinite" }}
+          />
         </Flex>
       </Box>
     );
@@ -315,7 +364,13 @@ export default function MapPage() {
     return (
       <Box minH="100vh" bg="white">
         <Header />
-        <Flex direction="column" align="center" justify="center" h="calc(100vh - 56px)" gap={4}>
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          h="calc(100vh - 56px)"
+          gap={4}
+        >
           <Text color="red.500">{error}</Text>
           <Button
             bg="brand.orange"
@@ -359,13 +414,15 @@ export default function MapPage() {
               {showingColormap && renderMode !== "client" && (
                 <Box position="absolute" bottom={3} left={3}>
                   <MapLegend
-                    layers={[{
-                      type: "continuous" as const,
-                      id: "raster",
-                      title: dataset.filename,
-                      domain,
-                      colors,
-                    }]}
+                    layers={[
+                      {
+                        type: "continuous" as const,
+                        id: "raster",
+                        title: dataset.filename,
+                        domain,
+                        colors,
+                      },
+                    ]}
                   />
                 </Box>
               )}
@@ -382,11 +439,18 @@ export default function MapPage() {
                   preloadProgress={preloadProgress}
                   label={
                     dataset.timesteps[animation.activeIndex]
-                      ? formatTimestepLabel(dataset.timesteps[animation.activeIndex].datetime, cadence)
+                      ? formatTimestepLabel(
+                          dataset.timesteps[animation.activeIndex].datetime,
+                          cadence
+                        )
                       : ""
                   }
-                  onExportGif={() => exportHook.exportGif(animation.setActiveIndex)}
-                  onExportMp4={() => exportHook.exportMp4(animation.setActiveIndex)}
+                  onExportGif={() =>
+                    exportHook.exportGif(animation.setActiveIndex)
+                  }
+                  onExportMp4={() =>
+                    exportHook.exportMp4(animation.setActiveIndex)
+                  }
                   isExporting={exportHook.isExporting}
                 />
               )}
@@ -395,9 +459,14 @@ export default function MapPage() {
                 <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />
               )}
 
-              {vectorPopup.popup && dataset.dataset_type === "vector" && renderMode !== "geojson" && (
-                <VectorPopupOverlay popup={vectorPopup.popup} onDismiss={vectorPopup.dismiss} />
-              )}
+              {vectorPopup.popup &&
+                dataset.dataset_type === "vector" &&
+                renderMode !== "geojson" && (
+                  <VectorPopupOverlay
+                    popup={vectorPopup.popup}
+                    onDismiss={vectorPopup.dismiss}
+                  />
+                )}
             </UnifiedMap>
           </Box>
 

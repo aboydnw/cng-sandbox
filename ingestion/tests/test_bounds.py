@@ -17,6 +17,7 @@ def test_extract_bounds_raster():
 
     with patch.dict(sys.modules, {"rasterio": mock_rasterio}):
         import src.services.pipeline as pipeline_mod
+
         importlib.reload(pipeline_mod)
         result = pipeline_mod._extract_bounds("/fake/output.tif", DatasetType.RASTER)
 
@@ -33,7 +34,10 @@ def test_extract_bounds_vector():
 
     with patch.dict(sys.modules, {"geopandas": mock_gpd}):
         import src.services.pipeline as pipeline_mod
+
         importlib.reload(pipeline_mod)
-        result = pipeline_mod._extract_bounds("/fake/output.parquet", DatasetType.VECTOR)
+        result = pipeline_mod._extract_bounds(
+            "/fake/output.parquet", DatasetType.VECTOR
+        )
 
     assert result == pytest.approx([-73.99, 40.70, -73.97, 40.72])

@@ -18,7 +18,7 @@ export const DEFAULT_CAMERA: CameraState = {
 
 export function cameraFromBounds(
   bounds: [number, number, number, number],
-  viewportSize?: { width: number; height: number },
+  viewportSize?: { width: number; height: number }
 ): CameraState {
   const size = viewportSize ?? {
     width: window.innerWidth,
@@ -32,7 +32,7 @@ export function cameraFromBounds(
       [west, Math.max(south, -MERCATOR_LIMIT)],
       [east, Math.min(north, MERCATOR_LIMIT)],
     ],
-    { padding: 40 },
+    { padding: 40 }
   );
   return { longitude, latitude, zoom: Math.max(0, zoom), bearing: 0, pitch: 0 };
 }

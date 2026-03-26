@@ -1,5 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { WorkspaceProvider, WorkspaceRedirect, useWorkspace } from "./hooks/useWorkspace";
+import {
+  WorkspaceProvider,
+  WorkspaceRedirect,
+  useWorkspace,
+} from "./hooks/useWorkspace";
 import UploadPage from "./pages/UploadPage";
 import MapPage from "./pages/MapPage";
 import ExpiredPage from "./pages/ExpiredPage";

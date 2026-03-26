@@ -16,13 +16,21 @@ const resetButtonStyle: React.CSSProperties = {
   padding: 0,
   cursor: "pointer",
   display: "flex",
-  alignItems: "center"
+  alignItems: "center",
 };
 
-export function LegendItem({ config, collapsible, headingLevel, onToggle, children }: LegendItemProps) {
+export function LegendItem({
+  config,
+  collapsible,
+  headingLevel,
+  onToggle,
+  children,
+}: LegendItemProps) {
   const [expanded, setExpanded] = useState(true);
   const title =
-    config.type === "continuous" && config.unit ? `${config.title} (${config.unit})` : config.title;
+    config.type === "continuous" && config.unit
+      ? `${config.title} (${config.unit})`
+      : config.title;
 
   return (
     <Box
@@ -44,7 +52,7 @@ export function LegendItem({ config, collapsible, headingLevel, onToggle, childr
               borderRadius: "4px",
               border: `1px solid ${config.visible === false ? "#e5e7eb" : "#3b82f6"}`,
               background: config.visible === false ? "white" : "#3b82f6",
-              flexShrink: 0
+              flexShrink: 0,
             }}
             onClick={() => onToggle(config.visible === false)}
             aria-label={`Toggle ${config.title} visibility`}

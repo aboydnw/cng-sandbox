@@ -2,9 +2,9 @@
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import Column, String, DateTime, Text
+from sqlalchemy import Column, DateTime, String, Text
 
 from src.models.base import Base
 
@@ -19,7 +19,7 @@ class DatasetRow(Base):
     tile_url = Column(String, nullable=False)
     bounds_json = Column(Text, nullable=True)
     metadata_json = Column(Text, nullable=False, default="{}")
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     workspace_id = Column(String, nullable=True)
 
     def to_dict(self) -> dict:
@@ -40,7 +40,16 @@ class DatasetRow(Base):
 
 
 _TOP_LEVEL_COLUMNS = frozenset(
-    ("id", "filename", "dataset_type", "format_pair", "tile_url", "bounds", "created_at", "workspace_id")
+    (
+        "id",
+        "filename",
+        "dataset_type",
+        "format_pair",
+        "tile_url",
+        "bounds",
+        "created_at",
+        "workspace_id",
+    )
 )
 
 
@@ -55,10 +64,14 @@ def persist_dataset(db_session_factory, dataset) -> None:
             format_pair=dataset.format_pair.value,
             tile_url=dataset.tile_url,
             bounds_json=json.dumps(dataset.bounds) if dataset.bounds else None,
-            metadata_json=json.dumps({
-                k: v for k, v in dataset.model_dump().items()
-                if k not in _TOP_LEVEL_COLUMNS
-            }, default=str),
+            metadata_json=json.dumps(
+                {
+                    k: v
+                    for k, v in dataset.model_dump().items()
+                    if k not in _TOP_LEVEL_COLUMNS
+                },
+                default=str,
+            ),
             created_at=dataset.created_at,
             workspace_id=getattr(dataset, "workspace_id", None),
         )

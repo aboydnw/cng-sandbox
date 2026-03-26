@@ -5,10 +5,7 @@ import { UnifiedMap } from "./UnifiedMap";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Dataset } from "../types";
-import {
-  buildRasterTileLayers,
-  buildVectorLayer,
-} from "../lib/layers";
+import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 
 interface MapChapterProps {
@@ -17,7 +14,11 @@ interface MapChapterProps {
   dataset: Dataset | null;
 }
 
-export function MapChapter({ chapter, chapterIndex, dataset }: MapChapterProps) {
+export function MapChapter({
+  chapter,
+  chapterIndex,
+  dataset,
+}: MapChapterProps) {
   const [camera, setCamera] = useState<CameraState>({
     longitude: chapter.map_state.center[0],
     latitude: chapter.map_state.center[1],

@@ -7,7 +7,11 @@ interface PipelineTimelineProps {
   onStepClick: (step: number) => void;
 }
 
-export function PipelineTimeline({ steps, activeStep, onStepClick }: PipelineTimelineProps) {
+export function PipelineTimeline({
+  steps,
+  activeStep,
+  onStepClick,
+}: PipelineTimelineProps) {
   return (
     <Flex align="flex-start" gap={0} mb={6} px="10px">
       {steps.map((step, i) => {

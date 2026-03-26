@@ -28,7 +28,9 @@ export function useTileTransferSize(tileUrlPrefix: string): number | null {
     };
 
     // Scan any entries already in the buffer
-    const existing = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
+    const existing = performance.getEntriesByType(
+      "resource"
+    ) as PerformanceResourceTiming[];
     for (const e of existing) addEntry(e);
     if (acc.count > 0) setBytes(acc.total);
 

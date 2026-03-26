@@ -1,6 +1,6 @@
 """Bug report endpoint — creates GitHub issues from user reports."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -28,7 +28,9 @@ class BugReportRequest(BaseModel):
     @model_validator(mode="after")
     def require_context(self):
         if not self.dataset_id and not self.story_id and not self.job_id:
-            raise ValueError("At least one of dataset_id, story_id, or job_id is required")
+            raise ValueError(
+                "At least one of dataset_id, story_id, or job_id is required"
+            )
         return self
 
 
@@ -44,7 +46,14 @@ def _build_issue_title(req: BugReportRequest) -> str:
 
 
 def _build_issue_body(req: BugReportRequest) -> str:
-    lines = ["## Description", "", req.description or "No description provided", "", "## Context", ""]
+    lines = [
+        "## Description",
+        "",
+        req.description or "No description provided",
+        "",
+        "## Context",
+        "",
+    ]
     lines.append(f"- **Page:** {req.page_url}")
     if req.dataset_id:
         lines.append(f"- **Dataset ID:** {req.dataset_id}")
@@ -54,24 +63,28 @@ def _build_issue_body(req: BugReportRequest) -> str:
         lines.append(f"- **Dataset IDs:** {', '.join(req.dataset_ids)}")
     if req.job_id:
         lines.append(f"- **Job ID:** {req.job_id}")
-    lines.append(f"- **Reported at:** {datetime.now(timezone.utc).isoformat()}")
+    lines.append(f"- **Reported at:** {datetime.now(UTC).isoformat()}")
 
     if req.error_message:
         lines.extend(["", "## Error", "", f"```\n{req.error_message}\n```"])
 
     if req.console_logs:
-        log_text = "\n".join(f"[{e.timestamp}] {e.level.upper()}: {e.message}" for e in req.console_logs)
-        lines.extend([
-            "",
-            "<details>",
-            f"<summary>Console logs ({len(req.console_logs)} entries)</summary>",
-            "",
-            "```",
-            log_text,
-            "```",
-            "",
-            "</details>",
-        ])
+        log_text = "\n".join(
+            f"[{e.timestamp}] {e.level.upper()}: {e.message}" for e in req.console_logs
+        )
+        lines.extend(
+            [
+                "",
+                "<details>",
+                f"<summary>Console logs ({len(req.console_logs)} entries)</summary>",
+                "",
+                "```",
+                log_text,
+                "```",
+                "",
+                "</details>",
+            ]
+        )
 
     return "\n".join(lines)
 
@@ -109,11 +122,15 @@ def submit_bug_report(req: BugReportRequest, request: Request):
                     timeout=10,
                 )
                 resp.raise_for_status()
-            except Exception:
-                raise HTTPException(status_code=502, detail="Unable to create issue")
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=502, detail="Unable to create issue"
+                ) from exc
         else:
-            raise HTTPException(status_code=502, detail="Unable to create issue")
-    except Exception:
-        raise HTTPException(status_code=502, detail="Unable to create issue")
+            raise HTTPException(
+                status_code=502, detail="Unable to create issue"
+            ) from None
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Unable to create issue") from exc
 
     return {"issue_url": resp.json()["html_url"]}

@@ -33,14 +33,29 @@ export function Header({ children }: HeaderProps) {
       <Flex align="center" gap={6}>
         <Link to={workspacePath("/")} style={{ textDecoration: "none" }}>
           <Flex align="center" gap={3}>
-            <img src="/logo.svg" alt="Development Seed" width={32} height={32} />
-            <Text as="span" color="brand.brown" fontWeight={700} fontSize="15px">
+            <img
+              src="/logo.svg"
+              alt="Development Seed"
+              width={32}
+              height={32}
+            />
+            <Text
+              as="span"
+              color="brand.brown"
+              fontWeight={700}
+              fontSize="15px"
+            >
               CNG Sandbox
             </Text>
           </Flex>
         </Link>
         <Link to={workspacePath("/library")} style={{ textDecoration: "none" }}>
-          <Text fontSize="sm" fontWeight={500} color="gray.600" _hover={{ color: "gray.800" }}>
+          <Text
+            fontSize="sm"
+            fontWeight={500}
+            color="gray.600"
+            _hover={{ color: "gray.800" }}
+          >
             Library
           </Text>
         </Link>

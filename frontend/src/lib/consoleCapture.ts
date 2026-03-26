@@ -24,7 +24,11 @@ export function initConsoleCapture(): () => void {
       .map((a) => {
         if (typeof a === "string") return a;
         if (a instanceof Error) return a.stack ?? a.message;
-        try { return JSON.stringify(a); } catch { return String(a); }
+        try {
+          return JSON.stringify(a);
+        } catch {
+          return String(a);
+        }
       })
       .join(" ");
     buffer.push({ timestamp: new Date().toISOString(), level, message });

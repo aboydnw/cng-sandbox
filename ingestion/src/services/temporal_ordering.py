@@ -15,12 +15,24 @@ class OrderedFile:
 # Patterns ordered most-specific to least-specific
 _PATTERNS = [
     # YYYY-MM-DD or YYYYMMDD
-    (re.compile(r"(\d{4})-(\d{2})-(\d{2})"), lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}T00:00:00Z"),
-    (re.compile(r"(\d{4})(\d{2})(\d{2})(?!\d)"), lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}T00:00:00Z"),
+    (
+        re.compile(r"(\d{4})-(\d{2})-(\d{2})"),
+        lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}T00:00:00Z",
+    ),
+    (
+        re.compile(r"(\d{4})(\d{2})(\d{2})(?!\d)"),
+        lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}T00:00:00Z",
+    ),
     # YYYY_MM_DD
-    (re.compile(r"(\d{4})_(\d{2})_(\d{2})"), lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}T00:00:00Z"),
+    (
+        re.compile(r"(\d{4})_(\d{2})_(\d{2})"),
+        lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}T00:00:00Z",
+    ),
     # YYYY-MM
-    (re.compile(r"(\d{4})-(\d{2})(?!\d)"), lambda m: f"{m.group(1)}-{m.group(2)}-01T00:00:00Z"),
+    (
+        re.compile(r"(\d{4})-(\d{2})(?!\d)"),
+        lambda m: f"{m.group(1)}-{m.group(2)}-01T00:00:00Z",
+    ),
     # YYYY (must not be followed by more digits)
     (re.compile(r"(?<!\d)(\d{4})(?!\d)"), lambda m: f"{m.group(1)}-01-01T00:00:00Z"),
 ]

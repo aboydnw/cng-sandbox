@@ -2,13 +2,13 @@
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     PENDING = "pending"
     SCANNING = "scanning"
     CONVERTING = "converting"
@@ -18,12 +18,12 @@ class JobStatus(str, Enum):
     FAILED = "failed"
 
 
-class DatasetType(str, Enum):
+class DatasetType(StrEnum):
     RASTER = "raster"
     VECTOR = "vector"
 
 
-class FormatPair(str, Enum):
+class FormatPair(StrEnum):
     GEOTIFF_TO_COG = "geotiff-to-cog"
     SHAPEFILE_TO_GEOPARQUET = "shapefile-to-geoparquet"
     GEOJSON_TO_GEOPARQUET = "geojson-to-geoparquet"
@@ -51,7 +51,11 @@ class FormatPair(str, Enum):
 
     @property
     def dataset_type(self) -> DatasetType:
-        if self in (FormatPair.GEOTIFF_TO_COG, FormatPair.NETCDF_TO_COG, FormatPair.HDF5_TO_COG):
+        if self in (
+            FormatPair.GEOTIFF_TO_COG,
+            FormatPair.NETCDF_TO_COG,
+            FormatPair.HDF5_TO_COG,
+        ):
             return DatasetType.RASTER
         return DatasetType.VECTOR
 
@@ -79,7 +83,7 @@ class Job(BaseModel):
     validation_results: list[ValidationCheck] = []
     progress_current: int | None = None
     progress_total: int | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     variable: str | None = None
     group: str | None = None
     scan_event: asyncio.Event | None = Field(default=None, exclude=True)

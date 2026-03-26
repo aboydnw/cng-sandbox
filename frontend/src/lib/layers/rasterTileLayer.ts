@@ -36,6 +36,6 @@ export function buildRasterTileLayers({
       tileUrl: `${tileUrl}&datetime=${ts.datetime}`,
       opacity: i === activeTimestepIndex ? opacity : 0,
       onViewportLoad: getLoadCallback?.(i),
-    }),
+    })
   );
 }

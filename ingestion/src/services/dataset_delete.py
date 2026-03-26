@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from src.config import get_settings
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
-from src.services.storage import StorageService
 from src.services import vector_ingest
+from src.services.storage import StorageService
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,9 @@ async def delete_stac_collection(collection_id: str) -> None:
     """Delete STAC items then collection. Best-effort — logs errors."""
     settings = get_settings()
     try:
-        async with httpx.AsyncClient(base_url=settings.stac_api_url, timeout=30.0) as client:
+        async with httpx.AsyncClient(
+            base_url=settings.stac_api_url, timeout=30.0
+        ) as client:
             items_resp = await client.get(f"/collections/{collection_id}/items")
             if items_resp.status_code == 200:
                 for feature in items_resp.json().get("features", []):
@@ -54,6 +56,7 @@ def delete_vector_table(dataset_id: str) -> None:
     """Drop the vector table from PostgreSQL. Best-effort."""
     try:
         from sqlalchemy import create_engine, text
+
         settings = get_settings()
         table_name = vector_ingest.build_table_name(dataset_id)
         if not _SAFE_TABLE_RE.match(table_name):
@@ -68,7 +71,9 @@ def delete_vector_table(dataset_id: str) -> None:
         logger.exception("Failed to drop vector table for %s", dataset_id)
 
 
-async def delete_dataset(session: Session, dataset_id: str, storage: StorageService | None = None) -> dict | None:
+async def delete_dataset(
+    session: Session, dataset_id: str, storage: StorageService | None = None
+) -> dict | None:
     """Delete a dataset and all its artifacts. Returns response dict."""
     row = session.get(DatasetRow, dataset_id)
     if row is None:

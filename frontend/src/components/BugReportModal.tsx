@@ -14,9 +14,19 @@ interface BugReportModalProps {
   errorMessage?: string;
 }
 
-export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datasetIds, errorMessage }: BugReportModalProps) {
+export function BugReportModal({
+  open,
+  onClose,
+  datasetId,
+  storyId,
+  jobId,
+  datasetIds,
+  errorMessage,
+}: BugReportModalProps) {
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "success" | "error"
+  >("idle");
   const [issueUrl, setIssueUrl] = useState<string | null>(null);
 
   if (!open) return null;
@@ -61,7 +71,12 @@ export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datas
       justifyContent="center"
     >
       {/* Backdrop */}
-      <Box position="absolute" inset={0} bg="blackAlpha.500" onClick={handleClose} />
+      <Box
+        position="absolute"
+        inset={0}
+        bg="blackAlpha.500"
+        onClick={handleClose}
+      />
 
       {/* Modal */}
       <Box
@@ -75,25 +90,37 @@ export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datas
       >
         {status === "success" ? (
           <Box textAlign="center">
-            <Heading size="sm" mb={3}>Report submitted</Heading>
+            <Heading size="sm" mb={3}>
+              Report submitted
+            </Heading>
             <Text fontSize="sm" color="gray.600" mb={4}>
               Thank you for helping us improve.
               {issueUrl && (
                 <>
                   {" "}
-                  <a href={issueUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#CF3F02", textDecoration: "underline" }}>
+                  <a
+                    href={issueUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#CF3F02", textDecoration: "underline" }}
+                  >
                     View issue
                   </a>
                 </>
               )}
             </Text>
-            <Button size="sm" onClick={handleClose}>Close</Button>
+            <Button size="sm" onClick={handleClose}>
+              Close
+            </Button>
           </Box>
         ) : (
           <>
-            <Heading size="sm" mb={2}>Report a rendering issue</Heading>
+            <Heading size="sm" mb={2}>
+              Report a rendering issue
+            </Heading>
             <Text fontSize="xs" color="gray.500" mb={4}>
-              No personal information is shared. Only the details shown below are sent.
+              No personal information is shared. Only the details shown below
+              are sent.
             </Text>
 
             <Textarea
@@ -105,8 +132,17 @@ export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datas
               rows={3}
             />
 
-            <Box fontSize="xs" color="gray.600" mb={4} p={3} bg="gray.50" borderRadius="sm">
-              <Text fontWeight={600} mb={1}>What will be sent:</Text>
+            <Box
+              fontSize="xs"
+              color="gray.600"
+              mb={4}
+              p={3}
+              bg="gray.50"
+              borderRadius="sm"
+            >
+              <Text fontWeight={600} mb={1}>
+                What will be sent:
+              </Text>
               {datasetId && <Text>Dataset: {datasetId}</Text>}
               {storyId && <Text>Story: {storyId}</Text>}
               {jobId && <Text>Job: {jobId}</Text>}
@@ -133,7 +169,12 @@ export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datas
                       borderRadius="sm"
                     >
                       {logs.map((log, i) => (
-                        <Text key={i} color={log.level === "error" ? "red.600" : "orange.600"}>
+                        <Text
+                          key={i}
+                          color={
+                            log.level === "error" ? "red.600" : "orange.600"
+                          }
+                        >
                           [{log.level}] {log.message}
                         </Text>
                       ))}
@@ -150,7 +191,9 @@ export function BugReportModal({ open, onClose, datasetId, storyId, jobId, datas
             )}
 
             <Flex gap={2} justify="flex-end">
-              <Button variant="ghost" size="sm" onClick={handleClose}>Cancel</Button>
+              <Button variant="ghost" size="sm" onClick={handleClose}>
+                Cancel
+              </Button>
               <Button
                 size="sm"
                 bg="brand.orange"

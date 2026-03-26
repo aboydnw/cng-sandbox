@@ -39,7 +39,7 @@ describe("PathCard", () => {
     renderWithChakra(
       <PathCard {...defaultProps} expanded={true} onCollapse={onCollapse}>
         <div>Drop zone content</div>
-      </PathCard>,
+      </PathCard>
     );
     expect(screen.getByText("Drop zone content")).toBeTruthy();
     expect(screen.queryByText("Browse files")).toBeNull();
@@ -51,7 +51,7 @@ describe("PathCard", () => {
     renderWithChakra(
       <PathCard {...defaultProps} expanded={true} onCollapse={onCollapse}>
         <div>Content</div>
-      </PathCard>,
+      </PathCard>
     );
     fireEvent.click(screen.getByLabelText("Go back"));
     expect(onCollapse).toHaveBeenCalledOnce();

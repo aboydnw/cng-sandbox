@@ -37,10 +37,19 @@ import {
 import type { Dataset } from "../types";
 import { config } from "../config";
 import { workspaceFetch } from "../lib/api";
-import { ArrowCounterClockwise, Check, SpinnerGap } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwise,
+  Check,
+  SpinnerGap,
+} from "@phosphor-icons/react";
 
-
-function TooltipCard({ text, onDismiss }: { text: string; onDismiss: () => void }) {
+function TooltipCard({
+  text,
+  onDismiss,
+}: {
+  text: string;
+  onDismiss: () => void;
+}) {
   return (
     <Box
       position="absolute"
@@ -56,7 +65,9 @@ function TooltipCard({ text, onDismiss }: { text: string; onDismiss: () => void 
       pointerEvents="all"
     >
       <Flex gap={2} align="flex-start">
-        <Text flex={1} lineHeight="1.4">{text}</Text>
+        <Text flex={1} lineHeight="1.4">
+          {text}
+        </Text>
         <Box
           as="button"
           flexShrink={0}
@@ -88,7 +99,9 @@ export default function StoryEditorPage() {
   const [basemap, setBasemap] = useState("streets");
   const [viewSavedFlash, setViewSavedFlash] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
-  const [transitionDuration, setTransitionDuration] = useState<number | undefined>(undefined);
+  const [transitionDuration, setTransitionDuration] = useState<
+    number | undefined
+  >(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -139,7 +152,9 @@ export default function StoryEditorPage() {
       try {
         const draft = createStory(datasetIdParam);
         if (datasetIdParam) {
-          const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${datasetIdParam}`);
+          const resp = await workspaceFetch(
+            `${config.apiBase}/api/datasets/${datasetIdParam}`
+          );
           if (resp.ok) {
             const data: Dataset = await resp.json();
             setDataset(data);
@@ -179,7 +194,9 @@ export default function StoryEditorPage() {
     if (dataset?.id === dsId) return;
     async function fetchDataset() {
       try {
-        const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${dsId}`);
+        const resp = await workspaceFetch(
+          `${config.apiBase}/api/datasets/${dsId}`
+        );
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data: Dataset = await resp.json();
         setDataset(data);
@@ -205,11 +222,13 @@ export default function StoryEditorPage() {
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
     try {
-      const resp = await workspaceFetch(`${config.apiBase}/api/datasets/${datasetId}`);
+      const resp = await workspaceFetch(
+        `${config.apiBase}/api/datasets/${datasetId}`
+      );
       if (!resp.ok) return;
       const ds: Dataset = await resp.json();
       setAllDatasets((prev) =>
-        prev.some((d) => d.id === ds.id) ? prev : [...prev, ds],
+        prev.some((d) => d.id === ds.id) ? prev : [...prev, ds]
       );
       if (activeChapterId) {
         updateChapterLayerConfig({
@@ -231,7 +250,7 @@ export default function StoryEditorPage() {
         saveStoryToServer(updated).then(markSaved).catch(markError);
       }, 500);
     },
-    [markSaving, markSaved, markError],
+    [markSaving, markSaved, markError]
   );
 
   // Update story helper
@@ -246,7 +265,7 @@ export default function StoryEditorPage() {
 
   const activeChapter = story?.chapters.find((c) => c.id === activeChapterId);
   const activeDataset = activeChapter
-    ? datasetMap.get(activeChapter.layer_config.dataset_id) ?? dataset
+    ? (datasetMap.get(activeChapter.layer_config.dataset_id) ?? dataset)
     : dataset;
 
   // Select chapter: fly map to its saved state
@@ -287,7 +306,7 @@ export default function StoryEditorPage() {
                   basemap,
                 },
               }
-            : ch,
+            : ch
         ),
       }));
       setViewSavedFlash(true);
@@ -311,7 +330,8 @@ export default function StoryEditorPage() {
   // Add chapter
   function addChapter() {
     const maxOrder = Math.max(...(story?.chapters.map((c) => c.order) ?? [0]));
-    const inheritedDatasetId = activeChapter?.layer_config.dataset_id ?? story?.dataset_id ?? "";
+    const inheritedDatasetId =
+      activeChapter?.layer_config.dataset_id ?? story?.dataset_id ?? "";
     const newCh = createChapter({
       order: maxOrder + 1,
       title: `Chapter ${(story?.chapters.length ?? 0) + 1}`,
@@ -332,7 +352,10 @@ export default function StoryEditorPage() {
   function deleteChapter(chapterId: string) {
     updateStory((s) => {
       const remaining = s.chapters.filter((c) => c.id !== chapterId);
-      return { ...s, chapters: remaining.map((ch, i) => ({ ...ch, order: i })) };
+      return {
+        ...s,
+        chapters: remaining.map((ch, i) => ({ ...ch, order: i })),
+      };
     });
     if (activeChapterId === chapterId) {
       const remaining = story?.chapters.filter((c) => c.id !== chapterId);
@@ -350,7 +373,7 @@ export default function StoryEditorPage() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, title } : ch,
+        ch.id === activeChapterId ? { ...ch, title } : ch
       ),
     }));
   }
@@ -359,7 +382,7 @@ export default function StoryEditorPage() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, narrative } : ch,
+        ch.id === activeChapterId ? { ...ch, narrative } : ch
       ),
     }));
   }
@@ -368,7 +391,7 @@ export default function StoryEditorPage() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, layer_config: config } : ch,
+        ch.id === activeChapterId ? { ...ch, layer_config: config } : ch
       ),
     }));
   }
@@ -377,7 +400,7 @@ export default function StoryEditorPage() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, type } : ch,
+        ch.id === activeChapterId ? { ...ch, type } : ch
       ),
     }));
   }
@@ -433,13 +456,22 @@ export default function StoryEditorPage() {
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
+        <SpinnerGap
+          size={32}
+          style={{ animation: "spin 1s linear infinite" }}
+        />
       </Flex>
     );
   }
   if (error || !story) {
     return (
-      <Flex h="100vh" direction="column" align="center" justify="center" gap={3}>
+      <Flex
+        h="100vh"
+        direction="column"
+        align="center"
+        justify="center"
+        gap={3}
+      >
         <Text color="red.500">{error ?? "Story not found"}</Text>
       </Flex>
     );
@@ -448,15 +480,12 @@ export default function StoryEditorPage() {
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
-        <Flex
-          align="center"
-          gap={1}
-          role="group"
-          position="relative"
-        >
+        <Flex align="center" gap={1} role="group" position="relative">
           <Input
             value={story.title}
-            onChange={(e) => updateStory((s) => ({ ...s, title: e.target.value }))}
+            onChange={(e) =>
+              updateStory((s) => ({ ...s, title: e.target.value }))
+            }
             placeholder="Click to name your story"
             fontSize="15px"
             fontWeight={600}
@@ -490,7 +519,9 @@ export default function StoryEditorPage() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => window.open(workspacePath(`/story/${story.id}`), "_blank")}
+            onClick={() =>
+              window.open(workspacePath(`/story/${story.id}`), "_blank")
+            }
           >
             Preview
           </Button>
@@ -545,14 +576,15 @@ export default function StoryEditorPage() {
           fontSize="xs"
           color="green.700"
         >
-          <Box w={1.5} h={1.5} borderRadius="full" bg="green.500" flexShrink={0} />
+          <Box
+            w={1.5}
+            h={1.5}
+            borderRadius="full"
+            bg="green.500"
+            flexShrink={0}
+          />
           <Text fontWeight={500}>Published —</Text>
-          <Text
-            color="green.600"
-            fontFamily="mono"
-            truncate
-            maxW="400px"
-          >
+          <Text color="green.600" fontFamily="mono" truncate maxW="400px">
             {`${window.location.origin}${workspacePath(`/story/${story.id}`)}`}
           </Text>
           <Button
@@ -615,7 +647,9 @@ export default function StoryEditorPage() {
               basemap={basemap}
               onBasemapChange={setBasemap}
               transitionDuration={transitionDuration}
-              transitionInterpolator={transitionDuration ? flyToRef.current : undefined}
+              transitionInterpolator={
+                transitionDuration ? flyToRef.current : undefined
+              }
             >
               {viewSavedFlash && (
                 <Flex
@@ -638,34 +672,36 @@ export default function StoryEditorPage() {
                   <Check size={12} /> View saved
                 </Flex>
               )}
-              {!viewSavedFlash && activeChapter && (() => {
-                const ms = activeChapter.map_state;
-                const differs =
-                  Math.abs(camera.longitude - ms.center[0]) > 0.0001 ||
-                  Math.abs(camera.latitude - ms.center[1]) > 0.0001 ||
-                  Math.abs(camera.zoom - ms.zoom) > 0.01 ||
-                  Math.abs(camera.bearing - ms.bearing) > 0.1 ||
-                  Math.abs(camera.pitch - ms.pitch) > 0.1 ||
-                  basemap !== ms.basemap;
-                return differs ? (
-                  <Button
-                    position="absolute"
-                    bottom={4}
-                    left="50%"
-                    transform="translateX(-50%)"
-                    size="sm"
-                    variant="outline"
-                    bg="whiteAlpha.900"
-                    shadow="md"
-                    onClick={resetView}
-                    display="flex"
-                    alignItems="center"
-                    gap={1.5}
-                  >
-                    <ArrowCounterClockwise size={14} /> Reset view
-                  </Button>
-                ) : null;
-              })()}
+              {!viewSavedFlash &&
+                activeChapter &&
+                (() => {
+                  const ms = activeChapter.map_state;
+                  const differs =
+                    Math.abs(camera.longitude - ms.center[0]) > 0.0001 ||
+                    Math.abs(camera.latitude - ms.center[1]) > 0.0001 ||
+                    Math.abs(camera.zoom - ms.zoom) > 0.01 ||
+                    Math.abs(camera.bearing - ms.bearing) > 0.1 ||
+                    Math.abs(camera.pitch - ms.pitch) > 0.1 ||
+                    basemap !== ms.basemap;
+                  return differs ? (
+                    <Button
+                      position="absolute"
+                      bottom={4}
+                      left="50%"
+                      transform="translateX(-50%)"
+                      size="sm"
+                      variant="outline"
+                      bg="whiteAlpha.900"
+                      shadow="md"
+                      onClick={resetView}
+                      display="flex"
+                      alignItems="center"
+                      gap={1.5}
+                    >
+                      <ArrowCounterClockwise size={14} /> Reset view
+                    </Button>
+                  ) : null;
+                })()}
             </UnifiedMap>
           </Box>
         ) : (

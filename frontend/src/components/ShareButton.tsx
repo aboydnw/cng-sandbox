@@ -69,8 +69,12 @@ export function ShareButton() {
         px={4}
       >
         <span className="share-roller" data-copied={copied}>
-          <span className="share-label"><LinkSimple size={14} weight="bold" /> Share</span>
-          <span className="copied-label"><Check size={14} weight="bold" /> Copied</span>
+          <span className="share-label">
+            <LinkSimple size={14} weight="bold" /> Share
+          </span>
+          <span className="copied-label">
+            <Check size={14} weight="bold" /> Copied
+          </span>
         </span>
       </Button>
     </>

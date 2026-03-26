@@ -16,7 +16,12 @@ interface SidePanelProps {
   children?: ReactNode;
 }
 
-export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children }: SidePanelProps) {
+export function SidePanel({
+  dataset,
+  bytesTransferred,
+  onDetailsClick,
+  children,
+}: SidePanelProps) {
   const [mode, setMode] = useState<"dataset" | "upload">("dataset");
   const expiryDays = daysUntilExpiry(dataset.created_at);
 
@@ -59,7 +64,11 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
           fontWeight={500}
           cursor="pointer"
           transition={transition(200)}
-          _hover={{ borderColor: "brand.orange", color: "brand.orange", bg: "white" }}
+          _hover={{
+            borderColor: "brand.orange",
+            color: "brand.orange",
+            bg: "white",
+          }}
           onClick={() => setMode("upload")}
         >
           <Plus size={14} weight="bold" />
@@ -67,7 +76,12 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
         </Flex>
 
         {expiryDays !== null && (
-          <Text fontSize="11px" color="brand.textSecondary" mt={3} textAlign="center">
+          <Text
+            fontSize="11px"
+            color="brand.textSecondary"
+            mt={3}
+            textAlign="center"
+          >
             Expires in {expiryDays} day{expiryDays !== 1 ? "s" : ""}
           </Text>
         )}
@@ -75,7 +89,13 @@ export function SidePanel({ dataset, bytesTransferred, onDetailsClick, children 
 
       {/* Contextual bottom — scrollable */}
       {children && (
-        <Box flex={1} overflowY="auto" p={4} borderTopWidth="1px" borderColor="brand.border">
+        <Box
+          flex={1}
+          overflowY="auto"
+          p={4}
+          borderTopWidth="1px"
+          borderColor="brand.border"
+        >
           {children}
         </Box>
       )}

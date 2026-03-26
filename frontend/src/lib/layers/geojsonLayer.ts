@@ -2,8 +2,18 @@ import { GeoJsonLayer } from "@deck.gl/layers";
 import { BRAND_COLOR_RGBA } from "../../components/MapShell";
 import type { Table } from "apache-arrow";
 
-const FILL_COLOR = [...BRAND_COLOR_RGBA, 180] as [number, number, number, number];
-const LINE_COLOR = [...BRAND_COLOR_RGBA, 255] as [number, number, number, number];
+const FILL_COLOR = [...BRAND_COLOR_RGBA, 180] as [
+  number,
+  number,
+  number,
+  number,
+];
+const LINE_COLOR = [...BRAND_COLOR_RGBA, 255] as [
+  number,
+  number,
+  number,
+  number,
+];
 
 export function arrowTableToGeoJSON(table: Table): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = [];

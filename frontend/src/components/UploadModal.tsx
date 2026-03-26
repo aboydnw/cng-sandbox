@@ -24,10 +24,22 @@ interface UploadModalProps {
   onDatasetReady: (datasetId: string) => void;
 }
 
-export function UploadModal({ open, onClose, onDatasetReady }: UploadModalProps) {
-  const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } =
-    useConversionJob();
-  const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
+export function UploadModal({
+  open,
+  onClose,
+  onDatasetReady,
+}: UploadModalProps) {
+  const {
+    state,
+    startUpload,
+    startUrlFetch,
+    startTemporalUpload,
+    confirmVariable,
+  } = useConversionJob();
+  const fileRef = useRef<{ name: string; size: string }>({
+    name: "",
+    size: "",
+  });
 
   const isProcessing =
     state.isUploading || (state.jobId !== null && state.status !== "failed");
@@ -50,7 +62,11 @@ export function UploadModal({ open, onClose, onDatasetReady }: UploadModalProps)
   }, [state.status, state.datasetId]);
 
   return (
-    <DialogRoot open={open} onOpenChange={(e) => !e.open && onClose()} size="lg">
+    <DialogRoot
+      open={open}
+      onOpenChange={(e) => !e.open && onClose()}
+      size="lg"
+    >
       <DialogBackdrop />
       <DialogContent shadow="lg">
         <DialogHeader>

@@ -13,7 +13,11 @@ describe("ProgressTracker", () => {
   const baseProps = {
     stages: [
       { name: "Scanning", status: "done" as const },
-      { name: "Converting", status: "error" as const, detail: "Unsupported CRS" },
+      {
+        name: "Converting",
+        status: "error" as const,
+        detail: "Unsupported CRS",
+      },
       { name: "Validating", status: "pending" as const },
     ],
     filename: "test.tif",
@@ -31,7 +35,9 @@ describe("ProgressTracker", () => {
 
   it("renders report button when onReport is provided", () => {
     const onReport = vi.fn();
-    renderWithChakra(<ProgressTracker {...baseProps} onRetry={() => {}} onReport={onReport} />);
+    renderWithChakra(
+      <ProgressTracker {...baseProps} onRetry={() => {}} onReport={onReport} />
+    );
     const btn = screen.getByText("Report this issue");
     expect(btn).toBeTruthy();
     fireEvent.click(btn);
@@ -44,7 +50,12 @@ describe("ProgressTracker", () => {
       { name: "Converting", status: "active" },
     ];
     renderWithChakra(
-      <ProgressTracker stages={stages} filename="test.tif" fileSize="10 MB" onRetry={() => {}} />,
+      <ProgressTracker
+        stages={stages}
+        filename="test.tif"
+        fileSize="10 MB"
+        onRetry={() => {}}
+      />
     );
     expect(screen.queryByText("Try again")).toBeNull();
   });

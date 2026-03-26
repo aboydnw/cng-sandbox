@@ -1,4 +1,10 @@
-export type ContinuousScaleType = "linear" | "quantize" | "quantile" | "threshold" | "log" | "sqrt";
+export type ContinuousScaleType =
+  | "linear"
+  | "quantize"
+  | "quantile"
+  | "threshold"
+  | "log"
+  | "sqrt";
 
 export interface ContinuousLegendConfig {
   type: "continuous";
@@ -31,9 +37,15 @@ export interface CategoricalLegendConfig {
   visible?: boolean;
 }
 
-export type LegendLayerConfig = ContinuousLegendConfig | CategoricalLegendConfig;
+export type LegendLayerConfig =
+  | ContinuousLegendConfig
+  | CategoricalLegendConfig;
 export type LegendOrientation = "vertical" | "horizontal";
-export type LegendPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type LegendPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 export interface MapLegendProps {
   layers: LegendLayerConfig[];

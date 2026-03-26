@@ -24,7 +24,10 @@ export interface QueryResult {
 const FEATURE_LIMIT = 100_000;
 const GEOM_NAMES = ["geometry", "geom", "wkb_geometry", "the_geom"];
 
-export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUrl: string) {
+export function useGeoParquetQuery(
+  conn: AsyncDuckDBConnection | null,
+  parquetUrl: string
+) {
   const [result, setResult] = useState<QueryResult>({
     table: null,
     totalCount: 0,
@@ -39,7 +42,9 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
   const fullUrl = `${window.location.origin}${parquetUrl}`;
 
   const computeStats = useCallback(
-    async (whereClause: string): Promise<{ count: number; stats: ColumnStats[] }> => {
+    async (
+      whereClause: string
+    ): Promise<{ count: number; stats: ColumnStats[] }> => {
       if (!conn) return { count: 0, stats: [] };
 
       const countResult = await conn.query(
@@ -47,7 +52,9 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
       );
       const count = Number(countResult.get(0)?.cnt ?? 0);
 
-      const summarize = await conn.query(`SUMMARIZE SELECT * FROM read_parquet('${fullUrl}') ${whereClause}`);
+      const summarize = await conn.query(
+        `SUMMARIZE SELECT * FROM read_parquet('${fullUrl}') ${whereClause}`
+      );
       const stats: ColumnStats[] = [];
 
       for (let i = 0; i < summarize.numRows; i++) {
@@ -60,7 +67,18 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
         if (colType.includes("GEOMETRY") || colType === "BLOB") continue;
         if (["id", "fid", "ogc_fid"].includes(colName.toLowerCase())) continue;
 
-        if (["INTEGER", "BIGINT", "DOUBLE", "FLOAT", "SMALLINT", "TINYINT", "HUGEINT", "DECIMAL"].some(t => colType.includes(t))) {
+        if (
+          [
+            "INTEGER",
+            "BIGINT",
+            "DOUBLE",
+            "FLOAT",
+            "SMALLINT",
+            "TINYINT",
+            "HUGEINT",
+            "DECIMAL",
+          ].some((t) => colType.includes(t))
+        ) {
           stats.push({
             name: colName,
             type: "numeric",
@@ -70,7 +88,11 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
             uniqueCount: Number(row.approx_unique),
           });
         } else if (colType.includes("DATE") || colType.includes("TIMESTAMP")) {
-          stats.push({ name: colName, type: "date", uniqueCount: Number(row.approx_unique) });
+          stats.push({
+            name: colName,
+            type: "date",
+            uniqueCount: Number(row.approx_unique),
+          });
         } else if (colType === "VARCHAR" || colType === "STRING") {
           const uniqueCount = Number(row.approx_unique);
           let topValues: Array<{ value: string; count: number }> = [];
@@ -83,12 +105,17 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
               return { value: String(r.val), count: Number(r.cnt) };
             });
           }
-          stats.push({ name: colName, type: "categorical", uniqueCount, topValues });
+          stats.push({
+            name: colName,
+            type: "categorical",
+            uniqueCount,
+            topValues,
+          });
         }
       }
       return { count, stats };
     },
-    [conn, fullUrl],
+    [conn, fullUrl]
   );
 
   const runQuery = useCallback(
@@ -97,18 +124,25 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
       setLoading(true);
       try {
         // Get total count (unfiltered) for context
-        const totalResult = await conn.query(`SELECT COUNT(*) as cnt FROM read_parquet('${fullUrl}')`);
+        const totalResult = await conn.query(
+          `SELECT COUNT(*) as cnt FROM read_parquet('${fullUrl}')`
+        );
         const totalCount = Number(totalResult.get(0)?.cnt ?? 0);
 
         // Detect geometry column name on first run
         if (!geomColRef.current) {
-          const descResult = await conn.query(`DESCRIBE SELECT * FROM read_parquet('${fullUrl}') LIMIT 0`);
+          const descResult = await conn.query(
+            `DESCRIBE SELECT * FROM read_parquet('${fullUrl}') LIMIT 0`
+          );
           for (let i = 0; i < descResult.numRows; i++) {
             const row = descResult.get(i);
             if (!row) continue;
             const colType = String(row.column_type);
             const colName = String(row.column_name);
-            if (colType.includes("GEOMETRY") || colType === "BLOB" && GEOM_NAMES.includes(colName.toLowerCase())) {
+            if (
+              colType.includes("GEOMETRY") ||
+              (colType === "BLOB" && GEOM_NAMES.includes(colName.toLowerCase()))
+            ) {
               geomColRef.current = colName;
               break;
             }
@@ -150,7 +184,7 @@ export function useGeoParquetQuery(conn: AsyncDuckDBConnection | null, parquetUr
         setLoading(false);
       }
     },
-    [conn, fullUrl, computeStats],
+    [conn, fullUrl, computeStats]
   );
 
   const loadInitial = useCallback(async () => {

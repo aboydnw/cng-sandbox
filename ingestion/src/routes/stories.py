@@ -2,12 +2,18 @@
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from src.models.story import StoryRow, StoryCreate, StoryUpdate, StoryResponse, ChapterPayload
+from src.models.story import (
+    ChapterPayload,
+    StoryCreate,
+    StoryResponse,
+    StoryRow,
+    StoryUpdate,
+)
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
@@ -25,7 +31,11 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         ds_id = lc.get("dataset_id")
         if ds_id and ds_id not in chapter_dataset_ids:
             chapter_dataset_ids.append(ds_id)
-    dataset_ids = chapter_dataset_ids if chapter_dataset_ids else ([row.dataset_id] if row.dataset_id else [])
+    dataset_ids = (
+        chapter_dataset_ids
+        if chapter_dataset_ids
+        else ([row.dataset_id] if row.dataset_id else [])
+    )
     return StoryResponse(
         id=row.id,
         title=row.title,
@@ -51,8 +61,8 @@ async def create_story(body: StoryCreate, request: Request):
             dataset_id=body.dataset_id,
             chapters_json=json.dumps([ch.model_dump() for ch in body.chapters]),
             published=body.published,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             workspace_id=workspace_id if workspace_id else None,
         )
         session.add(row)
@@ -113,7 +123,7 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
             row.chapters_json = json.dumps([ch.model_dump() for ch in body.chapters])
         if body.published is not None:
             row.published = body.published
-        row.updated_at = datetime.now(timezone.utc)
+        row.updated_at = datetime.now(UTC)
         session.commit()
         session.refresh(row)
         return _row_to_response(row)

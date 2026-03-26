@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Table,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { config } from "../config";
@@ -27,9 +20,7 @@ function formatBytes(bytes: number | null | undefined): string {
 }
 
 function timeAgo(dateStr: string): string {
-  const seconds = Math.floor(
-    (Date.now() - new Date(dateStr).getTime()) / 1000,
-  );
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
   if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -71,44 +62,38 @@ export default function LibraryPage() {
       .catch(() => setStoriesLoading(false));
   }, []);
 
-  const handleDeleteStory = useCallback(
-    async (story: Story) => {
-      if (!window.confirm(`Delete "${story.title}"?`)) return;
-      setDeletingStory(story.id);
-      try {
-        await deleteStoryFromServer(story.id);
-        setStories((prev) => prev.filter((s) => s.id !== story.id));
-      } finally {
-        setDeletingStory(null);
+  const handleDeleteStory = useCallback(async (story: Story) => {
+    if (!window.confirm(`Delete "${story.title}"?`)) return;
+    setDeletingStory(story.id);
+    try {
+      await deleteStoryFromServer(story.id);
+      setStories((prev) => prev.filter((s) => s.id !== story.id));
+    } finally {
+      setDeletingStory(null);
+    }
+  }, []);
+
+  const handleDelete = useCallback(async (ds: DatasetWithStoryCount) => {
+    const storyWarning =
+      ds.story_count && ds.story_count > 0
+        ? `\n\nThis dataset is used in ${ds.story_count} story${ds.story_count > 1 ? "s" : ""}. Those chapters will no longer display.`
+        : "";
+
+    if (!window.confirm(`Delete "${ds.filename}"?${storyWarning}`)) return;
+
+    setDeleting(ds.id);
+    try {
+      const resp = await workspaceFetch(
+        `${config.apiBase}/api/datasets/${ds.id}`,
+        { method: "DELETE" }
+      );
+      if (resp.ok) {
+        setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
       }
-    },
-    [],
-  );
-
-  const handleDelete = useCallback(
-    async (ds: DatasetWithStoryCount) => {
-      const storyWarning =
-        ds.story_count && ds.story_count > 0
-          ? `\n\nThis dataset is used in ${ds.story_count} story${ds.story_count > 1 ? "s" : ""}. Those chapters will no longer display.`
-          : "";
-
-      if (!window.confirm(`Delete "${ds.filename}"?${storyWarning}`)) return;
-
-      setDeleting(ds.id);
-      try {
-        const resp = await workspaceFetch(
-          `${config.apiBase}/api/datasets/${ds.id}`,
-          { method: "DELETE" },
-        );
-        if (resp.ok) {
-          setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
-        }
-      } finally {
-        setDeleting(null);
-      }
-    },
-    [],
-  );
+    } finally {
+      setDeleting(null);
+    }
+  }, []);
 
   return (
     <Box minH="100vh" bg="gray.50">
@@ -133,7 +118,10 @@ export default function LibraryPage() {
 
         {loading ? (
           <Flex justify="center" py={12}>
-            <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
+            <SpinnerGap
+              size={32}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
           </Flex>
         ) : datasets.length === 0 ? (
           <Flex
@@ -166,7 +154,6 @@ export default function LibraryPage() {
                 <Table.Row key={ds.id}>
                   <Table.Cell>
                     <Link to={workspacePath(`/map/${ds.id}`)}>
-
                       <Text
                         color="blue.600"
                         _hover={{ textDecoration: "underline" }}
@@ -184,9 +171,7 @@ export default function LibraryPage() {
                       fontWeight={600}
                       textTransform="uppercase"
                       color={
-                        ds.dataset_type === "raster"
-                          ? "purple.600"
-                          : "teal.600"
+                        ds.dataset_type === "raster" ? "purple.600" : "teal.600"
                       }
                     >
                       {ds.dataset_type}
@@ -194,7 +179,9 @@ export default function LibraryPage() {
                   </Table.Cell>
                   <Table.Cell>
                     <Text fontSize="sm" color="gray.600">
-                      {ds.created_at ? timeAgo(ds.created_at as unknown as string) : "\u2014"}
+                      {ds.created_at
+                        ? timeAgo(ds.created_at as unknown as string)
+                        : "\u2014"}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
@@ -232,7 +219,10 @@ export default function LibraryPage() {
 
         {storiesLoading ? (
           <Flex justify="center" py={8}>
-            <SpinnerGap size={24} style={{ animation: "spin 1s linear infinite" }} />
+            <SpinnerGap
+              size={24}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
           </Flex>
         ) : stories.length === 0 ? (
           <Flex justify="center" py={12} color="gray.500">

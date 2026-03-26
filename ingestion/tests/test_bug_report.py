@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -43,12 +43,18 @@ def test_submit_bug_report_creates_github_issue(github_client):
         "page_url": "/map/ds-123",
         "dataset_id": "ds-123",
         "console_logs": [
-            {"timestamp": "2026-03-22T10:00:00Z", "level": "error", "message": "tile load failed"},
+            {
+                "timestamp": "2026-03-22T10:00:00Z",
+                "level": "error",
+                "message": "tile load failed",
+            },
         ],
     }
     mock_response = MagicMock()
     mock_response.status_code = 201
-    mock_response.json.return_value = {"html_url": "https://github.com/org/repo/issues/1"}
+    mock_response.json.return_value = {
+        "html_url": "https://github.com/org/repo/issues/1"
+    }
     mock_response.raise_for_status = MagicMock()
 
     with patch("src.routes.bug_report.httpx.post", return_value=mock_response):
@@ -78,7 +84,9 @@ def test_submit_bug_report_with_story_context(github_client):
     }
     mock_response = MagicMock()
     mock_response.status_code = 201
-    mock_response.json.return_value = {"html_url": "https://github.com/org/repo/issues/2"}
+    mock_response.json.return_value = {
+        "html_url": "https://github.com/org/repo/issues/2"
+    }
     mock_response.raise_for_status = MagicMock()
 
     with patch("src.routes.bug_report.httpx.post", return_value=mock_response):
@@ -94,7 +102,9 @@ def test_submit_bug_report_github_unavailable(github_client):
         "dataset_id": "ds-123",
         "console_logs": [],
     }
-    with patch("src.routes.bug_report.httpx.post", side_effect=Exception("connection failed")):
+    with patch(
+        "src.routes.bug_report.httpx.post", side_effect=Exception("connection failed")
+    ):
         resp = github_client.post("/api/bug-report", json=payload)
 
     assert resp.status_code == 502
@@ -109,7 +119,9 @@ def test_submit_bug_report_with_job_context(github_client):
     }
     mock_response = MagicMock()
     mock_response.status_code = 201
-    mock_response.json.return_value = {"html_url": "https://github.com/org/repo/issues/3"}
+    mock_response.json.return_value = {
+        "html_url": "https://github.com/org/repo/issues/3"
+    }
     mock_response.raise_for_status = MagicMock()
 
     with patch("src.routes.bug_report.httpx.post", return_value=mock_response):

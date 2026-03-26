@@ -11,11 +11,17 @@ import type { Story } from "../lib/story";
 import type { Dataset } from "../types";
 import { config } from "../config";
 
-export default function StoryReaderPage({ embed = false }: { embed?: boolean }) {
+export default function StoryReaderPage({
+  embed = false,
+}: {
+  embed?: boolean;
+}) {
   const { id } = useParams<{ id: string }>();
   const { workspacePath } = useWorkspace();
   const [story, setStory] = useState<Story | null>(null);
-  const [datasetMap, setDatasetMap] = useState<Map<string, Dataset | null>>(new Map());
+  const [datasetMap, setDatasetMap] = useState<Map<string, Dataset | null>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,11 +55,11 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
           try {
             const resp = await fetch(`${config.apiBase}/api/datasets/${dsId}`);
             if (!resp.ok) return [dsId, null] as const;
-            return [dsId, await resp.json() as Dataset] as const;
+            return [dsId, (await resp.json()) as Dataset] as const;
           } catch {
             return [dsId, null] as const;
           }
-        }),
+        })
       );
       setDatasetMap(new Map(entries));
       setLoading(false);
@@ -64,7 +70,10 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
+        <SpinnerGap
+          size={32}
+          style={{ animation: "spin 1s linear infinite" }}
+        />
       </Flex>
     );
   }
@@ -84,7 +93,9 @@ export default function StoryReaderPage({ embed = false }: { embed?: boolean }) 
         </Text>
         <Link to={workspacePath("/")}>
           <Text color="brand.orange" fontWeight={600}>
-            <Flex align="center" gap={1.5}><ArrowLeft size={14} /> Back to sandbox</Flex>
+            <Flex align="center" gap={1.5}>
+              <ArrowLeft size={14} /> Back to sandbox
+            </Flex>
           </Text>
         </Link>
       </Flex>

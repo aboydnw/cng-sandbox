@@ -48,21 +48,44 @@ export function NarrativeEditor({
 
   return (
     <Flex direction="column" p={3} gap={2}>
-      <ChapterTypePicker value={chapterType} onChange={handleChapterTypeChange} />
+      <ChapterTypePicker
+        value={chapterType}
+        onChange={handleChapterTypeChange}
+      />
 
       {showStyleTab && (
         <Box>
-          <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase" mb={1}>
+          <Text
+            fontSize="12px"
+            color="gray.500"
+            fontWeight={600}
+            letterSpacing="1px"
+            textTransform="uppercase"
+            mb={1}
+          >
             Dataset
           </Text>
           <Flex gap={1} align="center">
             <select
               value={layerConfig.dataset_id}
-              onChange={(e) => onLayerConfigChange({ ...layerConfig, dataset_id: e.target.value })}
-              style={{ fontSize: "13px", padding: "6px 8px", maxWidth: "220px", borderRadius: "4px", border: "1px solid #e8e5e0" }}
+              onChange={(e) =>
+                onLayerConfigChange({
+                  ...layerConfig,
+                  dataset_id: e.target.value,
+                })
+              }
+              style={{
+                fontSize: "13px",
+                padding: "6px 8px",
+                maxWidth: "220px",
+                borderRadius: "4px",
+                border: "1px solid #e8e5e0",
+              }}
             >
-              {datasets.map(ds => (
-                <option key={ds.id} value={ds.id}>{ds.filename} ({ds.dataset_type})</option>
+              {datasets.map((ds) => (
+                <option key={ds.id} value={ds.id}>
+                  {ds.filename} ({ds.dataset_type})
+                </option>
               ))}
             </select>
             {onAddDataset && (
@@ -76,7 +99,9 @@ export function NarrativeEditor({
                 _hover={{ color: "brand.orangeHover" }}
                 whiteSpace="nowrap"
               >
-                <Flex align="center" gap={1.5}><Plus size={12} weight="bold" /> Add</Flex>
+                <Flex align="center" gap={1.5}>
+                  <Plus size={12} weight="bold" /> Add
+                </Flex>
               </Text>
             )}
           </Flex>
@@ -136,7 +161,13 @@ export function NarrativeEditor({
             }}
           />
 
-          <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase">
+          <Text
+            fontSize="12px"
+            color="gray.500"
+            fontWeight={600}
+            letterSpacing="1px"
+            textTransform="uppercase"
+          >
             Narrative
           </Text>
 
@@ -180,19 +211,45 @@ export function NarrativeEditor({
           {datasetType === "raster" && (
             <>
               <Box>
-                <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase" mb={1}>Colormap</Text>
+                <Text
+                  fontSize="12px"
+                  color="gray.500"
+                  fontWeight={600}
+                  letterSpacing="1px"
+                  textTransform="uppercase"
+                  mb={1}
+                >
+                  Colormap
+                </Text>
                 <ColormapPicker
                   value={layerConfig.colormap}
-                  onChange={(cm) => onLayerConfigChange({ ...layerConfig, colormap: cm })}
+                  onChange={(cm) =>
+                    onLayerConfigChange({ ...layerConfig, colormap: cm })
+                  }
                 />
               </Box>
               <Box>
-                <Text fontSize="12px" color="gray.500" fontWeight={600} letterSpacing="1px" textTransform="uppercase" mb={1}>Opacity</Text>
+                <Text
+                  fontSize="12px"
+                  color="gray.500"
+                  fontWeight={600}
+                  letterSpacing="1px"
+                  textTransform="uppercase"
+                  mb={1}
+                >
+                  Opacity
+                </Text>
                 <input
                   type="range"
-                  min={0} max={100}
+                  min={0}
+                  max={100}
                   value={Math.round(layerConfig.opacity * 100)}
-                  onChange={(e) => onLayerConfigChange({ ...layerConfig, opacity: Number(e.target.value) / 100 })}
+                  onChange={(e) =>
+                    onLayerConfigChange({
+                      ...layerConfig,
+                      opacity: Number(e.target.value) / 100,
+                    })
+                  }
                 />
               </Box>
             </>

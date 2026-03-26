@@ -6,8 +6,20 @@ declare module "scrollama" {
       progress?: boolean;
       debug?: boolean;
     }): ScrollamaInstance;
-    onStepEnter(callback: (response: { element: HTMLElement; index: number; direction: string }) => void): ScrollamaInstance;
-    onStepExit(callback: (response: { element: HTMLElement; index: number; direction: string }) => void): ScrollamaInstance;
+    onStepEnter(
+      callback: (response: {
+        element: HTMLElement;
+        index: number;
+        direction: string;
+      }) => void
+    ): ScrollamaInstance;
+    onStepExit(
+      callback: (response: {
+        element: HTMLElement;
+        index: number;
+        direction: string;
+      }) => void
+    ): ScrollamaInstance;
     resize(): void;
     destroy(): void;
   }

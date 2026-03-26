@@ -35,8 +35,16 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     cog_url: null,
     validation_results: [],
     credits: [
-      { tool: "GeoPandas", role: "Converted", url: "https://github.com/geopandas/geopandas" },
-      { tool: "tippecanoe", role: "Tiled", url: "https://github.com/felt/tippecanoe" },
+      {
+        tool: "GeoPandas",
+        role: "Converted",
+        url: "https://github.com/geopandas/geopandas",
+      },
+      {
+        tool: "tippecanoe",
+        role: "Tiled",
+        url: "https://github.com/felt/tippecanoe",
+      },
     ],
     created_at: "2026-01-01T00:00:00Z",
     is_temporal: false,
@@ -62,7 +70,9 @@ describe("ReportCard", () => {
   });
 
   it("renders drawer when open", () => {
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
+    renderWithChakra(
+      <ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />
+    );
     expect(screen.getByText("Your data, transformed")).toBeTruthy();
     expect(screen.getByText("test.shp")).toBeTruthy();
   });
@@ -70,13 +80,17 @@ describe("ReportCard", () => {
   it("calls onClose when close button is clicked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={onClose} />);
+    renderWithChakra(
+      <ReportCard dataset={makeDataset()} isOpen={true} onClose={onClose} />
+    );
     await user.click(screen.getByLabelText("Close report card"));
     expect(onClose).toHaveBeenCalled();
   });
 
   it("renders pipeline timeline with all 4 steps", () => {
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
+    renderWithChakra(
+      <ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />
+    );
     expect(screen.getByText("Convert")).toBeTruthy();
     expect(screen.getByText("Catalog")).toBeTruthy();
     expect(screen.getByText("Store")).toBeTruthy();
@@ -84,8 +98,12 @@ describe("ReportCard", () => {
   });
 
   it("shows convert step content by default for pmtiles vector dataset", () => {
-    renderWithChakra(<ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />);
-    expect(screen.getByText("Converted to PMTiles vector tile archive")).toBeTruthy();
+    renderWithChakra(
+      <ReportCard dataset={makeDataset()} isOpen={true} onClose={() => {}} />
+    );
+    expect(
+      screen.getByText("Converted to PMTiles vector tile archive")
+    ).toBeTruthy();
   });
 
   it("shows convert step content for geotiff-to-cog datasets", () => {
@@ -96,14 +114,20 @@ describe("ReportCard", () => {
           format_pair: "geotiff-to-cog",
           tile_url: "/raster/datasets/test-id",
           credits: [
-            { tool: "rio-cogeo", role: "Converted", url: "https://github.com/cogeotiff/rio-cogeo" },
+            {
+              tool: "rio-cogeo",
+              role: "Converted",
+              url: "https://github.com/cogeotiff/rio-cogeo",
+            },
           ],
         })}
         isOpen={true}
         onClose={() => {}}
       />
     );
-    expect(screen.getByText("Converted to Cloud Optimized GeoTIFF (COG)")).toBeTruthy();
+    expect(
+      screen.getByText("Converted to Cloud Optimized GeoTIFF (COG)")
+    ).toBeTruthy();
   });
 
   it("shows convert step content for postgis vector datasets", () => {
@@ -112,7 +136,11 @@ describe("ReportCard", () => {
         dataset={makeDataset({
           tile_url: "/vector/collections/public.test/tiles",
           credits: [
-            { tool: "GeoPandas", role: "Converted", url: "https://github.com/geopandas/geopandas" },
+            {
+              tool: "GeoPandas",
+              role: "Converted",
+              url: "https://github.com/geopandas/geopandas",
+            },
           ],
         })}
         isOpen={true}
@@ -125,7 +153,9 @@ describe("ReportCard", () => {
 
 describe("getTileUrlPrefix", () => {
   it("extracts /pmtiles/ from pmtiles URL", () => {
-    expect(getTileUrlPrefix("/pmtiles/datasets/test-id/test.pmtiles")).toBe("/pmtiles/");
+    expect(getTileUrlPrefix("/pmtiles/datasets/test-id/test.pmtiles")).toBe(
+      "/pmtiles/"
+    );
   });
 
   it("extracts /raster/ from raster URL", () => {
@@ -133,6 +163,8 @@ describe("getTileUrlPrefix", () => {
   });
 
   it("extracts /vector/ from vector URL", () => {
-    expect(getTileUrlPrefix("/vector/collections/public.test/tiles")).toBe("/vector/");
+    expect(getTileUrlPrefix("/vector/collections/public.test/tiles")).toBe(
+      "/vector/"
+    );
   });
 });

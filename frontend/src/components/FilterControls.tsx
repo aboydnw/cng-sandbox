@@ -1,12 +1,19 @@
 import { Box, Flex, Text, Slider, Button } from "@chakra-ui/react";
 import { X, Plus } from "@phosphor-icons/react";
-import type { Filter, NumericFilter, CategoricalFilter } from "../hooks/useFilterQuery";
+import type {
+  Filter,
+  NumericFilter,
+  CategoricalFilter,
+} from "../hooks/useFilterQuery";
 import type { ColumnStats } from "../hooks/useGeoParquetQuery";
 
 interface FilterControlsProps {
   filters: Filter[];
   availableColumns: ColumnStats[];
-  onUpdateFilter: (column: string, update: Partial<NumericFilter> | Partial<CategoricalFilter>) => void;
+  onUpdateFilter: (
+    column: string,
+    update: Partial<NumericFilter> | Partial<CategoricalFilter>
+  ) => void;
   onAddFilter: (stat: ColumnStats) => void;
   onRemoveFilter: (column: string) => void;
   disabled: boolean;
@@ -66,8 +73,12 @@ function NumericFilterControl({
         </Slider.Control>
       </Slider.Root>
       <Flex justify="space-between" mt={0.5}>
-        <Text fontSize="2xs" color="gray.500">{formatNum(filter.currentMin)}</Text>
-        <Text fontSize="2xs" color="gray.500">{formatNum(filter.currentMax)}</Text>
+        <Text fontSize="2xs" color="gray.500">
+          {formatNum(filter.currentMin)}
+        </Text>
+        <Text fontSize="2xs" color="gray.500">
+          {formatNum(filter.currentMax)}
+        </Text>
       </Flex>
     </Box>
   );
@@ -137,7 +148,9 @@ export function FilterControls({
 }: FilterControlsProps) {
   const activeColumnNames = new Set(filters.map((f) => f.column));
   const addableColumns = availableColumns.filter(
-    (s) => !activeColumnNames.has(s.name) && (s.type === "numeric" || s.type === "categorical"),
+    (s) =>
+      !activeColumnNames.has(s.name) &&
+      (s.type === "numeric" || s.type === "categorical")
   );
 
   return (
@@ -159,14 +172,16 @@ export function FilterControls({
             onRemove={() => onRemoveFilter(f.column)}
             disabled={disabled}
           />
-        ),
+        )
       )}
 
       {addableColumns.length > 0 && (
         <Box mt={2}>
           <Flex align="center" gap={1.5} mb={1}>
             <Plus size={12} weight="bold" />
-            <Text fontSize="xs" color="gray.500">Add filter</Text>
+            <Text fontSize="xs" color="gray.500">
+              Add filter
+            </Text>
           </Flex>
           <Flex wrap="wrap" gap={1}>
             {addableColumns.slice(0, 10).map((s) => (

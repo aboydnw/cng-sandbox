@@ -1,4 +1,4 @@
-from src.models import FormatPair, DatasetType
+from src.models import DatasetType, FormatPair
 from src.services.detector import detect_format
 
 

@@ -2,8 +2,15 @@ import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useTileTransferSize } from "./useTileTransferSize";
 
-function makeEntry(name: string, transferSize: number): PerformanceResourceTiming {
-  return { name, transferSize, entryType: "resource" } as unknown as PerformanceResourceTiming;
+function makeEntry(
+  name: string,
+  transferSize: number
+): PerformanceResourceTiming {
+  return {
+    name,
+    transferSize,
+    entryType: "resource",
+  } as unknown as PerformanceResourceTiming;
 }
 
 describe("useTileTransferSize", () => {
@@ -45,16 +52,19 @@ describe("useTileTransferSize", () => {
   });
 
   it("updates when the observer fires with new entries", () => {
-    vi.spyOn(performance, "getEntriesByType")
-      .mockReturnValue([makeEntry("http://localhost/pmtiles/tile-a", 100)]);
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+      makeEntry("http://localhost/pmtiles/tile-a", 100),
+    ]);
 
     const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
     expect(result.current).toBe(100);
 
     act(() => {
       observerCallback(
-        { getEntries: () => [makeEntry("http://localhost/pmtiles/tile-b", 200)] } as unknown as PerformanceObserverEntryList,
-        {} as PerformanceObserver,
+        {
+          getEntries: () => [makeEntry("http://localhost/pmtiles/tile-b", 200)],
+        } as unknown as PerformanceObserverEntryList,
+        {} as PerformanceObserver
       );
     });
     expect(result.current).toBe(300);
@@ -70,11 +80,13 @@ describe("useTileTransferSize", () => {
 
     act(() => {
       observerCallback(
-        { getEntries: () => [
-          makeEntry("http://localhost/pmtiles/tile-a", 100),
-          makeEntry("http://localhost/pmtiles/tile-b", 200),
-        ] } as unknown as PerformanceObserverEntryList,
-        {} as PerformanceObserver,
+        {
+          getEntries: () => [
+            makeEntry("http://localhost/pmtiles/tile-a", 100),
+            makeEntry("http://localhost/pmtiles/tile-b", 200),
+          ],
+        } as unknown as PerformanceObserverEntryList,
+        {} as PerformanceObserver
       );
     });
     // tile-a was already counted, only tile-b is new

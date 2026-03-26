@@ -59,7 +59,9 @@ def test_upload_geotiff_end_to_end(client, synthetic_geotiff):
 
 def test_upload_geojson_end_to_end(client, synthetic_geojson):
     with open(synthetic_geojson, "rb") as f:
-        resp = client.post("/api/upload", files={"file": ("test.geojson", f, "application/json")})
+        resp = client.post(
+            "/api/upload", files={"file": ("test.geojson", f, "application/json")}
+        )
     assert resp.status_code == 200
     data = resp.json()
     job_id = data["job_id"]

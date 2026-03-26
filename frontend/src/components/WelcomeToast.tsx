@@ -60,8 +60,9 @@ export function WelcomeToast() {
           Welcome to CNG Sandbox
         </Text>
         <Text fontSize="sm" color="gray.500" mb={5} lineHeight="tall">
-          We've created a private workspace for you. Your data is only visible to
-          people you share the link with. Bookmark this page to come back later.
+          We've created a private workspace for you. Your data is only visible
+          to people you share the link with. Bookmark this page to come back
+          later.
         </Text>
         <Button
           size="sm"

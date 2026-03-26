@@ -63,7 +63,7 @@ describe("fetchWithRetry", () => {
     mockFetch.mockRejectedValue(new Error("network error"));
 
     await expect(fetchWithRetry("/api/test", undefined, 0)).rejects.toThrow(
-      "network error",
+      "network error"
     );
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
@@ -82,7 +82,10 @@ describe("fetchWithRetry", () => {
     const init = { method: "POST", body: "data" };
     await fetchWithRetry("/api/test", init);
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/test", expect.objectContaining({ method: "POST", body: "data" }));
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/test",
+      expect.objectContaining({ method: "POST", body: "data" })
+    );
   });
 });
 
@@ -124,7 +127,7 @@ describe("useConversionJob", () => {
 
     await act(async () => {
       await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
+        new File(["data"], "test.tif", { type: "image/tiff" })
       );
     });
 
@@ -143,7 +146,7 @@ describe("useConversionJob", () => {
 
     await act(async () => {
       await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
+        new File(["data"], "test.tif", { type: "image/tiff" })
       );
     });
 
@@ -188,7 +191,9 @@ describe("useConversionJob", () => {
       MockEventSource.instances[3].onerror?.();
     });
 
-    expect(result.current.state.error).toBe("Connection lost. Please refresh the page.");
+    expect(result.current.state.error).toBe(
+      "Connection lost. Please refresh the page."
+    );
     expect(result.current.state.status).toBe("failed");
   });
 
@@ -202,7 +207,7 @@ describe("useConversionJob", () => {
 
     await act(async () => {
       await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
+        new File(["data"], "test.tif", { type: "image/tiff" })
       );
     });
 
@@ -221,7 +226,7 @@ describe("useConversionJob", () => {
         "status",
         new MessageEvent("status", {
           data: JSON.stringify({ status: "scanning" }),
-        }),
+        })
       );
     });
 

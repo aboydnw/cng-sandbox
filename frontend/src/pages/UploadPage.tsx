@@ -13,18 +13,32 @@ import { FolderOpen, GlobeHemisphereWest } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { formatBytes } from "../utils/format";
 
-type PageMode = "initial" | "upload-idle" | "uploading" | "error" | "variable-picker";
+type PageMode =
+  | "initial"
+  | "upload-idle"
+  | "uploading"
+  | "error"
+  | "variable-picker";
 
 export default function UploadPage() {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
-  const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } =
-    useConversionJob();
-  const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
+  const {
+    state,
+    startUpload,
+    startUrlFetch,
+    startTemporalUpload,
+    confirmVariable,
+  } = useConversionJob();
+  const fileRef = useRef<{ name: string; size: string }>({
+    name: "",
+    size: "",
+  });
   const [mode, setMode] = useState<PageMode>("initial");
   const [reportOpen, setReportOpen] = useState(false);
 
-  const isProcessing = state.isUploading || (state.jobId !== null && state.status !== "failed");
+  const isProcessing =
+    state.isUploading || (state.jobId !== null && state.status !== "failed");
 
   // Derive mode from conversion job state
   useEffect(() => {
@@ -50,7 +64,7 @@ export default function UploadPage() {
       setMode("uploading");
       startUpload(file);
     },
-    [startUpload],
+    [startUpload]
   );
 
   const handleUrl = useCallback(
@@ -60,16 +74,19 @@ export default function UploadPage() {
       setMode("uploading");
       startUrlFetch(url);
     },
-    [startUrlFetch],
+    [startUrlFetch]
   );
 
   const handleTemporalUpload = useCallback(
     (files: File[]) => {
-      fileRef.current = { name: `${files.length} files`, size: "calculating..." };
+      fileRef.current = {
+        name: `${files.length} files`,
+        size: "calculating...",
+      };
       setMode("uploading");
       startTemporalUpload(files);
     },
-    [startTemporalUpload],
+    [startTemporalUpload]
   );
 
   const handleRetry = useCallback(() => {
@@ -106,7 +123,9 @@ export default function UploadPage() {
           onClick={() => setMode("upload-idle")}
           expanded={uploadCardExpanded}
           faded={false}
-          onCollapse={mode === "upload-idle" ? () => setMode("initial") : undefined}
+          onCollapse={
+            mode === "upload-idle" ? () => setMode("initial") : undefined
+          }
         >
           {mode === "upload-idle" && (
             <FileUploader

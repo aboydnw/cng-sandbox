@@ -1,11 +1,10 @@
 """Story persistence model and API schemas."""
 
 import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import Column, String, Boolean, DateTime, Text
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
+from sqlalchemy import Boolean, Column, DateTime, String, Text
 
 from src.models.base import Base
 
@@ -19,8 +18,13 @@ class StoryRow(Base):
     dataset_id = Column(String, nullable=True)
     chapters_json = Column(Text, nullable=False, default="[]")
     published = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
     workspace_id = Column(String, nullable=True)
 
 

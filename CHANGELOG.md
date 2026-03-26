@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/aboydnw/cng-sandbox/compare/v1.3.0...v1.4.0) (2026-03-26)
+
+
+### Features
+
+* combine datasets and stories into Library page ([#35](https://github.com/aboydnw/cng-sandbox/issues/35)) ([103f638](https://github.com/aboydnw/cng-sandbox/commit/103f638e025dffaec0c82780b348eff1b05c44e6))
+
+
+### Bug Fixes
+
+* add vector view mode toggle for PMTiles vs GeoParquet ([#39](https://github.com/aboydnw/cng-sandbox/issues/39)) ([34fb9aa](https://github.com/aboydnw/cng-sandbox/commit/34fb9aaa3c912e98888ec3d964648741c56dc145)), closes [#22](https://github.com/aboydnw/cng-sandbox/issues/22)
+* improve HDF5 converter robustness for NISAR data ([#40](https://github.com/aboydnw/cng-sandbox/issues/40)) ([30bd477](https://github.com/aboydnw/cng-sandbox/commit/30bd477f39c7bc807f63a32cd8278f443d577358))
+
 ## [1.3.0](https://github.com/aboydnw/cng-sandbox/compare/v1.2.0...v1.3.0) (2026-03-25)
 
 

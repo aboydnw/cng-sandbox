@@ -148,7 +148,9 @@ export default function UploadPage() {
             lineHeight={1.8}
             listStyleType="disc"
           >
-            <li>Automatically converts your file to a cloud-optimized format</li>
+            <li>
+              Automatically converts your file to a cloud-optimized format
+            </li>
             <li>Data is private to your workspace</li>
             <li>Files up to 15 GB accepted</li>
             <li>Hosted for 30 days, then automatically removed</li>
@@ -205,7 +207,10 @@ export default function UploadPage() {
             <li>Combine maps, text, and media into a shareable narrative</li>
             <li>Add datasets from your workspace or our public library</li>
             <li>Publish a live URL anyone can view</li>
-            <li>Data is hosted for 30 days — map layers may stop loading after that, but the story URL stays accessible</li>
+            <li>
+              Data is hosted for 30 days — map layers may stop loading after
+              that, but the story URL stays accessible
+            </li>
           </Box>
           <Box
             as="button"

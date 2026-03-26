@@ -19,3 +19,4 @@ scripts/update-duckdns.sh
 .superpowers/
 .worktrees/
 docs/
+.yarn/

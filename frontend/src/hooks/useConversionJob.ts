@@ -1,5 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { ConversionJobState, StageInfo, JobStatus, ScanResult } from "../types";
+import type {
+  ConversionJobState,
+  StageInfo,
+  JobStatus,
+  ScanResult,
+} from "../types";
 import { config } from "../config";
 import { workspaceFetch } from "../lib/api";
 
@@ -24,8 +29,20 @@ export async function fetchWithRetry(
   throw new Error("Fetch failed after retries");
 }
 
-const STAGE_NAMES = ["Scanning", "Converting", "Validating", "Ingesting", "Ready"];
-const STATUS_ORDER: JobStatus[] = ["scanning", "converting", "validating", "ingesting", "ready"];
+const STAGE_NAMES = [
+  "Scanning",
+  "Converting",
+  "Validating",
+  "Ingesting",
+  "Ready",
+];
+const STATUS_ORDER: JobStatus[] = [
+  "scanning",
+  "converting",
+  "validating",
+  "ingesting",
+  "ready",
+];
 
 function buildInitialStages(): StageInfo[] {
   return STAGE_NAMES.map((name) => ({ name, status: "pending" as const }));
@@ -38,7 +55,12 @@ function buildUploadingStages(): StageInfo[] {
   ];
 }
 
-function updateStages(status: JobStatus, error?: string, progressCurrent?: number, progressTotal?: number): StageInfo[] {
+function updateStages(
+  status: JobStatus,
+  error?: string,
+  progressCurrent?: number,
+  progressTotal?: number
+): StageInfo[] {
   const idx = STATUS_ORDER.indexOf(status);
   const pipelineStages: StageInfo[] = STAGE_NAMES.map((name, i) => {
     if (status === "failed") {
@@ -49,9 +71,10 @@ function updateStages(status: JobStatus, error?: string, progressCurrent?: numbe
     }
     if (i < idx) return { name, status: "done" as const };
     if (i === idx) {
-      const detail = progressCurrent && progressTotal
-        ? `${progressCurrent} of ${progressTotal}`
-        : undefined;
+      const detail =
+        progressCurrent && progressTotal
+          ? `${progressCurrent} of ${progressTotal}`
+          : undefined;
       return { name, status: "active" as const, detail };
     }
     return { name, status: "pending" as const };
@@ -88,7 +111,12 @@ export function useConversionJob() {
     esRef.current = es;
 
     es.addEventListener("status", (event) => {
-      let data: { status: JobStatus; error?: string; progress_current?: number; progress_total?: number };
+      let data: {
+        status: JobStatus;
+        error?: string;
+        progress_current?: number;
+        progress_total?: number;
+      };
       try {
         data = JSON.parse((event as MessageEvent).data);
       } catch {
@@ -105,7 +133,12 @@ export function useConversionJob() {
         progressCurrent: data.progress_current ?? null,
         progressTotal: data.progress_total ?? null,
         datasetId: status === "ready" ? datasetIdRef.current : prev.datasetId,
-        stages: updateStages(status, error ?? undefined, data.progress_current, data.progress_total),
+        stages: updateStages(
+          status,
+          error ?? undefined,
+          data.progress_current,
+          data.progress_total
+        ),
       }));
 
       if (status === "ready" || status === "failed") {
@@ -124,7 +157,11 @@ export function useConversionJob() {
       sseRetryCountRef.current = 0;
 
       if (data.variables.length === 1) {
-        confirmVariable(data.scan_id, data.variables[0].name, data.variables[0].group);
+        confirmVariable(
+          data.scan_id,
+          data.variables[0].name,
+          data.variables[0].group
+        );
         return;
       }
 
@@ -145,7 +182,10 @@ export function useConversionJob() {
           ...prev,
           error: "Connection lost. Please refresh the page.",
           status: "failed",
-          stages: updateStages("failed", "Connection lost. Please refresh the page."),
+          stages: updateStages(
+            "failed",
+            "Connection lost. Please refresh the page."
+          ),
         }));
       }
     };
@@ -155,14 +195,19 @@ export function useConversionJob() {
     async (scanId: string, variable: string, group: string) => {
       setState((prev) => ({ ...prev, scanResult: null }));
 
-      const resp = await fetchWithRetry(`${config.apiBase}/api/scan/${scanId}/convert`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variable, group }),
-      });
+      const resp = await fetchWithRetry(
+        `${config.apiBase}/api/scan/${scanId}/convert`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ variable, group }),
+        }
+      );
 
       if (!resp.ok) {
-        const detail = await resp.json().catch(() => ({ detail: "Variable selection failed" }));
+        const detail = await resp
+          .json()
+          .catch(() => ({ detail: "Variable selection failed" }));
         setState((prev) => ({
           ...prev,
           status: "failed",
@@ -171,12 +216,18 @@ export function useConversionJob() {
         }));
       }
     },
-    [],
+    []
   );
 
   const startUpload = useCallback(
     async (file: File) => {
-      setState((prev) => ({ ...prev, isUploading: true, status: "pending", error: null, stages: buildUploadingStages() }));
+      setState((prev) => ({
+        ...prev,
+        isUploading: true,
+        status: "pending",
+        error: null,
+        stages: buildUploadingStages(),
+      }));
 
       const formData = new FormData();
       formData.append("file", file);
@@ -187,7 +238,9 @@ export function useConversionJob() {
       });
 
       if (!resp.ok) {
-        const detail = await resp.json().catch(() => ({ detail: "Upload failed" }));
+        const detail = await resp
+          .json()
+          .catch(() => ({ detail: "Upload failed" }));
         setState((prev) => ({
           ...prev,
           isUploading: false,
@@ -209,12 +262,18 @@ export function useConversionJob() {
       }));
       connectSSE(job_id);
     },
-    [connectSSE],
+    [connectSSE]
   );
 
   const startUrlFetch = useCallback(
     async (url: string) => {
-      setState((prev) => ({ ...prev, isUploading: true, status: "pending", error: null, stages: buildUploadingStages() }));
+      setState((prev) => ({
+        ...prev,
+        isUploading: true,
+        status: "pending",
+        error: null,
+        stages: buildUploadingStages(),
+      }));
 
       const resp = await fetchWithRetry(`${config.apiBase}/api/convert-url`, {
         method: "POST",
@@ -223,12 +282,16 @@ export function useConversionJob() {
       });
 
       if (!resp.ok) {
-        const body = await resp.json().catch(() => ({ detail: "Fetch failed" }));
+        const body = await resp
+          .json()
+          .catch(() => ({ detail: "Fetch failed" }));
         const msg =
           typeof body.detail === "string"
             ? body.detail
             : Array.isArray(body.detail)
-              ? body.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ")
+              ? body.detail
+                  .map((e: any) => e.msg ?? JSON.stringify(e))
+                  .join("; ")
               : "Fetch failed";
         setState((prev) => ({
           ...prev,
@@ -251,25 +314,36 @@ export function useConversionJob() {
       }));
       connectSSE(job_id);
     },
-    [connectSSE],
+    [connectSSE]
   );
 
   const startTemporalUpload = useCallback(
     async (files: File[]) => {
-      setState((prev) => ({ ...prev, isUploading: true, status: "pending", error: null, stages: buildUploadingStages() }));
+      setState((prev) => ({
+        ...prev,
+        isUploading: true,
+        status: "pending",
+        error: null,
+        stages: buildUploadingStages(),
+      }));
 
       const formData = new FormData();
       for (const file of files) {
         formData.append("files", file);
       }
 
-      const resp = await fetchWithRetry(`${config.apiBase}/api/upload-temporal`, {
-        method: "POST",
-        body: formData,
-      });
+      const resp = await fetchWithRetry(
+        `${config.apiBase}/api/upload-temporal`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!resp.ok) {
-        const detail = await resp.json().catch(() => ({ detail: "Upload failed" }));
+        const detail = await resp
+          .json()
+          .catch(() => ({ detail: "Upload failed" }));
         setState((prev) => ({
           ...prev,
           isUploading: false,
@@ -291,8 +365,14 @@ export function useConversionJob() {
       }));
       connectSSE(job_id);
     },
-    [connectSSE],
+    [connectSSE]
   );
 
-  return { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable };
+  return {
+    state,
+    startUpload,
+    startUrlFetch,
+    startTemporalUpload,
+    confirmVariable,
+  };
 }

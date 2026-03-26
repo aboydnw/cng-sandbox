@@ -12,7 +12,11 @@ export interface UseColorScaleReturn {
   values: number[];
 }
 
-export function useColorScale({ domain, colormap = "viridis", steps = 8 }: UseColorScaleOptions): UseColorScaleReturn {
+export function useColorScale({
+  domain,
+  colormap = "viridis",
+  steps = 8,
+}: UseColorScaleOptions): UseColorScaleReturn {
   return useMemo(() => {
     const palette = getColormap(colormap);
     const colors = Array.from({ length: steps }, (_, i) => {

@@ -5,7 +5,7 @@ import type { TileCacheEntry } from "../lib/layers/cogLayer";
 function lookupValue(
   cache: Map<string, TileCacheEntry>,
   lng: number,
-  lat: number,
+  lat: number
 ): number | null {
   let bestEntry: TileCacheEntry | null = null;
   let bestRes = Infinity;
@@ -65,7 +65,7 @@ interface PixelInspectorProps {
 
 export function usePixelInspector(
   tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
-  bandNames: string[] | null,
+  bandNames: string[] | null
 ) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const hoverRafRef = useRef<number | null>(null);
@@ -100,7 +100,7 @@ export function usePixelInspector(
         });
       });
     },
-    [tileCacheRef, bandNames],
+    [tileCacheRef, bandNames]
   );
 
   return { hoverInfo, onHover };
@@ -110,7 +110,9 @@ interface PixelInspectorTooltipProps {
   hoverInfo: HoverInfo;
 }
 
-export function PixelInspectorTooltip({ hoverInfo }: PixelInspectorTooltipProps) {
+export function PixelInspectorTooltip({
+  hoverInfo,
+}: PixelInspectorTooltipProps) {
   return (
     <Box
       position="absolute"
@@ -127,15 +129,33 @@ export function PixelInspectorTooltip({ hoverInfo }: PixelInspectorTooltipProps)
       zIndex={10}
       whiteSpace="nowrap"
     >
-      <Text fontSize="13px" fontWeight={600} fontFamily="mono" color="white" lineHeight="1.2">
+      <Text
+        fontSize="13px"
+        fontWeight={600}
+        fontFamily="mono"
+        color="white"
+        lineHeight="1.2"
+      >
         {formatValue(hoverInfo.value)}
         {hoverInfo.bandName && (
-          <Text as="span" fontSize="11px" fontWeight={400} color="whiteAlpha.600" ml={1.5}>
+          <Text
+            as="span"
+            fontSize="11px"
+            fontWeight={400}
+            color="whiteAlpha.600"
+            ml={1.5}
+          >
             {hoverInfo.bandName}
           </Text>
         )}
       </Text>
-      <Text fontSize="10px" fontFamily="mono" color="whiteAlpha.500" mt={0.5} lineHeight="1.2">
+      <Text
+        fontSize="10px"
+        fontFamily="mono"
+        color="whiteAlpha.500"
+        mt={0.5}
+        lineHeight="1.2"
+      >
         {formatCoord(hoverInfo.lat, hoverInfo.lng)}
       </Text>
     </Box>

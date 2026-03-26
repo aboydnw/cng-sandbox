@@ -20,14 +20,18 @@ describe("submitBugReport", () => {
   it("posts to /api/bug-report and returns the issue URL", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ issue_url: "https://github.com/org/repo/issues/1" }),
+      json: () =>
+        Promise.resolve({ issue_url: "https://github.com/org/repo/issues/1" }),
     });
 
     const result = await submitBugReport(basePayload);
-    expect(mockFetch).toHaveBeenCalledWith("/api/bug-report", expect.objectContaining({
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    }));
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/bug-report",
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+    );
     expect(result.issue_url).toBe("https://github.com/org/repo/issues/1");
   });
 

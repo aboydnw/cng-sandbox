@@ -1,1 +1,1 @@
-declare module 'wkt-parser';
+declare module "wkt-parser";

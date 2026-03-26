@@ -230,7 +230,9 @@ function getConvertStep(dataset: Dataset, pipeline: PipelineType): StepContent {
     beforeLabel: `Original ${sourceLabel}`,
     beforeValue: formatBytes(dataset.original_file_size),
     afterLabel: "GeoParquet",
-    afterValue: formatBytes(dataset.geoparquet_file_size ?? dataset.converted_file_size),
+    afterValue: formatBytes(
+      dataset.geoparquet_file_size ?? dataset.converted_file_size
+    ),
     note: "GeoParquet is a cloud-native columnar format for vector data.",
   };
 

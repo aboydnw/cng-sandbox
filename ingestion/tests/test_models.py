@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
-from src.models import Job, JobStatus, DatasetType, FormatPair, Dataset, Timestep
+
+from src.models import Dataset, DatasetType, FormatPair, Job, JobStatus, Timestep
 
 
 def test_job_initial_status():
@@ -43,7 +45,7 @@ def test_dataset_new_fields_default_none():
         dataset_type=DatasetType.RASTER,
         format_pair=FormatPair.GEOTIFF_TO_COG,
         tile_url="/raster/x",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     assert d.original_file_size is None
     assert d.converted_file_size is None
@@ -76,7 +78,7 @@ def test_dataset_temporal_fields_default():
         dataset_type=DatasetType.RASTER,
         format_pair=FormatPair.GEOTIFF_TO_COG,
         tile_url="/raster/x",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     assert d.is_temporal is False
     assert d.timesteps == []
@@ -91,7 +93,7 @@ def test_dataset_temporal_fields_populated():
         dataset_type=DatasetType.RASTER,
         format_pair=FormatPair.GEOTIFF_TO_COG,
         tile_url="/raster/x",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         is_temporal=True,
         timesteps=[
             Timestep(datetime="2018-01-01T00:00:00Z", index=0),
@@ -112,7 +114,7 @@ def test_dataset_cog_url_default_none():
         dataset_type=DatasetType.RASTER,
         format_pair=FormatPair.GEOTIFF_TO_COG,
         tile_url="/raster/x",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     assert d.cog_url is None
 
@@ -124,7 +126,7 @@ def test_dataset_cog_url_populated():
         dataset_type=DatasetType.RASTER,
         format_pair=FormatPair.GEOTIFF_TO_COG,
         tile_url="/raster/x",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         cog_url="/storage/datasets/x/converted/data.tif",
     )
     assert d.cog_url == "/storage/datasets/x/converted/data.tif"

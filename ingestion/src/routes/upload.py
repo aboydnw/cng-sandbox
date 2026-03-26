@@ -8,15 +8,23 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile
-from pydantic import BaseModel as PydanticBaseModel, field_validator
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Request,
+    UploadFile,
+)
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import field_validator
 
-from src.state import jobs, scan_store, scan_store_lock
 from src.config import get_settings
 from src.models import Job
-from src.workspace import get_workspace_id
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
+from src.state import jobs, scan_store, scan_store_lock
+from src.workspace import get_workspace_id
 
 RASTER_EXTENSIONS = {".tif", ".tiff", ".nc", ".nc4", ".h5", ".hdf5"}
 TEMPORAL_EXCLUDED = {".h5", ".hdf5"}
@@ -47,27 +55,32 @@ class ConvertUrlRequest(PydanticBaseModel):
                 for _, _, _, _, sockaddr in resolved:
                     addr = ipaddress.ip_address(sockaddr[0])
                     if addr.is_private or addr.is_loopback or addr.is_reserved:
-                        raise ValueError("URLs resolving to private networks are not allowed")
+                        raise ValueError(
+                            "URLs resolving to private networks are not allowed"
+                        )
             except socket.gaierror:
                 pass
         return v
+
 
 @asynccontextmanager
 async def _save_chunks(suffix: str):
     """Write chunks to a temp file with size validation. Cleans up on error."""
     settings = get_settings()
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)  # noqa: SIM115
     size = 0
     try:
+
         async def write(chunk: bytes):
             nonlocal size
             size += len(chunk)
             if size > settings.max_upload_bytes:
                 raise HTTPException(
                     status_code=413,
-                    detail=f"File too large. Maximum size is {settings.max_upload_bytes // (1024*1024)} MB.",
+                    detail=f"File too large. Maximum size is {settings.max_upload_bytes // (1024 * 1024)} MB.",
                 )
             tmp.write(chunk)
+
         yield tmp.name, write
         tmp.close()
     except Exception:
@@ -100,7 +113,9 @@ async def upload_file(
     job.workspace_id = workspace_id
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_and_cleanup, job, tmp_path, request.app.state.db_session_factory)
+    background_tasks.add_task(
+        _run_and_cleanup, job, tmp_path, request.app.state.db_session_factory
+    )
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
@@ -117,22 +132,28 @@ async def convert_url(
     ext = os.path.splitext(filename)[1]
 
     try:
-        async with _save_chunks(suffix=ext) as (tmp_path, write):
-            async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
+        async with _save_chunks(suffix=ext) as (tmp_path, write):  # noqa: SIM117
+            async with httpx.AsyncClient(
+                follow_redirects=True, timeout=120.0
+            ) as client:
                 async with client.stream("GET", body.url) as resp:
                     resp.raise_for_status()
                     async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                         await write(chunk)
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e.response.status_code}")
+        raise HTTPException(
+            status_code=400, detail=f"Failed to fetch URL: {e.response.status_code}"
+        ) from e
     except httpx.RequestError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
 
     job = Job(filename=filename)
     job.workspace_id = workspace_id
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_and_cleanup, job, tmp_path, request.app.state.db_session_factory)
+    background_tasks.add_task(
+        _run_and_cleanup, job, tmp_path, request.app.state.db_session_factory
+    )
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
@@ -188,14 +209,21 @@ async def upload_temporal(
 ):
     """Accept multiple raster files and start the temporal conversion pipeline."""
     if len(files) < 2:
-        raise HTTPException(status_code=400, detail="Temporal upload requires at least 2 files.")
+        raise HTTPException(
+            status_code=400, detail="Temporal upload requires at least 2 files."
+        )
     if len(files) > MAX_TEMPORAL_FILES:
-        raise HTTPException(status_code=400, detail=f"Maximum {MAX_TEMPORAL_FILES} files per temporal upload.")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {MAX_TEMPORAL_FILES} files per temporal upload.",
+        )
 
     extensions = set()
     for f in files:
         if not f.filename:
-            raise HTTPException(status_code=400, detail="All files must have filenames.")
+            raise HTTPException(
+                status_code=400, detail="All files must have filenames."
+            )
         ext = os.path.splitext(f.filename)[1].lower()
         if ext not in RASTER_EXTENSIONS:
             raise HTTPException(
@@ -209,7 +237,9 @@ async def upload_temporal(
             )
         extensions.add(ext)
     if len(extensions) > 1:
-        raise HTTPException(status_code=400, detail="All files must be the same format.")
+        raise HTTPException(
+            status_code=400, detail="All files must be the same format."
+        )
 
     tmp_paths = []
     filenames = []
@@ -231,11 +261,19 @@ async def upload_temporal(
     job.workspace_id = workspace_id
     jobs[job.id] = job
 
-    background_tasks.add_task(_run_temporal_and_cleanup, job, tmp_paths, filenames, request.app.state.db_session_factory)
+    background_tasks.add_task(
+        _run_temporal_and_cleanup,
+        job,
+        tmp_paths,
+        filenames,
+        request.app.state.db_session_factory,
+    )
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
-async def _run_temporal_and_cleanup(job: Job, input_paths: list[str], filenames: list[str], db_session_factory):
+async def _run_temporal_and_cleanup(
+    job: Job, input_paths: list[str], filenames: list[str], db_session_factory
+):
     """Run the temporal pipeline, then clean up all temp files."""
     try:
         await run_temporal_pipeline(job, input_paths, filenames, db_session_factory)

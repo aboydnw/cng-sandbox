@@ -34,7 +34,10 @@ interface VectorPopupOverlayProps {
   onDismiss: () => void;
 }
 
-export function VectorPopupOverlay({ popup, onDismiss }: VectorPopupOverlayProps) {
+export function VectorPopupOverlay({
+  popup,
+  onDismiss,
+}: VectorPopupOverlayProps) {
   return (
     <Box
       position="absolute"

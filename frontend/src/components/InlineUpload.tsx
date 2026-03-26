@@ -16,11 +16,20 @@ interface InlineUploadProps {
 export function InlineUpload({ onCancel }: InlineUploadProps) {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
-  const { state, startUpload, startUrlFetch, startTemporalUpload, confirmVariable } =
-    useConversionJob();
-  const fileRef = useRef<{ name: string; size: string }>({ name: "", size: "" });
+  const {
+    state,
+    startUpload,
+    startUrlFetch,
+    startTemporalUpload,
+    confirmVariable,
+  } = useConversionJob();
+  const fileRef = useRef<{ name: string; size: string }>({
+    name: "",
+    size: "",
+  });
 
-  const isProcessing = state.isUploading || (state.jobId !== null && state.status !== "failed");
+  const isProcessing =
+    state.isUploading || (state.jobId !== null && state.status !== "failed");
 
   // Navigate on success
   useEffect(() => {
@@ -34,7 +43,7 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
       fileRef.current = { name: file.name, size: formatBytes(file.size) };
       startUpload(file);
     },
-    [startUpload],
+    [startUpload]
   );
 
   const handleFiles = useCallback(
@@ -47,15 +56,18 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
         startTemporalUpload(files);
       }
     },
-    [startTemporalUpload],
+    [startTemporalUpload]
   );
 
   const handleUrl = useCallback(
     (url: string) => {
-      fileRef.current = { name: url.split("/").pop() || "remote file", size: "" };
+      fileRef.current = {
+        name: url.split("/").pop() || "remote file",
+        size: "",
+      };
       startUrlFetch(url);
     },
-    [startUrlFetch],
+    [startUrlFetch]
   );
 
   const showUploader = !isProcessing && !state.scanResult;
@@ -68,8 +80,16 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
         <Text fontSize="13px" fontWeight={700} color="brand.brown">
           Upload a new file
         </Text>
-        <Button size="xs" variant="ghost" color="brand.textSecondary" _hover={{ color: "brand.brown" }} onClick={onCancel}>
-          <Flex align="center" gap={1.5}><ArrowLeft size={14} /> Back</Flex>
+        <Button
+          size="xs"
+          variant="ghost"
+          color="brand.textSecondary"
+          _hover={{ color: "brand.brown" }}
+          onClick={onCancel}
+        >
+          <Flex align="center" gap={1.5}>
+            <ArrowLeft size={14} /> Back
+          </Flex>
         </Button>
       </Flex>
 

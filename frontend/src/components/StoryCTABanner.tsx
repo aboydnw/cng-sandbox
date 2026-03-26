@@ -3,8 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { ArrowRight } from "@phosphor-icons/react";
-import { transition, cardHover, cardActive, focusRing } from "../lib/interactionStyles";
-import { createStory, createChapter, DEFAULT_LAYER_CONFIG } from "../lib/story/types";
+import {
+  transition,
+  cardHover,
+  cardActive,
+  focusRing,
+} from "../lib/interactionStyles";
+import {
+  createStory,
+  createChapter,
+  DEFAULT_LAYER_CONFIG,
+} from "../lib/story/types";
 import { createStoryOnServer } from "../lib/story/api";
 import type { Dataset } from "../types";
 import { cameraFromBounds } from "../lib/layers";
@@ -20,7 +29,13 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
   const handleCreate = useCallback(async () => {
     const cam = dataset.bounds ? cameraFromBounds(dataset.bounds) : null;
     const mapState = cam
-      ? { center: [cam.longitude, cam.latitude] as [number, number], zoom: cam.zoom, pitch: 0, bearing: 0, basemap: "streets" }
+      ? {
+          center: [cam.longitude, cam.latitude] as [number, number],
+          zoom: cam.zoom,
+          pitch: 0,
+          bearing: 0,
+          basemap: "streets",
+        }
       : undefined;
 
     const proseChapter = createChapter({
@@ -62,18 +77,37 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
       _active={cardActive}
       _focusVisible={focusRing}
     >
-      <Text fontSize="11px" textTransform="uppercase" letterSpacing="1px" color="brand.textSecondary" fontWeight={600}>
+      <Text
+        fontSize="11px"
+        textTransform="uppercase"
+        letterSpacing="1px"
+        color="brand.textSecondary"
+        fontWeight={600}
+      >
         What's next
       </Text>
       <Text fontSize="14px" color="brand.brown" fontWeight={700} mt={1}>
         Tell a story with this data
       </Text>
-      <Text fontSize="12px" color="brand.textSecondary" mt={1} mb={3} lineHeight="1.6">
-        Add annotations, narrative text, and guided map views to create a shareable data story.
+      <Text
+        fontSize="12px"
+        color="brand.textSecondary"
+        mt={1}
+        mb={3}
+        lineHeight="1.6"
+      >
+        Add annotations, narrative text, and guided map views to create a
+        shareable data story.
       </Text>
       <Flex align="center" gap={1.5}>
-        <Text fontSize="12px" color="brand.orange" fontWeight={600}>Create story</Text>
-        <ArrowRight size={12} weight="bold" color="var(--chakra-colors-brand-orange)" />
+        <Text fontSize="12px" color="brand.orange" fontWeight={600}>
+          Create story
+        </Text>
+        <ArrowRight
+          size={12}
+          weight="bold"
+          color="var(--chakra-colors-brand-orange)"
+        />
       </Flex>
     </Box>
   );

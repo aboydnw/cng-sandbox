@@ -8,7 +8,11 @@ interface BugReportLinkProps {
   datasetIds?: string[];
 }
 
-export function BugReportLink({ datasetId, storyId, datasetIds }: BugReportLinkProps) {
+export function BugReportLink({
+  datasetId,
+  storyId,
+  datasetIds,
+}: BugReportLinkProps) {
   const [open, setOpen] = useState(false);
 
   return (

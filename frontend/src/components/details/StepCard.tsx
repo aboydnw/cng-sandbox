@@ -78,7 +78,11 @@ export function StepCard({
               mt={2}
             >
               <Box>
-                <Text fontSize="9px" textTransform="uppercase" color="brand.textSecondary">
+                <Text
+                  fontSize="9px"
+                  textTransform="uppercase"
+                  color="brand.textSecondary"
+                >
                   {content.beforeAfter.beforeLabel}
                 </Text>
                 <Text fontWeight={700} fontSize="14px" color="brand.brown">
@@ -89,7 +93,11 @@ export function StepCard({
                 →
               </Text>
               <Box>
-                <Text fontSize="9px" textTransform="uppercase" color="brand.textSecondary">
+                <Text
+                  fontSize="9px"
+                  textTransform="uppercase"
+                  color="brand.textSecondary"
+                >
                   {content.beforeAfter.afterLabel}
                 </Text>
                 <Text fontWeight={700} fontSize="14px" color="brand.brown">

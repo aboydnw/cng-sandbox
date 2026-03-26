@@ -16,16 +16,31 @@ interface ExploreTabProps {
   onTableChange: (table: Table | null) => void;
 }
 
-export function ExploreTab({ dataset, active, onTableChange }: ExploreTabProps) {
-  const { db, conn, loading: duckdbLoading, error: duckdbError, initialize } = useDuckDB();
+export function ExploreTab({
+  dataset,
+  active,
+  onTableChange,
+}: ExploreTabProps) {
+  const {
+    db,
+    conn,
+    loading: duckdbLoading,
+    error: duckdbError,
+    initialize,
+  } = useDuckDB();
   const parquetUrl = dataset.parquet_url!;
-  const { result, loading: queryLoading, runQuery, loadInitial } = useGeoParquetQuery(conn, parquetUrl);
+  const {
+    result,
+    loading: queryLoading,
+    runQuery,
+    loadInitial,
+  } = useGeoParquetQuery(conn, parquetUrl);
 
   const handleSqlChange = useCallback(
     (sql: string) => {
       if (conn) runQuery(sql);
     },
-    [conn, runQuery],
+    [conn, runQuery]
   );
 
   const filterQuery = useFilterQuery({
@@ -63,9 +78,21 @@ export function ExploreTab({ dataset, active, onTableChange }: ExploreTabProps) 
 
   if (duckdbLoading) {
     return (
-      <Flex align="center" justify="center" h="200px" direction="column" gap={3}>
-        <SpinnerGap size={24} color="#CF3F02" style={{ animation: "spin 1s linear infinite" }} />
-        <Text fontSize="sm" color="gray.500">Loading DuckDB...</Text>
+      <Flex
+        align="center"
+        justify="center"
+        h="200px"
+        direction="column"
+        gap={3}
+      >
+        <SpinnerGap
+          size={24}
+          color="#CF3F02"
+          style={{ animation: "spin 1s linear infinite" }}
+        />
+        <Text fontSize="sm" color="gray.500">
+          Loading DuckDB...
+        </Text>
       </Flex>
     );
   }
@@ -89,13 +116,17 @@ export function ExploreTab({ dataset, active, onTableChange }: ExploreTabProps) 
       <Box mb={4}>
         <Text fontSize="2xl" fontWeight={700} lineHeight={1}>
           {queryLoading ? "..." : formatCount(result.filteredCount)}
-          {result.totalCount > 0 && result.filteredCount !== result.totalCount && (
-            <Text as="span" fontSize="sm" fontWeight={400} color="gray.500">
-              {" "}of {formatCount(result.totalCount)}
-            </Text>
-          )}
+          {result.totalCount > 0 &&
+            result.filteredCount !== result.totalCount && (
+              <Text as="span" fontSize="sm" fontWeight={400} color="gray.500">
+                {" "}
+                of {formatCount(result.totalCount)}
+              </Text>
+            )}
         </Text>
-        <Text fontSize="xs" color="gray.500">features</Text>
+        <Text fontSize="xs" color="gray.500">
+          features
+        </Text>
         {result.truncated && (
           <Text fontSize="xs" color="orange.500" mt={1}>
             Showing first 100,000 features. Add filters to narrow results.
@@ -139,7 +170,9 @@ export function ExploreTab({ dataset, active, onTableChange }: ExploreTabProps) 
           </Text>
           {result.columnStats.slice(0, 6).map((stat) => (
             <Box key={stat.name} mb={2}>
-              <Text fontSize="xs" fontWeight={500}>{stat.name}</Text>
+              <Text fontSize="xs" fontWeight={500}>
+                {stat.name}
+              </Text>
               {stat.type === "numeric" && (
                 <Text fontSize="2xs" color="gray.500">
                   {stat.min?.toLocaleString()} – {stat.max?.toLocaleString()}

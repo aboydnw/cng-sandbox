@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useParams, Navigate, useLocation } from "react-router-dom";
 import { setWorkspaceId } from "../lib/api";
 
@@ -40,11 +46,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceId(activeId);
   }, [activeId]);
 
-  const value = useMemo(() => ({
-    workspaceId: activeId,
-    isHomeWorkspace: activeId === localStorage.getItem(STORAGE_KEY),
-    workspacePath: (path: string) => `/w/${activeId}${path}`,
-  }), [activeId]);
+  const value = useMemo(
+    () => ({
+      workspaceId: activeId,
+      isHomeWorkspace: activeId === localStorage.getItem(STORAGE_KEY),
+      workspacePath: (path: string) => `/w/${activeId}${path}`,
+    }),
+    [activeId]
+  );
 
   return (
     <WorkspaceContext.Provider value={value}>
@@ -62,6 +71,7 @@ export function WorkspaceRedirect() {
 
 export function useWorkspace(): WorkspaceContextValue {
   const ctx = useContext(WorkspaceContext);
-  if (!ctx) throw new Error("useWorkspace must be used within WorkspaceProvider");
+  if (!ctx)
+    throw new Error("useWorkspace must be used within WorkspaceProvider");
   return ctx;
 }

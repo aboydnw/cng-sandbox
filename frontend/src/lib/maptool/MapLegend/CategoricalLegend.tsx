@@ -9,15 +9,31 @@ export function CategoricalLegend({ config }: CategoricalLegendProps) {
   const { categories, shape = "square" } = config;
 
   return (
-    <Box as="ul" listStyleType="none" m={0} p={0} display="flex" flexDirection="column" gap={1}>
+    <Box
+      as="ul"
+      listStyleType="none"
+      m={0}
+      p={0}
+      display="flex"
+      flexDirection="column"
+      gap={1}
+    >
       {categories.map((cat) => (
-        <Flex as="li" key={cat.value} alignItems="center" gap={2} fontSize="12px">
+        <Flex
+          as="li"
+          key={cat.value}
+          alignItems="center"
+          gap={2}
+          fontSize="12px"
+        >
           <Box
             display="inline-block"
             flexShrink={0}
             w={shape === "line" ? "16px" : "12px"}
             h={shape === "line" ? "2px" : "12px"}
-            rounded={shape === "circle" ? "full" : shape === "line" ? "full" : "sm"}
+            rounded={
+              shape === "circle" ? "full" : shape === "line" ? "full" : "sm"
+            }
             style={{ backgroundColor: cat.color }}
             aria-hidden="true"
           />

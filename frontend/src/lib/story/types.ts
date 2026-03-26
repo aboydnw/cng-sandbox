@@ -72,9 +72,7 @@ export const DEFAULT_MAP_STATE: MapState = {
   basemap: "streets",
 };
 
-export function createChapter(
-  overrides: Partial<Chapter> = {},
-): Chapter {
+export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
   return {
     id: uuid(),
     order: 0,
@@ -90,7 +88,7 @@ export function createChapter(
 
 export function createStory(
   datasetId?: string | null,
-  overrides: Partial<Story> = {},
+  overrides: Partial<Story> = {}
 ): Story {
   const chapter = datasetId
     ? createChapter({

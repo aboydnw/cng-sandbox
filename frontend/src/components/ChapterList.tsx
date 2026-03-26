@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
-import { CaretDown, CaretUp, DotsSixVertical, ListBullets, MapTrifold, Scroll, Plus, X } from "@phosphor-icons/react";
+import {
+  CaretDown,
+  CaretUp,
+  DotsSixVertical,
+  ListBullets,
+  MapTrifold,
+  Scroll,
+  Plus,
+  X,
+} from "@phosphor-icons/react";
 import type { ChapterType } from "../lib/story";
 import type { Chapter } from "../lib/story";
 import { CHAPTER_TYPE_LABELS } from "../lib/story/labels";
@@ -49,7 +58,10 @@ export function ChapterList({
   function moveChapter(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     const reordered = [...sorted];
-    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    [reordered[index], reordered[targetIndex]] = [
+      reordered[targetIndex],
+      reordered[index],
+    ];
     onReorder(reordered.map((ch, i) => ({ ...ch, order: i })));
   }
 
@@ -145,13 +157,31 @@ export function ChapterList({
                     <Text fontSize="13px" fontWeight={600} lineClamp={1}>
                       {i + 1}. {chapter.title}
                     </Text>
-                    <Flex fontSize="11px" opacity={0.7} lineClamp={1} mt={0.5} align="center" gap={1}>
-                      {({ scrollytelling: <Scroll size={11} />, prose: <ListBullets size={11} />, map: <MapTrifold size={11} /> } as Record<ChapterType, React.ReactNode>)[chapter.type]}
+                    <Flex
+                      fontSize="11px"
+                      opacity={0.7}
+                      lineClamp={1}
+                      mt={0.5}
+                      align="center"
+                      gap={1}
+                    >
+                      {
+                        (
+                          {
+                            scrollytelling: <Scroll size={11} />,
+                            prose: <ListBullets size={11} />,
+                            map: <MapTrifold size={11} />,
+                          } as Record<ChapterType, React.ReactNode>
+                        )[chapter.type]
+                      }
                       {CHAPTER_TYPE_LABELS[chapter.type]}
                       {chapter.narrative.trim() ? (
                         <> · {chapter.narrative.trim().slice(0, 40)}</>
                       ) : (
-                        <Text as="span" fontStyle="italic"> · No narrative yet</Text>
+                        <Text as="span" fontStyle="italic">
+                          {" "}
+                          · No narrative yet
+                        </Text>
                       )}
                     </Flex>
                   </Box>
@@ -183,7 +213,9 @@ export function ChapterList({
                       aria-disabled={i === sorted.length - 1}
                       _hover={i === sorted.length - 1 ? {} : { opacity: 1 }}
                       lineHeight={1}
-                      onClick={() => i < sorted.length - 1 && moveChapter(i, "down")}
+                      onClick={() =>
+                        i < sorted.length - 1 && moveChapter(i, "down")
+                      }
                     >
                       <CaretDown size={13} weight="bold" />
                     </Box>
@@ -229,7 +261,9 @@ export function ChapterList({
           onClick={onAdd}
           _hover={{ borderColor: "brand.orange", color: "brand.orange" }}
         >
-          <Flex align="center" gap={1.5} justify="center"><Plus size={12} weight="bold" /> Add chapter</Flex>
+          <Flex align="center" gap={1.5} justify="center">
+            <Plus size={12} weight="bold" /> Add chapter
+          </Flex>
         </Box>
       </Box>
     </Flex>

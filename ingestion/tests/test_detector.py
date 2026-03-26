@@ -3,8 +3,12 @@ import tempfile
 
 import pytest
 
-from src.services.detector import detect_format, validate_magic_bytes, UnsupportedFormatError
 from src.models import FormatPair
+from src.services.detector import (
+    UnsupportedFormatError,
+    detect_format,
+    validate_magic_bytes,
+)
 
 
 def test_detect_geotiff():
@@ -42,7 +46,9 @@ def test_validate_magic_bytes_geojson():
 
 def test_validate_magic_bytes_netcdf4_hdf5():
     """NetCDF4 files are HDF5-based; libmagic reports application/x-hdf5."""
-    nc_path = "/home/anthony/projects/map-app-builder/sandbox/sample-data/air.mon.mean.nc"
+    nc_path = (
+        "/home/anthony/projects/map-app-builder/sandbox/sample-data/air.mon.mean.nc"
+    )
     if os.path.isfile(nc_path):
         validate_magic_bytes(nc_path, FormatPair.NETCDF_TO_COG)
 

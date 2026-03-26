@@ -9,10 +9,21 @@ interface VariablePickerProps {
 export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
   return (
     <Box py={10} px={8} maxW="520px" mx="auto">
-      <Text color="brand.brown" fontSize="18px" fontWeight={700} mb={2} textAlign="center">
+      <Text
+        color="brand.brown"
+        fontSize="18px"
+        fontWeight={700}
+        mb={2}
+        textAlign="center"
+      >
         Choose a variable
       </Text>
-      <Text color="brand.textSecondary" fontSize="13px" mb={6} textAlign="center">
+      <Text
+        color="brand.textSecondary"
+        fontSize="13px"
+        mb={6}
+        textAlign="center"
+      >
         This file contains multiple raster variables. Select one to convert.
       </Text>
       <Flex direction="column" gap={2}>

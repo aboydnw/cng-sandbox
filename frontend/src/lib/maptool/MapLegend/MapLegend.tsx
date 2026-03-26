@@ -5,11 +5,14 @@ import { ContinuousRamp } from "./ContinuousRamp";
 import { LegendItem } from "./LegendItem";
 import type { MapLegendProps } from "./types";
 
-const POSITION_STYLES: Record<NonNullable<MapLegendProps["position"]>, object> = {
+const POSITION_STYLES: Record<
+  NonNullable<MapLegendProps["position"]>,
+  object
+> = {
   "top-left": { top: 2, left: 2 },
   "top-right": { top: 2, right: 2 },
   "bottom-left": { bottom: 8, left: 2 },
-  "bottom-right": { bottom: 8, right: 2 }
+  "bottom-right": { bottom: 8, right: 2 },
 };
 
 const collapseButtonStyle: React.CSSProperties = {
@@ -24,7 +27,7 @@ const collapseButtonStyle: React.CSSProperties = {
   color: "#6b7280",
   background: "none",
   border: "none",
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 export function MapLegend({
@@ -36,7 +39,7 @@ export function MapLegend({
   defaultCollapsed = false,
   headingLevel = 3,
   onLayerToggle,
-  className
+  className,
 }: MapLegendProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
@@ -70,14 +73,24 @@ export function MapLegend({
       ) : null}
 
       {!collapsed ? (
-        <Box id="maptool-legend-content" p={3} display="flex" flexDirection="column" gap={2}>
+        <Box
+          id="maptool-legend-content"
+          p={3}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+        >
           {layers.map((layer) => (
             <LegendItem
               key={layer.id}
               config={layer}
               collapsible={collapsibleItems}
               headingLevel={Math.min(headingLevel + 1, 6) as 3 | 4 | 5 | 6}
-              onToggle={layer.toggler && onLayerToggle ? (visible) => onLayerToggle(layer.id, visible) : undefined}
+              onToggle={
+                layer.toggler && onLayerToggle
+                  ? (visible) => onLayerToggle(layer.id, visible)
+                  : undefined
+              }
             >
               {layer.type === "continuous" ? (
                 <ContinuousRamp config={layer} orientation={orientation} />

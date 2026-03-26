@@ -47,7 +47,9 @@ def ingest_pmtiles(
     gdf.columns = [c.lower() for c in gdf.columns]
 
     if len(gdf) == 0:
-        raise ValueError(f"Dataset {dataset_id} has no features — cannot generate PMTiles")
+        raise ValueError(
+            f"Dataset {dataset_id} has no features — cannot generate PMTiles"
+        )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         geojson_path = os.path.join(tmpdir, "data.geojson")

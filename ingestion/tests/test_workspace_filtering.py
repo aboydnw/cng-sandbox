@@ -34,18 +34,27 @@ def seed_data(client, db_session_factory):
     session = db_session_factory()
 
     ds_a = DatasetRow(
-        id="ds-a", filename="a.tif", dataset_type="raster",
-        format_pair="geotiff-to-cog", tile_url="/tiles/a",
+        id="ds-a",
+        filename="a.tif",
+        dataset_type="raster",
+        format_pair="geotiff-to-cog",
+        tile_url="/tiles/a",
         workspace_id="aaaaaaaa",
     )
     ds_b = DatasetRow(
-        id="ds-b", filename="b.tif", dataset_type="raster",
-        format_pair="geotiff-to-cog", tile_url="/tiles/b",
+        id="ds-b",
+        filename="b.tif",
+        dataset_type="raster",
+        format_pair="geotiff-to-cog",
+        tile_url="/tiles/b",
         workspace_id="bbbbbbbb",
     )
     ds_orphan = DatasetRow(
-        id="ds-orphan", filename="orphan.tif", dataset_type="raster",
-        format_pair="geotiff-to-cog", tile_url="/tiles/orphan",
+        id="ds-orphan",
+        filename="orphan.tif",
+        dataset_type="raster",
+        format_pair="geotiff-to-cog",
+        tile_url="/tiles/orphan",
         workspace_id=None,
     )
     session.add_all([ds_a, ds_b, ds_orphan])

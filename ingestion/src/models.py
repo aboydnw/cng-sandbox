@@ -2,13 +2,13 @@
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     PENDING = "pending"
     SCANNING = "scanning"
     CONVERTING = "converting"
@@ -18,12 +18,12 @@ class JobStatus(str, Enum):
     FAILED = "failed"
 
 
-class DatasetType(str, Enum):
+class DatasetType(StrEnum):
     RASTER = "raster"
     VECTOR = "vector"
 
 
-class FormatPair(str, Enum):
+class FormatPair(StrEnum):
     GEOTIFF_TO_COG = "geotiff-to-cog"
     SHAPEFILE_TO_GEOPARQUET = "shapefile-to-geoparquet"
     GEOJSON_TO_GEOPARQUET = "geojson-to-geoparquet"
@@ -51,7 +51,11 @@ class FormatPair(str, Enum):
 
     @property
     def dataset_type(self) -> DatasetType:
-        if self in (FormatPair.GEOTIFF_TO_COG, FormatPair.NETCDF_TO_COG, FormatPair.HDF5_TO_COG):
+        if self in (
+            FormatPair.GEOTIFF_TO_COG,
+            FormatPair.NETCDF_TO_COG,
+            FormatPair.HDF5_TO_COG,
+        ):
             return DatasetType.RASTER
         return DatasetType.VECTOR
 
@@ -64,7 +68,7 @@ class ValidationCheck(BaseModel):
 
 class Timestep(BaseModel):
     datetime: str  # ISO 8601 UTC
-    index: int     # 0-based position in temporal order
+    index: int  # 0-based position in temporal order
 
 
 class Job(BaseModel):
@@ -79,7 +83,7 @@ class Job(BaseModel):
     validation_results: list[ValidationCheck] = []
     progress_current: int | None = None
     progress_total: int | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     # Variable selection (HDF5/NetCDF scan flow)
     variable: str | None = None
     group: str | None = None
@@ -95,13 +99,15 @@ class Dataset(BaseModel):
     tile_url: str
     bounds: list[float] | None = None  # [west, south, east, north]
     band_count: int | None = None  # raster only; None for vector
-    band_names: list[str] | None = None        # raster only; from src.descriptions
+    band_names: list[str] | None = None  # raster only; from src.descriptions
     color_interpretation: list[str] | None = None  # raster only; from src.colorinterp
-    dtype: str | None = None                    # raster only; from src.dtypes[0]
-    original_file_size: int | None = None    # bytes, captured before conversion
-    converted_file_size: int | None = None   # bytes, output file in S3
-    geoparquet_file_size: int | None = None  # bytes, GeoParquet before PMTiles conversion
-    feature_count: int | None = None         # vector only; None for raster
+    dtype: str | None = None  # raster only; from src.dtypes[0]
+    original_file_size: int | None = None  # bytes, captured before conversion
+    converted_file_size: int | None = None  # bytes, output file in S3
+    geoparquet_file_size: int | None = (
+        None  # bytes, GeoParquet before PMTiles conversion
+    )
+    feature_count: int | None = None  # vector only; None for raster
     geometry_types: list[str] | None = None  # frequency-sorted; None for raster
     min_zoom: int | None = None
     max_zoom: int | None = None

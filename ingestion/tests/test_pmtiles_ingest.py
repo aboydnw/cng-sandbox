@@ -1,9 +1,9 @@
 import subprocess
 
+import boto3
 import geopandas as gpd
 import pytest
 from moto import mock_aws
-import boto3
 from shapely.geometry import Polygon
 
 from src.services.pmtiles_ingest import get_pmtiles_tile_url, ingest_pmtiles
@@ -76,7 +76,9 @@ def test_ingest_pmtiles_calls_tippecanoe_with_required_flags(
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    tile_url, min_zoom, max_zoom, file_size = ingest_pmtiles("abc-123", polygon_parquet, _storage=mock_storage)
+    tile_url, min_zoom, max_zoom, file_size = ingest_pmtiles(
+        "abc-123", polygon_parquet, _storage=mock_storage
+    )
 
     assert len(calls) == 1
     cmd = calls[0]
@@ -92,10 +94,9 @@ def test_ingest_pmtiles_calls_tippecanoe_with_required_flags(
     assert file_size == 102
 
 
-def test_ingest_pmtiles_uploads_to_storage(
-    monkeypatch, polygon_parquet, mock_storage
-):
+def test_ingest_pmtiles_uploads_to_storage(monkeypatch, polygon_parquet, mock_storage):
     """ingest_pmtiles uploads the generated .pmtiles file to storage."""
+
     def fake_run(cmd, **kwargs):
         output_flag = next(f for f in cmd if f.startswith("--output="))
         output_path = output_flag.split("=", 1)[1]
@@ -118,6 +119,7 @@ def test_ingest_pmtiles_raises_on_tippecanoe_failure(
     monkeypatch, polygon_parquet, mock_storage
 ):
     """ingest_pmtiles raises RuntimeError when tippecanoe exits non-zero."""
+
     def fake_run(cmd, **kwargs):
         return subprocess.CompletedProcess(cmd, 1, "", "tippecanoe: fatal error")
 
@@ -133,8 +135,11 @@ def test_ingest_pmtiles_raises_on_empty_dataset(empty_parquet, mock_storage):
         ingest_pmtiles("abc-123", empty_parquet, _storage=mock_storage)
 
 
-def test_ingest_pmtiles_returns_zoom_range_and_size(monkeypatch, polygon_parquet, mock_storage):
+def test_ingest_pmtiles_returns_zoom_range_and_size(
+    monkeypatch, polygon_parquet, mock_storage
+):
     """ingest_pmtiles returns (tile_url, min_zoom, max_zoom, file_size)."""
+
     def fake_run(cmd, **kwargs):
         output_flag = next(f for f in cmd if f.startswith("--output="))
         output_path = output_flag.split("=", 1)[1]
@@ -142,7 +147,9 @@ def test_ingest_pmtiles_returns_zoom_range_and_size(monkeypatch, polygon_parquet
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    _, min_zoom, max_zoom, file_size = ingest_pmtiles("abc-123", polygon_parquet, _storage=mock_storage)
+    _, min_zoom, max_zoom, file_size = ingest_pmtiles(
+        "abc-123", polygon_parquet, _storage=mock_storage
+    )
     assert min_zoom == 3
     assert max_zoom == 12
     assert file_size == 102
@@ -151,6 +158,7 @@ def test_ingest_pmtiles_returns_zoom_range_and_size(monkeypatch, polygon_parquet
 def test_read_pmtiles_zoom_range(tmp_path):
     """_read_pmtiles_zoom_range reads min/max zoom from a valid PMTiles header."""
     from src.services.pmtiles_ingest import _read_pmtiles_zoom_range
+
     header = bytearray(102)
     header[:7] = b"PMTiles"
     header[7] = 3
@@ -164,6 +172,7 @@ def test_read_pmtiles_zoom_range(tmp_path):
 
 def test_read_pmtiles_zoom_range_invalid_file(tmp_path):
     from src.services.pmtiles_ingest import _read_pmtiles_zoom_range
+
     path = str(tmp_path / "bad.pmtiles")
     with open(path, "wb") as f:
         f.write(b"NOTVALID")

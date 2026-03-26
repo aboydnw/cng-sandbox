@@ -1,7 +1,10 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { Scroll, Article, MapTrifold } from "@phosphor-icons/react";
 import type { ChapterType } from "../lib/story";
-import { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "../lib/story/labels";
+import {
+  CHAPTER_TYPE_LABELS,
+  CHAPTER_TYPE_DESCRIPTIONS,
+} from "../lib/story/labels";
 
 const CHAPTER_TYPES: ChapterType[] = ["scrollytelling", "prose", "map"];
 
@@ -36,7 +39,11 @@ export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
           <Box color={value === type ? "brand.orange" : "gray.400"} mb={1.5}>
             {ICONS[type]}
           </Box>
-          <Text fontSize="13px" fontWeight={600} color={value === type ? "brand.brown" : "gray.700"}>
+          <Text
+            fontSize="13px"
+            fontWeight={600}
+            color={value === type ? "brand.brown" : "gray.700"}
+          >
             {CHAPTER_TYPE_LABELS[type]}
           </Text>
           <Text fontSize="11px" color="gray.500" lineHeight="1.3">

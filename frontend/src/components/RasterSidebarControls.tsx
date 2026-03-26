@@ -41,14 +41,23 @@ export function RasterSidebarControls({
 }: RasterSidebarControlsProps) {
   return (
     <Box>
-      <Text fontSize="11px" color="brand.textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing="1px" mb={3}>
+      <Text
+        fontSize="11px"
+        color="brand.textSecondary"
+        fontWeight={600}
+        textTransform="uppercase"
+        letterSpacing="1px"
+        mb={3}
+      >
         Visualization Controls
       </Text>
 
       {/* Band selector */}
       {showBands && bands && bands.length > 0 && (
         <Box mb={3}>
-          <Text fontSize="11px" color="brand.textSecondary" mb={1}>Band</Text>
+          <Text fontSize="11px" color="brand.textSecondary" mb={1}>
+            Band
+          </Text>
           <NativeSelect.Root size="sm">
             <NativeSelect.Field
               value={String(selectedBand)}
@@ -67,7 +76,9 @@ export function RasterSidebarControls({
             >
               {hasRgb && <option value="rgb">RGB</option>}
               {bands.map((b) => (
-                <option key={b.index} value={b.index}>{b.name}</option>
+                <option key={b.index} value={b.index}>
+                  {b.name}
+                </option>
               ))}
             </NativeSelect.Field>
           </NativeSelect.Root>
@@ -77,7 +88,9 @@ export function RasterSidebarControls({
       {/* Colormap selector */}
       {showColormap && (
         <Box mb={3}>
-          <Text fontSize="11px" color="brand.textSecondary" mb={1}>Colormap</Text>
+          <Text fontSize="11px" color="brand.textSecondary" mb={1}>
+            Colormap
+          </Text>
           <NativeSelect.Root size="sm">
             <NativeSelect.Field
               value={colormapName}
@@ -92,7 +105,9 @@ export function RasterSidebarControls({
               _hover={{ borderColor: "brand.orange" }}
             >
               {COLORMAP_NAMES.map((name) => (
-                <option key={name} value={name}>{name}</option>
+                <option key={name} value={name}>
+                  {name}
+                </option>
               ))}
             </NativeSelect.Field>
           </NativeSelect.Root>
@@ -102,8 +117,12 @@ export function RasterSidebarControls({
       {/* Opacity slider */}
       <Box mb={3}>
         <Flex justify="space-between" mb={1}>
-          <Text fontSize="11px" color="brand.textSecondary">Opacity</Text>
-          <Text fontSize="11px" color="brand.textSecondary">{Math.round(opacity * 100)}%</Text>
+          <Text fontSize="11px" color="brand.textSecondary">
+            Opacity
+          </Text>
+          <Text fontSize="11px" color="brand.textSecondary">
+            {Math.round(opacity * 100)}%
+          </Text>
         </Flex>
         <input
           type="range"
@@ -121,8 +140,12 @@ export function RasterSidebarControls({
         <Box mb={3}>
           <Flex justify="space-between" align="center">
             <Box>
-              <Text fontSize="11px" color="brand.textSecondary">Client-side rendering</Text>
-              <Text fontSize="10px" color="brand.textSecondary">Reads COG directly in browser</Text>
+              <Text fontSize="11px" color="brand.textSecondary">
+                Client-side rendering
+              </Text>
+              <Text fontSize="10px" color="brand.textSecondary">
+                Reads COG directly in browser
+              </Text>
             </Box>
             <Box
               as="button"
@@ -132,7 +155,11 @@ export function RasterSidebarControls({
               bg={renderMode === "client" ? "brand.orange" : "brand.border"}
               position="relative"
               cursor="pointer"
-              onClick={() => onRenderModeChange(renderMode === "client" ? "server" : "client")}
+              onClick={() =>
+                onRenderModeChange(
+                  renderMode === "client" ? "server" : "client"
+                )
+              }
             >
               <Box
                 position="absolute"

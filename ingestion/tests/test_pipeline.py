@@ -7,8 +7,12 @@ from shapely.geometry import Point, Polygon
 
 from src.models import DatasetType, FormatPair
 from src.services.pipeline import (
-    _detect_use_pmtiles, _extract_band_metadata, _extract_feature_stats,
-    _extract_zoom_range_raster, get_credits, validate_geojson_structure,
+    _detect_use_pmtiles,
+    _extract_band_metadata,
+    _extract_feature_stats,
+    _extract_zoom_range_raster,
+    get_credits,
+    validate_geojson_structure,
 )
 
 
@@ -103,7 +107,10 @@ def test_extract_feature_stats_mixed_types(mixed_parquet):
 
 def test_extract_feature_stats_empty(tmp_path):
     import geopandas as gpd
-    gdf = gpd.GeoDataFrame({"name": []}, geometry=gpd.GeoSeries([], dtype="geometry"), crs="EPSG:4326")
+
+    gdf = gpd.GeoDataFrame(
+        {"name": []}, geometry=gpd.GeoSeries([], dtype="geometry"), crs="EPSG:4326"
+    )
     path = str(tmp_path / "empty.parquet")
     gdf.to_parquet(path)
     count, types = _extract_feature_stats(path)
@@ -119,9 +126,14 @@ def test_extract_zoom_range_raster(tmp_path):
     transform = from_bounds(0, 0, 1, 1, 256, 256)
     path = str(tmp_path / "test.tif")
     with rasterio.open(
-        path, "w", driver="GTiff",
-        height=256, width=256, count=1,
-        dtype=np.uint8, crs="EPSG:4326",
+        path,
+        "w",
+        driver="GTiff",
+        height=256,
+        width=256,
+        count=1,
+        dtype=np.uint8,
+        crs="EPSG:4326",
         transform=transform,
     ) as dst:
         dst.write(np.zeros((1, 256, 256), dtype=np.uint8))
@@ -148,8 +160,15 @@ def single_band_tif(tmp_path):
     data = np.random.rand(64, 64).astype("float32")
     transform = from_bounds(-180, -90, 180, 90, 64, 64)
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64,
-        count=1, dtype="float32", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data, 1)
         dst.set_band_description(1, "Precipitation")
@@ -162,8 +181,15 @@ def rgb_tif(tmp_path):
     data = np.random.randint(0, 255, (3, 64, 64), dtype="uint8")
     transform = from_bounds(-180, -90, 180, 90, 64, 64)
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64,
-        count=3, dtype="uint8", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=3,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
         photometric="RGB",
     ) as dst:
         dst.write(data)
@@ -176,8 +202,15 @@ def no_description_tif(tmp_path):
     data = np.random.rand(2, 64, 64).astype("float32")
     transform = from_bounds(-180, -90, 180, 90, 64, 64)
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64,
-        count=2, dtype="float32", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=2,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data)
     return path
@@ -224,12 +257,20 @@ def test_valid_geojson_accepted():
 def test_cog_url_built_for_raster():
     converted_key = "datasets/abc-123/converted/data.tif"
     format_pair = FormatPair.GEOTIFF_TO_COG
-    cog_url = f"/storage/{converted_key}" if format_pair.dataset_type == DatasetType.RASTER else None
+    cog_url = (
+        f"/storage/{converted_key}"
+        if format_pair.dataset_type == DatasetType.RASTER
+        else None
+    )
     assert cog_url == "/storage/datasets/abc-123/converted/data.tif"
 
 
 def test_cog_url_none_for_vector():
     converted_key = "datasets/abc-123/converted/data.parquet"
     format_pair = FormatPair.GEOJSON_TO_GEOPARQUET
-    cog_url = f"/storage/{converted_key}" if format_pair.dataset_type == DatasetType.RASTER else None
+    cog_url = (
+        f"/storage/{converted_key}"
+        if format_pair.dataset_type == DatasetType.RASTER
+        else None
+    )
     assert cog_url is None

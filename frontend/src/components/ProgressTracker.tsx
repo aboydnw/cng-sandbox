@@ -33,7 +33,11 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
   if (status === "active") {
     return (
       <Flex align="center" justify="center" w={size} h={size} flexShrink={0}>
-        <SpinnerGap size={16} color="var(--chakra-colors-brand-orange)" style={{ animation: "spin 1s linear infinite" }} />
+        <SpinnerGap
+          size={16}
+          color="var(--chakra-colors-brand-orange)"
+          style={{ animation: "spin 1s linear infinite" }}
+        />
       </Flex>
     );
   }
@@ -66,9 +70,21 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
   );
 }
 
-export function ProgressTracker({ stages, filename, fileSize, onRetry, onReport, embedded }: ProgressTrackerProps) {
+export function ProgressTracker({
+  stages,
+  filename,
+  fileSize,
+  onRetry,
+  onReport,
+  embedded,
+}: ProgressTrackerProps) {
   return (
-    <Flex direction="column" align={embedded ? "flex-start" : "center"} py={embedded ? 4 : 14} px={embedded ? 0 : 8}>
+    <Flex
+      direction="column"
+      align={embedded ? "flex-start" : "center"}
+      py={embedded ? 4 : 14}
+      px={embedded ? 0 : 8}
+    >
       <Text color="brand.brown" fontSize="18px" fontWeight={700} mb={1}>
         Processing {filename}
       </Text>
@@ -78,7 +94,13 @@ export function ProgressTracker({ stages, filename, fileSize, onRetry, onReport,
 
       <Box w="100%" maxW="400px">
         {stages.map((stage, i) => (
-          <Flex key={stage.name} align="flex-start" gap={3} mb={i < stages.length - 1 ? 6 : 0} position="relative">
+          <Flex
+            key={stage.name}
+            align="flex-start"
+            gap={3}
+            mb={i < stages.length - 1 ? 6 : 0}
+            position="relative"
+          >
             <StageIcon status={stage.status} />
             <Box pt="3px">
               <Text
@@ -92,13 +114,19 @@ export function ProgressTracker({ stages, filename, fileSize, onRetry, onReport,
                         : "#bbb"
                 }
                 fontSize="14px"
-                fontWeight={stage.status === "active" || stage.status === "error" ? 700 : 600}
+                fontWeight={
+                  stage.status === "active" || stage.status === "error"
+                    ? 700
+                    : 600
+                }
               >
                 {stage.name}
               </Text>
               {stage.detail && (
                 <Text
-                  color={stage.status === "error" ? "red.500" : "brand.textSecondary"}
+                  color={
+                    stage.status === "error" ? "red.500" : "brand.textSecondary"
+                  }
                   fontSize="12px"
                 >
                   {stage.detail}

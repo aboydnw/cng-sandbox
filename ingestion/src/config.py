@@ -23,13 +23,19 @@ class Settings(BaseSettings):
     public_vector_tiler_url: str = "http://localhost:8083"
 
     # PostgreSQL (for vector ingest via geopandas)
-    postgres_dsn: str = "postgresql://sandbox:sandbox_dev_password@localhost:5439/postgis"
+    postgres_dsn: str = (
+        "postgresql://sandbox:sandbox_dev_password@localhost:5439/postgis"
+    )
 
     # Upload limits
     max_upload_bytes: int = 16_106_127_360  # 15 GB
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost:5185"]
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:5185",
+    ]
 
     # GitHub bug reporting
     github_token: str = ""

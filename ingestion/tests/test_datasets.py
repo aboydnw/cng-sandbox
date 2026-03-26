@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from sqlalchemy import inspect
 
 
@@ -13,9 +15,11 @@ def test_list_datasets_empty(client):
 
 
 def test_list_datasets_with_data(client, db_engine):
-    from src.models.dataset import DatasetRow
+    from datetime import datetime
+
     from sqlalchemy.orm import sessionmaker
-    from datetime import datetime, timezone
+
+    from src.models.dataset import DatasetRow
 
     session = sessionmaker(bind=db_engine)()
     row = DatasetRow(
@@ -25,7 +29,7 @@ def test_list_datasets_with_data(client, db_engine):
         format_pair="geotiff-to-cog",
         tile_url="/raster/collections/sandbox-ds-001/tiles/{z}/{x}/{y}",
         metadata_json="{}",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         workspace_id="testABCD",
     )
     session.add(row)
@@ -47,9 +51,11 @@ def test_get_dataset_not_found(client):
 
 
 def test_delete_dataset_endpoint(client, db_engine):
-    from src.models.dataset import DatasetRow
+    from datetime import datetime
+
     from sqlalchemy.orm import sessionmaker
-    from datetime import datetime, timezone
+
+    from src.models.dataset import DatasetRow
 
     session = sessionmaker(bind=db_engine)()
     row = DatasetRow(
@@ -59,7 +65,7 @@ def test_delete_dataset_endpoint(client, db_engine):
         format_pair="geotiff-to-cog",
         tile_url="/raster/collections/sandbox-ds-del/tiles/{z}/{x}/{y}",
         metadata_json='{"stac_collection_id": "sandbox-ds-del"}',
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         workspace_id="testABCD",
     )
     session.add(row)
@@ -81,36 +87,59 @@ def test_delete_dataset_not_found(client):
 
 
 def test_delete_dataset_reports_affected_stories(client, db_engine):
+    import json
+    from datetime import datetime
+
+    from sqlalchemy.orm import sessionmaker
+
     from src.models.dataset import DatasetRow
     from src.models.story import StoryRow
-    from sqlalchemy.orm import sessionmaker
-    from datetime import datetime, timezone
-    import json
 
     session = sessionmaker(bind=db_engine)()
-    session.add(DatasetRow(
-        id="ds-ref",
-        filename="referenced.tif",
-        dataset_type="raster",
-        format_pair="geotiff-to-cog",
-        tile_url="/raster/tiles/{z}/{x}/{y}",
-        metadata_json="{}",
-        created_at=datetime.now(timezone.utc),
-        workspace_id="testABCD",
-    ))
-    session.add(StoryRow(
-        id="story-1",
-        title="Test Story",
-        dataset_id="ds-ref",
-        chapters_json=json.dumps([{
-            "id": "ch-1", "order": 0, "title": "Ch1", "narrative": "text",
-            "map_state": {"center": [0, 0], "zoom": 2, "bearing": 0, "pitch": 0, "basemap": "streets"},
-            "transition": "fly-to",
-            "layer_config": {"dataset_id": "ds-ref", "colormap": "viridis", "opacity": 1},
-        }]),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    ))
+    session.add(
+        DatasetRow(
+            id="ds-ref",
+            filename="referenced.tif",
+            dataset_type="raster",
+            format_pair="geotiff-to-cog",
+            tile_url="/raster/tiles/{z}/{x}/{y}",
+            metadata_json="{}",
+            created_at=datetime.now(UTC),
+            workspace_id="testABCD",
+        )
+    )
+    session.add(
+        StoryRow(
+            id="story-1",
+            title="Test Story",
+            dataset_id="ds-ref",
+            chapters_json=json.dumps(
+                [
+                    {
+                        "id": "ch-1",
+                        "order": 0,
+                        "title": "Ch1",
+                        "narrative": "text",
+                        "map_state": {
+                            "center": [0, 0],
+                            "zoom": 2,
+                            "bearing": 0,
+                            "pitch": 0,
+                            "basemap": "streets",
+                        },
+                        "transition": "fly-to",
+                        "layer_config": {
+                            "dataset_id": "ds-ref",
+                            "colormap": "viridis",
+                            "opacity": 1,
+                        },
+                    }
+                ]
+            ),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+    )
     session.commit()
     session.close()
 

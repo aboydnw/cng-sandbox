@@ -19,7 +19,9 @@ export function detectCadence(datetimes: string[]): Cadence {
   const sorted = [...datetimes].sort();
   const diffs: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
-    diffs.push(new Date(sorted[i]).getTime() - new Date(sorted[i - 1]).getTime());
+    diffs.push(
+      new Date(sorted[i]).getTime() - new Date(sorted[i - 1]).getTime()
+    );
   }
 
   const median = diffs.sort((a, b) => a - b)[Math.floor(diffs.length / 2)];
@@ -32,7 +34,9 @@ function detectBaseCadence(datetimes: string[]): Cadence {
   const sorted = [...datetimes].sort();
   const diffs: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
-    diffs.push(new Date(sorted[i]).getTime() - new Date(sorted[i - 1]).getTime());
+    diffs.push(
+      new Date(sorted[i]).getTime() - new Date(sorted[i - 1]).getTime()
+    );
   }
 
   const minDiff = Math.min(...diffs);
@@ -106,9 +110,25 @@ export function isSubDaily(datetimes: string[]): boolean {
   return diff < MS_DAY;
 }
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
-export function formatTimestepLabel(datetime: string, cadence: Cadence): string {
+export function formatTimestepLabel(
+  datetime: string,
+  cadence: Cadence
+): string {
   const d = new Date(datetime);
   switch (cadence) {
     case "annual":

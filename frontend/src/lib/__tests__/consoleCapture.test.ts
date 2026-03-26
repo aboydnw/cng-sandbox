@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { initConsoleCapture, getRecentLogs, clearLogs } from "../consoleCapture";
+import {
+  initConsoleCapture,
+  getRecentLogs,
+  clearLogs,
+} from "../consoleCapture";
 
 let cleanup: (() => void) | undefined;
 

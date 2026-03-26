@@ -33,7 +33,9 @@ def test_upload_converted_file(storage):
         f.write(b"fake cog data")
         path = f.name
     try:
-        key = storage.upload_converted(path, dataset_id="abc-123", filename="output.tif")
+        key = storage.upload_converted(
+            path, dataset_id="abc-123", filename="output.tif"
+        )
         assert key == "datasets/abc-123/converted/output.tif"
     finally:
         os.unlink(path)
@@ -44,7 +46,9 @@ def test_get_presigned_url(storage):
         f.write(b"data")
         path = f.name
     try:
-        key = storage.upload_converted(path, dataset_id="abc-123", filename="output.tif")
+        key = storage.upload_converted(
+            path, dataset_id="abc-123", filename="output.tif"
+        )
         url = storage.get_presigned_url(key)
         assert "abc-123" in url
         assert "output.tif" in url

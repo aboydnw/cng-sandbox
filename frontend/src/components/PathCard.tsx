@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
-import { EASE_OUT_EXPO, cardHover, cardActive, focusRing, transition } from "../lib/interactionStyles";
+import {
+  EASE_OUT_EXPO,
+  cardHover,
+  cardActive,
+  focusRing,
+  transition,
+} from "../lib/interactionStyles";
 
 interface PathCardProps {
   icon: ReactNode;
@@ -70,7 +76,12 @@ export function PathCard({
                 <ArrowLeft size={18} />
               </Box>
             )}
-            <Text fontSize="16px" fontWeight={700} color="brand.brown" letterSpacing="-0.02em">
+            <Text
+              fontSize="16px"
+              fontWeight={700}
+              color="brand.brown"
+              letterSpacing="-0.02em"
+            >
               {title}
             </Text>
           </Flex>
@@ -79,7 +90,13 @@ export function PathCard({
       ) : faded ? (
         <Flex direction="column" align="center" justify="center" py={8} px={4}>
           <Box mb={2}>{icon}</Box>
-          <Text fontSize="13px" fontWeight={600} color="brand.brown" textAlign="center" letterSpacing="-0.02em">
+          <Text
+            fontSize="13px"
+            fontWeight={600}
+            color="brand.brown"
+            textAlign="center"
+            letterSpacing="-0.02em"
+          >
             {title}
           </Text>
         </Flex>
@@ -92,13 +109,31 @@ export function PathCard({
           textAlign="center"
         >
           <Box mb={3}>{icon}</Box>
-          <Text fontSize="17px" fontWeight={700} color="brand.brown" mb={2} letterSpacing="-0.02em">
+          <Text
+            fontSize="17px"
+            fontWeight={700}
+            color="brand.brown"
+            mb={2}
+            letterSpacing="-0.02em"
+          >
             {title}
           </Text>
-          <Text fontSize="13px" color="brand.textSecondary" mb={6} maxW="240px" lineHeight={1.5}>
+          <Text
+            fontSize="13px"
+            color="brand.textSecondary"
+            mb={6}
+            maxW="240px"
+            lineHeight={1.5}
+          >
             {description}
           </Text>
-          <Flex align="center" gap={1.5} color="brand.orange" fontSize="14px" fontWeight={600}>
+          <Flex
+            align="center"
+            gap={1.5}
+            color="brand.orange"
+            fontSize="14px"
+            fontWeight={600}
+          >
             {ctaLabel} <ArrowRight size={14} weight="bold" />
           </Flex>
         </Flex>

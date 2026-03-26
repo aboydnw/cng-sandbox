@@ -1,21 +1,35 @@
 """Pipeline orchestrator for temporal (multi-file) raster uploads."""
 
 import asyncio
+import contextlib
 import logging
 import os
 import tempfile
 
 from src.models import (
-    Dataset, DatasetType, FormatPair, Job, JobStatus, Timestep, ValidationCheck,
+    Dataset,
+    DatasetType,
+    FormatPair,
+    Job,
+    JobStatus,
+    Timestep,
+    ValidationCheck,
 )
-from src.services.detector import detect_format, validate_magic_bytes
-from src.services.storage import StorageService
 from src.services import stac_ingest
-from src.services.temporal_ordering import order_files, common_filename_prefix
-from src.services.temporal_validation import validate_cross_file_compatibility, compute_global_stats
+from src.services.detector import detect_format, validate_magic_bytes
 from src.services.pipeline import (
-    _import_and_convert, _import_and_validate, _extract_bounds,
-    _extract_band_metadata, _extract_zoom_range_raster, get_credits,
+    _extract_band_metadata,
+    _extract_bounds,
+    _extract_zoom_range_raster,
+    _import_and_convert,
+    _import_and_validate,
+    get_credits,
+)
+from src.services.storage import StorageService
+from src.services.temporal_ordering import common_filename_prefix, order_files
+from src.services.temporal_validation import (
+    compute_global_stats,
+    validate_cross_file_compatibility,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,7 +57,7 @@ async def run_temporal_pipeline(
         job.progress_total = len(ordered)
 
         # Build a filename-to-input-path lookup
-        path_by_filename = dict(zip(filenames, input_paths))
+        path_by_filename = dict(zip(filenames, input_paths, strict=False))
 
         with tempfile.TemporaryDirectory() as tmpdir:
             cog_paths: list[str] = []
@@ -63,7 +77,9 @@ async def run_temporal_pipeline(
 
                 if fp.dataset_type != DatasetType.RASTER:
                     job.status = JobStatus.FAILED
-                    job.error = f"Temporal pipelines only support raster files, got {fp.value}"
+                    job.error = (
+                        f"Temporal pipelines only support raster files, got {fp.value}"
+                    )
                     return
 
                 if format_pair is None:
@@ -80,12 +96,16 @@ async def run_temporal_pipeline(
                 job.status = JobStatus.CONVERTING
                 out_filename = os.path.splitext(entry.filename)[0] + ".tif"
                 output_path = os.path.join(tmpdir, out_filename)
-                await asyncio.to_thread(_import_and_convert, fp, input_path, output_path)
+                await asyncio.to_thread(
+                    _import_and_convert, fp, input_path, output_path
+                )
                 cog_paths.append(output_path)
 
                 # Validate
                 job.status = JobStatus.VALIDATING
-                check_results = await asyncio.to_thread(_import_and_validate, fp, input_path, output_path)
+                check_results = await asyncio.to_thread(
+                    _import_and_validate, fp, input_path, output_path
+                )
                 last_validation_results = [
                     ValidationCheck(name=c.name, passed=c.passed, detail=c.detail)
                     for c in check_results
@@ -95,7 +115,9 @@ async def run_temporal_pipeline(
                 failed = [c for c in check_results if not c.passed]
                 if failed:
                     details = "; ".join(f"{c.name}: {c.detail}" for c in failed)
-                    logger.warning("Validation failed for %s: %s", entry.filename, details)
+                    logger.warning(
+                        "Validation failed for %s: %s", entry.filename, details
+                    )
                     job.status = JobStatus.FAILED
                     job.error = f"Validation failed for {entry.filename}: {details}"
                     _cleanup_uploaded(storage, uploaded_keys)
@@ -103,7 +125,9 @@ async def run_temporal_pipeline(
 
             # Stage 3: Cross-file validation
             job.status = JobStatus.VALIDATING
-            cross_errors = await asyncio.to_thread(validate_cross_file_compatibility, cog_paths)
+            cross_errors = await asyncio.to_thread(
+                validate_cross_file_compatibility, cog_paths
+            )
             if cross_errors:
                 job.status = JobStatus.FAILED
                 job.error = "; ".join(cross_errors)
@@ -111,20 +135,28 @@ async def run_temporal_pipeline(
                 return
 
             # Stage 4: Compute global stats
-            raster_min, raster_max = await asyncio.to_thread(compute_global_stats, cog_paths)
+            raster_min, raster_max = await asyncio.to_thread(
+                compute_global_stats, cog_paths
+            )
 
             # Stage 5: Extract metadata from first COG
             first_cog = cog_paths[0]
-            bounds = await asyncio.to_thread(_extract_bounds, first_cog, DatasetType.RASTER)
+            bounds = await asyncio.to_thread(
+                _extract_bounds, first_cog, DatasetType.RASTER
+            )
             band_meta = await asyncio.to_thread(_extract_band_metadata, first_cog)
-            min_zoom, max_zoom = await asyncio.to_thread(_extract_zoom_range_raster, first_cog)
+            min_zoom, max_zoom = await asyncio.to_thread(
+                _extract_zoom_range_raster, first_cog
+            )
 
             # Stage 6: Ingest
             job.status = JobStatus.INGESTING
 
             s3_hrefs: list[str] = []
             converted_file_size = 0
-            for i, (entry, cog_path) in enumerate(zip(ordered, cog_paths)):
+            for i, (_entry, cog_path) in enumerate(
+                zip(ordered, cog_paths, strict=False)
+            ):
                 cog_filename = os.path.basename(cog_path)
                 key = f"datasets/{job.dataset_id}/timesteps/{i}/{cog_filename}"
                 storage.s3.upload_file(cog_path, storage.bucket, key)
@@ -177,6 +209,7 @@ async def run_temporal_pipeline(
                 created_at=job.created_at,
             )
             from src.models.dataset import persist_dataset
+
             persist_dataset(db_session_factory, dataset)
 
     except Exception as e:
@@ -189,7 +222,5 @@ async def run_temporal_pipeline(
 def _cleanup_uploaded(storage: StorageService, keys: list[str]) -> None:
     """Best-effort removal of already-uploaded S3 objects."""
     for key in keys:
-        try:
+        with contextlib.suppress(Exception):
             storage.s3.delete_object(Bucket=storage.bucket, Key=key)
-        except Exception:
-            pass

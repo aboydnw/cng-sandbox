@@ -7,8 +7,8 @@ import time
 from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from src.state import jobs
 from src.models import JobStatus
+from src.state import jobs
 
 router = APIRouter(prefix="/api")
 
@@ -46,7 +46,9 @@ async def stream_job(job_id: str):
                 last_status = current_snapshot
                 data = {
                     "status": job.status.value,
-                    "validation_results": [v.model_dump() for v in job.validation_results],
+                    "validation_results": [
+                        v.model_dump() for v in job.validation_results
+                    ],
                 }
                 if job.error:
                     data["error"] = job.error

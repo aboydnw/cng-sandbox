@@ -37,7 +37,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     transitionInterpolator,
     interactive = true,
   },
-  ref,
+  ref
 ) {
   const handleViewStateChange = useCallback(
     ({ viewState }: { viewState: any }) => {
@@ -49,7 +49,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         pitch: viewState.pitch ?? 0,
       });
     },
-    [onCameraChange],
+    [onCameraChange]
   );
 
   const views = useMemo(() => new MapView({ repeat: true }), []);

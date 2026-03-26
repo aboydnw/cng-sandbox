@@ -31,11 +31,12 @@ export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!isOpen) return;
-      if (e.key === "ArrowRight" && activeStep < totalSteps) setActiveStep((s) => s + 1);
+      if (e.key === "ArrowRight" && activeStep < totalSteps)
+        setActiveStep((s) => s + 1);
       if (e.key === "ArrowLeft" && activeStep > 1) setActiveStep((s) => s - 1);
       if (e.key === "Escape") onClose();
     },
-    [isOpen, activeStep, totalSteps, onClose],
+    [isOpen, activeStep, totalSteps, onClose]
   );
 
   useEffect(() => {
@@ -44,13 +45,19 @@ export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
   }, [handleKeyDown]);
 
   const allSteps = useMemo(
-    () => Array.from({ length: totalSteps }, (_, i) => getStepContent(dataset, i + 1)),
-    [dataset, totalSteps],
+    () =>
+      Array.from({ length: totalSteps }, (_, i) =>
+        getStepContent(dataset, i + 1)
+      ),
+    [dataset, totalSteps]
   );
 
   if (!isOpen) return null;
 
-  const stepSummaries = allSteps.map((s) => ({ label: s.label, subtitle: s.subtitle }));
+  const stepSummaries = allSteps.map((s) => ({
+    label: s.label,
+    subtitle: s.subtitle,
+  }));
   const currentContent = allSteps[activeStep - 1];
   const prevContent = activeStep > 1 ? allSteps[activeStep - 2] : null;
   const nextContent = activeStep < totalSteps ? allSteps[activeStep] : null;
@@ -115,7 +122,9 @@ export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
           stepNumber={activeStep}
           totalSteps={totalSteps}
           onPrev={activeStep > 1 ? () => setActiveStep((s) => s - 1) : null}
-          onNext={activeStep < totalSteps ? () => setActiveStep((s) => s + 1) : null}
+          onNext={
+            activeStep < totalSteps ? () => setActiveStep((s) => s + 1) : null
+          }
           prevLabel={prevContent?.label ?? null}
           nextLabel={nextContent?.label ?? null}
         />

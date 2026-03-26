@@ -3,12 +3,13 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine as sa_create_engine
 from sqlalchemy.orm import sessionmaker
+
 from src.config import get_settings
 from src.models.base import Base
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
@@ -22,12 +23,13 @@ async def _cleanup_scans():
     """Remove expired scan entries every 5 minutes."""
     while True:
         await asyncio.sleep(300)
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+        cutoff = datetime.now(UTC) - timedelta(minutes=30)
         async with scan_store_lock:
             expired = [
-                sid for sid, entry in scan_store.items()
+                sid
+                for sid, entry in scan_store.items()
                 if entry.get("state") == "waiting"
-                and entry.get("created_at", datetime.now(timezone.utc)) < cutoff
+                and entry.get("created_at", datetime.now(UTC)) < cutoff
             ]
             for sid in expired:
                 del scan_store[sid]
@@ -85,11 +87,12 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     async def health():
         return {"status": "ok"}
 
-    from src.routes.upload import router as upload_router
-    from src.routes.jobs import router as jobs_router
-    from src.routes.datasets import router as datasets_router
-    from src.routes.stories import router as stories_router
     from src.routes.bug_report import router as bug_report_router
+    from src.routes.datasets import router as datasets_router
+    from src.routes.jobs import router as jobs_router
+    from src.routes.stories import router as stories_router
+    from src.routes.upload import router as upload_router
+
     app.include_router(upload_router)
     app.include_router(jobs_router)
     app.include_router(datasets_router)

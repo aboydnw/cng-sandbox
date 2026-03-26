@@ -43,14 +43,17 @@ async function localEpsgResolver(epsg: number) {
 function padToAlignment(
   src: Uint8Array,
   width: number,
-  height: number,
+  height: number
 ): Uint8Array {
   const rowBytes = width;
   const alignedRowBytes = Math.ceil(rowBytes / 4) * 4;
   if (alignedRowBytes === rowBytes) return src;
   const dst = new Uint8Array(alignedRowBytes * height);
   for (let r = 0; r < height; r++) {
-    dst.set(src.subarray(r * rowBytes, (r + 1) * rowBytes), r * alignedRowBytes);
+    dst.set(
+      src.subarray(r * rowBytes, (r + 1) * rowBytes),
+      r * alignedRowBytes
+    );
   }
   return dst;
 }
@@ -156,7 +159,7 @@ export function buildCogLayer({
         continue;
       }
       uint8[i] = Math.round(
-        Math.max(0, Math.min(255, ((v - rasterMin) / range) * 255)),
+        Math.max(0, Math.min(255, ((v - rasterMin) / range) * 255))
       );
     }
 

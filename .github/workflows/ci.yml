@@ -30,6 +30,9 @@ jobs:
       - name: Lint with ruff
         run: pip install ruff && ruff check src/ tests/
 
+      - name: Check formatting with ruff
+        run: ruff format --check src/ tests/
+
       - name: Run tests
         run: python -m pytest tests/ -v --ignore=tests/test_integration.py
 
@@ -49,6 +52,9 @@ jobs:
 
       - name: Lint
         run: npx eslint src/
+
+      - name: Check formatting
+        run: npx prettier --check 'src/**/*.{ts,tsx,css}'
 
       - run: npx tsc --noEmit
 

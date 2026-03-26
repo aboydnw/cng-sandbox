@@ -20,19 +20,30 @@ export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
       scrollyGroup.push(ch);
     } else {
       if (scrollyGroup.length > 0) {
-        blocks.push({ type: "scrollytelling", chapters: scrollyGroup, startIndex: scrollyStartIndex });
+        blocks.push({
+          type: "scrollytelling",
+          chapters: scrollyGroup,
+          startIndex: scrollyStartIndex,
+        });
         scrollyGroup = [];
       }
       blocks.push({ type: ch.type, chapter: ch, index: i });
     }
   }
   if (scrollyGroup.length > 0) {
-    blocks.push({ type: "scrollytelling", chapters: scrollyGroup, startIndex: scrollyStartIndex });
+    blocks.push({
+      type: "scrollytelling",
+      chapters: scrollyGroup,
+      startIndex: scrollyStartIndex,
+    });
   }
   return blocks;
 }
 
-export function buildLayersForChapter(chapter: Chapter, datasetMap: Map<string, Dataset | null>) {
+export function buildLayersForChapter(
+  chapter: Chapter,
+  datasetMap: Map<string, Dataset | null>
+) {
   const ds = datasetMap.get(chapter.layer_config.dataset_id);
   if (!ds) return [];
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;

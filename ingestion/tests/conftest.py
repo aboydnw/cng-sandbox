@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import tempfile
 from contextlib import asynccontextmanager
 
@@ -45,7 +45,9 @@ def app(db_engine):
 
 @pytest.fixture
 def client(app):
-    return TestClient(app, raise_server_exceptions=False, headers={"X-Workspace-Id": "testABCD"})
+    return TestClient(
+        app, raise_server_exceptions=False, headers={"X-Workspace-Id": "testABCD"}
+    )
 
 
 @pytest.fixture
@@ -57,8 +59,13 @@ def synthetic_geotiff():
         path = f.name
 
     with rasterio.open(
-        path, "w", driver="GTiff",
-        width=64, height=64, count=1, dtype="float32",
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="float32",
         crs="EPSG:4326",
         transform=from_bounds(-10, -10, 10, 10, 64, 64),
         nodata=-9999.0,

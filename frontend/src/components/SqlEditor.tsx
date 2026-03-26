@@ -41,7 +41,9 @@ export function SqlEditor({
           {expanded ? "▼" : "▶"} SQL
         </Text>
         {isCustomMode && (
-          <Badge colorPalette="orange" size="sm">Custom SQL</Badge>
+          <Badge colorPalette="orange" size="sm">
+            Custom SQL
+          </Badge>
         )}
       </Flex>
 

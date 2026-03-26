@@ -4,7 +4,9 @@ import { workspaceFetch } from "../api";
 
 const BASE = `${config.apiBase}/api/stories`;
 
-export async function createStoryOnServer(story: Omit<Story, "id" | "created_at">): Promise<Story> {
+export async function createStoryOnServer(
+  story: Omit<Story, "id" | "created_at">
+): Promise<Story> {
   const resp = await workspaceFetch(BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

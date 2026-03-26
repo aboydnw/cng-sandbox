@@ -38,7 +38,7 @@ export function PublishDialog({
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   const incompleteChapters = story.chapters.filter(
-    (ch) => !ch.narrative.trim(),
+    (ch) => !ch.narrative.trim()
   );
   const hasIncomplete = incompleteChapters.length > 0;
 
@@ -64,11 +64,17 @@ export function PublishDialog({
   }
 
   return (
-    <DialogRoot open={open} onOpenChange={(e) => !e.open && handleClose()} size="md">
+    <DialogRoot
+      open={open}
+      onOpenChange={(e) => !e.open && handleClose()}
+      size="md"
+    >
       <DialogBackdrop />
       <DialogContent shadow="lg">
         <DialogHeader>
-          <DialogTitle>{published ? "Story published" : "Publish story"}</DialogTitle>
+          <DialogTitle>
+            {published ? "Story published" : "Publish story"}
+          </DialogTitle>
           <CloseButton size="sm" onClick={handleClose} />
         </DialogHeader>
 
@@ -86,16 +92,29 @@ export function PublishDialog({
               </Box>
 
               <Box>
-                <Text fontSize="xs" fontWeight={600} color="gray.500" mb={2} textTransform="uppercase" letterSpacing="wider">
+                <Text
+                  fontSize="xs"
+                  fontWeight={600}
+                  color="gray.500"
+                  mb={2}
+                  textTransform="uppercase"
+                  letterSpacing="wider"
+                >
                   Chapters
                 </Text>
                 <Flex direction="column" gap={1.5}>
                   {story.chapters.map((ch) => {
                     const hasNarrative = ch.narrative.trim().length > 0;
                     const isProse = ch.type === "prose";
-                    const hasMap = ch.type !== "prose" && !!ch.layer_config.dataset_id;
+                    const hasMap =
+                      ch.type !== "prose" && !!ch.layer_config.dataset_id;
                     return (
-                      <Flex key={ch.id} align="center" gap={2} justify="space-between">
+                      <Flex
+                        key={ch.id}
+                        align="center"
+                        gap={2}
+                        justify="space-between"
+                      >
                         <Text fontSize="sm" truncate maxW="60%">
                           {ch.title || "Untitled chapter"}
                         </Text>
@@ -153,7 +172,14 @@ export function PublishDialog({
                 </Text>
               </Flex>
               <Box>
-                <Text fontSize="xs" fontWeight={600} color="gray.500" mb={1.5} textTransform="uppercase" letterSpacing="wider">
+                <Text
+                  fontSize="xs"
+                  fontWeight={600}
+                  color="gray.500"
+                  mb={1.5}
+                  textTransform="uppercase"
+                  letterSpacing="wider"
+                >
                   Shareable URL
                 </Text>
                 <Flex gap={2}>
@@ -167,7 +193,12 @@ export function PublishDialog({
                     bg="gray.50"
                     onClick={() => urlInputRef.current?.select()}
                   />
-                  <Button size="sm" variant="outline" onClick={handleCopy} flexShrink={0}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopy}
+                    flexShrink={0}
+                  >
                     {copied ? (
                       <CheckCircle size={14} weight="fill" />
                     ) : (

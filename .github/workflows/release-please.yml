@@ -3,25 +3,26 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         id: app-token
         if: ${{ vars.RELEASE_BOT_ID != '' }}
         with:
           app-id: ${{ vars.RELEASE_BOT_ID }}
-          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }} # zizmor: ignore[secrets-outside-env]
 
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
         id: release
         with:
           config-file: release-please-config.json

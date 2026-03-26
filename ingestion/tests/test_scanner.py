@@ -98,3 +98,29 @@ def test_scan_single_var_netcdf(single_var_netcdf):
     variables = scan_netcdf(single_var_netcdf)
     assert len(variables) == 1
     assert variables[0]["name"] == "temperature"
+
+
+def test_scan_hdf5_flags_complex_variables(tmp_path):
+    import h5py
+
+    from src.services.scanner import scan_hdf5
+
+    path = tmp_path / "complex.h5"
+    with h5py.File(path, "w") as f:
+        grp = f.create_group("science/LSAR/GSLC/grids/frequencyA")
+        grp.create_dataset("HH", data=np.zeros((50, 40), dtype=np.complex64))
+        grp.create_dataset("VV", data=np.zeros((50, 40), dtype=np.float32))
+
+    variables = scan_hdf5(str(path))
+    hh = next(v for v in variables if v["name"] == "HH")
+    vv = next(v for v in variables if v["name"] == "VV")
+    assert hh["is_complex"] is True
+    assert vv["is_complex"] is False
+
+
+def test_scan_hdf5_real_variables_not_complex(sample_hdf5):
+    from src.services.scanner import scan_hdf5
+
+    variables = scan_hdf5(sample_hdf5)
+    for v in variables:
+        assert v["is_complex"] is False

@@ -74,6 +74,7 @@ export interface ScannedVariable {
   group: string;
   shape: number[];
   dtype: string;
+  is_complex?: boolean;
 }
 
 export interface ScanResult {

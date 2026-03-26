@@ -48,6 +48,7 @@ export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
             )}
             <Text fontSize="12px" color="#999" mt={1}>
               {v.shape.join(" × ")} · {v.dtype}
+              {v.is_complex && " (magnitude will be extracted)"}
             </Text>
           </Box>
         ))}

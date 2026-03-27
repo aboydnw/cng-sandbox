@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(docker compose down*)",
+      "Bash(DROP *)",
+      "Bash(DELETE FROM*)"
+    ]
+  }
+}

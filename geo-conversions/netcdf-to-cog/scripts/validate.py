@@ -58,6 +58,11 @@ def _detect_grid_mapping(ds, variable: str | None = None):
     gm_name = gm.attrs.get("grid_mapping_name", "")
 
     if gm_name == "geostationary":
+        required = ["perspective_point_height", "longitude_of_projection_origin",
+                     "sweep_angle_axis", "semi_major_axis", "semi_minor_axis"]
+        missing = [attr for attr in required if attr not in gm.attrs]
+        if missing:
+            raise ValueError(f"Geostationary grid_mapping missing attributes: {missing}")
         h = float(gm.attrs["perspective_point_height"])
         lon_0 = float(gm.attrs["longitude_of_projection_origin"])
         sweep = str(gm.attrs["sweep_angle_axis"])
@@ -226,6 +231,7 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
         lons = np.array(lons)
         lats = np.array(lats)
 
+        # Reprojection resampling introduces interpolation differences
         tolerance = 0.5
         with rasterio.open(output_path) as cog:
             cog_nodata = cog.nodata

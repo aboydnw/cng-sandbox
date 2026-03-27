@@ -66,7 +66,7 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 | Bounds match | COG bounds contain NetCDF cell centers |
 | Dimensions | Pixel width/height match NetCDF grid |
 | Band count | Exactly 1 band |
-| Pixel fidelity | 1000 random samples, max diff < 1e-4 |
+| Pixel fidelity | 1000 random samples, max diff < 1e-4 (geographic) or < 0.5 (reprojected) |
 | NoData defined | nodata value is set |
 | Overviews | >= 3 internal overview levels |
 

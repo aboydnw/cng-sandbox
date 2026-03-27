@@ -33,6 +33,25 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 import xarray as xr
 
 
+def _write_cog(src_path: str, dst_path: str, compression: str, verbose: bool):
+    """Translate a GeoTIFF to a Cloud-Optimized GeoTIFF."""
+    try:
+        output_profile = cog_profiles.get(compression.lower())
+    except KeyError:
+        output_profile = cog_profiles.get("deflate")
+    output_profile["blockxsize"] = 512
+    output_profile["blockysize"] = 512
+
+    if verbose:
+        print(f"Writing COG with {compression} compression...")
+
+    cog_translate(
+        src_path, dst_path, output_profile,
+        overview_level=6, overview_resampling="nearest",
+        quiet=not verbose,
+    )
+
+
 def _detect_crs(ds, da):
     """Detect CRS from CF grid_mapping conventions.
 
@@ -186,21 +205,7 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
                 data = np.where(np.isnan(data), nodata, data)
                 dst.write(data, 1)
 
-            try:
-                output_profile = cog_profiles.get(compression.lower())
-            except KeyError:
-                output_profile = cog_profiles.get("deflate")
-            output_profile["blockxsize"] = 512
-            output_profile["blockysize"] = 512
-
-            if verbose:
-                print(f"Writing COG with {compression} compression...")
-
-            cog_translate(
-                tmp_path, output_path, output_profile,
-                overview_level=6, overview_resampling="nearest",
-                quiet=not verbose,
-            )
+            _write_cog(tmp_path, output_path, compression, verbose)
         finally:
             os.unlink(tmp_path)
 
@@ -276,21 +281,7 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
             if verbose:
                 print(f"Reprojected to EPSG:4326 ({dst_width}x{dst_height})")
 
-            try:
-                output_profile = cog_profiles.get(compression.lower())
-            except KeyError:
-                output_profile = cog_profiles.get("deflate")
-            output_profile["blockxsize"] = 512
-            output_profile["blockysize"] = 512
-
-            if verbose:
-                print(f"Writing COG with {compression} compression...")
-
-            cog_translate(
-                reprojected_path, output_path, output_profile,
-                overview_level=6, overview_resampling="nearest",
-                quiet=not verbose,
-            )
+            _write_cog(reprojected_path, output_path, compression, verbose)
 
     ds.close()
     size_mb = os.path.getsize(output_path) / (1024 * 1024)

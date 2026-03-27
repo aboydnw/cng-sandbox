@@ -13,16 +13,20 @@ interface UnifiedMapProps {
   layers: Layer[];
   basemap: string;
   onBasemapChange: (basemap: string) => void;
-  onHover?: (info: unknown) => void;
-  onClick?: (info: unknown) => void;
-  getTooltip?: (info: unknown) => unknown;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onHover?: (info: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onClick?: (info: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getTooltip?: (info: any) => any;
   children?: React.ReactNode;
   transitionDuration?: number;
   transitionInterpolator?: FlyToInterpolator;
   interactive?: boolean;
 }
 
-export const UnifiedMap = forwardRef<unknown, UnifiedMapProps>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const UnifiedMap = forwardRef<any, UnifiedMapProps>(
   function UnifiedMap(
     {
       camera,

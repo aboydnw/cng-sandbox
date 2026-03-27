@@ -31,7 +31,7 @@ describe("createStoryOnServer", () => {
     });
 
     const result = await createStoryOnServer(
-      story as Parameters<typeof createStoryOnServer>[0]
+      story as unknown as Parameters<typeof createStoryOnServer>[0]
     );
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/stories",
@@ -72,7 +72,9 @@ describe("saveStoryToServer", () => {
       json: () => Promise.resolve(story),
     });
 
-    await saveStoryToServer(story as Parameters<typeof saveStoryToServer>[0]);
+    await saveStoryToServer(
+      story as unknown as Parameters<typeof saveStoryToServer>[0]
+    );
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/stories/s-1",
       expect.objectContaining({ method: "PATCH" })

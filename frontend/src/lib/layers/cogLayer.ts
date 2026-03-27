@@ -203,6 +203,7 @@ export function buildCogLayer({
     { module: ViridisColorize },
   ];
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return [
     new COGLayer({
       id: "direct-cog-layer",
@@ -210,8 +211,9 @@ export function buildCogLayer({
       opacity,
       getTileData,
       renderTile,
-    } as unknown),
+    } as any),
   ];
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export { localEpsgResolver };

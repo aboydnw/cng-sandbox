@@ -77,7 +77,7 @@ export function usePixelInspector(
       }
       hoverRafRef.current = requestAnimationFrame(() => {
         hoverRafRef.current = null;
-        const [lng, lat] = info.coordinate;
+        const [lng, lat] = info.coordinate!;
         const value = lookupValue(tileCacheRef.current, lng, lat);
         if (value === null) {
           setHoverInfo(null);

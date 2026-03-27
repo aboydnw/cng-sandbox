@@ -112,7 +112,7 @@ describe("migrateStory", () => {
       updated_at: "2026-01-01T00:00:00Z",
       published: false,
     };
-    const result = migrateStory(modern);
+    const result = migrateStory(modern as unknown as Record<string, unknown>);
     expect(result.chapters[0].layer_config.dataset_id).toBe("ds-1");
     expect(result.chapters[1].layer_config.dataset_id).toBe("ds-2");
     expect(result.dataset_ids).toEqual(["ds-1", "ds-2"]);
@@ -134,7 +134,7 @@ describe("migrateStory", () => {
 
   it("preserves existing chapter type", () => {
     const old = makeOldStory();
-    old.chapters[0].type = "prose";
+    (old.chapters as Record<string, unknown>[])[0].type = "prose";
     const migrated = migrateStory(old);
     expect(migrated.chapters[0].type).toBe("prose");
     expect(migrated.chapters[1].type).toBe("scrollytelling");

@@ -4,7 +4,9 @@ export function migrateStory(story: Record<string, unknown>): Story {
   const chapters = (
     (story.chapters as Record<string, unknown>[] | undefined) ?? []
   ).map((ch: Record<string, unknown>) => {
-    const lc = { ...(ch.layer_config ?? {}) };
+    const lc: Record<string, unknown> = {
+      ...(ch.layer_config as Record<string, unknown> | undefined),
+    };
     if (!lc.dataset_id) {
       lc.dataset_id = story.dataset_id;
     }
@@ -14,19 +16,22 @@ export function migrateStory(story: Record<string, unknown>): Story {
   const chapterDatasetIds = chapters
     .map(
       (ch: Record<string, unknown>) =>
-        (ch.layer_config as Record<string, unknown>).dataset_id
+        (ch.layer_config as Record<string, unknown>).dataset_id as
+          | string
+          | undefined
     )
-    .filter((id: string) => id);
+    .filter((id): id is string => Boolean(id));
   const uniqueIds = [...new Set<string>(chapterDatasetIds)];
 
   const dataset_ids =
-    story.dataset_ids && story.dataset_ids.length > 0
-      ? story.dataset_ids
+    (story.dataset_ids as string[] | undefined) &&
+    (story.dataset_ids as string[]).length > 0
+      ? (story.dataset_ids as string[])
       : uniqueIds.length > 0
         ? uniqueIds
         : story.dataset_id
-          ? [story.dataset_id]
+          ? [story.dataset_id as string]
           : [];
 
-  return { ...story, chapters, dataset_ids };
+  return { ...story, chapters, dataset_ids } as unknown as Story;
 }

@@ -75,8 +75,11 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 - **NetCDF4 / HDF5 MIME type rejection**: NetCDF4 files are built on the HDF5 format. `libmagic` (used by the sandbox ingestion service for magic-byte validation) reports their MIME type as `application/x-hdf5`, not `application/x-netcdf`. The sandbox detector's MIME whitelist for `netcdf-to-cog` must include `application/x-hdf5` alongside `application/x-netcdf` and `application/x-hdf`. Without it, every real-world NetCDF4 file (NCEP reanalysis, ERA5, etc.) is rejected at the scan step with "does not match expected format". Fix: add `application/x-hdf5` to `_MIME_WHITELIST[FormatPair.NETCDF_TO_COG]` in `sandbox/ingestion/src/services/detector.py`.
 - **Geostationary x/y not scaled to meters**: Satellite files using geostationary projection store x/y as scanning angles in radians. If these are not multiplied by `perspective_point_height` before building the affine transform, the data appears as a tiny dot near (0,0) with bounds of ~0.15 degrees. The converter handles this automatically, but any code reading geostationary NetCDF coordinates directly must apply this scaling.
 
+- **Single-band float COGs need `rescale` for colormap rendering**: NetCDF→COG always produces single-band float32 output. Applying `colormap_name` (e.g. `viridis`) on titiler without `rescale` returns 500 with "arrays used as indices must be of integer (or boolean) type". Raw float values can't index into a 256-entry colormap. Fix: pass `rescale=min,max` alongside `colormap_name`. Use p2/p98 percentiles for a good visual range. The validate script now reports recommended rescale values via `check_rendering_metadata`.
+
 ## Changelog
 
+- 2026-03-27: Added `check_rendering_metadata` advisory check and `run_advisory_checks` pattern — reports recommended rescale range for tile server colormap rendering. Documented rescale failure mode.
 - 2026-03-27: Add geostationary projection detection and reprojection to EPSG:4326; update validator for projected sources; add geostationary self-test.
 - 2026-03-14: Document NetCDF4/HDF5 MIME type rejection failure mode.
 - 2026-03-13: Initial implementation — xarray + rio-cogeo pipeline with 8-check validator and self-test.

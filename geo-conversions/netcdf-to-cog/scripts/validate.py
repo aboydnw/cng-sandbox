@@ -314,6 +314,39 @@ def check_nodata_present(output_path: str) -> CheckResult:
         return CheckResult("NoData defined", False, "No nodata value set")
 
 
+def check_rendering_metadata(output_path: str) -> CheckResult:
+    """Advisory: flag COGs that need special tile-server parameters for rendering.
+
+    NetCDF→COG always produces single-band float32 output. Tile servers like
+    titiler need `rescale=min,max` when using `colormap_name`, otherwise they
+    return 500 ("arrays used as indices must be of integer type"). This check
+    computes p2/p98 percentiles as the recommended rescale range.
+    """
+    with rasterio.open(output_path) as dst:
+        dtype = dst.dtypes[0]
+        if dtype == "uint8":
+            return CheckResult(
+                "Rendering metadata", True,
+                "Single-band uint8. Tile server can apply colormap_name without rescale."
+            )
+
+        data = dst.read(1)
+        valid = data[data != dst.nodata] if dst.nodata is not None else data
+        valid = valid[~np.isnan(valid)]
+        if valid.size == 0:
+            return CheckResult(
+                "Rendering metadata", False,
+                "All pixels are nodata — cannot compute rescale range."
+            )
+        p2 = float(np.percentile(valid, 2))
+        p98 = float(np.percentile(valid, 98))
+        return CheckResult(
+            "Rendering metadata", True,
+            f"Single-band {dtype}. Tile server needs rescale={p2:.4f},{p98:.4f} "
+            f"(p2/p98) when applying colormap_name."
+        )
+
+
 def check_overviews(output_path: str, min_levels: int = 3) -> CheckResult:
     """Check that internal overviews are present."""
     with rasterio.open(output_path) as dst:
@@ -488,10 +521,25 @@ def run_checks(input_path: str, output_path: str, variable: str | None = None,
     ]
 
 
+def run_advisory_checks(output_path: str) -> list[CheckResult]:
+    """Run advisory downstream-compatibility checks.
+
+    These checks do NOT indicate data corruption — the COG is valid. They flag
+    characteristics that require special handling by downstream consumers
+    (e.g. tile servers, web map viewers).
+    """
+    return [
+        check_rendering_metadata(output_path),
+    ]
+
+
 def run_validation(input_path: str, output_path: str, variable: str | None = None,
                    time_index: int = 0) -> bool:
     """Run all validation checks and print report."""
-    results = run_checks(input_path, output_path, variable=variable, time_index=time_index)
+    results = (
+        run_checks(input_path, output_path, variable=variable, time_index=time_index)
+        + run_advisory_checks(output_path)
+    )
     return print_report(results)
 
 

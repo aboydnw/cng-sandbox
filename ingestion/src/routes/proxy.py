@@ -1,11 +1,13 @@
 """Proxy endpoint for external resources that may not support CORS."""
 
+import ipaddress
 import logging
-from urllib.parse import unquote
+import socket
+from urllib.parse import unquote, urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +15,38 @@ router = APIRouter(prefix="/api")
 
 ALLOWED_EXTENSIONS = (".pmtiles", ".tif", ".tiff")
 
+MAX_RESPONSE_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
+def _sanitize_url_for_log(url: str) -> str:
+    """Strip query parameters to avoid logging credentials."""
+    return url.split("?")[0]
+
+
+def _is_private_ip(hostname: str) -> bool:
+    """Reject requests to private/loopback/link-local addresses (SSRF mitigation)."""
+    try:
+        for info in socket.getaddrinfo(hostname, None):
+            addr = ipaddress.ip_address(info[4][0])
+            if addr.is_private or addr.is_loopback or addr.is_link_local:
+                return True
+    except socket.gaierror:
+        return True
+    return False
+
 
 @router.get("/proxy")
 async def proxy_resource(url: str, request: Request):
     decoded = unquote(url)
     if not decoded.startswith("https://"):
         raise HTTPException(status_code=400, detail="Only HTTPS URLs are supported")
+
+    parsed = urlparse(decoded)
+    if not parsed.hostname:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    if _is_private_ip(parsed.hostname):
+        raise HTTPException(status_code=400, detail="Private addresses are not allowed")
 
     path = decoded.split("?")[0].lower()
     if not any(path.endswith(ext) for ext in ALLOWED_EXTENSIONS):
@@ -29,30 +57,41 @@ async def proxy_resource(url: str, request: Request):
     if range_header:
         headers["Range"] = range_header
 
+    safe_url = _sanitize_url_for_log(decoded)
+
     async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
         try:
-            resp = await client.get(decoded, headers=headers)
+            resp = await client.send(
+                client.build_request("GET", decoded, headers=headers),
+                stream=True,
+            )
         except httpx.RequestError as e:
-            logger.error("Proxy request failed for %s: %s", decoded, e)
-            raise HTTPException(status_code=502, detail=str(e)) from e
+            logger.error("Proxy request failed for %s: %s", safe_url, e)
+            raise HTTPException(
+                status_code=502, detail="Upstream request failed"
+            ) from e
 
     if resp.status_code >= 400:
-        logger.error("Upstream returned %d for %s", resp.status_code, decoded)
+        await resp.aclose()
+        logger.error("Upstream returned %d for %s", resp.status_code, safe_url)
         raise HTTPException(status_code=resp.status_code, detail="Upstream error")
 
-    body = resp.content
-    response_headers = {
-        "accept-ranges": "bytes",
-        "content-length": str(len(body)),
-    }
+    content_length = resp.headers.get("content-length")
+    if content_length and int(content_length) > MAX_RESPONSE_BYTES:
+        await resp.aclose()
+        raise HTTPException(status_code=413, detail="Response too large")
+
+    response_headers: dict[str, str] = {"accept-ranges": "bytes"}
     if "content-type" in resp.headers:
         response_headers["content-type"] = resp.headers["content-type"]
     if "content-range" in resp.headers:
         response_headers["content-range"] = resp.headers["content-range"]
+    if content_length:
+        response_headers["content-length"] = content_length
 
     status = 206 if "content-range" in response_headers else 200
-    return Response(
-        content=body,
+    return StreamingResponse(
+        content=resp.aiter_bytes(chunk_size=64 * 1024),
         status_code=status,
         headers=response_headers,
     )

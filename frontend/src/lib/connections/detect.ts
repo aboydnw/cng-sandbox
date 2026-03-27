@@ -11,6 +11,9 @@ export function detectConnectionType(url: string): ConnectionType | null {
     return "pmtiles";
   }
   if (url.includes("{z}") && url.includes("{x}") && url.includes("{y}")) {
+    if (path.endsWith(".mvt") || path.endsWith(".pbf")) {
+      return "xyz_vector";
+    }
     return "xyz_raster";
   }
   return null;

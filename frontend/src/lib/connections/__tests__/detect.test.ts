@@ -24,10 +24,16 @@ describe("detectConnectionType", () => {
     ).toBe("xyz_raster");
   });
 
-  it("detects alternate XYZ placeholders", () => {
+  it("detects .mvt XYZ as xyz_vector", () => {
     expect(
       detectConnectionType("https://tiles.example.com/{z}/{x}/{y}.mvt")
-    ).toBe("xyz_raster");
+    ).toBe("xyz_vector");
+  });
+
+  it("detects .pbf XYZ as xyz_vector", () => {
+    expect(
+      detectConnectionType("https://tiles.example.com/{z}/{x}/{y}.pbf")
+    ).toBe("xyz_vector");
   });
 
   it("returns null for unknown URLs", () => {

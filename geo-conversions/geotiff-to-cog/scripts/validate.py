@@ -211,7 +211,13 @@ def check_rendering_metadata(output_path: str) -> CheckResult:
 
         if bands == 1:
             data = dst.read(1)
-            valid = data[data != dst.nodata] if dst.nodata is not None else data
+            if dst.nodata is not None:
+                if np.isnan(dst.nodata):
+                    valid = data[~np.isnan(data)]
+                else:
+                    valid = data[data != dst.nodata]
+            else:
+                valid = data
             if valid.size == 0:
                 return CheckResult(
                     "Rendering metadata", False,

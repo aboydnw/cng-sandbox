@@ -105,7 +105,6 @@ export default function MapPage() {
   useEffect(() => {
     async function fetchDataset() {
       if (isConnectionRoute) {
-        setLoading(false);
         return;
       }
       try {
@@ -591,7 +590,10 @@ export default function MapPage() {
                 onOpacityChange={setOpacity}
                 colormapName={colormapName}
                 onColormapChange={setColormapName}
-                showColormap={connection.connection_type === "cog"}
+                showColormap={
+                  connection.connection_type === "cog" &&
+                  connection.band_count === 1
+                }
               />
             ) : dataset ? (
               <SidePanel

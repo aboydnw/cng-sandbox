@@ -15,7 +15,9 @@ class ConnectionRow(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     url = Column(String, nullable=False)
-    connection_type = Column(String, nullable=False)  # xyz_raster, xyz_vector, cog, pmtiles
+    connection_type = Column(
+        String, nullable=False
+    )  # xyz_raster, xyz_vector, cog, pmtiles
     bounds_json = Column(String, nullable=True)  # JSON array [w, s, e, n]
     min_zoom = Column(Integer, nullable=True)
     max_zoom = Column(Integer, nullable=True)

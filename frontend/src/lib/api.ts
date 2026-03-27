@@ -41,6 +41,8 @@ export const connectionsApi = {
     min_zoom?: number | null;
     max_zoom?: number | null;
     tile_type?: string | null;
+    band_count?: number | null;
+    rescale?: string | null;
   }): Promise<Connection> {
     return workspaceFetch("/api/connections", {
       method: "POST",

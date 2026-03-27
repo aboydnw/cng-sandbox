@@ -12,6 +12,8 @@ function makeConnection(overrides: Partial<Connection>): Connection {
     min_zoom: null,
     max_zoom: null,
     tile_type: "raster",
+    band_count: null,
+    rescale: null,
     workspace_id: null,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,

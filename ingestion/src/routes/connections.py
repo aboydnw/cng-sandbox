@@ -28,6 +28,12 @@ class ConnectionCreate(BaseModel):
     band_count: int | None = None
     rescale: str | None = None
 
+    def model_post_init(self, __context):
+        if self.bounds is not None and len(self.bounds) != 4:
+            raise ValueError(
+                "bounds must have exactly 4 elements [west, south, east, north]"
+            )
+
 
 def _get_session(request: Request) -> Session:
     return request.app.state.db_session_factory()
@@ -92,10 +98,13 @@ async def create_connection(body: ConnectionCreate, request: Request):
 
 @router.get("/connections/{connection_id}")
 async def get_connection(connection_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
     session = _get_session(request)
     try:
         row = session.get(ConnectionRow, connection_id)
         if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.workspace_id and row.workspace_id != workspace_id:
             raise HTTPException(status_code=404, detail="Connection not found")
         return row.to_dict()
     finally:

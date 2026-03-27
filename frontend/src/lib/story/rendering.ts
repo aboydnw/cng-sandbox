@@ -54,12 +54,18 @@ export function buildLayersForChapter(
     if (!conn) return [];
     const tileUrl = buildConnectionTileUrl(conn);
 
-    // COG connections get colormap support
+    // COG connections: only apply colormap + rescale for single-band
     if (conn.connection_type === "cog") {
-      const sep = tileUrl.includes("?") ? "&" : "?";
-      const fullUrl = `${tileUrl}${sep}colormap_name=${lc.colormap}`;
+      let finalTileUrl = tileUrl;
+      if (conn.band_count === 1) {
+        const sep = finalTileUrl.includes("?") ? "&" : "?";
+        finalTileUrl += `${sep}colormap_name=${lc.colormap}`;
+        if (conn.rescale) {
+          finalTileUrl += `&rescale=${conn.rescale}`;
+        }
+      }
       return buildRasterTileLayers({
-        tileUrl: fullUrl,
+        tileUrl: finalTileUrl,
         opacity: lc.opacity,
         isTemporalActive: false,
       });

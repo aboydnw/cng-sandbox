@@ -53,7 +53,8 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 
 - **Multi-variable NetCDFs:** Only one variable is extracted per conversion. If no `--variable` is specified, the first data variable is used.
 - **Temporal dimensions:** Only one timestep is extracted per conversion. Use `--time-index` to select.
-- **CRS:** Assumed EPSG:4326. Most climate/weather NetCDFs use geographic coordinates. NetCDFs with projected CRS are not handled.
+- **CRS:** Output is always EPSG:4326. Geographic NetCDFs are handled directly. Geostationary projection (`grid_mapping_name = "geostationary"`) is detected via CF conventions and reprojected automatically using `rasterio.warp`. Other projected CRS types (polar stereographic, Lambert conformal conic, etc.) are not yet supported and will raise a clear error.
+- **Geostationary coordinate scaling:** Geostationary satellite files (GOES-R, GOES-S, Himawari, Meteosat) store x/y as scanning angles in radians. These must be multiplied by `perspective_point_height` (satellite altitude in meters) to get the units that `+proj=geos` expects. The `sweep_angle_axis` attribute is also critical: GOES uses `x`, Meteosat uses `y`. Getting this wrong produces garbled output.
 - **Dimension naming:** The converter recognizes common dimension names: `lat`/`latitude`/`y` and `lon`/`longitude`/`x`. Non-standard names will cause a clear error.
 
 ## Validation checks (8 total)
@@ -72,8 +73,10 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 ## Known failure modes
 
 - **NetCDF4 / HDF5 MIME type rejection**: NetCDF4 files are built on the HDF5 format. `libmagic` (used by the sandbox ingestion service for magic-byte validation) reports their MIME type as `application/x-hdf5`, not `application/x-netcdf`. The sandbox detector's MIME whitelist for `netcdf-to-cog` must include `application/x-hdf5` alongside `application/x-netcdf` and `application/x-hdf`. Without it, every real-world NetCDF4 file (NCEP reanalysis, ERA5, etc.) is rejected at the scan step with "does not match expected format". Fix: add `application/x-hdf5` to `_MIME_WHITELIST[FormatPair.NETCDF_TO_COG]` in `sandbox/ingestion/src/services/detector.py`.
+- **Geostationary x/y not scaled to meters**: Satellite files using geostationary projection store x/y as scanning angles in radians. If these are not multiplied by `perspective_point_height` before building the affine transform, the data appears as a tiny dot near (0,0) with bounds of ~0.15 degrees. The converter handles this automatically, but any code reading geostationary NetCDF coordinates directly must apply this scaling.
 
 ## Changelog
 
+- 2026-03-27: Add geostationary projection detection and reprojection to EPSG:4326; update validator for projected sources; add geostationary self-test.
 - 2026-03-14: Document NetCDF4/HDF5 MIME type rejection failure mode.
 - 2026-03-13: Initial implementation — xarray + rio-cogeo pipeline with 8-check validator and self-test.

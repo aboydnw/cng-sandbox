@@ -162,12 +162,12 @@ export const COLORMAPS: Record<string, string[]> = {
 };
 
 export function colormapGradient(name: string): string {
-  const colors = COLORMAPS[name] ?? COLORMAPS.viridis;
+  const colors = COLORMAPS[name.toLowerCase()] ?? COLORMAPS.viridis;
   return `linear-gradient(90deg, ${colors.join(", ")})`;
 }
 
 export function getColormap(name: string): string[] {
-  return COLORMAPS[name] ?? COLORMAPS.viridis;
+  return COLORMAPS[name.toLowerCase()] ?? COLORMAPS.viridis;
 }
 
 export function listColormaps(): string[] {

@@ -7,6 +7,7 @@ interface ColormapPickerProps {
 }
 
 export function ColormapPicker({ value, onChange }: ColormapPickerProps) {
+  const normalizedValue = value.toLowerCase();
   return (
     <Flex direction="column" gap={0.5}>
       {Object.keys(COLORMAPS).map((name) => (
@@ -18,11 +19,15 @@ export function ColormapPicker({ value, onChange }: ColormapPickerProps) {
           py={1}
           borderRadius="4px"
           cursor="pointer"
-          bg={value === name ? "brand.bgSubtle" : "transparent"}
+          bg={normalizedValue === name ? "brand.bgSubtle" : "transparent"}
           border="1px solid"
-          borderColor={value === name ? "brand.border" : "transparent"}
+          borderColor={
+            normalizedValue === name ? "brand.border" : "transparent"
+          }
           onClick={() => onChange(name)}
-          _hover={{ bg: value === name ? "brand.bgSubtle" : "gray.50" }}
+          _hover={{
+            bg: normalizedValue === name ? "brand.bgSubtle" : "gray.50",
+          }}
         >
           <Box
             w="60px"

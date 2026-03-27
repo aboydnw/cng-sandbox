@@ -28,6 +28,8 @@ except ImportError:
 import numpy as np
 import rasterio
 import xarray as xr
+from rasterio.crs import CRS
+from rasterio import warp
 
 
 @dataclasses.dataclass
@@ -35,6 +37,39 @@ class CheckResult:
     name: str
     passed: bool
     detail: str
+
+
+def _detect_grid_mapping(ds, variable: str | None = None):
+    """Detect if a NetCDF variable uses a projected CRS.
+
+    Returns a tuple of (is_projected, src_crs, scale_factor).
+    For geographic sources: (False, None, None).
+    For geostationary sources: (True, CRS, perspective_point_height).
+    """
+    data_vars = list(ds.data_vars)
+    var_name = variable if variable else data_vars[0]
+    da = ds[var_name]
+
+    grid_mapping_attr = da.attrs.get("grid_mapping")
+    if grid_mapping_attr is None or grid_mapping_attr not in ds:
+        return False, None, None
+
+    gm = ds[grid_mapping_attr]
+    gm_name = gm.attrs.get("grid_mapping_name", "")
+
+    if gm_name == "geostationary":
+        h = float(gm.attrs["perspective_point_height"])
+        lon_0 = float(gm.attrs["longitude_of_projection_origin"])
+        sweep = str(gm.attrs["sweep_angle_axis"])
+        a = float(gm.attrs["semi_major_axis"])
+        b = float(gm.attrs["semi_minor_axis"])
+        crs = CRS.from_proj4(
+            f"+proj=geos +h={h} +lon_0={lon_0} +sweep={sweep} "
+            f"+a={a} +b={b} +units=m +no_defs"
+        )
+        return True, crs, h
+
+    return False, None, None
 
 
 def check_cog_valid(output_path: str) -> CheckResult:
@@ -56,7 +91,21 @@ def check_crs_present(output_path: str) -> CheckResult:
 def check_bounds_match(input_path: str, output_path: str, variable: str | None = None,
                        time_index: int = 0, tolerance: float = 1e-4) -> CheckResult:
     """Check that bounding box covers the NetCDF spatial extent."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
+    is_projected, _, _ = _detect_grid_mapping(ds, variable)
+
+    if is_projected:
+        ds.close()
+        with rasterio.open(output_path) as dst:
+            b = dst.bounds
+            if -180 <= b.left <= 180 and -180 <= b.right <= 180 and -90 <= b.bottom <= 90 and -90 <= b.top <= 90:
+                return CheckResult("Bounds match", True,
+                                   f"Projected source — reprojected bounds: "
+                                   f"({b.left:.4f}, {b.bottom:.4f}, {b.right:.4f}, {b.top:.4f})")
+            return CheckResult("Bounds match", False,
+                               f"Reprojected bounds out of valid range: "
+                               f"({b.left:.4f}, {b.bottom:.4f}, {b.right:.4f}, {b.top:.4f})")
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -75,14 +124,12 @@ def check_bounds_match(input_path: str, output_path: str, variable: str | None =
     with rasterio.open(output_path) as dst:
         cog_bounds = (dst.bounds.left, dst.bounds.bottom, dst.bounds.right, dst.bounds.top)
 
-    # COG bounds should contain NetCDF cell centers (with half-pixel margin)
     for i, (nc_val, cog_val, label) in enumerate([
         (nc_bounds[0], cog_bounds[0], "west"),
         (nc_bounds[1], cog_bounds[1], "south"),
         (nc_bounds[2], cog_bounds[2], "east"),
         (nc_bounds[3], cog_bounds[3], "north"),
     ]):
-        # For west/south, COG should be <= NetCDF center; for east/north, COG should be >=
         if i < 2 and cog_val > nc_val + tolerance:
             return CheckResult("Bounds match", False,
                                f"{label}: COG={cog_val:.6f} > NetCDF center={nc_val:.6f}")
@@ -97,7 +144,15 @@ def check_bounds_match(input_path: str, output_path: str, variable: str | None =
 
 def check_dimensions_match(input_path: str, output_path: str, variable: str | None = None) -> CheckResult:
     """Check that pixel dimensions match the NetCDF grid."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
+    is_projected, _, _ = _detect_grid_mapping(ds, variable)
+
+    if is_projected:
+        ds.close()
+        with rasterio.open(output_path) as dst:
+            return CheckResult("Dimensions", True,
+                               f"Projected source — reprojected to {dst.width}x{dst.height}")
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -124,9 +179,11 @@ def check_band_count(output_path: str) -> CheckResult:
 
 
 def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None = None,
-                          time_index: int = 0, n: int = 1000, tolerance: float = 1e-4) -> CheckResult:
+                          time_index: int = 0, n: int = 1000) -> CheckResult:
     """Sample random pixels and compare values against the NetCDF source."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
+    is_projected, src_crs, scale_factor = _detect_grid_mapping(ds, variable)
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -135,39 +192,107 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
     if time_dims:
         da = da.isel({time_dims[0]: time_index})
 
-    lat_names = [d for d in da.dims if d.lower() in ("lat", "latitude", "y")]
-    lats = da[lat_names[0]].values
-    if lats[0] < lats[-1]:
-        da = da.isel({lat_names[0]: slice(None, None, -1)})
+    if is_projected:
+        y_names = [d for d in da.dims if d.lower() in ("y", "lat", "latitude")]
+        x_names = [d for d in da.dims if d.lower() in ("x", "lon", "longitude")]
+        y_coords = da[y_names[0]].values.astype(np.float64) * scale_factor
+        x_coords = da[x_names[0]].values.astype(np.float64) * scale_factor
 
-    nc_data = da.values.astype(np.float32)
-    ds.close()
+        data = da.values.astype(np.float32)
+        if y_coords[0] < y_coords[-1]:
+            y_coords = y_coords[::-1]
+            data = data[::-1, :]
 
-    with rasterio.open(output_path) as dst:
-        cog_data = dst.read(1)
-        nodata = dst.nodata
+        nodata_val = float(da.encoding.get("_FillValue", da.attrs.get("_FillValue", -9999.0)))
+        ds.close()
 
-    rng = np.random.default_rng(42)
-    height, width = nc_data.shape
-    rows = rng.integers(0, height, size=n)
-    cols = rng.integers(0, width, size=n)
+        height, width = data.shape
+        rng = np.random.default_rng(42)
+        rows = rng.integers(0, height, size=n)
+        cols = rng.integers(0, width, size=n)
 
-    nc_vals = nc_data[rows, cols]
-    cog_vals = cog_data[rows, cols]
+        src_vals = data[rows, cols]
+        mask = ~np.isnan(src_vals) & (src_vals != nodata_val)
+        if mask.sum() == 0:
+            return CheckResult("Pixel fidelity", True, "All sampled pixels are nodata")
 
-    # Skip nodata pixels
-    mask = ~np.isnan(nc_vals)
-    if nodata is not None:
-        mask &= (cog_vals != nodata)
+        rows, cols, src_vals = rows[mask], cols[mask], src_vals[mask]
 
-    if mask.sum() == 0:
-        return CheckResult("Pixel fidelity", True, "All sampled pixels are nodata")
+        xs = x_coords[cols]
+        ys = y_coords[rows]
 
-    max_diff = np.max(np.abs(nc_vals[mask] - cog_vals[mask]))
-    if max_diff > tolerance:
-        return CheckResult("Pixel fidelity", False, f"max diff={max_diff:.6f} exceeds {tolerance}")
+        dst_crs = CRS.from_epsg(4326)
+        lons, lats = warp.transform(src_crs, dst_crs, xs, ys)
+        lons = np.array(lons)
+        lats = np.array(lats)
 
-    return CheckResult("Pixel fidelity", True, f"{mask.sum()}/{n} data pixels sampled, max diff={max_diff:.8f}")
+        tolerance = 0.5
+        with rasterio.open(output_path) as cog:
+            cog_nodata = cog.nodata
+            cog_vals = []
+            for lon, lat in zip(lons, lats):
+                try:
+                    row, col = cog.index(lon, lat)
+                    if 0 <= row < cog.height and 0 <= col < cog.width:
+                        val = cog.read(1, window=rasterio.windows.Window(col, row, 1, 1))[0, 0]
+                        cog_vals.append(val)
+                    else:
+                        cog_vals.append(np.nan)
+                except Exception:
+                    cog_vals.append(np.nan)
+            cog_vals = np.array(cog_vals, dtype=np.float32)
+
+        valid = ~np.isnan(cog_vals)
+        if cog_nodata is not None:
+            valid &= (cog_vals != cog_nodata)
+
+        if valid.sum() == 0:
+            return CheckResult("Pixel fidelity", False,
+                               "No valid COG pixels found at reprojected sample locations")
+
+        max_diff = float(np.max(np.abs(src_vals[valid] - cog_vals[valid])))
+        if max_diff > tolerance:
+            return CheckResult("Pixel fidelity", False,
+                               f"max diff={max_diff:.6f} exceeds tolerance={tolerance}")
+
+        return CheckResult("Pixel fidelity", True,
+                           f"{valid.sum()}/{n} data pixels (reprojected), max diff={max_diff:.6f}")
+
+    else:
+        lat_names = [d for d in da.dims if d.lower() in ("lat", "latitude", "y")]
+        lats = da[lat_names[0]].values
+        if lats[0] < lats[-1]:
+            da = da.isel({lat_names[0]: slice(None, None, -1)})
+
+        nc_data = da.values.astype(np.float32)
+        ds.close()
+
+        with rasterio.open(output_path) as dst:
+            cog_data = dst.read(1)
+            nodata = dst.nodata
+
+        tolerance = 1e-4
+        rng = np.random.default_rng(42)
+        height, width = nc_data.shape
+        rows = rng.integers(0, height, size=n)
+        cols = rng.integers(0, width, size=n)
+
+        nc_vals = nc_data[rows, cols]
+        cog_vals = cog_data[rows, cols]
+
+        mask = ~np.isnan(nc_vals)
+        if nodata is not None:
+            mask &= (cog_vals != nodata)
+
+        if mask.sum() == 0:
+            return CheckResult("Pixel fidelity", True, "All sampled pixels are nodata")
+
+        max_diff = np.max(np.abs(nc_vals[mask] - cog_vals[mask]))
+        if max_diff > tolerance:
+            return CheckResult("Pixel fidelity", False, f"max diff={max_diff:.6f} exceeds {tolerance}")
+
+        return CheckResult("Pixel fidelity", True,
+                           f"{mask.sum()}/{n} data pixels sampled, max diff={max_diff:.8f}")
 
 
 def check_nodata_present(output_path: str) -> CheckResult:

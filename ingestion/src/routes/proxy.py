@@ -34,7 +34,7 @@ async def proxy_resource(url: str, request: Request):
             resp = await client.get(decoded, headers=headers)
         except httpx.RequestError as e:
             logger.error("Proxy request failed for %s: %s", decoded, e)
-            raise HTTPException(status_code=502, detail=str(e))
+            raise HTTPException(status_code=502, detail=str(e)) from e
 
     if resp.status_code >= 400:
         logger.error("Upstream returned %d for %s", resp.status_code, decoded)

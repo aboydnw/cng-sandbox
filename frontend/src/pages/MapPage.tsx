@@ -65,7 +65,8 @@ export default function MapPage() {
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
   const [connection, setConnection] = useState<Connection | null>(null);
   // Detect connection route: URL contains /map/connection/
-  const isConnectionRoute = window.location.pathname.includes("/map/connection/");
+  const isConnectionRoute =
+    window.location.pathname.includes("/map/connection/");
   const deckRef = useRef(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
@@ -103,7 +104,10 @@ export default function MapPage() {
 
   useEffect(() => {
     async function fetchDataset() {
-      if (isConnectionRoute) { setLoading(false); return; }
+      if (isConnectionRoute) {
+        setLoading(false);
+        return;
+      }
       try {
         const resp = await fetch(`${config.apiBase}/api/datasets/${id}`);
         if (resp.status === 404) {

@@ -128,7 +128,10 @@ export default function StoryEditorPage() {
   }, []);
 
   useEffect(() => {
-    connectionsApi.list().then(setAllConnections).catch(() => {});
+    connectionsApi
+      .list()
+      .then(setAllConnections)
+      .catch(() => {});
   }, []);
 
   // Load or create story

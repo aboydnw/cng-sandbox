@@ -45,7 +45,9 @@ export default function LibraryPage() {
   const [deletingStory, setDeletingStory] = useState<string | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(true);
-  const [deletingConnection, setDeletingConnection] = useState<string | null>(null);
+  const [deletingConnection, setDeletingConnection] = useState<string | null>(
+    null
+  );
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
 
   useEffect(() => {
@@ -317,7 +319,12 @@ export default function LibraryPage() {
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Text fontSize="sm" color="gray.500" truncate title={conn.url}>
+                    <Text
+                      fontSize="sm"
+                      color="gray.500"
+                      truncate
+                      title={conn.url}
+                    >
                       {conn.url}
                     </Text>
                   </Table.Cell>

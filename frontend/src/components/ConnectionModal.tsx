@@ -1,14 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
+import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
 import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Input,
-  Text,
-} from "@chakra-ui/react";
-import { X as XIcon, Link as LinkIcon, SpinnerGap } from "@phosphor-icons/react";
-import { detectConnectionType, extractNameFromUrl, probePMTiles, probeCOG } from "../lib/connections";
+  X as XIcon,
+  Link as LinkIcon,
+  SpinnerGap,
+} from "@phosphor-icons/react";
+import {
+  detectConnectionType,
+  extractNameFromUrl,
+  probePMTiles,
+  probeCOG,
+} from "../lib/connections";
 import type { ProbeMetadata } from "../lib/connections";
 import { connectionsApi } from "../lib/api";
 import type { ConnectionType, Connection } from "../types";
@@ -20,7 +22,12 @@ const TYPE_LABELS: Record<ConnectionType, string> = {
   xyz_vector: "XYZ Vector Tiles",
 };
 
-const ALL_TYPES: ConnectionType[] = ["cog", "pmtiles", "xyz_raster", "xyz_vector"];
+const ALL_TYPES: ConnectionType[] = [
+  "cog",
+  "pmtiles",
+  "xyz_raster",
+  "xyz_vector",
+];
 
 interface ConnectionModalProps {
   isOpen: boolean;
@@ -28,14 +35,22 @@ interface ConnectionModalProps {
   onCreated: (connection: Connection) => void;
 }
 
-export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalProps) {
+export function ConnectionModal({
+  isOpen,
+  onClose,
+  onCreated,
+}: ConnectionModalProps) {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
-  const [connectionType, setConnectionType] = useState<ConnectionType | null>(null);
+  const [connectionType, setConnectionType] = useState<ConnectionType | null>(
+    null
+  );
   const [autoDetected, setAutoDetected] = useState(false);
   const [saving, setSaving] = useState(false);
   const [probing, setProbing] = useState(false);
-  const [probeMetadata, setProbeMetadata] = useState<ProbeMetadata | null>(null);
+  const [probeMetadata, setProbeMetadata] = useState<ProbeMetadata | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Auto-detect type and name when URL changes
@@ -53,9 +68,10 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
     if (detected === "pmtiles" || detected === "cog") {
       setProbing(true);
       try {
-        const metadata = detected === "pmtiles"
-          ? await probePMTiles(url)
-          : await probeCOG(url);
+        const metadata =
+          detected === "pmtiles"
+            ? await probePMTiles(url)
+            : await probeCOG(url);
         setProbeMetadata(metadata);
       } catch {
         setProbeMetadata(null);
@@ -96,10 +112,14 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
           min_zoom: probeMetadata.minZoom ?? undefined,
           max_zoom: probeMetadata.maxZoom ?? undefined,
           band_count: probeMetadata.bandCount ?? undefined,
-          rescale: probeMetadata.rescale ? `${probeMetadata.rescale[0]},${probeMetadata.rescale[1]}` : undefined,
+          rescale: probeMetadata.rescale
+            ? `${probeMetadata.rescale[0]},${probeMetadata.rescale[1]}`
+            : undefined,
         }),
-        ...(connectionType === "pmtiles" && !probeMetadata && { tile_type: "vector" }),
-        ...(connectionType === "cog" && !probeMetadata && { tile_type: "raster" }),
+        ...(connectionType === "pmtiles" &&
+          !probeMetadata && { tile_type: "vector" }),
+        ...(connectionType === "cog" &&
+          !probeMetadata && { tile_type: "raster" }),
         ...(connectionType === "xyz_raster" && { tile_type: "raster" }),
         ...(connectionType === "xyz_vector" && { tile_type: "vector" }),
       });
@@ -229,9 +249,11 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
           {probeMetadata && !probing && (
             <Text fontSize="13px" color="green.600">
               Detected {probeMetadata.tileType} data
-              {probeMetadata.bandCount != null && ` (${probeMetadata.bandCount} band${probeMetadata.bandCount === 1 ? "" : "s"})`}
+              {probeMetadata.bandCount != null &&
+                ` (${probeMetadata.bandCount} band${probeMetadata.bandCount === 1 ? "" : "s"})`}
               {probeMetadata.bounds && " with bounds"}
-              {probeMetadata.minZoom != null && `, zoom ${probeMetadata.minZoom}–${probeMetadata.maxZoom}`}
+              {probeMetadata.minZoom != null &&
+                `, zoom ${probeMetadata.minZoom}–${probeMetadata.maxZoom}`}
             </Text>
           )}
 

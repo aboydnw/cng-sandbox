@@ -135,7 +135,9 @@ export default function StoryEditorPage() {
         setLoading(false);
         return;
       }
-      const migrated = migrateStory(loaded as unknown as Record<string, unknown>);
+      const migrated = migrateStory(
+        loaded as unknown as Record<string, unknown>
+      );
       setStory(migrated);
       setActiveChapterId(migrated.chapters[0]?.id ?? "");
       if (JSON.stringify(migrated) !== JSON.stringify(loaded)) {

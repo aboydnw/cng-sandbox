@@ -35,7 +35,9 @@ export default function StoryReaderPage({
           setLoading(false);
           return;
         }
-        const migrated = migrateStory(loaded as unknown as Record<string, unknown>);
+        const migrated = migrateStory(
+          loaded as unknown as Record<string, unknown>
+        );
         setStory(migrated);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load story");

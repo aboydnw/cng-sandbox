@@ -26,90 +26,88 @@ interface UnifiedMapProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const UnifiedMap = forwardRef<any, UnifiedMapProps>(
-  function UnifiedMap(
-    {
-      camera,
-      onCameraChange,
-      layers,
-      basemap,
-      onBasemapChange,
-      onHover,
-      onClick,
-      getTooltip,
-      children,
-      transitionDuration,
-      transitionInterpolator,
-      interactive = true,
+export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
+  {
+    camera,
+    onCameraChange,
+    layers,
+    basemap,
+    onBasemapChange,
+    onHover,
+    onClick,
+    getTooltip,
+    children,
+    transitionDuration,
+    transitionInterpolator,
+    interactive = true,
+  },
+  ref
+) {
+  const handleViewStateChange = useCallback(
+    ({
+      viewState,
+    }: {
+      viewState: {
+        longitude: number;
+        latitude: number;
+        zoom: number;
+        bearing?: number;
+        pitch?: number;
+      };
+    }) => {
+      onCameraChange({
+        longitude: viewState.longitude,
+        latitude: viewState.latitude,
+        zoom: viewState.zoom,
+        bearing: viewState.bearing ?? 0,
+        pitch: viewState.pitch ?? 0,
+      });
     },
-    ref
-  ) {
-    const handleViewStateChange = useCallback(
-      ({
-        viewState,
-      }: {
-        viewState: {
-          longitude: number;
-          latitude: number;
-          zoom: number;
-          bearing?: number;
-          pitch?: number;
-        };
-      }) => {
-        onCameraChange({
-          longitude: viewState.longitude,
-          latitude: viewState.latitude,
-          zoom: viewState.zoom,
-          bearing: viewState.bearing ?? 0,
-          pitch: viewState.pitch ?? 0,
-        });
-      },
-      [onCameraChange]
-    );
+    [onCameraChange]
+  );
 
-    const views = useMemo(() => new MapView({ repeat: true }), []);
+  const views = useMemo(() => new MapView({ repeat: true }), []);
 
-    const viewState = transitionDuration
-      ? { ...camera, transitionDuration, transitionInterpolator }
-      : camera;
+  const viewState = transitionDuration
+    ? { ...camera, transitionDuration, transitionInterpolator }
+    : camera;
 
-    return (
-      <Box position="relative" w="100%" h="100%">
-        <DeckGL
-          ref={ref}
-          viewState={viewState}
-          onViewStateChange={handleViewStateChange}
-          controller={interactive ? { dragRotate: true } : false}
-          layers={layers}
-          views={views}
-          onHover={onHover}
-          onClick={onClick}
-          getTooltip={getTooltip}
-        >
-          <Map
-            mapStyle={BASEMAPS[basemap]}
-            longitude={camera.longitude}
-            latitude={camera.latitude}
-            zoom={camera.zoom}
-            bearing={camera.bearing}
-            pitch={camera.pitch}
-          />
-        </DeckGL>
+  return (
+    <Box position="relative" w="100%" h="100%">
+      <DeckGL
+        ref={ref}
+        viewState={viewState}
+        onViewStateChange={handleViewStateChange}
+        controller={interactive ? { dragRotate: true } : false}
+        layers={layers}
+        views={views}
+        onHover={onHover}
+        onClick={onClick}
+        getTooltip={getTooltip}
+      >
+        <Map
+          mapStyle={BASEMAPS[basemap]}
+          longitude={camera.longitude}
+          latitude={camera.latitude}
+          zoom={camera.zoom}
+          bearing={camera.bearing}
+          pitch={camera.pitch}
+        />
+      </DeckGL>
 
-        <Box
-          position="absolute"
-          top={3}
-          left={3}
-          bg="white"
-          borderRadius="4px"
-          shadow="sm"
-          p={1}
-        >
-          <BasemapPicker value={basemap} onChange={onBasemapChange} />
-        </Box>
-
-        {children}
+      <Box
+        position="absolute"
+        top={3}
+        left={3}
+        bg="white"
+        borderRadius="4px"
+        shadow="sm"
+        p={1}
+      >
+        <BasemapPicker value={basemap} onChange={onBasemapChange} />
       </Box>
-    );
-  }
-);
+
+      {children}
+    </Box>
+  );
+});

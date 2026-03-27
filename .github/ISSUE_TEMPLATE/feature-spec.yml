@@ -1,0 +1,47 @@
+name: Feature Specification
+description: Describe a feature for agent implementation
+labels: ["agent-ready", "spec"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Spec
+        Write a clear spec and assign `@claude` in a comment to trigger agent implementation.
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      description: Who is this for and what do they need?
+      placeholder: "As a [user], I want [capability] so that [benefit]"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Specific, testable conditions for completion
+      placeholder: |
+        - [ ] Given [context], when [action], then [result]
+        - [ ] Error case: when [bad input], show [error message]
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-constraints
+    attributes:
+      label: Technical Constraints
+      description: Architecture boundaries, performance requirements, dependencies
+      placeholder: "Must use existing titiler endpoint patterns. No new database tables."
+
+  - type: dropdown
+    id: risk-level
+    attributes:
+      label: Risk Level
+      options:
+        - Low (UI-only, no backend changes)
+        - Medium (new API endpoints, database queries)
+        - High (auth changes, data model changes, infrastructure)
+    validations:
+      required: true

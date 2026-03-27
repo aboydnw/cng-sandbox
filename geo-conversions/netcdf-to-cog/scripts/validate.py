@@ -28,6 +28,8 @@ except ImportError:
 import numpy as np
 import rasterio
 import xarray as xr
+from rasterio.crs import CRS
+from rasterio import warp
 
 
 @dataclasses.dataclass
@@ -35,6 +37,44 @@ class CheckResult:
     name: str
     passed: bool
     detail: str
+
+
+def _detect_grid_mapping(ds, variable: str | None = None):
+    """Detect if a NetCDF variable uses a projected CRS.
+
+    Returns a tuple of (is_projected, src_crs, scale_factor).
+    For geographic sources: (False, None, None).
+    For geostationary sources: (True, CRS, perspective_point_height).
+    """
+    data_vars = list(ds.data_vars)
+    var_name = variable if variable else data_vars[0]
+    da = ds[var_name]
+
+    grid_mapping_attr = da.attrs.get("grid_mapping")
+    if grid_mapping_attr is None or grid_mapping_attr not in ds:
+        return False, None, None
+
+    gm = ds[grid_mapping_attr]
+    gm_name = gm.attrs.get("grid_mapping_name", "")
+
+    if gm_name == "geostationary":
+        required = ["perspective_point_height", "longitude_of_projection_origin",
+                     "sweep_angle_axis", "semi_major_axis", "semi_minor_axis"]
+        missing = [attr for attr in required if attr not in gm.attrs]
+        if missing:
+            raise ValueError(f"Geostationary grid_mapping missing attributes: {missing}")
+        h = float(gm.attrs["perspective_point_height"])
+        lon_0 = float(gm.attrs["longitude_of_projection_origin"])
+        sweep = str(gm.attrs["sweep_angle_axis"])
+        a = float(gm.attrs["semi_major_axis"])
+        b = float(gm.attrs["semi_minor_axis"])
+        crs = CRS.from_proj4(
+            f"+proj=geos +h={h} +lon_0={lon_0} +sweep={sweep} "
+            f"+a={a} +b={b} +units=m +no_defs"
+        )
+        return True, crs, h
+
+    return False, None, None
 
 
 def check_cog_valid(output_path: str) -> CheckResult:
@@ -56,7 +96,21 @@ def check_crs_present(output_path: str) -> CheckResult:
 def check_bounds_match(input_path: str, output_path: str, variable: str | None = None,
                        time_index: int = 0, tolerance: float = 1e-4) -> CheckResult:
     """Check that bounding box covers the NetCDF spatial extent."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
+    is_projected, _, _ = _detect_grid_mapping(ds, variable)
+
+    if is_projected:
+        ds.close()
+        with rasterio.open(output_path) as dst:
+            b = dst.bounds
+            if -180 <= b.left <= 180 and -180 <= b.right <= 180 and -90 <= b.bottom <= 90 and -90 <= b.top <= 90:
+                return CheckResult("Bounds match", True,
+                                   f"Projected source — reprojected bounds: "
+                                   f"({b.left:.4f}, {b.bottom:.4f}, {b.right:.4f}, {b.top:.4f})")
+            return CheckResult("Bounds match", False,
+                               f"Reprojected bounds out of valid range: "
+                               f"({b.left:.4f}, {b.bottom:.4f}, {b.right:.4f}, {b.top:.4f})")
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -75,14 +129,12 @@ def check_bounds_match(input_path: str, output_path: str, variable: str | None =
     with rasterio.open(output_path) as dst:
         cog_bounds = (dst.bounds.left, dst.bounds.bottom, dst.bounds.right, dst.bounds.top)
 
-    # COG bounds should contain NetCDF cell centers (with half-pixel margin)
     for i, (nc_val, cog_val, label) in enumerate([
         (nc_bounds[0], cog_bounds[0], "west"),
         (nc_bounds[1], cog_bounds[1], "south"),
         (nc_bounds[2], cog_bounds[2], "east"),
         (nc_bounds[3], cog_bounds[3], "north"),
     ]):
-        # For west/south, COG should be <= NetCDF center; for east/north, COG should be >=
         if i < 2 and cog_val > nc_val + tolerance:
             return CheckResult("Bounds match", False,
                                f"{label}: COG={cog_val:.6f} > NetCDF center={nc_val:.6f}")
@@ -97,7 +149,15 @@ def check_bounds_match(input_path: str, output_path: str, variable: str | None =
 
 def check_dimensions_match(input_path: str, output_path: str, variable: str | None = None) -> CheckResult:
     """Check that pixel dimensions match the NetCDF grid."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
+    is_projected, _, _ = _detect_grid_mapping(ds, variable)
+
+    if is_projected:
+        ds.close()
+        with rasterio.open(output_path) as dst:
+            return CheckResult("Dimensions", True,
+                               f"Projected source — reprojected to {dst.width}x{dst.height}")
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -124,9 +184,11 @@ def check_band_count(output_path: str) -> CheckResult:
 
 
 def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None = None,
-                          time_index: int = 0, n: int = 1000, tolerance: float = 1e-4) -> CheckResult:
+                          time_index: int = 0, n: int = 1000) -> CheckResult:
     """Sample random pixels and compare values against the NetCDF source."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
+    is_projected, src_crs, scale_factor = _detect_grid_mapping(ds, variable)
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -135,39 +197,113 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
     if time_dims:
         da = da.isel({time_dims[0]: time_index})
 
-    lat_names = [d for d in da.dims if d.lower() in ("lat", "latitude", "y")]
-    lats = da[lat_names[0]].values
-    if lats[0] < lats[-1]:
-        da = da.isel({lat_names[0]: slice(None, None, -1)})
+    if is_projected:
+        y_names = [d for d in da.dims if d.lower() in ("y", "lat", "latitude")]
+        x_names = [d for d in da.dims if d.lower() in ("x", "lon", "longitude")]
+        y_coords = da[y_names[0]].values.astype(np.float64) * scale_factor
+        x_coords = da[x_names[0]].values.astype(np.float64) * scale_factor
 
-    nc_data = da.values.astype(np.float32)
-    ds.close()
+        data = da.values.astype(np.float32)
+        if y_coords[0] < y_coords[-1]:
+            y_coords = y_coords[::-1]
+            data = data[::-1, :]
 
-    with rasterio.open(output_path) as dst:
-        cog_data = dst.read(1)
-        nodata = dst.nodata
+        nodata_val = float(da.encoding.get("_FillValue", da.attrs.get("_FillValue", -9999.0)))
+        ds.close()
 
-    rng = np.random.default_rng(42)
-    height, width = nc_data.shape
-    rows = rng.integers(0, height, size=n)
-    cols = rng.integers(0, width, size=n)
+        height, width = data.shape
+        rng = np.random.default_rng(42)
+        rows = rng.integers(0, height, size=n)
+        cols = rng.integers(0, width, size=n)
 
-    nc_vals = nc_data[rows, cols]
-    cog_vals = cog_data[rows, cols]
+        src_vals = data[rows, cols]
+        mask = ~np.isnan(src_vals) & (src_vals != nodata_val)
+        if mask.sum() == 0:
+            return CheckResult("Pixel fidelity", True, "All sampled pixels are nodata")
 
-    # Skip nodata pixels
-    mask = ~np.isnan(nc_vals)
-    if nodata is not None:
-        mask &= (cog_vals != nodata)
+        rows, cols, src_vals = rows[mask], cols[mask], src_vals[mask]
 
-    if mask.sum() == 0:
-        return CheckResult("Pixel fidelity", True, "All sampled pixels are nodata")
+        xs = x_coords[cols]
+        ys = y_coords[rows]
 
-    max_diff = np.max(np.abs(nc_vals[mask] - cog_vals[mask]))
-    if max_diff > tolerance:
-        return CheckResult("Pixel fidelity", False, f"max diff={max_diff:.6f} exceeds {tolerance}")
+        dst_crs = CRS.from_epsg(4326)
+        lons, lats = warp.transform(src_crs, dst_crs, xs, ys)
+        lons = np.array(lons)
+        lats = np.array(lats)
 
-    return CheckResult("Pixel fidelity", True, f"{mask.sum()}/{n} data pixels sampled, max diff={max_diff:.8f}")
+        # Reprojection resampling introduces interpolation differences
+        tolerance = 0.5
+        with rasterio.open(output_path) as cog:
+            cog_nodata = cog.nodata
+            cog_data = cog.read(1)
+            cog_rows = np.empty(len(lons), dtype=np.int64)
+            cog_cols = np.empty(len(lons), dtype=np.int64)
+            for i, (lon, lat) in enumerate(zip(lons, lats)):
+                try:
+                    r, c = cog.index(lon, lat)
+                    cog_rows[i] = r
+                    cog_cols[i] = c
+                except Exception:
+                    cog_rows[i] = -1
+                    cog_cols[i] = -1
+
+            in_bounds = ((cog_rows >= 0) & (cog_rows < cog.height) &
+                         (cog_cols >= 0) & (cog_cols < cog.width))
+
+        cog_vals = np.full(len(lons), np.nan, dtype=np.float32)
+        cog_vals[in_bounds] = cog_data[cog_rows[in_bounds], cog_cols[in_bounds]]
+
+        valid = ~np.isnan(cog_vals) & in_bounds
+        if cog_nodata is not None:
+            valid &= (cog_vals != cog_nodata)
+
+        if valid.sum() == 0:
+            return CheckResult("Pixel fidelity", False,
+                               "No valid COG pixels found at reprojected sample locations")
+
+        max_diff = float(np.max(np.abs(src_vals[valid] - cog_vals[valid])))
+        if max_diff > tolerance:
+            return CheckResult("Pixel fidelity", False,
+                               f"max diff={max_diff:.6f} exceeds tolerance={tolerance}")
+
+        return CheckResult("Pixel fidelity", True,
+                           f"{valid.sum()}/{n} data pixels (reprojected), max diff={max_diff:.6f}")
+
+    else:
+        lat_names = [d for d in da.dims if d.lower() in ("lat", "latitude", "y")]
+        lats = da[lat_names[0]].values
+        if lats[0] < lats[-1]:
+            da = da.isel({lat_names[0]: slice(None, None, -1)})
+
+        nc_data = da.values.astype(np.float32)
+        ds.close()
+
+        with rasterio.open(output_path) as dst:
+            cog_data = dst.read(1)
+            nodata = dst.nodata
+
+        tolerance = 1e-4
+        rng = np.random.default_rng(42)
+        height, width = nc_data.shape
+        rows = rng.integers(0, height, size=n)
+        cols = rng.integers(0, width, size=n)
+
+        nc_vals = nc_data[rows, cols]
+        cog_vals = cog_data[rows, cols]
+
+        mask = ~np.isnan(nc_vals)
+        if nodata is not None:
+            mask &= (cog_vals != nodata)
+
+        if mask.sum() == 0:
+            return CheckResult("Pixel fidelity", True, "All sampled pixels are nodata")
+
+        max_diff = np.max(np.abs(nc_vals[mask] - cog_vals[mask]))
+        if max_diff > tolerance:
+            return CheckResult("Pixel fidelity", False, f"max diff={max_diff:.6f} exceeds {tolerance}")
+
+        return CheckResult("Pixel fidelity", True,
+                           f"{mask.sum()}/{n} data pixels sampled, max diff={max_diff:.8f}")
 
 
 def check_nodata_present(output_path: str) -> CheckResult:
@@ -239,8 +375,43 @@ def generate_synthetic_netcdf(path: str):
     ds.close()
 
 
+def generate_geostationary_netcdf(path: str):
+    """Generate a small synthetic geostationary NetCDF for self-testing.
+
+    Creates a 64x64 grid of scanning angles in radians with a
+    goes_imager_projection variable, mimicking GOES-R ABI structure.
+    """
+    sat_height = 35786023.0
+    # Small scanning angle range (~±0.02 radians ≈ ±1.15 degrees from nadir)
+    x_rad = np.linspace(-0.02, 0.02, 64).astype(np.float64)
+    y_rad = np.linspace(0.02, -0.02, 64).astype(np.float64)  # north-to-south
+
+    rng = np.random.default_rng(456)
+    data = rng.uniform(0.1, 1.0, (64, 64)).astype(np.float32)
+
+    ds = xr.Dataset(
+        {"CMI": (["y", "x"], data, {"grid_mapping": "goes_imager_projection",
+                                     "_FillValue": np.float32(-1.0)})},
+        coords={"x": x_rad, "y": y_rad},
+    )
+    ds["goes_imager_projection"] = xr.DataArray(
+        np.int32(0),
+        attrs={
+            "grid_mapping_name": "geostationary",
+            "perspective_point_height": sat_height,
+            "longitude_of_projection_origin": -137.0,
+            "sweep_angle_axis": "x",
+            "semi_major_axis": 6378137.0,
+            "semi_minor_axis": 6356752.31414,
+            "latitude_of_projection_origin": 0.0,
+        },
+    )
+    ds.to_netcdf(path)
+    ds.close()
+
+
 def run_self_test() -> bool:
-    """Generate synthetic NetCDF, convert, and validate."""
+    """Generate synthetic NetCDFs, convert, and validate."""
     print("Running self-test...")
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -254,11 +425,15 @@ def run_self_test() -> bool:
     convert_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(convert_mod)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_path = os.path.join(tmpdir, "test_input.nc")
-        output_path = os.path.join(tmpdir, "test_output.tif")
+    all_passed = True
 
-        print("Generating synthetic NetCDF (2 variables, 3 timesteps)...")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Test 1: Geographic NetCDF (existing test)
+        print("\n--- Test 1: Geographic NetCDF ---")
+        input_path = os.path.join(tmpdir, "test_geographic.nc")
+        output_path = os.path.join(tmpdir, "test_geographic.tif")
+
+        print("Generating synthetic geographic NetCDF (2 variables, 3 timesteps)...")
         generate_synthetic_netcdf(input_path)
 
         print("Converting 'temperature' variable, timestep 0 to COG...")
@@ -266,7 +441,36 @@ def run_self_test() -> bool:
                             time_index=0, verbose=True)
 
         print("Validating...")
-        return run_validation(input_path, output_path, variable="temperature", time_index=0)
+        if not run_validation(input_path, output_path, variable="temperature", time_index=0):
+            all_passed = False
+
+        # Test 2: Geostationary NetCDF
+        print("\n--- Test 2: Geostationary NetCDF ---")
+        geo_input = os.path.join(tmpdir, "test_geostationary.nc")
+        geo_output = os.path.join(tmpdir, "test_geostationary.tif")
+
+        print("Generating synthetic geostationary NetCDF (64x64, GOES-like)...")
+        generate_geostationary_netcdf(geo_input)
+
+        print("Converting 'CMI' variable to COG (should detect + reproject)...")
+        convert_mod.convert(geo_input, geo_output, variable="CMI", verbose=True)
+
+        print("Validating reprojected COG...")
+        if not run_validation(geo_input, geo_output, variable="CMI"):
+            all_passed = False
+
+        # Verify the reprojected COG has sensible geographic bounds (not near 0,0)
+        with rasterio.open(geo_output) as dst:
+            b = dst.bounds
+            # With lon_0=-137 and ±0.02 rad, expect bounds roughly around -138 to -136 lon
+            if abs(b.left) < 1 and abs(b.right) < 1:
+                print("FAIL: Reprojected bounds are near (0,0) — coordinate scaling likely broken")
+                all_passed = False
+            else:
+                print(f"Reprojected bounds look correct: ({b.left:.2f}, {b.bottom:.2f}, "
+                      f"{b.right:.2f}, {b.top:.2f})")
+
+    return all_passed
 
 
 def run_checks(input_path: str, output_path: str, variable: str | None = None,

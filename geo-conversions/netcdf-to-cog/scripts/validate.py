@@ -364,8 +364,43 @@ def generate_synthetic_netcdf(path: str):
     ds.close()
 
 
+def generate_geostationary_netcdf(path: str):
+    """Generate a small synthetic geostationary NetCDF for self-testing.
+
+    Creates a 64x64 grid of scanning angles in radians with a
+    goes_imager_projection variable, mimicking GOES-R ABI structure.
+    """
+    sat_height = 35786023.0
+    # Small scanning angle range (~±0.02 radians ≈ ±1.15 degrees from nadir)
+    x_rad = np.linspace(-0.02, 0.02, 64).astype(np.float64)
+    y_rad = np.linspace(0.02, -0.02, 64).astype(np.float64)  # north-to-south
+
+    rng = np.random.default_rng(456)
+    data = rng.uniform(0.1, 1.0, (64, 64)).astype(np.float32)
+
+    ds = xr.Dataset(
+        {"CMI": (["y", "x"], data, {"grid_mapping": "goes_imager_projection",
+                                     "_FillValue": np.float32(-1.0)})},
+        coords={"x": x_rad, "y": y_rad},
+    )
+    ds["goes_imager_projection"] = xr.DataArray(
+        np.int32(0),
+        attrs={
+            "grid_mapping_name": "geostationary",
+            "perspective_point_height": sat_height,
+            "longitude_of_projection_origin": -137.0,
+            "sweep_angle_axis": "x",
+            "semi_major_axis": 6378137.0,
+            "semi_minor_axis": 6356752.31414,
+            "latitude_of_projection_origin": 0.0,
+        },
+    )
+    ds.to_netcdf(path)
+    ds.close()
+
+
 def run_self_test() -> bool:
-    """Generate synthetic NetCDF, convert, and validate."""
+    """Generate synthetic NetCDFs, convert, and validate."""
     print("Running self-test...")
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -379,11 +414,15 @@ def run_self_test() -> bool:
     convert_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(convert_mod)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_path = os.path.join(tmpdir, "test_input.nc")
-        output_path = os.path.join(tmpdir, "test_output.tif")
+    all_passed = True
 
-        print("Generating synthetic NetCDF (2 variables, 3 timesteps)...")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Test 1: Geographic NetCDF (existing test)
+        print("\n--- Test 1: Geographic NetCDF ---")
+        input_path = os.path.join(tmpdir, "test_geographic.nc")
+        output_path = os.path.join(tmpdir, "test_geographic.tif")
+
+        print("Generating synthetic geographic NetCDF (2 variables, 3 timesteps)...")
         generate_synthetic_netcdf(input_path)
 
         print("Converting 'temperature' variable, timestep 0 to COG...")
@@ -391,7 +430,36 @@ def run_self_test() -> bool:
                             time_index=0, verbose=True)
 
         print("Validating...")
-        return run_validation(input_path, output_path, variable="temperature", time_index=0)
+        if not run_validation(input_path, output_path, variable="temperature", time_index=0):
+            all_passed = False
+
+        # Test 2: Geostationary NetCDF
+        print("\n--- Test 2: Geostationary NetCDF ---")
+        geo_input = os.path.join(tmpdir, "test_geostationary.nc")
+        geo_output = os.path.join(tmpdir, "test_geostationary.tif")
+
+        print("Generating synthetic geostationary NetCDF (64x64, GOES-like)...")
+        generate_geostationary_netcdf(geo_input)
+
+        print("Converting 'CMI' variable to COG (should detect + reproject)...")
+        convert_mod.convert(geo_input, geo_output, variable="CMI", verbose=True)
+
+        print("Validating reprojected COG...")
+        if not run_validation(geo_input, geo_output, variable="CMI"):
+            all_passed = False
+
+        # Verify the reprojected COG has sensible geographic bounds (not near 0,0)
+        with rasterio.open(geo_output) as dst:
+            b = dst.bounds
+            # With lon_0=-137 and ±0.02 rad, expect bounds roughly around -138 to -136 lon
+            if abs(b.left) < 1 and abs(b.right) < 1:
+                print("FAIL: Reprojected bounds are near (0,0) — coordinate scaling likely broken")
+                all_passed = False
+            else:
+                print(f"Reprojected bounds look correct: ({b.left:.2f}, {b.bottom:.2f}, "
+                      f"{b.right:.2f}, {b.top:.2f})")
+
+    return all_passed
 
 
 def run_checks(input_path: str, output_path: str, variable: str | None = None,

@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.config import get_settings
 from src.models.base import Base
+from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
 from src.services.cleanup import cleanup_expired_rows
 from src.state import scan_store, scan_store_lock
@@ -88,6 +89,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
         return {"status": "ok"}
 
     from src.routes.bug_report import router as bug_report_router
+    from src.routes.connections import router as connections_router
     from src.routes.datasets import router as datasets_router
     from src.routes.jobs import router as jobs_router
     from src.routes.stories import router as stories_router
@@ -98,6 +100,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(datasets_router)
     app.include_router(stories_router)
     app.include_router(bug_report_router)
+    app.include_router(connections_router)
 
     return app
 

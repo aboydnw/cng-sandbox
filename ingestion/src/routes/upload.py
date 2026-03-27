@@ -134,7 +134,7 @@ async def convert_url(
     try:
         async with _save_chunks(suffix=ext) as (tmp_path, write):  # noqa: SIM117
             async with httpx.AsyncClient(
-                follow_redirects=True, timeout=120.0
+                follow_redirects=True, timeout=300.0
             ) as client:
                 async with client.stream("GET", body.url) as resp:
                     resp.raise_for_status()

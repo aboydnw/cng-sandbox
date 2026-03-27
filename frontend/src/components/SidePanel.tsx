@@ -12,7 +12,9 @@ interface SidePanelProps {
   dataset: Dataset;
   bytesTransferred: number | null;
   onDetailsClick: () => void;
-  /** Contextual controls for the bottom section — raster or vector */
+  colormap?: string;
+  opacity?: number;
+  basemap?: string;
   children?: ReactNode;
 }
 
@@ -20,6 +22,9 @@ export function SidePanel({
   dataset,
   bytesTransferred,
   onDetailsClick,
+  colormap,
+  opacity,
+  basemap,
   children,
 }: SidePanelProps) {
   const [mode, setMode] = useState<"dataset" | "upload">("dataset");
@@ -44,7 +49,12 @@ export function SidePanel({
         />
 
         <Box mt={4}>
-          <StoryCTABanner dataset={dataset} />
+          <StoryCTABanner
+            dataset={dataset}
+            colormap={colormap}
+            opacity={opacity}
+            basemap={basemap}
+          />
         </Box>
 
         <Flex

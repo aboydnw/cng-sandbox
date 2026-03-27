@@ -485,6 +485,9 @@ export default function MapPage() {
               dataset={dataset}
               bytesTransferred={bytesTransferred}
               onDetailsClick={() => setReportCardOpen(true)}
+              colormap={colormapName}
+              opacity={opacity}
+              basemap={basemap}
             >
               {dataset.dataset_type === "raster" && (
                 <RasterSidebarControls

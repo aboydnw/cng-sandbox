@@ -20,13 +20,22 @@ import { cameraFromBounds } from "../lib/layers";
 
 interface StoryCTABannerProps {
   dataset: Dataset;
+  colormap?: string;
+  opacity?: number;
+  basemap?: string;
 }
 
-export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
+export function StoryCTABanner({
+  dataset,
+  colormap,
+  opacity,
+  basemap,
+}: StoryCTABannerProps) {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
 
   const handleCreate = useCallback(async () => {
+    const effectiveBasemap = basemap ?? "streets";
     const cam = dataset.bounds ? cameraFromBounds(dataset.bounds) : null;
     const mapState = cam
       ? {
@@ -34,9 +43,17 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
           zoom: cam.zoom,
           pitch: 0,
           bearing: 0,
-          basemap: "streets",
+          basemap: effectiveBasemap,
         }
       : undefined;
+
+    const layerConfig = {
+      ...DEFAULT_LAYER_CONFIG,
+      dataset_id: dataset.id,
+      ...(colormap && { colormap }),
+      ...(opacity != null && { opacity }),
+      ...(basemap && { basemap: effectiveBasemap }),
+    };
 
     const proseChapter = createChapter({
       order: 0,
@@ -49,7 +66,7 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
       order: 1,
       title: "Chapter 2",
       type: "map",
-      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: dataset.id },
+      layer_config: layerConfig,
       ...(mapState && { map_state: mapState }),
     });
 
@@ -59,7 +76,7 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
 
     const created = await createStoryOnServer(story);
     navigate(workspacePath(`/story/${created.id}/edit`));
-  }, [dataset, navigate, workspacePath]);
+  }, [dataset, navigate, workspacePath, colormap, opacity, basemap]);
 
   return (
     <Box

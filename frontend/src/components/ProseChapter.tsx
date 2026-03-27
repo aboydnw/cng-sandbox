@@ -1,6 +1,7 @@
 import { Box, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import type { Chapter } from "../lib/story";
+import { storyMarkdownComponents } from "./storyMarkdownComponents";
 
 interface ProseChapterProps {
   chapter: Chapter;
@@ -37,7 +38,9 @@ export function ProseChapter({ chapter, chapterIndex }: ProseChapterProps) {
           },
         }}
       >
-        <Markdown>{chapter.narrative}</Markdown>
+        <Markdown components={storyMarkdownComponents}>
+          {chapter.narrative}
+        </Markdown>
       </Box>
     </Box>
   );

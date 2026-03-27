@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
+import { storyMarkdownComponents } from "./storyMarkdownComponents";
 import scrollama from "scrollama";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "./UnifiedMap";
@@ -157,7 +158,9 @@ function ScrollytellingBlock({
                   },
                 }}
               >
-                <Markdown>{chapter.narrative}</Markdown>
+                <Markdown components={storyMarkdownComponents}>
+                  {chapter.narrative}
+                </Markdown>
               </Box>
             </Box>
           </Box>

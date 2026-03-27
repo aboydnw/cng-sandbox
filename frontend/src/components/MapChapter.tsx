@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
+import { storyMarkdownComponents } from "./storyMarkdownComponents";
 import { UnifiedMap } from "./UnifiedMap";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
@@ -92,7 +93,9 @@ export function MapChapter({
               },
             }}
           >
-            <Markdown>{chapter.narrative}</Markdown>
+            <Markdown components={storyMarkdownComponents}>
+              {chapter.narrative}
+            </Markdown>
           </Box>
         )}
       </Box>

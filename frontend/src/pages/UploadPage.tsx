@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
@@ -99,7 +99,6 @@ export default function UploadPage() {
   }, []);
 
   const uploadCardExpanded = mode !== "initial";
-  const anyCardExpanded = uploadCardExpanded || storyExpanded;
 
   const handleUploadCardClick = () => {
     setStoryExpanded(false);

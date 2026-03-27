@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { migrateStory } from "../migration";
 import type { Story } from "../types";
 
-function makeOldStory(): any {
+function makeOldStory(): Record<string, unknown> {
   return {
     id: "s-1",
     title: "Old Story",

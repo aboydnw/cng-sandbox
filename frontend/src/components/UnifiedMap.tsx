@@ -13,16 +13,16 @@ interface UnifiedMapProps {
   layers: Layer[];
   basemap: string;
   onBasemapChange: (basemap: string) => void;
-  onHover?: (info: any) => void;
-  onClick?: (info: any) => void;
-  getTooltip?: (info: any) => any;
+  onHover?: (info: unknown) => void;
+  onClick?: (info: unknown) => void;
+  getTooltip?: (info: unknown) => unknown;
   children?: React.ReactNode;
   transitionDuration?: number;
   transitionInterpolator?: FlyToInterpolator;
   interactive?: boolean;
 }
 
-export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
+export const UnifiedMap = forwardRef<unknown, UnifiedMapProps>(function UnifiedMap(
   {
     camera,
     onCameraChange,
@@ -40,7 +40,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   ref
 ) {
   const handleViewStateChange = useCallback(
-    ({ viewState }: { viewState: any }) => {
+    ({ viewState }: { viewState: { longitude: number; latitude: number; zoom: number; bearing?: number; pitch?: number } }) => {
       onCameraChange({
         longitude: viewState.longitude,
         latitude: viewState.latitude,

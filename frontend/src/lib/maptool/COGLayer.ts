@@ -32,7 +32,7 @@ export function createCOGLayer({
     tileSize: 256,
     ...(bounds ? { extent: bounds } : {}),
     ...(onViewportLoad ? { onViewportLoad } : {}),
-    renderSubLayers: (props: any) => {
+    renderSubLayers: (props: { tile: { boundingBox: [[number, number], [number, number]] }; data: unknown } & Record<string, unknown>) => {
       const { boundingBox } = props.tile;
       return new BitmapLayer(props, {
         data: undefined,

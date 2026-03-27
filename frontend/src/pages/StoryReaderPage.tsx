@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";

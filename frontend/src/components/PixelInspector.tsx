@@ -58,11 +58,6 @@ interface HoverInfo {
   bandName: string | null;
 }
 
-interface PixelInspectorProps {
-  tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>;
-  bandNames: string[] | null;
-}
-
 export function usePixelInspector(
   tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
   bandNames: string[] | null
@@ -71,7 +66,7 @@ export function usePixelInspector(
   const hoverRafRef = useRef<number | null>(null);
 
   const onHover = useCallback(
-    (info: any) => {
+    (info: { coordinate?: [number, number]; x: number; y: number }) => {
       if (hoverRafRef.current !== null) {
         cancelAnimationFrame(hoverRafRef.current);
       }

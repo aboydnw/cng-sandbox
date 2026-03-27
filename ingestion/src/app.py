@@ -49,9 +49,23 @@ async def _cleanup_expired(app):
             logger.exception("Cleanup task failed")
 
 
+def _migrate_schema(engine):
+    """Add columns that create_all won't add to existing tables."""
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        for col, typ in [("band_count", "INTEGER"), ("rescale", "TEXT")]:
+            try:
+                conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+
 @asynccontextmanager
 async def _default_lifespan(app: FastAPI):
     Base.metadata.create_all(app.state.db_engine)
+    _migrate_schema(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
     expired_task = asyncio.create_task(_cleanup_expired(app))
     yield
@@ -92,6 +106,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.connections import router as connections_router
     from src.routes.datasets import router as datasets_router
     from src.routes.jobs import router as jobs_router
+    from src.routes.proxy import router as proxy_router
     from src.routes.stories import router as stories_router
     from src.routes.upload import router as upload_router
 
@@ -101,6 +116,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(stories_router)
     app.include_router(bug_report_router)
     app.include_router(connections_router)
+    app.include_router(proxy_router)
 
     return app
 

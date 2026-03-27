@@ -8,7 +8,8 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { X as XIcon, Link as LinkIcon, SpinnerGap } from "@phosphor-icons/react";
-import { detectConnectionType, extractNameFromUrl } from "../lib/connections";
+import { detectConnectionType, extractNameFromUrl, probePMTiles, probeCOG } from "../lib/connections";
+import type { ProbeMetadata } from "../lib/connections";
 import { connectionsApi } from "../lib/api";
 import type { ConnectionType, Connection } from "../types";
 
@@ -33,10 +34,12 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
   const [connectionType, setConnectionType] = useState<ConnectionType | null>(null);
   const [autoDetected, setAutoDetected] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [probing, setProbing] = useState(false);
+  const [probeMetadata, setProbeMetadata] = useState<ProbeMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Auto-detect type and name when URL changes
-  const handleUrlBlur = useCallback(() => {
+  const handleUrlBlur = useCallback(async () => {
     if (!url) return;
     const detected = detectConnectionType(url);
     if (detected) {
@@ -45,6 +48,22 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
     }
     if (!name) {
       setName(extractNameFromUrl(url));
+    }
+    // Probe metadata for PMTiles and COGs
+    if (detected === "pmtiles" || detected === "cog") {
+      setProbing(true);
+      try {
+        const metadata = detected === "pmtiles"
+          ? await probePMTiles(url)
+          : await probeCOG(url);
+        setProbeMetadata(metadata);
+      } catch {
+        setProbeMetadata(null);
+      } finally {
+        setProbing(false);
+      }
+    } else {
+      setProbeMetadata(null);
     }
   }, [url, name]);
 
@@ -56,6 +75,8 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
       setConnectionType(null);
       setAutoDetected(false);
       setSaving(false);
+      setProbing(false);
+      setProbeMetadata(null);
       setError(null);
     }
   }, [isOpen]);
@@ -69,6 +90,18 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
         name,
         url,
         connection_type: connectionType,
+        ...(probeMetadata && {
+          tile_type: probeMetadata.tileType,
+          bounds: probeMetadata.bounds ?? undefined,
+          min_zoom: probeMetadata.minZoom ?? undefined,
+          max_zoom: probeMetadata.maxZoom ?? undefined,
+          band_count: probeMetadata.bandCount ?? undefined,
+          rescale: probeMetadata.rescale ? `${probeMetadata.rescale[0]},${probeMetadata.rescale[1]}` : undefined,
+        }),
+        ...(connectionType === "pmtiles" && !probeMetadata && { tile_type: "vector" }),
+        ...(connectionType === "cog" && !probeMetadata && { tile_type: "raster" }),
+        ...(connectionType === "xyz_raster" && { tile_type: "raster" }),
+        ...(connectionType === "xyz_vector" && { tile_type: "vector" }),
       });
       onCreated(connection);
       onClose();
@@ -81,7 +114,7 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
 
   if (!isOpen) return null;
 
-  const canSave = !!url && !!name && !!connectionType && !saving;
+  const canSave = !!url && !!name && !!connectionType && !saving && !probing;
 
   return (
     <Box
@@ -180,6 +213,27 @@ export function ConnectionModal({ isOpen, onClose, onCreated }: ConnectionModalP
               ))}
             </select>
           </Box>
+
+          {probing && (
+            <Flex align="center" gap={2}>
+              <SpinnerGap
+                size={14}
+                style={{ animation: "spin 1s linear infinite" }}
+              />
+              <Text fontSize="13px" color="gray.500">
+                Reading metadata...
+              </Text>
+            </Flex>
+          )}
+
+          {probeMetadata && !probing && (
+            <Text fontSize="13px" color="green.600">
+              Detected {probeMetadata.tileType} data
+              {probeMetadata.bandCount != null && ` (${probeMetadata.bandCount} band${probeMetadata.bandCount === 1 ? "" : "s"})`}
+              {probeMetadata.bounds && " with bounds"}
+              {probeMetadata.minZoom != null && `, zoom ${probeMetadata.minZoom}–${probeMetadata.maxZoom}`}
+            </Text>
+          )}
 
           {error && (
             <Text fontSize="13px" color="red.500">

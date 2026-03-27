@@ -77,6 +77,20 @@ services:
       database:
         condition: service_healthy
 
+  cog-tiler:
+    image: ghcr.io/developmentseed/titiler:0.19.1
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    environment:
+      GDAL_CACHEMAX: "75%"
+      VSI_CACHE: "TRUE"
+      VSI_CACHE_SIZE: "536870912"
+    ports:
+      - "8084:80"
+
   vector-tiler:
     image: ghcr.io/developmentseed/tipg:1.0.1
     restart: unless-stopped
@@ -155,6 +169,7 @@ services:
       VITE_VECTOR_TILER_URL: ""
       API_PROXY_TARGET: http://ingestion:8000
       RASTER_TILER_PROXY_TARGET: http://raster-tiler:80
+      COG_TILER_PROXY_TARGET: http://cog-tiler:80
       VECTOR_TILER_PROXY_TARGET: http://vector-tiler:80
       STORAGE_PROXY_TARGET: ${R2_PUBLIC_URL}
       STAC_API_PROXY_TARGET: http://stac-api:8080

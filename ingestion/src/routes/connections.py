@@ -25,6 +25,8 @@ class ConnectionCreate(BaseModel):
     min_zoom: int | None = None
     max_zoom: int | None = None
     tile_type: str | None = None
+    band_count: int | None = None
+    rescale: str | None = None
 
 
 def _get_session(request: Request) -> Session:
@@ -75,6 +77,8 @@ async def create_connection(body: ConnectionCreate, request: Request):
             min_zoom=body.min_zoom,
             max_zoom=body.max_zoom,
             tile_type=body.tile_type,
+            band_count=body.band_count,
+            rescale=body.rescale,
             workspace_id=workspace_id,
             created_at=datetime.now(UTC),
         )

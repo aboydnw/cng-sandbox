@@ -26,7 +26,7 @@ describe("buildConnectionTileUrl", () => {
     });
     const result = buildConnectionTileUrl(conn);
     expect(result).toBe(
-      "/raster/cog/tiles/WebMercatorQuad/{z}/{x}/{y}?url=https%3A%2F%2Fbucket.s3.amazonaws.com%2Fscene.tif"
+      "/cog/tiles/WebMercatorQuad/{z}/{x}/{y}?url=https%3A%2F%2Fbucket.s3.amazonaws.com%2Fscene.tif"
     );
   });
 

@@ -304,20 +304,26 @@ export default function MapPage() {
       const tileUrl = buildConnectionTileUrl(connection);
       const connType = connection.connection_type;
 
-      // COG — raster tiles via titiler
+      // COG — raster tiles via titiler; apply colormap + rescale for single-band COGs
       if (connType === "cog") {
-        const sep = tileUrl.includes("?") ? "&" : "?";
-        const fullUrl = `${tileUrl}${sep}colormap_name=${colormapName}`;
+        const isSingleBandCOG = connection.band_count === 1;
+        let finalTileUrl = tileUrl;
+        if (isSingleBandCOG) {
+          finalTileUrl += `&colormap_name=${colormapName}`;
+          if (connection.rescale) {
+            finalTileUrl += `&rescale=${connection.rescale}`;
+          }
+        }
         return buildRasterTileLayers({
-          tileUrl: fullUrl,
+          tileUrl: finalTileUrl,
           opacity,
           isTemporalActive: false,
         });
       }
 
-      // PMTiles — check tile_type for raster vs vector
+      // PMTiles — default to vector when tile_type is unknown
       if (connType === "pmtiles") {
-        if (connection.tile_type === "vector") {
+        if (connection.tile_type !== "raster") {
           return [
             buildVectorLayer({
               tileUrl,
@@ -487,6 +493,7 @@ export default function MapPage() {
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
         {dataset && <BugReportLink datasetId={dataset.id} />}
+        {connection && <BugReportLink connectionId={connection.id} />}
         <ShareButton />
       </Header>
 

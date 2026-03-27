@@ -38,6 +38,16 @@
 		}
 	}
 
+	# COG tiler proxy (standalone titiler for external COGs)
+	handle /cog/* {
+		basic_auth {
+			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
+		}
+		reverse_proxy cog-tiler:80 {
+			header_down Cache-Control "no-store"
+		}
+	}
+
 	# Raster tile proxy
 	handle /raster/* {
 		basic_auth {

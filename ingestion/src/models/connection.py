@@ -20,6 +20,8 @@ class ConnectionRow(Base):
     min_zoom = Column(Integer, nullable=True)
     max_zoom = Column(Integer, nullable=True)
     tile_type = Column(String, nullable=True)  # "raster" or "vector"
+    band_count = Column(Integer, nullable=True)
+    rescale = Column(String, nullable=True)  # "min,max" for single-band COGs
     workspace_id = Column(String, nullable=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
 
@@ -35,6 +37,8 @@ class ConnectionRow(Base):
             "min_zoom": self.min_zoom,
             "max_zoom": self.max_zoom,
             "tile_type": self.tile_type,
+            "band_count": self.band_count,
+            "rescale": self.rescale,
             "workspace_id": self.workspace_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

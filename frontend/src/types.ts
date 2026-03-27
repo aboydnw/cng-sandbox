@@ -74,6 +74,8 @@ export interface Connection {
   min_zoom: number | null;
   max_zoom: number | null;
   tile_type: "raster" | "vector" | null;
+  band_count: number | null;
+  rescale: string | null;
   workspace_id: string | null;
   created_at: string;
 }

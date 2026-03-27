@@ -49,6 +49,7 @@ jobs:
       - uses: anthropics/claude-code-action@094bd24d575e7b30ac1576024817bf1a97c81262 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-6
           allowed_tools: |
             Bash(cd frontend && npx vitest run)
             Bash(cd frontend && npx eslint *)

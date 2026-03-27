@@ -4,20 +4,24 @@ import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
-import type { Dataset } from "../types";
+import type { Connection, Dataset } from "../types";
 import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
+import { buildConnectionTileUrl } from "../lib/connections";
+import { buildLayersForChapter } from "../lib/story/rendering";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 
 interface MapChapterProps {
   chapter: Chapter;
   chapterIndex: number;
   dataset: Dataset | null;
+  connection?: Connection;
 }
 
 export function MapChapter({
   chapter,
   chapterIndex,
   dataset,
+  connection,
 }: MapChapterProps) {
   const [camera, setCamera] = useState<CameraState>({
     longitude: chapter.map_state.center[0],
@@ -33,6 +37,16 @@ export function MapChapter({
   }, []);
 
   const layers = useMemo(() => {
+    // Connection path — delegate to shared rendering logic
+    if (connection) {
+      const connMap = new Map([[connection.id, connection]]);
+      return buildLayersForChapter(
+        chapter,
+        new Map() as Map<string, Dataset | null>,
+        connMap
+      );
+    }
+
     if (!dataset) return [];
     const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
@@ -58,7 +72,7 @@ export function MapChapter({
         maxZoom: dataset.max_zoom ?? undefined,
       }),
     ];
-  }, [dataset, chapter.layer_config]);
+  }, [dataset, connection, chapter]);
 
   return (
     <Box maxW="900px" mx="auto" px={8} py={12}>
@@ -107,7 +121,7 @@ export function MapChapter({
         shadow="sm"
         position="relative"
       >
-        {dataset ? (
+        {dataset || connection ? (
           <UnifiedMap
             camera={camera}
             onCameraChange={handleCameraChange}
@@ -185,9 +199,11 @@ export function MapChapter({
               maxW="250px"
             >
               <Text fontSize="11px" fontWeight={600} color="gray.700" mb={1}>
-                {dataset.filename}
+                {connection ? connection.name : dataset?.filename}
               </Text>
-              {dataset.dataset_type === "raster" && (
+              {(dataset?.dataset_type === "raster" ||
+                (connection?.connection_type === "cog" &&
+                  connection?.band_count === 1)) && (
                 <Text fontSize="10px" color="gray.500">
                   Colormap: {chapter.layer_config?.colormap ?? "viridis"}
                 </Text>

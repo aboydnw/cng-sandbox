@@ -8,7 +8,8 @@ import { StoryRenderer } from "../components/StoryRenderer";
 import { getStoryFromServer, migrateStory } from "../lib/story";
 import { BugReportLink } from "../components/BugReportLink";
 import type { Story } from "../lib/story";
-import type { Dataset } from "../types";
+import type { Connection, Dataset } from "../types";
+import { connectionsApi } from "../lib/api";
 import { config } from "../config";
 
 export default function StoryReaderPage({
@@ -20,6 +21,9 @@ export default function StoryReaderPage({
   const { workspacePath } = useWorkspace();
   const [story, setStory] = useState<Story | null>(null);
   const [datasetMap, setDatasetMap] = useState<Map<string, Dataset | null>>(
+    new Map()
+  );
+  const [connectionMap, setConnectionMap] = useState<Map<string, Connection>>(
     new Map()
   );
   const [loading, setLoading] = useState(true);
@@ -49,11 +53,12 @@ export default function StoryReaderPage({
 
   useEffect(() => {
     if (!story) return;
-    async function fetchDatasets() {
-      const ids = story!.dataset_ids ?? [story!.dataset_id];
-      const uniqueIds = [...new Set(ids)];
-      const entries = await Promise.all(
-        uniqueIds.map(async (dsId) => {
+    async function fetchData() {
+      // Fetch datasets
+      const dsIds = story!.dataset_ids ?? [story!.dataset_id];
+      const uniqueDsIds = [...new Set(dsIds)].filter(Boolean);
+      const dsEntries = await Promise.all(
+        uniqueDsIds.map(async (dsId) => {
           try {
             const resp = await fetch(`${config.apiBase}/api/datasets/${dsId}`);
             if (!resp.ok) return [dsId, null] as const;
@@ -63,10 +68,37 @@ export default function StoryReaderPage({
           }
         })
       );
-      setDatasetMap(new Map(entries));
+      setDatasetMap(new Map(dsEntries));
+
+      // Fetch connections referenced by chapters
+      const connIds = [
+        ...new Set(
+          story!.chapters
+            .map((ch) => ch.layer_config?.connection_id)
+            .filter(Boolean) as string[]
+        ),
+      ];
+      if (connIds.length > 0) {
+        const connEntries = await Promise.all(
+          connIds.map(async (cid) => {
+            try {
+              const conn = await connectionsApi.get(cid);
+              return [cid, conn] as [string, Connection];
+            } catch {
+              return null;
+            }
+          })
+        );
+        const validEntries = connEntries.filter(Boolean) as [
+          string,
+          Connection,
+        ][];
+        setConnectionMap(new Map(validEntries));
+      }
+
       setLoading(false);
     }
-    fetchDatasets();
+    fetchData();
   }, [story]);
 
   if (loading) {
@@ -129,7 +161,11 @@ export default function StoryReaderPage({
       )}
 
       <Box flex={1} overflowY="auto">
-        <StoryRenderer story={story} datasetMap={datasetMap} />
+        <StoryRenderer
+          story={story}
+          datasetMap={datasetMap}
+          connectionMap={connectionMap}
+        />
       </Box>
     </Box>
   );

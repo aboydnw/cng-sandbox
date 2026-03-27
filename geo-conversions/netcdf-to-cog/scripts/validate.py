@@ -229,20 +229,25 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
         tolerance = 0.5
         with rasterio.open(output_path) as cog:
             cog_nodata = cog.nodata
-            cog_vals = []
-            for lon, lat in zip(lons, lats):
+            cog_data = cog.read(1)
+            cog_rows = np.empty(len(lons), dtype=np.int64)
+            cog_cols = np.empty(len(lons), dtype=np.int64)
+            for i, (lon, lat) in enumerate(zip(lons, lats)):
                 try:
-                    row, col = cog.index(lon, lat)
-                    if 0 <= row < cog.height and 0 <= col < cog.width:
-                        val = cog.read(1, window=rasterio.windows.Window(col, row, 1, 1))[0, 0]
-                        cog_vals.append(val)
-                    else:
-                        cog_vals.append(np.nan)
+                    r, c = cog.index(lon, lat)
+                    cog_rows[i] = r
+                    cog_cols[i] = c
                 except Exception:
-                    cog_vals.append(np.nan)
-            cog_vals = np.array(cog_vals, dtype=np.float32)
+                    cog_rows[i] = -1
+                    cog_cols[i] = -1
 
-        valid = ~np.isnan(cog_vals)
+            in_bounds = ((cog_rows >= 0) & (cog_rows < cog.height) &
+                         (cog_cols >= 0) & (cog_cols < cog.width))
+
+        cog_vals = np.full(len(lons), np.nan, dtype=np.float32)
+        cog_vals[in_bounds] = cog_data[cog_rows[in_bounds], cog_cols[in_bounds]]
+
+        valid = ~np.isnan(cog_vals) & in_bounds
         if cog_nodata is not None:
             valid &= (cog_vals != cog_nodata)
 

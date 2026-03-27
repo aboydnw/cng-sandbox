@@ -37,6 +37,10 @@ import { detectCadence, formatTimestepLabel } from "../utils/temporal";
 import { config } from "../config";
 import type { Dataset } from "../types";
 import type { Table } from "apache-arrow";
+import { ConnectionSidePanel } from "../components/ConnectionSidePanel";
+import { connectionsApi } from "../lib/api";
+import { buildConnectionTileUrl } from "../lib/connections";
+import type { Connection } from "../types";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
 type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
@@ -59,6 +63,9 @@ export default function MapPage() {
   const [opacity, setOpacity] = useState(0.8);
   const [colormapName, setColormapName] = useState("viridis");
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
+  const [connection, setConnection] = useState<Connection | null>(null);
+  // Detect connection route: URL contains /map/connection/
+  const isConnectionRoute = window.location.pathname.includes("/map/connection/");
   const deckRef = useRef(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
@@ -96,6 +103,7 @@ export default function MapPage() {
 
   useEffect(() => {
     async function fetchDataset() {
+      if (isConnectionRoute) { setLoading(false); return; }
       try {
         const resp = await fetch(`${config.apiBase}/api/datasets/${id}`);
         if (resp.status === 404) {
@@ -120,7 +128,29 @@ export default function MapPage() {
       }
     }
     fetchDataset();
-  }, [id, navigate, workspacePath]);
+  }, [id, navigate, workspacePath, isConnectionRoute]);
+
+  useEffect(() => {
+    if (!isConnectionRoute || !id) return;
+    async function fetchConnection() {
+      try {
+        const conn = await connectionsApi.get(id!);
+        setConnection(conn);
+        if (conn.bounds) {
+          const el = mapContainerRef.current;
+          const size = el
+            ? { width: el.clientWidth, height: el.clientHeight }
+            : undefined;
+          setCamera(cameraFromBounds(conn.bounds, size));
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load connection");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchConnection();
+  }, [id, isConnectionRoute]);
 
   // --- Raster band logic ---
   const isSingleBand = dataset?.band_count === 1;
@@ -270,6 +300,67 @@ export default function MapPage() {
 
   // --- Build deck.gl layers ---
   const layers = useMemo(() => {
+    if (connection) {
+      const tileUrl = buildConnectionTileUrl(connection);
+      const connType = connection.connection_type;
+
+      // COG — raster tiles via titiler
+      if (connType === "cog") {
+        const sep = tileUrl.includes("?") ? "&" : "?";
+        const fullUrl = `${tileUrl}${sep}colormap_name=${colormapName}`;
+        return buildRasterTileLayers({
+          tileUrl: fullUrl,
+          opacity,
+          isTemporalActive: false,
+        });
+      }
+
+      // PMTiles — check tile_type for raster vs vector
+      if (connType === "pmtiles") {
+        if (connection.tile_type === "vector") {
+          return [
+            buildVectorLayer({
+              tileUrl,
+              isPMTiles: true,
+              opacity,
+              minZoom: connection.min_zoom ?? undefined,
+              maxZoom: connection.max_zoom ?? undefined,
+            }),
+          ];
+        }
+        // Raster PMTiles
+        return buildRasterTileLayers({
+          tileUrl,
+          opacity,
+          isTemporalActive: false,
+        });
+      }
+
+      // XYZ raster — pre-rendered tiles
+      if (connType === "xyz_raster") {
+        return buildRasterTileLayers({
+          tileUrl,
+          opacity,
+          isTemporalActive: false,
+        });
+      }
+
+      // XYZ vector (MVT)
+      if (connType === "xyz_vector") {
+        return [
+          buildVectorLayer({
+            tileUrl,
+            isPMTiles: false,
+            opacity,
+            minZoom: connection.min_zoom ?? undefined,
+            maxZoom: connection.max_zoom ?? undefined,
+          }),
+        ];
+      }
+
+      return [];
+    }
+
     if (!dataset) return [];
 
     if (dataset.dataset_type === "raster") {
@@ -309,6 +400,7 @@ export default function MapPage() {
       }),
     ];
   }, [
+    connection,
     dataset,
     renderMode,
     canClientRender,
@@ -389,12 +481,12 @@ export default function MapPage() {
     );
   }
 
-  if (!dataset) return null;
+  if (!dataset && !connection) return null;
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
-        <BugReportLink datasetId={dataset.id} />
+        {dataset && <BugReportLink datasetId={dataset.id} />}
         <ShareButton />
       </Header>
 
@@ -419,7 +511,7 @@ export default function MapPage() {
                       {
                         type: "continuous" as const,
                         id: "raster",
-                        title: dataset.filename,
+                        title: dataset?.filename ?? "",
                         domain,
                         colors,
                       },
@@ -428,7 +520,7 @@ export default function MapPage() {
                 </Box>
               )}
 
-              {dataset.is_temporal && renderMode !== "client" && (
+              {dataset?.is_temporal && renderMode !== "client" && (
                 <TemporalControls
                   timesteps={dataset.timesteps}
                   activeIndex={animation.activeIndex}
@@ -461,7 +553,7 @@ export default function MapPage() {
               )}
 
               {vectorPopup.popup &&
-                dataset.dataset_type === "vector" &&
+                dataset?.dataset_type === "vector" &&
                 renderMode !== "geojson" && (
                   <VectorPopupOverlay
                     popup={vectorPopup.popup}
@@ -481,59 +573,72 @@ export default function MapPage() {
             borderColor="brand.border"
             overflow="hidden"
           >
-            <SidePanel
-              dataset={dataset}
-              bytesTransferred={bytesTransferred}
-              onDetailsClick={() => setReportCardOpen(true)}
-            >
-              {dataset.dataset_type === "raster" && (
-                <RasterSidebarControls
-                  opacity={opacity}
-                  onOpacityChange={setOpacity}
-                  colormapName={colormapName}
-                  onColormapChange={setColormapName}
-                  showColormap={showingColormap}
-                  bands={selectableBands}
-                  hasRgb={hasRgb}
-                  selectedBand={selectedBand}
-                  onBandChange={setSelectedBand}
-                  showBands={isMultiBand}
-                  canClientRender={canClientRender}
-                  renderMode={renderMode === "client" ? "client" : "server"}
-                  onRenderModeChange={(mode) => setRenderMode(mode)}
-                />
-              )}
-              {dataset.dataset_type === "vector" && (
-                <>
-                  <VectorSidebarControls
-                    renderMode={
-                      renderMode === "geojson" ? "geojson" : "vector-tiles"
-                    }
-                    onRenderModeChange={(mode) => {
-                      setRenderMode(mode);
-                      if (mode === "vector-tiles") setArrowTable(null);
-                    }}
-                    hasParquet={!!dataset.parquet_url}
+            {connection ? (
+              <ConnectionSidePanel
+                connection={connection}
+                opacity={opacity}
+                onOpacityChange={setOpacity}
+                colormapName={colormapName}
+                onColormapChange={setColormapName}
+                showColormap={connection.connection_type === "cog"}
+              />
+            ) : dataset ? (
+              <SidePanel
+                dataset={dataset}
+                bytesTransferred={bytesTransferred}
+                onDetailsClick={() => setReportCardOpen(true)}
+              >
+                {dataset.dataset_type === "raster" && (
+                  <RasterSidebarControls
+                    opacity={opacity}
+                    onOpacityChange={setOpacity}
+                    colormapName={colormapName}
+                    onColormapChange={setColormapName}
+                    showColormap={showingColormap}
+                    bands={selectableBands}
+                    hasRgb={hasRgb}
+                    selectedBand={selectedBand}
+                    onBandChange={setSelectedBand}
+                    showBands={isMultiBand}
+                    canClientRender={canClientRender}
+                    renderMode={renderMode === "client" ? "client" : "server"}
+                    onRenderModeChange={(mode) => setRenderMode(mode)}
                   />
-                  {renderMode === "geojson" && dataset.parquet_url && (
-                    <ExploreTab
-                      dataset={dataset}
-                      active={true}
-                      onTableChange={handleTableChange}
+                )}
+                {dataset.dataset_type === "vector" && (
+                  <>
+                    <VectorSidebarControls
+                      renderMode={
+                        renderMode === "geojson" ? "geojson" : "vector-tiles"
+                      }
+                      onRenderModeChange={(mode) => {
+                        setRenderMode(mode);
+                        if (mode === "vector-tiles") setArrowTable(null);
+                      }}
+                      hasParquet={!!dataset.parquet_url}
                     />
-                  )}
-                </>
-              )}
-            </SidePanel>
+                    {renderMode === "geojson" && dataset.parquet_url && (
+                      <ExploreTab
+                        dataset={dataset}
+                        active={true}
+                        onTableChange={handleTableChange}
+                      />
+                    )}
+                  </>
+                )}
+              </SidePanel>
+            ) : null}
           </Box>
         </Flex>
       </ErrorBoundary>
-      <ReportCard
-        dataset={dataset}
-        isOpen={reportCardOpen}
-        onClose={() => setReportCardOpen(false)}
-        renderMode={renderMode}
-      />
+      {dataset && (
+        <ReportCard
+          dataset={dataset}
+          isOpen={reportCardOpen}
+          onClose={() => setReportCardOpen(false)}
+          renderMode={renderMode}
+        />
+      )}
     </Box>
   );
 }

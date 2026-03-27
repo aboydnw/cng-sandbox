@@ -13,8 +13,11 @@ interface UnifiedMapProps {
   layers: Layer[];
   basemap: string;
   onBasemapChange: (basemap: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onHover?: (info: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onClick?: (info: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getTooltip?: (info: any) => any;
   children?: React.ReactNode;
   transitionDuration?: number;
@@ -22,6 +25,7 @@ interface UnifiedMapProps {
   interactive?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   {
     camera,
@@ -40,7 +44,17 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   ref
 ) {
   const handleViewStateChange = useCallback(
-    ({ viewState }: { viewState: any }) => {
+    ({
+      viewState,
+    }: {
+      viewState: {
+        longitude: number;
+        latitude: number;
+        zoom: number;
+        bearing?: number;
+        pitch?: number;
+      };
+    }) => {
       onCameraChange({
         longitude: viewState.longitude,
         latitude: viewState.latitude,

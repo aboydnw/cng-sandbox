@@ -30,7 +30,9 @@ describe("createStoryOnServer", () => {
       json: () => Promise.resolve(response),
     });
 
-    const result = await createStoryOnServer(story as any);
+    const result = await createStoryOnServer(
+      story as unknown as Parameters<typeof createStoryOnServer>[0]
+    );
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/stories",
       expect.objectContaining({ method: "POST" })
@@ -70,7 +72,9 @@ describe("saveStoryToServer", () => {
       json: () => Promise.resolve(story),
     });
 
-    await saveStoryToServer(story as any);
+    await saveStoryToServer(
+      story as unknown as Parameters<typeof saveStoryToServer>[0]
+    );
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/stories/s-1",
       expect.objectContaining({ method: "PATCH" })

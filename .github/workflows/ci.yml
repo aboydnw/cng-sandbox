@@ -57,7 +57,7 @@ jobs:
       - run: npm ci
 
       - name: Lint
-        run: npx eslint src/
+        run: npx eslint src/ --max-warnings 0
 
       - name: Check formatting
         run: npx prettier --check 'src/**/*.{ts,tsx,css}'
@@ -85,3 +85,27 @@ jobs:
           persist-credentials: false
       - run: cp .env.example .env
       - run: docker compose build
+
+  pr-size-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check PR size
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          LINES=$(git diff --numstat "origin/$BASE_REF"...HEAD | awk '{s+=$1+$2} END {print s+0}')
+          echo "Total changed lines: $LINES"
+          if [ "$LINES" -gt 500 ]; then
+            gh pr comment "$PR_NUMBER" \
+              --body "**Large PR warning:** This PR changes $LINES lines. Consider breaking it into smaller changes for easier review."
+          fi

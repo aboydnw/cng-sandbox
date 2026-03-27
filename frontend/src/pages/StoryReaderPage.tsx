@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
@@ -35,7 +35,9 @@ export default function StoryReaderPage({
           setLoading(false);
           return;
         }
-        const migrated = migrateStory(loaded);
+        const migrated = migrateStory(
+          loaded as unknown as Record<string, unknown>
+        );
         setStory(migrated);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load story");

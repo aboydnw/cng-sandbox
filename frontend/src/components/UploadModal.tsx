@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import {
   Box,
-  Button,
   CloseButton,
   DialogBackdrop,
   DialogBody,

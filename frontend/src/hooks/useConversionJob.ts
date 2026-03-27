@@ -290,7 +290,11 @@ export function useConversionJob() {
             ? body.detail
             : Array.isArray(body.detail)
               ? body.detail
-                  .map((e: any) => e.msg ?? JSON.stringify(e))
+                  .map((e: unknown) =>
+                    e instanceof Object && "msg" in e
+                      ? String((e as Record<string, unknown>).msg)
+                      : JSON.stringify(e)
+                  )
                   .join("; ")
               : "Fetch failed";
         setState((prev) => ({

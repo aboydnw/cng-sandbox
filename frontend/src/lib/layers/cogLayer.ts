@@ -5,7 +5,7 @@ import wktParser from "wkt-parser";
 
 // --- EPSG resolver (offline for common CRSes, network fallback) ---
 
-const EPSG_DEFS: Record<number, any> = {
+const EPSG_DEFS: Record<number, unknown> = {
   4326: {
     projName: "longlat",
     name: "WGS 84",
@@ -112,7 +112,29 @@ export function buildCogLayer({
   const url = window.location.origin + cogUrl;
   const range = rasterMax - rasterMin || 1;
 
-  const getTileData = async (image: any, options: any) => {
+  const getTileData = async (
+    image: {
+      fetchTile: (
+        x: number,
+        y: number,
+        opts: { boundless: boolean; signal: AbortSignal }
+      ) => Promise<{
+        array: {
+          layout: string;
+          bands: Float32Array[];
+          data: Float32Array;
+          width: number;
+          height: number;
+        };
+      }>;
+    },
+    options: {
+      device: { createTexture: (opts: unknown) => unknown };
+      x: number;
+      y: number;
+      signal: AbortSignal;
+    }
+  ) => {
     const { device, x, y, signal } = options;
     const tile = await image.fetchTile(x, y, {
       boundless: false,
@@ -176,11 +198,12 @@ export function buildCogLayer({
     return { texture, width, height };
   };
 
-  const renderTile = (data: any) => [
+  const renderTile = (data: { texture: unknown }) => [
     { module: CreateTexture, props: { textureName: data.texture } },
     { module: ViridisColorize },
   ];
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return [
     new COGLayer({
       id: "direct-cog-layer",
@@ -190,6 +213,7 @@ export function buildCogLayer({
       renderTile,
     } as any),
   ];
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export { localEpsgResolver };

@@ -32,9 +32,11 @@ export function createCOGLayer({
     tileSize: 256,
     ...(bounds ? { extent: bounds } : {}),
     ...(onViewportLoad ? { onViewportLoad } : {}),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     renderSubLayers: (props: any) => {
       const { boundingBox } = props.tile;
-      return new BitmapLayer(props, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return new BitmapLayer(props as any, {
         data: undefined,
         image: props.data,
         bounds: [

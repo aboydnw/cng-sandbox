@@ -68,7 +68,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#e26952",
     "#b40426",
   ],
-  RdYlGn: [
+  rdylgn: [
     "#a50026",
     "#d73027",
     "#f46d43",
@@ -80,7 +80,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#1a9850",
     "#006837",
   ],
-  RdBu: [
+  rdbu: [
     "#67001f",
     "#b2182b",
     "#d6604d",
@@ -92,7 +92,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#2166ac",
     "#053061",
   ],
-  YlOrRd: [
+  ylorrd: [
     "#ffffcc",
     "#ffeda0",
     "#fed976",
@@ -103,7 +103,18 @@ export const COLORMAPS: Record<string, string[]> = {
     "#bd0026",
     "#800026",
   ],
-  Blues: [
+  terrain: [
+    "#333399",
+    "#0077b3",
+    "#00b300",
+    "#66cc00",
+    "#ffe066",
+    "#cc9933",
+    "#8b4513",
+    "#c0c0c0",
+    "#ffffff",
+  ],
+  blues: [
     "#f7fbff",
     "#deebf7",
     "#c6dbef",
@@ -114,7 +125,18 @@ export const COLORMAPS: Record<string, string[]> = {
     "#08519c",
     "#08306b",
   ],
-  Greens: [
+  reds: [
+    "#fff5f0",
+    "#fee0d2",
+    "#fcbba1",
+    "#fc9272",
+    "#fb6a4a",
+    "#ef3b2c",
+    "#cb181d",
+    "#a50f15",
+    "#67000d",
+  ],
+  greens: [
     "#f7fcf5",
     "#e5f5e0",
     "#c7e9c0",
@@ -125,10 +147,27 @@ export const COLORMAPS: Record<string, string[]> = {
     "#006d2c",
     "#00441b",
   ],
+  gray: [
+    "#000000",
+    "#1c1c1c",
+    "#383838",
+    "#555555",
+    "#717171",
+    "#8e8e8e",
+    "#aaaaaa",
+    "#c6c6c6",
+    "#e3e3e3",
+    "#ffffff",
+  ],
 };
 
+export function colormapGradient(name: string): string {
+  const colors = COLORMAPS[name.toLowerCase()] ?? COLORMAPS.viridis;
+  return `linear-gradient(90deg, ${colors.join(", ")})`;
+}
+
 export function getColormap(name: string): string[] {
-  return COLORMAPS[name] ?? COLORMAPS.viridis;
+  return COLORMAPS[name.toLowerCase()] ?? COLORMAPS.viridis;
 }
 
 export function listColormaps(): string[] {

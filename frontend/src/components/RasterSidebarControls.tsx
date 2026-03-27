@@ -1,5 +1,5 @@
 import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
-import { listColormaps } from "../lib/maptool";
+import { listColormaps, colormapLabel } from "../lib/maptool";
 
 const COLORMAP_NAMES = listColormaps();
 
@@ -106,7 +106,7 @@ export function RasterSidebarControls({
             >
               {COLORMAP_NAMES.map((name) => (
                 <option key={name} value={name}>
-                  {name}
+                  {colormapLabel(name)}
                 </option>
               ))}
             </NativeSelect.Field>

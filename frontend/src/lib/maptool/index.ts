@@ -7,7 +7,12 @@ export type {
   UseColorScaleOptions,
   UseColorScaleReturn,
 } from "./useColorScale";
-export { listColormaps, getColormap, COLORMAPS } from "./colormaps";
+export {
+  listColormaps,
+  getColormap,
+  colormapLabel,
+  COLORMAPS,
+} from "./colormaps";
 export { MapLegend } from "./MapLegend";
 export type {
   MapLegendProps,

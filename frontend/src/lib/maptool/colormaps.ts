@@ -68,7 +68,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#e26952",
     "#b40426",
   ],
-  RdYlGn: [
+  rdylgn: [
     "#a50026",
     "#d73027",
     "#f46d43",
@@ -80,7 +80,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#1a9850",
     "#006837",
   ],
-  RdBu: [
+  rdbu: [
     "#67001f",
     "#b2182b",
     "#d6604d",
@@ -92,7 +92,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#2166ac",
     "#053061",
   ],
-  YlOrRd: [
+  ylorrd: [
     "#ffffcc",
     "#ffeda0",
     "#fed976",
@@ -103,7 +103,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#bd0026",
     "#800026",
   ],
-  Blues: [
+  blues: [
     "#f7fbff",
     "#deebf7",
     "#c6dbef",
@@ -114,7 +114,7 @@ export const COLORMAPS: Record<string, string[]> = {
     "#08519c",
     "#08306b",
   ],
-  Greens: [
+  greens: [
     "#f7fcf5",
     "#e5f5e0",
     "#c7e9c0",
@@ -126,6 +126,16 @@ export const COLORMAPS: Record<string, string[]> = {
     "#00441b",
   ],
 };
+
+export const COLORMAP_LABELS: Record<string, string> = {
+  rdylgn: "RdYlGn",
+  rdbu: "RdBu",
+  ylorrd: "YlOrRd",
+};
+
+export function colormapLabel(name: string): string {
+  return COLORMAP_LABELS[name] ?? name;
+}
 
 export function getColormap(name: string): string[] {
   return COLORMAPS[name] ?? COLORMAPS.viridis;

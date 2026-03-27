@@ -21,6 +21,7 @@ import {
   buildRasterTileLayers,
   buildVectorLayer,
 } from "../lib/layers";
+import { buildConnectionTileUrl } from "../lib/connections";
 import {
   type Story,
   type Chapter,
@@ -34,9 +35,9 @@ import {
   saveStoryToServer,
   migrateStory,
 } from "../lib/story";
-import type { Dataset } from "../types";
+import type { Connection, Dataset } from "../types";
 import { config } from "../config";
-import { workspaceFetch } from "../lib/api";
+import { workspaceFetch, connectionsApi } from "../lib/api";
 import {
   ArrowCounterClockwise,
   Check,
@@ -106,6 +107,7 @@ export default function StoryEditorPage() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
+  const [allConnections, setAllConnections] = useState<Connection[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { saveState, markSaving, markSaved, markError } = useSaveStatus();
   const { shouldShow, dismiss } = useTooltipDismiss();
@@ -123,6 +125,10 @@ export default function StoryEditorPage() {
       }
     }
     fetchAllDatasets();
+  }, []);
+
+  useEffect(() => {
+    connectionsApi.list().then(setAllConnections).catch(() => {});
   }, []);
 
   // Load or create story
@@ -220,6 +226,12 @@ export default function StoryEditorPage() {
     if (dataset && !map.has(dataset.id)) map.set(dataset.id, dataset);
     return map;
   }, [allDatasets, dataset]);
+
+  const connectionMap = useMemo(() => {
+    const map = new Map<string, Connection>();
+    for (const c of allConnections) map.set(c.id, c);
+    return map;
+  }, [allConnections]);
 
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
@@ -426,9 +438,56 @@ export default function StoryEditorPage() {
 
   // Build layers
   const layers = useMemo(() => {
+    if (!activeChapter) return [];
+    const lc = activeChapter.layer_config ?? DEFAULT_LAYER_CONFIG;
+
+    // Connection path
+    if (lc.connection_id) {
+      const conn = connectionMap.get(lc.connection_id);
+      if (!conn) return [];
+      const tileUrl = buildConnectionTileUrl(conn);
+
+      if (conn.connection_type === "cog") {
+        const sep = tileUrl.includes("?") ? "&" : "?";
+        const fullUrl = `${tileUrl}${sep}colormap_name=${lc.colormap}`;
+        return buildRasterTileLayers({
+          tileUrl: fullUrl,
+          opacity: lc.opacity,
+          isTemporalActive: false,
+        });
+      }
+      if (conn.connection_type === "pmtiles" && conn.tile_type === "vector") {
+        return [
+          buildVectorLayer({
+            tileUrl,
+            isPMTiles: true,
+            opacity: lc.opacity,
+            minZoom: conn.min_zoom ?? undefined,
+            maxZoom: conn.max_zoom ?? undefined,
+          }),
+        ];
+      }
+      if (conn.connection_type === "xyz_vector") {
+        return [
+          buildVectorLayer({
+            tileUrl,
+            isPMTiles: false,
+            opacity: lc.opacity,
+            minZoom: conn.min_zoom ?? undefined,
+            maxZoom: conn.max_zoom ?? undefined,
+          }),
+        ];
+      }
+      return buildRasterTileLayers({
+        tileUrl,
+        opacity: lc.opacity,
+        isTemporalActive: false,
+      });
+    }
+
+    // Dataset path
     const ds = activeDataset;
     if (!ds) return [];
-    const lc = activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG;
 
     if (ds.dataset_type === "raster") {
       const base = ds.tile_url;
@@ -452,7 +511,7 @@ export default function StoryEditorPage() {
         maxZoom: ds.max_zoom ?? undefined,
       }),
     ];
-  }, [activeDataset, activeChapter]);
+  }, [activeDataset, activeChapter, connectionMap]);
 
   // --- Loading / error ---
   if (loading) {
@@ -738,6 +797,7 @@ export default function StoryEditorPage() {
               onLayerConfigChange={updateChapterLayerConfig}
               datasetType={activeDataset?.dataset_type ?? "raster"}
               datasets={allDatasets}
+              connections={allConnections}
               onAddDataset={() => setUploadModalOpen(true)}
             />
           ) : (

@@ -2,7 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { Plus } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
-import type { Dataset } from "../types";
+import type { Connection, Dataset } from "../types";
 import { ChapterTypePicker } from "./ChapterTypePicker";
 import { ColormapPicker } from "./ColormapPicker";
 import { MarkdownToolbar } from "./MarkdownToolbar";
@@ -18,6 +18,7 @@ interface NarrativeEditorProps {
   onLayerConfigChange: (config: LayerConfig) => void;
   datasetType: "raster" | "vector";
   datasets: Dataset[];
+  connections?: Connection[];
   onAddDataset?: () => void;
 }
 
@@ -32,6 +33,7 @@ export function NarrativeEditor({
   onLayerConfigChange,
   datasetType,
   datasets,
+  connections,
   onAddDataset,
 }: NarrativeEditorProps) {
   const [activeTab, setActiveTab] = useState<"content" | "style">("content");
@@ -45,6 +47,13 @@ export function NarrativeEditor({
   }
 
   const showStyleTab = chapterType !== "prose";
+
+  const selectedConnection = connections?.find(
+    (c) => c.id === layerConfig.connection_id
+  );
+  const showStyleColormap =
+    datasetType === "raster" &&
+    !(selectedConnection?.connection_type === "xyz_raster");
 
   return (
     <Flex direction="column" p={3} gap={2}>
@@ -67,13 +76,24 @@ export function NarrativeEditor({
           </Text>
           <Flex gap={1} align="center">
             <select
-              value={layerConfig.dataset_id}
-              onChange={(e) =>
-                onLayerConfigChange({
-                  ...layerConfig,
-                  dataset_id: e.target.value,
-                })
-              }
+              value={layerConfig.connection_id || layerConfig.dataset_id}
+              onChange={(e) => {
+                const val = e.target.value;
+                const isConnection = connections?.some((c) => c.id === val);
+                if (isConnection) {
+                  onLayerConfigChange({
+                    ...layerConfig,
+                    connection_id: val,
+                    dataset_id: "",
+                  });
+                } else {
+                  onLayerConfigChange({
+                    ...layerConfig,
+                    dataset_id: val,
+                    connection_id: undefined,
+                  });
+                }
+              }}
               style={{
                 fontSize: "13px",
                 padding: "6px 8px",
@@ -82,11 +102,24 @@ export function NarrativeEditor({
                 border: "1px solid #e8e5e0",
               }}
             >
-              {datasets.map((ds) => (
-                <option key={ds.id} value={ds.id}>
-                  {ds.filename} ({ds.dataset_type})
-                </option>
-              ))}
+              {datasets.length > 0 && (
+                <optgroup label="Datasets">
+                  {datasets.map((ds) => (
+                    <option key={ds.id} value={ds.id}>
+                      {ds.filename} ({ds.dataset_type})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {connections && connections.length > 0 && (
+                <optgroup label="Connections">
+                  {connections.map((conn) => (
+                    <option key={conn.id} value={conn.id}>
+                      {conn.name} ({conn.connection_type.replace("_", " ")})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
             {onAddDataset && (
               <Text
@@ -208,7 +241,7 @@ export function NarrativeEditor({
 
       {activeTab === "style" && showStyleTab && (
         <Flex direction="column" gap={4} px={1} py={2}>
-          {datasetType === "raster" && (
+          {showStyleColormap && (
             <>
               <Box>
                 <Text

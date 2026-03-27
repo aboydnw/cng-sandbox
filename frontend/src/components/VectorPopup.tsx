@@ -11,18 +11,28 @@ interface PopupInfo {
 export function useVectorPopup() {
   const [popup, setPopup] = useState<PopupInfo | null>(null);
 
-  const onClick = useCallback((info: { object?: { properties?: Record<string, unknown> } & Record<string, unknown>; x: number; y: number }) => {
-    if (!info.object) {
-      setPopup(null);
-      return;
-    }
-    const properties = info.object.properties ?? info.object;
-    setPopup({
-      x: info.x,
-      y: info.y,
-      properties,
-    });
-  }, []);
+  const onClick = useCallback(
+    (info: {
+      object?: { properties?: Record<string, unknown> } & Record<
+        string,
+        unknown
+      >;
+      x: number;
+      y: number;
+    }) => {
+      if (!info.object) {
+        setPopup(null);
+        return;
+      }
+      const properties = info.object.properties ?? info.object;
+      setPopup({
+        x: info.x,
+        y: info.y,
+        properties,
+      });
+    },
+    []
+  );
 
   const dismiss = useCallback(() => setPopup(null), []);
 

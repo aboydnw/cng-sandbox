@@ -30,7 +30,9 @@ describe("createStoryOnServer", () => {
       json: () => Promise.resolve(response),
     });
 
-    const result = await createStoryOnServer(story as Parameters<typeof createStoryOnServer>[0]);
+    const result = await createStoryOnServer(
+      story as Parameters<typeof createStoryOnServer>[0]
+    );
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/stories",
       expect.objectContaining({ method: "POST" })

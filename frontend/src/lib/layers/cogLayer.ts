@@ -112,7 +112,29 @@ export function buildCogLayer({
   const url = window.location.origin + cogUrl;
   const range = rasterMax - rasterMin || 1;
 
-  const getTileData = async (image: { fetchTile: (x: number, y: number, opts: { boundless: boolean; signal: AbortSignal }) => Promise<{ array: { layout: string; bands: Float32Array[]; data: Float32Array; width: number; height: number } }> }, options: { device: { createTexture: (opts: unknown) => unknown }; x: number; y: number; signal: AbortSignal }) => {
+  const getTileData = async (
+    image: {
+      fetchTile: (
+        x: number,
+        y: number,
+        opts: { boundless: boolean; signal: AbortSignal }
+      ) => Promise<{
+        array: {
+          layout: string;
+          bands: Float32Array[];
+          data: Float32Array;
+          width: number;
+          height: number;
+        };
+      }>;
+    },
+    options: {
+      device: { createTexture: (opts: unknown) => unknown };
+      x: number;
+      y: number;
+      signal: AbortSignal;
+    }
+  ) => {
     const { device, x, y, signal } = options;
     const tile = await image.fetchTile(x, y, {
       boundless: false,

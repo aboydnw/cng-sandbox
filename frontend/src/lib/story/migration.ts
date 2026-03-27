@@ -1,7 +1,9 @@
 import type { Story } from "./types";
 
 export function migrateStory(story: Record<string, unknown>): Story {
-  const chapters = ((story.chapters as Record<string, unknown>[] | undefined) ?? []).map((ch: Record<string, unknown>) => {
+  const chapters = (
+    (story.chapters as Record<string, unknown>[] | undefined) ?? []
+  ).map((ch: Record<string, unknown>) => {
     const lc = { ...(ch.layer_config ?? {}) };
     if (!lc.dataset_id) {
       lc.dataset_id = story.dataset_id;
@@ -10,7 +12,10 @@ export function migrateStory(story: Record<string, unknown>): Story {
   });
 
   const chapterDatasetIds = chapters
-    .map((ch: Record<string, unknown>) => (ch.layer_config as Record<string, unknown>).dataset_id)
+    .map(
+      (ch: Record<string, unknown>) =>
+        (ch.layer_config as Record<string, unknown>).dataset_id
+    )
     .filter((id: string) => id);
   const uniqueIds = [...new Set<string>(chapterDatasetIds)];
 

@@ -101,8 +101,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{s+=$1+$2} END {print s+0}')
+          LINES=$(git diff --numstat "origin/$BASE_REF"...HEAD | awk '{s+=$1+$2} END {print s+0}')
           echo "Total changed lines: $LINES"
           if [ "$LINES" -gt 500 ]; then
             gh pr comment "$PR_NUMBER" \

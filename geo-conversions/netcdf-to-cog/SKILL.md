@@ -55,11 +55,13 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 - **Temporal dimensions:** Only one timestep is extracted per conversion. Use `--time-index` to select.
 - **CRS:** Assumed EPSG:4326. Most climate/weather NetCDFs use geographic coordinates. NetCDFs with projected CRS are not handled.
 - **Dimension naming:** The converter recognizes common dimension names: `lat`/`latitude`/`y` and `lon`/`longitude`/`x`. Non-standard names will cause a clear error.
+- **Colormap name casing**: titiler-pgstac uses matplotlib colormaps which require lowercase names. If frontend colormap keys use mixed case (e.g., `RdYlGn`), tile requests will silently fail. Always use lowercase keys for colormap names passed to the tile server.
 
-## Validation checks (8 total)
+## Validation checks (9 total)
 
 | Check | Pass Condition |
 |-------|---------------|
+| Source opens safely | `xr.open_dataset(path, decode_times=False)` succeeds |
 | COG structure | rio-cogeo validate returns valid |
 | CRS present | EPSG:4326 defined |
 | Bounds match | COG bounds contain NetCDF cell centers |
@@ -73,7 +75,10 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 
 - **NetCDF4 / HDF5 MIME type rejection**: NetCDF4 files are built on the HDF5 format. `libmagic` (used by the sandbox ingestion service for magic-byte validation) reports their MIME type as `application/x-hdf5`, not `application/x-netcdf`. The sandbox detector's MIME whitelist for `netcdf-to-cog` must include `application/x-hdf5` alongside `application/x-netcdf` and `application/x-hdf`. Without it, every real-world NetCDF4 file (NCEP reanalysis, ERA5, etc.) is rejected at the scan step with "does not match expected format". Fix: add `application/x-hdf5` to `_MIME_WHITELIST[FormatPair.NETCDF_TO_COG]` in `sandbox/ingestion/src/services/detector.py`.
 
+- **xarray `decode_times` crash on non-standard time encodings**: Satellite data (GOES-R, MODIS, etc.) often encodes time coordinates using non-standard calendar references or day-of-year formats that `cftime`/`datetime` cannot parse. Opening these files with `xr.open_dataset(path)` (which defaults to `decode_times=True`) raises `ValueError: day is out of range for month` or similar errors. Fix: always pass `decode_times=False` when opening NetCDF files for scanning, conversion, or validation — none of these operations need decoded time values.
+
 ## Changelog
 
+- 2026-03-27: Document decode_times failure mode for satellite NetCDFs; add decode_times=False to convert.py and validate.py; add "Source opens safely" validation check.
 - 2026-03-14: Document NetCDF4/HDF5 MIME type rejection failure mode.
 - 2026-03-13: Initial implementation — xarray + rio-cogeo pipeline with 8-check validator and self-test.

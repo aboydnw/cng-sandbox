@@ -37,6 +37,24 @@ class CheckResult:
     detail: str
 
 
+def check_source_opens(input_path: str) -> CheckResult:
+    """Check that the source NetCDF can be opened safely."""
+    try:
+        ds = xr.open_dataset(input_path, decode_times=False)
+        ds.close()
+    except Exception as e:
+        return CheckResult("Source opens safely", False, f"Cannot open: {e}")
+
+    detail = "Opens with decode_times=False"
+    try:
+        ds = xr.open_dataset(input_path, decode_times=True)
+        ds.close()
+    except Exception:
+        detail += " (warning: decode_times=True fails — non-standard time encoding)"
+
+    return CheckResult("Source opens safely", True, detail)
+
+
 def check_cog_valid(output_path: str) -> CheckResult:
     """Check that the file is a valid COG."""
     is_valid, errors, warnings = cog_validate(output_path)
@@ -56,7 +74,7 @@ def check_crs_present(output_path: str) -> CheckResult:
 def check_bounds_match(input_path: str, output_path: str, variable: str | None = None,
                        time_index: int = 0, tolerance: float = 1e-4) -> CheckResult:
     """Check that bounding box covers the NetCDF spatial extent."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -97,7 +115,7 @@ def check_bounds_match(input_path: str, output_path: str, variable: str | None =
 
 def check_dimensions_match(input_path: str, output_path: str, variable: str | None = None) -> CheckResult:
     """Check that pixel dimensions match the NetCDF grid."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -126,7 +144,7 @@ def check_band_count(output_path: str) -> CheckResult:
 def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None = None,
                           time_index: int = 0, n: int = 1000, tolerance: float = 1e-4) -> CheckResult:
     """Sample random pixels and compare values against the NetCDF source."""
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -239,6 +257,31 @@ def generate_synthetic_netcdf(path: str):
     ds.close()
 
 
+def generate_problematic_time_netcdf(path: str):
+    """Generate a NetCDF with time encoding that breaks decode_times=True."""
+    rng = np.random.default_rng(456)
+    lats = np.linspace(10, -10, 32)
+    lons = np.linspace(-10, 10, 64)
+
+    data = rng.standard_normal((32, 64)).astype(np.float32)
+
+    ds = xr.Dataset(
+        {"temperature": (["lat", "lon"], data, {"_FillValue": np.float32(-9999.0)})},
+        coords={"lat": lats, "lon": lons},
+    )
+    ds.attrs["crs"] = "EPSG:4326"
+    ds.to_netcdf(path)
+    ds.close()
+
+    import netCDF4
+    with netCDF4.Dataset(path, "a") as nc:
+        nc.createDimension("time", 1)
+        tv = nc.createVariable("time", "f8", ("time",))
+        tv[:] = [0.0]
+        tv.units = "days since 0001-01-00"
+        tv.calendar = "360_day"
+
+
 def run_self_test() -> bool:
     """Generate synthetic NetCDF, convert, and validate."""
     print("Running self-test...")
@@ -266,13 +309,30 @@ def run_self_test() -> bool:
                             time_index=0, verbose=True)
 
         print("Validating...")
-        return run_validation(input_path, output_path, variable="temperature", time_index=0)
+        passed = run_validation(input_path, output_path, variable="temperature", time_index=0)
+
+        print("\nTesting with problematic time encoding...")
+        problem_path = os.path.join(tmpdir, "problem_time.nc")
+        generate_problematic_time_netcdf(problem_path)
+        problem_output = os.path.join(tmpdir, "problem_output.tif")
+
+        print("Converting problematic-time NetCDF...")
+        convert_mod.convert(problem_path, problem_output, variable="temperature",
+                            time_index=0, verbose=True)
+
+        print("Validating...")
+        problem_passed = run_validation(problem_path, problem_output,
+                                        variable="temperature", time_index=0)
+        passed = passed and problem_passed
+
+        return passed
 
 
 def run_checks(input_path: str, output_path: str, variable: str | None = None,
                time_index: int = 0) -> list[CheckResult]:
     """Run all validation checks and return structured results."""
     return [
+        check_source_opens(input_path),
         check_cog_valid(output_path),
         check_crs_present(output_path),
         check_bounds_match(input_path, output_path, variable=variable, time_index=time_index),

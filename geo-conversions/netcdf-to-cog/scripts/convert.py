@@ -38,7 +38,7 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
     Opens the NetCDF with xarray, selects one variable and one timestep,
     writes a temporary GeoTIFF, then converts to COG with rio-cogeo.
     """
-    ds = xr.open_dataset(input_path)
+    ds = xr.open_dataset(input_path, decode_times=False)
 
     data_vars = list(ds.data_vars)
     if not data_vars:

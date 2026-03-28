@@ -7,20 +7,14 @@ import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { useFilterQuery } from "../hooks/useFilterQuery";
 import { FilterControls } from "./FilterControls";
 import { SqlEditor } from "./SqlEditor";
-import type { Dataset } from "../types";
 import { formatCount } from "../utils/format";
 
 interface ExploreTabProps {
-  dataset: Dataset;
-  active: boolean;
+  parquetUrl: string;
   onTableChange: (table: Table | null) => void;
 }
 
-export function ExploreTab({
-  dataset,
-  active,
-  onTableChange,
-}: ExploreTabProps) {
+export function ExploreTab({ parquetUrl, onTableChange }: ExploreTabProps) {
   const {
     db,
     conn,
@@ -28,7 +22,6 @@ export function ExploreTab({
     error: duckdbError,
     initialize,
   } = useDuckDB();
-  const parquetUrl = dataset.parquet_url!;
   const {
     result,
     loading: queryLoading,
@@ -48,19 +41,19 @@ export function ExploreTab({
     onSqlChange: handleSqlChange,
   });
 
-  // Initialize DuckDB on first activation
+  // Initialize DuckDB on mount
   useEffect(() => {
-    if (active && !db && !duckdbLoading) {
+    if (!db && !duckdbLoading) {
       initialize();
     }
-  }, [active, db, duckdbLoading, initialize]);
+  }, [db, duckdbLoading, initialize]);
 
   // Load initial data once connected
   useEffect(() => {
-    if (conn && active && result.totalCount === 0 && !queryLoading) {
+    if (conn && result.totalCount === 0 && !queryLoading) {
       loadInitial();
     }
-  }, [conn, active, result.totalCount, queryLoading, loadInitial]);
+  }, [conn, result.totalCount, queryLoading, loadInitial]);
 
   // Build filters once we have stats (only once)
   const filtersInitialized = useRef(false);

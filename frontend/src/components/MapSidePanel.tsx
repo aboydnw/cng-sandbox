@@ -168,7 +168,7 @@ export function MapSidePanel({
             bytesTransferred={bytesTransferred}
             onDetailsClick={onDetailsClick}
           />
-          <StoryCTABanner />
+          <StoryCTABanner dataset={ds} />
         </Box>
       )}
     </Box>

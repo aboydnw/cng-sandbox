@@ -25,7 +25,8 @@ interface UseLayerBuilderOptions {
   getLoadCallback: (index: number) => () => void;
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   arrowTable: Table | null;
-  onVectorClick?: (info: unknown) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onVectorClick?: (info: any) => void;
 }
 
 export function useLayerBuilder({

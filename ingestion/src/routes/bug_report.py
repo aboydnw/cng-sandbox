@@ -21,15 +21,19 @@ class BugReportRequest(BaseModel):
     dataset_id: str | None = None
     story_id: str | None = None
     job_id: str | None = None
+    connection_id: str | None = None
     dataset_ids: list[str] | None = None
     error_message: str | None = None
     console_logs: list[LogEntry] = []
 
     @model_validator(mode="after")
     def require_context(self):
-        if not self.dataset_id and not self.story_id and not self.job_id:
+        has_context = (
+            self.dataset_id or self.story_id or self.job_id or self.connection_id
+        )
+        if not has_context:
             raise ValueError(
-                "At least one of dataset_id, story_id, or job_id is required"
+                "At least one of dataset_id, story_id, job_id, or connection_id is required"
             )
         return self
 
@@ -42,6 +46,8 @@ def _build_issue_title(req: BugReportRequest) -> str:
         return f"[Bug Report] Story — {req.story_id}"
     if req.dataset_id:
         return f"[Bug Report] Dataset — {req.dataset_id}"
+    if req.connection_id:
+        return f"[Bug Report] Connection — {req.connection_id}"
     return f"[Bug Report] Upload — {req.job_id}"
 
 
@@ -59,6 +65,8 @@ def _build_issue_body(req: BugReportRequest) -> str:
         lines.append(f"- **Dataset ID:** {req.dataset_id}")
     if req.story_id:
         lines.append(f"- **Story ID:** {req.story_id}")
+    if req.connection_id:
+        lines.append(f"- **Connection ID:** {req.connection_id}")
     if req.dataset_ids:
         lines.append(f"- **Dataset IDs:** {', '.join(req.dataset_ids)}")
     if req.job_id:

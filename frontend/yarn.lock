@@ -443,6 +443,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@deck.gl/extensions@npm:^9.2.11":
+  version: 9.2.11
+  resolution: "@deck.gl/extensions@npm:9.2.11"
+  dependencies:
+    "@luma.gl/constants": "npm:~9.2.6"
+    "@luma.gl/shadertools": "npm:~9.2.6"
+    "@math.gl/core": "npm:^4.1.0"
+  peerDependencies:
+    "@deck.gl/core": ~9.2.0
+    "@luma.gl/core": ~9.2.6
+    "@luma.gl/engine": ~9.2.6
+  checksum: 10c0/209e58d6b5ff912425b5bb3668355c3ec945bd0e24476197a92b4653cac095c7721d3a74f29d1ece4489d6ef8c21d50c8311b1007eefa1e93e72d2cb1de4da92
+  languageName: node
+  linkType: hard
+
 "@deck.gl/geo-layers@npm:^9.2.7":
   version: 9.2.11
   resolution: "@deck.gl/geo-layers@npm:9.2.11"
@@ -524,6 +539,18 @@ __metadata:
     react: ">=16.3.0"
     react-dom: ">=16.3.0"
   checksum: 10c0/0e162ef1b5a21683021145c661b886b5cc94164436f9dff2844710fc98a5c3c5c9a3a5eebe109cd77ca10c9c7823b9f0accce7cd0086bfc2f36c78c945599ce0
+  languageName: node
+  linkType: hard
+
+"@deck.gl/widgets@npm:^9.2.11":
+  version: 9.2.11
+  resolution: "@deck.gl/widgets@npm:9.2.11"
+  dependencies:
+    preact: "npm:^10.17.0"
+  peerDependencies:
+    "@deck.gl/core": ~9.2.0
+    "@luma.gl/core": ~9.2.6
+  checksum: 10c0/f4123f4e93aa1f1519d61637a1994b27835bd6a66274b767b1f3665e4d459679aebd57a17fde0f7e56b3f0e6500725e6fd4c263873900a0760b61959da9b022a
   languageName: node
   linkType: hard
 
@@ -4471,10 +4498,12 @@ __metadata:
   dependencies:
     "@chakra-ui/react": "npm:^3.0.0"
     "@deck.gl/core": "npm:^9.2.7"
+    "@deck.gl/extensions": "npm:^9.2.11"
     "@deck.gl/geo-layers": "npm:^9.2.7"
     "@deck.gl/layers": "npm:^9.2.7"
     "@deck.gl/mesh-layers": "npm:^9.2.7"
     "@deck.gl/react": "npm:^9.2.7"
+    "@deck.gl/widgets": "npm:^9.2.11"
     "@developmentseed/deck.gl-geotiff": "npm:^0.3.0"
     "@duckdb/duckdb-wasm": "npm:^1.29.0"
     "@emotion/react": "npm:^11.0.0"
@@ -7930,6 +7959,13 @@ __metadata:
   version: 2.1.0
   resolution: "potpack@npm:2.1.0"
   checksum: 10c0/25fb86728e2eba7d67928ba770cecf76d1d09e82ca2fe090a20ad573fee20ed67e727b353aeef99d03dbc32c7bf76bdcdf0f6466f25d0cd66a40b9776e607e56
+  languageName: node
+  linkType: hard
+
+"preact@npm:^10.17.0":
+  version: 10.29.0
+  resolution: "preact@npm:10.29.0"
+  checksum: 10c0/d111381e5b48335e3a797a03adb83521cf5e9bdf880570fb2eff4fe9da9c82e6dedcbdf54538b1ed8f60bf813a0df0f4891b03dc32140ad93f8f720a8812dd5c
   languageName: node
   linkType: hard
 

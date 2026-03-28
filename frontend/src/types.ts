@@ -63,6 +63,23 @@ export interface Dataset {
   compression: string | null;
 }
 
+export type ConnectionType = "xyz_raster" | "xyz_vector" | "cog" | "pmtiles";
+
+export interface Connection {
+  id: string;
+  name: string;
+  url: string;
+  connection_type: ConnectionType;
+  bounds: [number, number, number, number] | null;
+  min_zoom: number | null;
+  max_zoom: number | null;
+  tile_type: "raster" | "vector" | null;
+  band_count: number | null;
+  rescale: string | null;
+  workspace_id: string | null;
+  created_at: string;
+}
+
 export interface StageInfo {
   name: string;
   status: "pending" | "active" | "done" | "error";

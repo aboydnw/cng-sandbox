@@ -5,9 +5,10 @@ import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { config } from "../config";
-import { workspaceFetch } from "../lib/api";
-import type { Dataset } from "../types";
+import { workspaceFetch, connectionsApi } from "../lib/api";
+import type { Dataset, Connection } from "../types";
 import type { Story } from "../lib/story/types";
+import { ConnectionModal } from "../components/ConnectionModal";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -42,6 +43,12 @@ export default function LibraryPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [storiesLoading, setStoriesLoading] = useState(true);
   const [deletingStory, setDeletingStory] = useState<string | null>(null);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(true);
+  const [deletingConnection, setDeletingConnection] = useState<string | null>(
+    null
+  );
+  const [connectionModalOpen, setConnectionModalOpen] = useState(false);
 
   useEffect(() => {
     workspaceFetch(`${config.apiBase}/api/datasets`)
@@ -62,6 +69,16 @@ export default function LibraryPage() {
       .catch(() => setStoriesLoading(false));
   }, []);
 
+  useEffect(() => {
+    connectionsApi
+      .list()
+      .then((data) => {
+        setConnections(data);
+        setConnectionsLoading(false);
+      })
+      .catch(() => setConnectionsLoading(false));
+  }, []);
+
   const handleDeleteStory = useCallback(async (story: Story) => {
     if (!window.confirm(`Delete "${story.title}"?`)) return;
     setDeletingStory(story.id);
@@ -71,6 +88,21 @@ export default function LibraryPage() {
     } finally {
       setDeletingStory(null);
     }
+  }, []);
+
+  const handleDeleteConnection = useCallback(async (conn: Connection) => {
+    if (!window.confirm(`Delete connection "${conn.name}"?`)) return;
+    setDeletingConnection(conn.id);
+    try {
+      await connectionsApi.delete(conn.id);
+      setConnections((prev) => prev.filter((c) => c.id !== conn.id));
+    } finally {
+      setDeletingConnection(null);
+    }
+  }, []);
+
+  const handleConnectionCreated = useCallback((conn: Connection) => {
+    setConnections((prev) => [conn, ...prev]);
   }, []);
 
   const handleDelete = useCallback(async (ds: DatasetWithStoryCount) => {
@@ -206,6 +238,118 @@ export default function LibraryPage() {
           </Table.Root>
         )}
 
+        {/* Connections section */}
+        <Flex justify="space-between" align="center" mt={10} mb={3}>
+          <Heading size="md" color="gray.700">
+            Connections
+          </Heading>
+          <Button
+            size="sm"
+            colorScheme="orange"
+            onClick={() => setConnectionModalOpen(true)}
+          >
+            Add connection
+          </Button>
+        </Flex>
+
+        {connectionsLoading ? (
+          <Flex justify="center" py={8}>
+            <SpinnerGap
+              size={24}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
+          </Flex>
+        ) : connections.length === 0 ? (
+          <Flex
+            direction="column"
+            align="center"
+            py={12}
+            gap={3}
+            color="gray.500"
+          >
+            <Text>
+              Connect to external data sources like COGs, PMTiles, or tile
+              endpoints.
+            </Text>
+            <Text
+              as="button"
+              color="brand.orange"
+              fontWeight={600}
+              cursor="pointer"
+              onClick={() => setConnectionModalOpen(true)}
+            >
+              Add your first connection
+            </Text>
+          </Flex>
+        ) : (
+          <Table.Root size="sm" tableLayout="fixed">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader>Name</Table.ColumnHeader>
+                <Table.ColumnHeader w="120px">Type</Table.ColumnHeader>
+                <Table.ColumnHeader>URL</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
+                <Table.ColumnHeader w="80px" />
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {connections.map((conn) => (
+                <Table.Row key={conn.id}>
+                  <Table.Cell>
+                    <Link to={workspacePath(`/map/connection/${conn.id}`)}>
+                      <Text
+                        color="blue.600"
+                        _hover={{ textDecoration: "underline" }}
+                        fontWeight={500}
+                        truncate
+                        title={conn.name}
+                      >
+                        {conn.name}
+                      </Text>
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text
+                      fontSize="xs"
+                      fontWeight={600}
+                      textTransform="uppercase"
+                      color="orange.600"
+                    >
+                      {conn.connection_type.replace("_", " ")}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text
+                      fontSize="sm"
+                      color="gray.500"
+                      truncate
+                      title={conn.url}
+                    >
+                      {conn.url}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {conn.created_at ? timeAgo(conn.created_at) : "\u2014"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="red"
+                      loading={deletingConnection === conn.id}
+                      onClick={() => handleDeleteConnection(conn)}
+                    >
+                      Delete
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        )}
+
         <Flex justify="space-between" align="center" mt={10} mb={3}>
           <Heading size="md" color="gray.700">
             Stories
@@ -292,6 +436,11 @@ export default function LibraryPage() {
           </Table.Root>
         )}
       </Box>
+      <ConnectionModal
+        isOpen={connectionModalOpen}
+        onClose={() => setConnectionModalOpen(false)}
+        onCreated={handleConnectionCreated}
+      />
     </Box>
   );
 }

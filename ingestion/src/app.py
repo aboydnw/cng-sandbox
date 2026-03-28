@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.config import get_settings
 from src.models.base import Base
+from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
 from src.services.cleanup import cleanup_expired_rows
 from src.state import scan_store, scan_store_lock
@@ -48,9 +49,24 @@ async def _cleanup_expired(app):
             logger.exception("Cleanup task failed")
 
 
+def _migrate_schema(engine):
+    """Add columns that create_all won't add to existing tables."""
+    from sqlalchemy import text
+    from sqlalchemy.exc import OperationalError
+
+    with engine.connect() as conn:
+        for col, typ in [("band_count", "INTEGER"), ("rescale", "TEXT")]:
+            try:
+                conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
+                conn.commit()
+            except OperationalError:
+                conn.rollback()
+
+
 @asynccontextmanager
 async def _default_lifespan(app: FastAPI):
     Base.metadata.create_all(app.state.db_engine)
+    _migrate_schema(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
     expired_task = asyncio.create_task(_cleanup_expired(app))
     yield
@@ -88,8 +104,10 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
         return {"status": "ok"}
 
     from src.routes.bug_report import router as bug_report_router
+    from src.routes.connections import router as connections_router
     from src.routes.datasets import router as datasets_router
     from src.routes.jobs import router as jobs_router
+    from src.routes.proxy import router as proxy_router
     from src.routes.stories import router as stories_router
     from src.routes.upload import router as upload_router
 
@@ -98,6 +116,8 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(datasets_router)
     app.include_router(stories_router)
     app.include_router(bug_report_router)
+    app.include_router(connections_router)
+    app.include_router(proxy_router)
 
     return app
 

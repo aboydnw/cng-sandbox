@@ -12,17 +12,19 @@ import {
   buildLayersForChapter,
 } from "../lib/story/rendering";
 import type { Story, Chapter } from "../lib/story";
-import type { Dataset } from "../types";
+import type { Connection, Dataset } from "../types";
 
 function ScrollytellingBlock({
   chapters,
   startIndex,
   datasetMap,
+  connectionMap,
   onChapterClick,
 }: {
   chapters: Chapter[];
   startIndex: number;
   datasetMap: Map<string, Dataset | null>;
+  connectionMap?: Map<string, Connection>;
   onChapterClick?: (chapterId: string) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -93,8 +95,9 @@ function ScrollytellingBlock({
   }, [activeIndex, chapters]);
 
   const layers = useMemo(
-    () => buildLayersForChapter(chapters[activeIndex], datasetMap),
-    [datasetMap, activeIndex, chapters]
+    () =>
+      buildLayersForChapter(chapters[activeIndex], datasetMap, connectionMap),
+    [datasetMap, connectionMap, activeIndex, chapters]
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
@@ -102,8 +105,12 @@ function ScrollytellingBlock({
     setTransitionDuration(undefined);
   }, []);
 
-  const activeDataset = chapters[activeIndex]
-    ? datasetMap.get(chapters[activeIndex].layer_config.dataset_id)
+  const activeChapter = chapters[activeIndex];
+  const hasConnection =
+    activeChapter?.layer_config?.connection_id &&
+    connectionMap?.has(activeChapter.layer_config.connection_id);
+  const activeDataset = activeChapter
+    ? datasetMap.get(activeChapter.layer_config.dataset_id)
     : undefined;
 
   return (
@@ -165,7 +172,7 @@ function ScrollytellingBlock({
       </Box>
 
       <Box w="60%" position="sticky" top={0} h="100vh">
-        {datasetMap.size > 0 && (
+        {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
           <UnifiedMap
             camera={camera}
             onCameraChange={handleCameraChange}
@@ -179,7 +186,7 @@ function ScrollytellingBlock({
             interactive={false}
           />
         )}
-        {activeDataset === null && (
+        {activeDataset === null && !hasConnection && (
           <Flex
             position="absolute"
             inset={0}
@@ -201,10 +208,12 @@ function ScrollytellingBlock({
 export function StoryRenderer({
   story,
   datasetMap,
+  connectionMap,
   onChapterClick,
 }: {
   story: Story;
   datasetMap: Map<string, Dataset | null>;
+  connectionMap?: Map<string, Connection>;
   onChapterClick?: (chapterId: string) => void;
 }) {
   const sortedChapters = useMemo(
@@ -242,6 +251,9 @@ export function StoryRenderer({
         if (block.type === "map") {
           const ds =
             datasetMap.get(block.chapter.layer_config.dataset_id) ?? null;
+          const conn = block.chapter.layer_config.connection_id
+            ? connectionMap?.get(block.chapter.layer_config.connection_id)
+            : undefined;
           return (
             <Box
               key={block.chapter.id}
@@ -256,6 +268,7 @@ export function StoryRenderer({
                 chapter={block.chapter}
                 chapterIndex={block.index}
                 dataset={ds}
+                connection={conn}
               />
             </Box>
           );
@@ -267,6 +280,7 @@ export function StoryRenderer({
             chapters={block.chapters}
             startIndex={block.startIndex}
             datasetMap={datasetMap}
+            connectionMap={connectionMap}
             onChapterClick={onChapterClick}
           />
         );

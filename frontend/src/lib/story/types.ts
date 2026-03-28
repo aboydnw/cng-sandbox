@@ -18,6 +18,7 @@ export interface MapState {
 
 export interface LayerConfig {
   dataset_id: string;
+  connection_id?: string; // new — one or the other is set
   colormap: string;
   opacity: number;
   basemap: string;

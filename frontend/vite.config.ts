@@ -17,7 +17,18 @@ export default defineConfig({
     port: 5185,
     allowedHosts: true,
     proxy: {
-      "/api": process.env.API_PROXY_TARGET || "http://localhost:8000",
+      "/api": {
+        target: process.env.API_PROXY_TARGET || "http://localhost:8000",
+      },
+      "/cog": {
+        target: process.env.COG_TILER_PROXY_TARGET || "http://localhost:8084",
+        configure: (proxy) => {
+          proxy.on("proxyRes", (proxyRes) => {
+            proxyRes.headers["cache-control"] = "no-store";
+            proxyRes.headers["timing-allow-origin"] = "*";
+          });
+        },
+      },
       "/raster": {
         target: process.env.RASTER_TILER_PROXY_TARGET || "http://localhost:8082",
         rewrite: (path: string) => path.replace(/^\/raster/, ""),

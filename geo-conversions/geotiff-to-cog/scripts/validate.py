@@ -183,6 +183,60 @@ def check_mercator_bounds(output_path: str) -> CheckResult:
     )
 
 
+def check_rendering_metadata(output_path: str) -> CheckResult:
+    """Advisory: flag COGs that need special tile-server parameters for rendering.
+
+    Single-band non-uint8 COGs need `rescale=min,max` when using `colormap_name`
+    with titiler. Without rescale, titiler returns 500 ("arrays used as indices
+    must be of integer type") because float/int16 values can't index into a
+    256-entry colormap lookup table. Multi-band (RGB) COGs must NOT use
+    colormap_name at all — titiler returns 500 for those as well.
+    """
+    with rasterio.open(output_path) as dst:
+        dtype = dst.dtypes[0]
+        bands = dst.count
+
+        if bands >= 3:
+            return CheckResult(
+                "Rendering metadata", True,
+                f"Multi-band ({bands} bands, {dtype}). Tile server must NOT apply "
+                f"colormap_name — serves as RGB directly."
+            )
+
+        if bands == 1 and dtype == "uint8":
+            return CheckResult(
+                "Rendering metadata", True,
+                f"Single-band uint8. Tile server can apply colormap_name without rescale."
+            )
+
+        if bands == 1:
+            data = dst.read(1)
+            if dst.nodata is not None:
+                if np.isnan(dst.nodata):
+                    valid = data[~np.isnan(data)]
+                else:
+                    valid = data[data != dst.nodata]
+            else:
+                valid = data
+            if valid.size == 0:
+                return CheckResult(
+                    "Rendering metadata", False,
+                    "Single-band but all pixels are nodata — cannot compute rescale range."
+                )
+            p2 = float(np.percentile(valid, 2))
+            p98 = float(np.percentile(valid, 98))
+            return CheckResult(
+                "Rendering metadata", True,
+                f"Single-band {dtype}. Tile server needs rescale={p2:.4f},{p98:.4f} "
+                f"(p2/p98) when applying colormap_name."
+            )
+
+        return CheckResult(
+            "Rendering metadata", True,
+            f"{bands} band(s), {dtype}. Review tile server parameters for this configuration."
+        )
+
+
 def check_overviews(output_path: str, min_levels: int = 3) -> CheckResult:
     """Check that internal overviews are present."""
     with rasterio.open(output_path) as dst:
@@ -303,6 +357,7 @@ def run_advisory_checks(input_path: str, output_path: str) -> list[CheckResult]:
         check_wgs84_bounds(output_path),
         check_mercator_bounds(output_path),
         check_band_metadata(input_path, output_path),
+        check_rendering_metadata(output_path),
     ]
 
 

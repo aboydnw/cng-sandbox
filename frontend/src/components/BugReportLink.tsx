@@ -5,12 +5,14 @@ import { BugReportModal } from "./BugReportModal";
 interface BugReportLinkProps {
   datasetId?: string;
   storyId?: string;
+  connectionId?: string;
   datasetIds?: string[];
 }
 
 export function BugReportLink({
   datasetId,
   storyId,
+  connectionId,
   datasetIds,
 }: BugReportLinkProps) {
   const [open, setOpen] = useState(false);
@@ -32,6 +34,7 @@ export function BugReportLink({
         onClose={() => setOpen(false)}
         datasetId={datasetId}
         storyId={storyId}
+        connectionId={connectionId}
         datasetIds={datasetIds}
       />
     </>

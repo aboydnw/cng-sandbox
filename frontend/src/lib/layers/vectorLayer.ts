@@ -61,7 +61,11 @@ export function buildVectorLayer({
   };
 
   if (isPMTiles) {
-    const absoluteUrl = `${window.location.origin}${tileUrl}`;
+    // External PMTiles need to go through our proxy to avoid CORS issues
+    const isExternal = tileUrl.startsWith("http");
+    const absoluteUrl = isExternal
+      ? `${window.location.origin}/api/proxy?url=${encodeURIComponent(tileUrl)}`
+      : `${window.location.origin}${tileUrl}`;
     const pmtilesSource = new PMTiles(absoluteUrl);
 
     return new MVTLayer({

@@ -10,6 +10,7 @@ interface BugReportModalProps {
   datasetId?: string;
   storyId?: string;
   jobId?: string;
+  connectionId?: string;
   datasetIds?: string[];
   errorMessage?: string;
 }
@@ -20,6 +21,7 @@ export function BugReportModal({
   datasetId,
   storyId,
   jobId,
+  connectionId,
   datasetIds,
   errorMessage,
 }: BugReportModalProps) {
@@ -41,6 +43,7 @@ export function BugReportModal({
       dataset_id: datasetId,
       story_id: storyId,
       job_id: jobId,
+      connection_id: connectionId,
       dataset_ids: datasetIds,
       error_message: errorMessage,
       console_logs: logs,
@@ -146,6 +149,7 @@ export function BugReportModal({
               {datasetId && <Text>Dataset: {datasetId}</Text>}
               {storyId && <Text>Story: {storyId}</Text>}
               {jobId && <Text>Job: {jobId}</Text>}
+              {connectionId && <Text>Connection: {connectionId}</Text>}
               {datasetIds && datasetIds.length > 0 && (
                 <Text>Datasets: {datasetIds.join(", ")}</Text>
               )}

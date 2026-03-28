@@ -25,6 +25,7 @@ function WorkspaceRoutes() {
       <Routes>
         <Route path="/" element={<UploadPage />} />
         <Route path="/map/:id" element={<MapPage />} />
+        <Route path="/map/connection/:id" element={<MapPage />} />
         <Route path="/expired/:id" element={<ExpiredPage />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/datasets" element={<DatasetsRedirect />} />

@@ -106,6 +106,7 @@ export default function StoryEditorPage() {
   const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
   const [allConnections, setAllConnections] = useState<Connection[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -248,10 +249,13 @@ export default function StoryEditorPage() {
         prev.some((d) => d.id === ds.id) ? prev : [...prev, ds]
       );
       if (activeChapterId) {
-        updateChapterLayerConfig({
-          ...(activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG),
-          dataset_id: datasetId,
-        });
+        updateChapterLayerConfig(
+          {
+            ...(activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG),
+            dataset_id: datasetId,
+          },
+          ds.bounds
+        );
       }
     } catch (e) {
       console.error("Failed to fetch new dataset", e);
@@ -404,13 +408,43 @@ export default function StoryEditorPage() {
     }));
   }
 
-  function updateChapterLayerConfig(config: LayerConfig) {
+  function zoomToBounds(bounds: [number, number, number, number]) {
+    const el = mapContainerRef.current;
+    const size = el
+      ? { width: el.clientWidth, height: el.clientHeight }
+      : undefined;
+    setTransitionDuration(1000);
+    setCamera(cameraFromBounds(bounds, size));
+  }
+
+  function updateChapterLayerConfig(
+    config: LayerConfig,
+    boundsOverride?: [number, number, number, number] | null
+  ) {
+    const prevConfig = activeChapter?.layer_config;
+
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
         ch.id === activeChapterId ? { ...ch, layer_config: config } : ch
       ),
     }));
+
+    // Zoom to bounds when dataset changes
+    if (config.dataset_id && config.dataset_id !== prevConfig?.dataset_id) {
+      const bounds =
+        boundsOverride ?? datasetMap.get(config.dataset_id)?.bounds;
+      if (bounds) zoomToBounds(bounds);
+    }
+
+    // Zoom to bounds when connection changes
+    if (
+      config.connection_id &&
+      config.connection_id !== prevConfig?.connection_id
+    ) {
+      const conn = connectionMap.get(config.connection_id);
+      if (conn?.bounds) zoomToBounds(conn.bounds);
+    }
   }
 
   function updateChapterType(type: ChapterType) {
@@ -703,7 +737,7 @@ export default function StoryEditorPage() {
 
         {/* Center: map (full height) — hidden for prose chapters */}
         {activeChapter?.type !== "prose" ? (
-          <Box flex={1} position="relative">
+          <Box ref={mapContainerRef} flex={1} position="relative">
             {firstUnseen === "map" && (
               <TooltipCard
                 text="Navigate the map to frame your view. It saves automatically as you go."

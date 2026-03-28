@@ -39,15 +39,16 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTimestep = Number(searchParams.get("t") ?? 0);
 
-  const isConnectionRoute = window.location.pathname.includes(
-    "/map/connection/"
-  );
+  const isConnectionRoute =
+    window.location.pathname.includes("/map/connection/");
 
   // --- Data fetching ---
-  const { data: item, isLoading, error, isExpired } = useMapData(
-    id,
-    isConnectionRoute
-  );
+  const {
+    data: item,
+    isLoading,
+    error,
+    isExpired,
+  } = useMapData(id, isConnectionRoute);
 
   // Redirect on expiry
   useEffect(() => {
@@ -264,7 +265,9 @@ export default function MapPage() {
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
         {item?.dataset && <BugReportLink datasetId={item.dataset.id} />}
-        {item?.connection && <BugReportLink connectionId={item.connection.id} />}
+        {item?.connection && (
+          <BugReportLink connectionId={item.connection.id} />
+        )}
         <ShareButton />
       </Header>
 

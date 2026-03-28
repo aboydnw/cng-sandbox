@@ -37,8 +37,9 @@ export function InlineConnectionForm({
 }: InlineConnectionFormProps) {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
-  const [connectionType, setConnectionType] =
-    useState<ConnectionType | null>(null);
+  const [connectionType, setConnectionType] = useState<ConnectionType | null>(
+    null
+  );
   const [autoDetected, setAutoDetected] = useState(false);
   const [saving, setSaving] = useState(false);
   const [probing, setProbing] = useState(false);

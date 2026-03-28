@@ -48,7 +48,10 @@ export function useLayerBuilder({
 
     if (item.source === "connection") {
       const base = item.tileUrl;
-      if (item.dataType === "raster" && item.connection?.connection_type === "cog") {
+      if (
+        item.dataType === "raster" &&
+        item.connection?.connection_type === "cog"
+      ) {
         const isSingleBandCOG = item.bandCount === 1;
         if (isSingleBandCOG) {
           let url = `${base}&colormap_name=${colormapName}`;

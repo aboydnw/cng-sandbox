@@ -36,9 +36,7 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     setOpacity(0.8);
     setColormapName("viridis");
     setSelectedBand("rgb");
-    setRenderMode(
-      item?.dataType === "vector" ? "vector-tiles" : "server"
-    );
+    setRenderMode(item?.dataType === "vector" ? "vector-tiles" : "server");
   }, [item?.id, item?.dataType]);
 
   const isSingleBand = item?.bandCount === 1;

@@ -176,7 +176,7 @@ export default function MapPage() {
   );
 
   // --- Layers ---
-  const { layers, tileUrl } = useLayerBuilder({
+  const { layers } = useLayerBuilder({
     item,
     renderMode: controls.renderMode,
     canClientRender: controls.canClientRender,
@@ -226,9 +226,6 @@ export default function MapPage() {
       return { text: props, style: { fontSize: "12px" } };
     };
   }, [item?.dataType, controls.renderMode]);
-
-  // suppress unused warning — tileUrl is used by useLayerBuilder internally
-  void tileUrl;
 
   // --- Render ---
   if (isLoading) {

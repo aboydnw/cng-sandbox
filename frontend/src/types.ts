@@ -122,8 +122,6 @@ export interface MapItem {
   bounds: [number, number, number, number] | null;
   minZoom: number | null;
   maxZoom: number | null;
-
-  // Raster-specific (null for vector)
   bandCount: number | null;
   bandNames: string[] | null;
   colorInterpretation: string[] | null;
@@ -131,15 +129,9 @@ export interface MapItem {
   rasterMax: number | null;
   cogUrl: string | null;
   rescale: string | null;
-
-  // Vector-specific (null for raster)
   parquetUrl: string | null;
-
-  // Temporal (only for datasets)
   isTemporal: boolean;
   timesteps: Timestep[];
-
-  // Raw source objects for dataset-specific features
   dataset: Dataset | null;
   connection: Connection | null;
 }

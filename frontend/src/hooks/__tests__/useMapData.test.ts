@@ -120,6 +120,24 @@ describe("useMapData", () => {
     expect(result.current.data!.dataType).toBe("vector");
   });
 
+  it("never marks a connection as expired", async () => {
+    mockConnectionsGet.mockResolvedValue(MOCK_CONNECTION);
+    const { result } = renderHook(() => useMapData("conn-1", true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isExpired).toBe(false);
+  });
+
+  it("determines vector dataType for pmtiles vector connections", async () => {
+    mockConnectionsGet.mockResolvedValue({
+      ...MOCK_CONNECTION,
+      connection_type: "pmtiles",
+      tile_type: "vector",
+    });
+    const { result } = renderHook(() => useMapData("conn-3", true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data!.dataType).toBe("vector");
+  });
+
   it("returns error on fetch failure", async () => {
     mockFetch.mockResolvedValue({ ok: false, status: 500 });
 

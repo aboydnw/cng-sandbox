@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CaretDown, Plus, Upload } from "@phosphor-icons/react";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { connectionsApi } from "../lib/api";
-import { config } from "../config";
+import { connectionsApi, workspaceFetch } from "../lib/api";
 import { transition } from "../lib/interactionStyles";
 import type { Dataset, Connection, MapItemSource } from "../types";
 
@@ -49,7 +48,7 @@ export function DataSwitcher({
 
   // Fetch lists
   useEffect(() => {
-    fetch(`${config.apiBase}/api/datasets`)
+    workspaceFetch("/api/datasets")
       .then((r) => r.json())
       .then((list: Dataset[]) =>
         setDatasets(
@@ -114,10 +113,9 @@ export function DataSwitcher({
       (i) => i.id === activeId && i.source === activeSource
     )?.name ?? "Loading...";
 
-  const activeColor =
-    [...datasets, ...connections].find(
-      (i) => i.id === activeId && i.source === activeSource
-    );
+  const activeColor = [...datasets, ...connections].find(
+    (i) => i.id === activeId && i.source === activeSource
+  );
 
   return (
     <Box ref={containerRef} position="relative" mb={3}>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { config } from "../config";
-import { connectionsApi } from "../lib/api";
+import { connectionsApi, workspaceFetch } from "../lib/api";
 import { buildConnectionTileUrl } from "../lib/connections";
 import type { Dataset, Connection, MapItem } from "../types";
 
@@ -94,7 +93,7 @@ export function useMapData(
         )
         .finally(() => setIsLoading(false));
     } else {
-      fetch(`${config.apiBase}/api/datasets/${id}`)
+      workspaceFetch(`/api/datasets/${id}`)
         .then((resp) => {
           if (resp.status === 404) {
             setIsExpired(true);
@@ -106,9 +105,7 @@ export function useMapData(
         .then((ds: Dataset | null) => {
           if (!ds) return;
           const created = new Date(ds.created_at);
-          const expiry = new Date(
-            created.getTime() + 30 * 24 * 60 * 60 * 1000
-          );
+          const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
           if (new Date() > expiry) {
             setIsExpired(true);
             return;

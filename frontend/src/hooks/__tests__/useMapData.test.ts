@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useMapData } from "../useMapData";
 
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
+const mockWorkspaceFetch = vi.fn();
 
 vi.mock("../../lib/api", () => ({
+  workspaceFetch: (...args: unknown[]) => mockWorkspaceFetch(...args),
   connectionsApi: {
     get: vi.fn(),
   },
@@ -67,13 +67,13 @@ const MOCK_CONNECTION = {
 };
 
 beforeEach(() => {
-  mockFetch.mockReset();
+  mockWorkspaceFetch.mockReset();
   mockConnectionsGet.mockReset();
 });
 
 describe("useMapData", () => {
   it("fetches and normalizes a dataset", async () => {
-    mockFetch.mockResolvedValue({
+    mockWorkspaceFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve(MOCK_DATASET),
@@ -139,7 +139,7 @@ describe("useMapData", () => {
   });
 
   it("returns error on fetch failure", async () => {
-    mockFetch.mockResolvedValue({ ok: false, status: 500 });
+    mockWorkspaceFetch.mockResolvedValue({ ok: false, status: 500 });
 
     const { result } = renderHook(() => useMapData("ds-bad", false));
 
@@ -149,7 +149,7 @@ describe("useMapData", () => {
   });
 
   it("refetches when id changes", async () => {
-    mockFetch.mockResolvedValue({
+    mockWorkspaceFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve(MOCK_DATASET),
@@ -161,14 +161,14 @@ describe("useMapData", () => {
     );
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockWorkspaceFetch).toHaveBeenCalledTimes(1);
 
     rerender({ id: "ds-2", isConn: false });
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mockWorkspaceFetch).toHaveBeenCalledTimes(2));
   });
 
   it("marks dataset as expired when fetch returns 404", async () => {
-    mockFetch.mockResolvedValue({
+    mockWorkspaceFetch.mockResolvedValue({
       status: 404,
       ok: false,
     });
@@ -186,7 +186,7 @@ describe("useMapData", () => {
       Date.now() - 60 * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    mockFetch.mockResolvedValue({
+    mockWorkspaceFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: () =>

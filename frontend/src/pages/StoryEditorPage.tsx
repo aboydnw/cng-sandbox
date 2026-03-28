@@ -405,12 +405,32 @@ export default function StoryEditorPage() {
   }
 
   function updateChapterLayerConfig(config: LayerConfig) {
+    const prevConfig = activeChapter?.layer_config;
+
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
         ch.id === activeChapterId ? { ...ch, layer_config: config } : ch
       ),
     }));
+
+    // Zoom to bounds when dataset changes
+    if (config.dataset_id && config.dataset_id !== prevConfig?.dataset_id) {
+      const ds = datasetMap.get(config.dataset_id);
+      if (ds?.bounds) {
+        setTransitionDuration(1000);
+        setCamera(cameraFromBounds(ds.bounds));
+      }
+    }
+
+    // Zoom to bounds when connection changes
+    if (config.connection_id && config.connection_id !== prevConfig?.connection_id) {
+      const conn = connectionMap.get(config.connection_id);
+      if (conn?.bounds) {
+        setTransitionDuration(1000);
+        setCamera(cameraFromBounds(conn.bounds));
+      }
+    }
   }
 
   function updateChapterType(type: ChapterType) {

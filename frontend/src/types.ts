@@ -110,3 +110,36 @@ export interface ConversionJobState {
   isUploading: boolean;
   scanResult: ScanResult | null;
 }
+
+export type MapItemSource = "dataset" | "connection";
+
+export interface MapItem {
+  id: string;
+  name: string;
+  source: MapItemSource;
+  dataType: "raster" | "vector";
+  tileUrl: string;
+  bounds: [number, number, number, number] | null;
+  minZoom: number | null;
+  maxZoom: number | null;
+
+  // Raster-specific (null for vector)
+  bandCount: number | null;
+  bandNames: string[] | null;
+  colorInterpretation: string[] | null;
+  rasterMin: number | null;
+  rasterMax: number | null;
+  cogUrl: string | null;
+  rescale: string | null;
+
+  // Vector-specific (null for raster)
+  parquetUrl: string | null;
+
+  // Temporal (only for datasets)
+  isTemporal: boolean;
+  timesteps: Timestep[];
+
+  // Raw source objects for dataset-specific features
+  dataset: Dataset | null;
+  connection: Connection | null;
+}

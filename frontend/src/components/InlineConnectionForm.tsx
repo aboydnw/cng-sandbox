@@ -51,6 +51,7 @@ export function InlineConnectionForm({
   const handleUrlBlur = useCallback(async () => {
     if (!url.trim()) return;
     setError(null);
+    setProbeMetadata(null);
 
     const detected = detectConnectionType(url);
     if (detected) {
@@ -176,6 +177,7 @@ export function InlineConnectionForm({
               onClick={() => {
                 setConnectionType(t);
                 setAutoDetected(false);
+                setProbeMetadata(null);
               }}
             >
               {TYPE_LABELS[t]}

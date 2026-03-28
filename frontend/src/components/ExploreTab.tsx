@@ -48,15 +48,24 @@ export function ExploreTab({ parquetUrl, onTableChange }: ExploreTabProps) {
     }
   }, [db, duckdbLoading, initialize]);
 
+  // Track first load explicitly to avoid re-triggering for empty datasets
+  const initialLoadStarted = useRef(false);
+  const filtersInitialized = useRef(false);
+
+  useEffect(() => {
+    initialLoadStarted.current = false;
+    filtersInitialized.current = false;
+  }, [parquetUrl]);
+
   // Load initial data once connected
   useEffect(() => {
-    if (conn && result.totalCount === 0 && !queryLoading) {
+    if (conn && !queryLoading && !initialLoadStarted.current) {
+      initialLoadStarted.current = true;
       loadInitial();
     }
-  }, [conn, result.totalCount, queryLoading, loadInitial]);
+  }, [conn, queryLoading, loadInitial]);
 
-  // Build filters once we have stats (only once)
-  const filtersInitialized = useRef(false);
+  // Build filters once we have stats (only once per parquetUrl)
   useEffect(() => {
     if (result.columnStats.length > 0 && !filtersInitialized.current) {
       filtersInitialized.current = true;

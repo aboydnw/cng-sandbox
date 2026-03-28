@@ -5,7 +5,7 @@ import { CaretDown, Plus, Upload } from "@phosphor-icons/react";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import { transition } from "../lib/interactionStyles";
-import type { Dataset, Connection, MapItemSource } from "../types";
+import type { Dataset, MapItemSource } from "../types";
 
 interface DataSwitcherProps {
   activeId: string;

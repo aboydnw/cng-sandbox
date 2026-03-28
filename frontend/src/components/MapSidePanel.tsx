@@ -12,7 +12,6 @@ import { InlineUpload } from "./InlineUpload";
 import { InlineConnectionForm } from "./InlineConnectionForm";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { StoryCTABanner } from "./StoryCTABanner";
-import { daysUntilExpiry } from "../utils/format";
 import type { Table } from "apache-arrow";
 
 type PanelMode = "controls" | "upload" | "add-connection";
@@ -81,13 +80,6 @@ export function MapSidePanel({
     },
     [navigate, workspacePath]
   );
-
-  // InlineUpload navigates on its own after upload completes,
-  // so we just need to reset mode and refresh the list
-  const handleUploadComplete = useCallback(() => {
-    setMode("controls");
-    setRefreshKey((k) => k + 1);
-  }, []);
 
   if (!item) return null;
 

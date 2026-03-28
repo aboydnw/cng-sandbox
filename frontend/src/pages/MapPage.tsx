@@ -158,15 +158,13 @@ export default function MapPage() {
   // --- Arrow table for GeoParquet ---
   const [arrowTable, setArrowTable] = useState<Table | null>(null);
 
-  const handleTableChange = useCallback(
-    (table: Table | null) => {
-      setArrowTable(table);
-      if (item?.dataType === "vector") {
-        controls.setRenderMode(table ? "geojson" : "vector-tiles");
-      }
-    },
-    [item?.dataType, controls]
-  );
+  useEffect(() => {
+    setArrowTable(null);
+  }, [item?.id]);
+
+  const handleTableChange = useCallback((table: Table | null) => {
+    setArrowTable(table);
+  }, []);
 
   // --- Popups & pixel inspector ---
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());

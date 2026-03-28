@@ -50,7 +50,7 @@ function connectionToMapItem(conn: Connection): MapItem {
     colorInterpretation: null,
     rasterMin: null,
     rasterMax: null,
-    cogUrl: null,
+    cogUrl: conn.connection_type === "cog" ? conn.url : null,
     rescale: conn.rescale,
     parquetUrl: null,
     isTemporal: false,
@@ -77,7 +77,17 @@ export function useMapData(
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    let ignore = false;
+
+    if (!id) {
+      setData(null);
+      setError(null);
+      setIsExpired(false);
+      setIsLoading(false);
+      return () => {
+        ignore = true;
+      };
+    }
 
     setIsLoading(true);
     setError(null);
@@ -87,23 +97,30 @@ export function useMapData(
     if (isConnection) {
       connectionsApi
         .get(id)
-        .then((conn) => setData(connectionToMapItem(conn)))
-        .catch((e) =>
-          setError(e instanceof Error ? e.message : "Failed to load connection")
-        )
-        .finally(() => setIsLoading(false));
+        .then((conn) => {
+          if (!ignore) setData(connectionToMapItem(conn));
+        })
+        .catch((e) => {
+          if (!ignore)
+            setError(
+              e instanceof Error ? e.message : "Failed to load connection"
+            );
+        })
+        .finally(() => {
+          if (!ignore) setIsLoading(false);
+        });
     } else {
       workspaceFetch(`/api/datasets/${id}`)
         .then((resp) => {
           if (resp.status === 404) {
-            setIsExpired(true);
+            if (!ignore) setIsExpired(true);
             return null;
           }
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           return resp.json();
         })
         .then((ds: Dataset | null) => {
-          if (!ds) return;
+          if (!ds || ignore) return;
           const created = new Date(ds.created_at);
           const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
           if (new Date() > expiry) {
@@ -112,11 +129,18 @@ export function useMapData(
           }
           setData(datasetToMapItem(ds));
         })
-        .catch((e) =>
-          setError(e instanceof Error ? e.message : "Failed to load dataset")
-        )
-        .finally(() => setIsLoading(false));
+        .catch((e) => {
+          if (!ignore)
+            setError(e instanceof Error ? e.message : "Failed to load dataset");
+        })
+        .finally(() => {
+          if (!ignore) setIsLoading(false);
+        });
     }
+
+    return () => {
+      ignore = true;
+    };
   }, [id, isConnection]);
 
   return { data, isLoading, error, isExpired };

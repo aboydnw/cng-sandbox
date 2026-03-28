@@ -148,4 +148,41 @@ describe("useMapData", () => {
     rerender({ id: "ds-2", isConn: false });
     await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2));
   });
+
+  it("marks dataset as expired when fetch returns 404", async () => {
+    mockFetch.mockResolvedValue({
+      status: 404,
+      ok: false,
+    });
+
+    const { result } = renderHook(() => useMapData("ds-expired", false));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.isExpired).toBe(true);
+    expect(result.current.data).toBeNull();
+  });
+
+  it("marks dataset as expired when created_at is older than 30 days", async () => {
+    const sixtyDaysAgo = new Date(
+      Date.now() - 60 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          ...MOCK_DATASET,
+          created_at: sixtyDaysAgo,
+        }),
+    });
+
+    const { result } = renderHook(() => useMapData("ds-old", false));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.isExpired).toBe(true);
+    expect(result.current.data).toBeNull();
+  });
 });

@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
-import { SidePanel } from "../components/SidePanel";
-import { RasterSidebarControls } from "../components/RasterSidebarControls";
-import { VectorSidebarControls } from "../components/VectorSidebarControls";
-import { ExploreTab } from "../components/ExploreTab";
 import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
 import { UnifiedMap } from "../components/UnifiedMap";
 import {
@@ -22,11 +18,6 @@ import {
   type TileCacheEntry,
   DEFAULT_CAMERA,
   cameraFromBounds,
-  buildRasterTileLayers,
-  buildCogLayer,
-  buildVectorLayer,
-  buildGeoJsonLayer,
-  arrowTableToGeoJSON,
 } from "../lib/layers";
 import { useColorScale, MapLegend } from "../lib/maptool";
 import { TemporalControls } from "../components/TemporalControls";
@@ -34,180 +25,70 @@ import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
 import { detectCadence, formatTimestepLabel } from "../utils/temporal";
-import { config } from "../config";
-import type { Dataset } from "../types";
-import type { Table } from "apache-arrow";
-import { ConnectionSidePanel } from "../components/ConnectionSidePanel";
-import { connectionsApi } from "../lib/api";
-import { buildConnectionTileUrl } from "../lib/connections";
-import type { Connection } from "../types";
+import { MapSidePanel } from "../components/MapSidePanel";
+import { useMapData } from "../hooks/useMapData";
+import { useMapControls } from "../hooks/useMapControls";
+import { useLayerBuilder } from "../hooks/useLayerBuilder";
 import { ErrorBoundary } from "../components/ErrorBoundary";
-
-type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
+import type { Table } from "apache-arrow";
 
 export default function MapPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
-  const [dataset, setDataset] = useState<Dataset | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reportCardOpen, setReportCardOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTimestep = Number(searchParams.get("t") ?? 0);
-  const [renderMode, setRenderMode] = useState<RenderMode>("server");
-  const [basemap, setBasemap] = useState("streets");
-  const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
-  const [arrowTable, setArrowTable] = useState<Table | null>(null);
 
-  const [opacity, setOpacity] = useState(0.8);
-  const [colormapName, setColormapName] = useState("viridis");
-  const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
-  const [connection, setConnection] = useState<Connection | null>(null);
-  // Detect connection route: URL contains /map/connection/
   const isConnectionRoute =
     window.location.pathname.includes("/map/connection/");
-  const deckRef = useRef(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
 
-  const vectorPopup = useVectorPopup();
-  const pixelInspector = usePixelInspector(
-    tileCacheRef,
-    dataset?.band_names ?? null
-  );
+  // --- Data fetching ---
+  const {
+    data: item,
+    isLoading,
+    error,
+    isExpired,
+  } = useMapData(id, isConnectionRoute);
 
-  // --- Initialize renderMode based on dataset type ---
+  // Redirect on expiry
   useEffect(() => {
-    if (dataset) {
-      setRenderMode(
-        dataset.dataset_type === "vector" ? "vector-tiles" : "server"
-      );
+    if (isExpired && id) {
+      navigate(workspacePath(`/expired/${id}`), { replace: true });
     }
-  }, [dataset]);
+  }, [isExpired, id, navigate, workspacePath]);
 
-  // --- Tile transfer size ---
-  const tileUrlPrefix = dataset?.tile_url
-    ? getTileUrlPrefix(dataset.tile_url)
-    : "";
-  const bytesTransferred = useTileTransferSize(tileUrlPrefix);
+  // --- Controls ---
+  const controls = useMapControls(item);
+
+  // --- Camera ---
+  const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
+  const [basemap, setBasemap] = useState("streets");
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (dataset?.bounds) {
+    if (item?.bounds) {
       const el = mapContainerRef.current;
       const size = el
         ? { width: el.clientWidth, height: el.clientHeight }
         : undefined;
-      setCamera(cameraFromBounds(dataset.bounds, size));
+      setCamera(cameraFromBounds(item.bounds, size));
     }
-  }, [dataset?.bounds]);
+  }, [item?.bounds]);
 
-  useEffect(() => {
-    async function fetchDataset() {
-      if (isConnectionRoute) {
-        return;
-      }
-      try {
-        const resp = await fetch(`${config.apiBase}/api/datasets/${id}`);
-        if (resp.status === 404) {
-          navigate(workspacePath(`/expired/${id}`), { replace: true });
-          return;
-        }
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data: Dataset = await resp.json();
+  // --- Report card ---
+  const [reportCardOpen, setReportCardOpen] = useState(false);
 
-        const created = new Date(data.created_at);
-        const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
-        if (new Date() > expiry) {
-          navigate(workspacePath(`/expired/${id}`), { replace: true });
-          return;
-        }
+  // --- Tile transfer size ---
+  const tileUrlPrefix = item?.dataset?.tile_url
+    ? getTileUrlPrefix(item.dataset.tile_url)
+    : "";
+  const bytesTransferred = useTileTransferSize(tileUrlPrefix);
 
-        setDataset(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load dataset");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchDataset();
-  }, [id, navigate, workspacePath, isConnectionRoute]);
+  // --- Temporal ---
+  const ds = item?.dataset;
+  const frameCount = ds?.timesteps?.length ?? 0;
+  const gapIndices = useMemo(() => new Set<number>(), []);
 
-  useEffect(() => {
-    if (!isConnectionRoute || !id) return;
-    async function fetchConnection() {
-      try {
-        const conn = await connectionsApi.get(id!);
-        setConnection(conn);
-        if (conn.bounds) {
-          const el = mapContainerRef.current;
-          const size = el
-            ? { width: el.clientWidth, height: el.clientHeight }
-            : undefined;
-          setCamera(cameraFromBounds(conn.bounds, size));
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load connection");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchConnection();
-  }, [id, isConnectionRoute]);
-
-  // --- Raster band logic ---
-  const isSingleBand = dataset?.band_count === 1;
-  const isMultiBand = (dataset?.band_count ?? 0) > 1;
-  const ci = dataset?.color_interpretation ?? [];
-  const hasRgb =
-    ci.length >= 3 && ci[0] === "red" && ci[1] === "green" && ci[2] === "blue";
-
-  const selectableBands = (dataset?.band_names ?? [])
-    .map((name, i) => ({ name, index: i }))
-    .filter((_, i) => ci[i] !== "alpha");
-
-  const effectiveBand =
-    isMultiBand && !hasRgb && selectedBand === "rgb" ? 0 : selectedBand;
-  const showingColormap =
-    isSingleBand || (isMultiBand && effectiveBand !== "rgb");
-
-  // --- Tile URL computation ---
-  const tileUrl = useMemo(() => {
-    if (!dataset?.tile_url) return "";
-    const base = dataset.tile_url;
-    const separator = base.includes("?") ? "&" : "?";
-
-    if (isSingleBand) {
-      let url = `${base}${separator}colormap_name=${colormapName}`;
-      if (dataset.raster_min != null && dataset.raster_max != null) {
-        url += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
-      }
-      return url;
-    }
-
-    if (isMultiBand && typeof effectiveBand === "number") {
-      let url = `${base}${separator}bidx=${effectiveBand + 1}&colormap_name=${colormapName}`;
-      if (dataset.raster_min != null && dataset.raster_max != null) {
-        url += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
-      }
-      return url;
-    }
-
-    return base;
-  }, [dataset, colormapName, isSingleBand, isMultiBand, effectiveBand]);
-
-  // --- Color scale for legend ---
-  const domain: [number, number] =
-    dataset?.raster_min != null && dataset?.raster_max != null
-      ? [dataset.raster_min, dataset.raster_max]
-      : [0, 1];
-
-  const { colors } = useColorScale({
-    domain,
-    colormap: colormapName,
-  });
-
-  // --- Temporal pre-rendering ---
   const loadedRef = useRef<Set<number>>(new Set());
   const [loadedCount, setLoadedCount] = useState(0);
   const callbacksRef = useRef<Record<number, () => void>>({});
@@ -224,27 +105,25 @@ export default function MapPage() {
     return callbacksRef.current[index];
   }, []);
 
+  // Reset preload tracking when item changes
   useEffect(() => {
     loadedRef.current.clear();
     callbacksRef.current = {};
     setLoadedCount(0);
-  }, [tileUrl]);
+  }, [item?.id]);
 
-  const frameCount = dataset?.timesteps?.length ?? 0;
-  const isPreloaded = !dataset?.is_temporal || loadedCount >= frameCount;
+  const isPreloaded = !ds?.is_temporal || loadedCount >= frameCount;
   const preloadProgress =
-    dataset?.is_temporal && !isPreloaded
+    ds?.is_temporal && !isPreloaded
       ? { current: loadedCount, total: frameCount }
       : null;
 
-  const gapIndices = useMemo(() => new Set<number>(), []);
-
   const cadence = useMemo(
     () =>
-      dataset?.is_temporal
-        ? detectCadence(dataset.timesteps.map((t) => t.datetime))
+      ds?.is_temporal
+        ? detectCadence(ds.timesteps.map((t) => t.datetime))
         : ("irregular" as const),
-    [dataset]
+    [ds]
   );
 
   const animation = useTemporalAnimation(
@@ -255,15 +134,16 @@ export default function MapPage() {
   );
 
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;
+  const deckRef = useRef(null);
   const exportHook = useTemporalExport(
     deckRef,
-    dataset?.timesteps ?? [],
+    ds?.timesteps ?? [],
     gapIndices,
     speedMs
   );
 
   useEffect(() => {
-    if (dataset?.is_temporal) {
+    if (ds?.is_temporal) {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -273,168 +153,68 @@ export default function MapPage() {
         { replace: true }
       );
     }
-  }, [animation.activeIndex, dataset?.is_temporal, setSearchParams]);
+  }, [animation.activeIndex, ds?.is_temporal, setSearchParams]);
 
-  // --- Client-side COG rendering eligibility ---
-  const canClientRender =
-    !!dataset &&
-    !dataset.is_temporal &&
-    !!dataset.cog_url &&
-    !!dataset.bounds &&
-    Math.abs(dataset.bounds[1]) < 85.05 &&
-    Math.abs(dataset.bounds[3]) < 85.05;
+  // --- Arrow table for GeoParquet ---
+  const [arrowTable, setArrowTable] = useState<Table | null>(null);
 
-  // --- GeoJSON from arrow table ---
-  const geojson = useMemo(
-    () => (arrowTable ? arrowTableToGeoJSON(arrowTable) : null),
-    [arrowTable]
+  useEffect(() => {
+    setArrowTable(null);
+  }, [item?.id]);
+
+  const handleTableChange = useCallback((table: Table | null) => {
+    setArrowTable(table);
+  }, []);
+
+  // --- Popups & pixel inspector ---
+  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
+  const vectorPopup = useVectorPopup();
+  const pixelInspector = usePixelInspector(
+    tileCacheRef,
+    item?.bandNames ?? null
   );
 
-  // --- Handle table change from ExploreTab ---
-  const handleTableChange = useCallback(
-    (table: Table | null) => {
-      setArrowTable(table);
-      if (dataset?.dataset_type === "vector") {
-        setRenderMode(table ? "geojson" : "vector-tiles");
-      }
-    },
-    [dataset]
-  );
-
-  // --- Build deck.gl layers ---
-  const layers = useMemo(() => {
-    if (connection) {
-      const tileUrl = buildConnectionTileUrl(connection);
-      const connType = connection.connection_type;
-
-      // COG — raster tiles via titiler; apply colormap + rescale for single-band COGs
-      if (connType === "cog") {
-        const isSingleBandCOG = connection.band_count === 1;
-        let finalTileUrl = tileUrl;
-        if (isSingleBandCOG) {
-          finalTileUrl += `&colormap_name=${colormapName}`;
-          if (connection.rescale) {
-            finalTileUrl += `&rescale=${connection.rescale}`;
-          }
-        }
-        return buildRasterTileLayers({
-          tileUrl: finalTileUrl,
-          opacity,
-          isTemporalActive: false,
-        });
-      }
-
-      // PMTiles — default to vector when tile_type is unknown
-      if (connType === "pmtiles") {
-        if (connection.tile_type !== "raster") {
-          return [
-            buildVectorLayer({
-              tileUrl,
-              isPMTiles: true,
-              opacity,
-              minZoom: connection.min_zoom ?? undefined,
-              maxZoom: connection.max_zoom ?? undefined,
-            }),
-          ];
-        }
-        // Raster PMTiles
-        return buildRasterTileLayers({
-          tileUrl,
-          opacity,
-          isTemporalActive: false,
-        });
-      }
-
-      // XYZ raster — pre-rendered tiles
-      if (connType === "xyz_raster") {
-        return buildRasterTileLayers({
-          tileUrl,
-          opacity,
-          isTemporalActive: false,
-        });
-      }
-
-      // XYZ vector (MVT)
-      if (connType === "xyz_vector") {
-        return [
-          buildVectorLayer({
-            tileUrl,
-            isPMTiles: false,
-            opacity,
-            minZoom: connection.min_zoom ?? undefined,
-            maxZoom: connection.max_zoom ?? undefined,
-          }),
-        ];
-      }
-
-      return [];
-    }
-
-    if (!dataset) return [];
-
-    if (dataset.dataset_type === "raster") {
-      if (renderMode === "client" && canClientRender) {
-        return buildCogLayer({
-          cogUrl: dataset.cog_url!,
-          opacity,
-          rasterMin: dataset.raster_min ?? 0,
-          rasterMax: dataset.raster_max ?? 1,
-          datasetBounds: dataset.bounds,
-          tileCacheRef,
-        });
-      }
-      return buildRasterTileLayers({
-        id: `raster-layer-${colormapName}-${effectiveBand}`,
-        tileUrl,
-        opacity,
-        isTemporalActive: dataset.is_temporal,
-        timesteps: dataset.timesteps,
-        activeTimestepIndex: animation.activeIndex,
-        getLoadCallback,
-      });
-    }
-
-    if (renderMode === "geojson" && geojson) {
-      return buildGeoJsonLayer({ geojson });
-    }
-
-    return [
-      buildVectorLayer({
-        tileUrl: dataset.tile_url,
-        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
-        opacity: 1,
-        minZoom: dataset.min_zoom ?? undefined,
-        maxZoom: dataset.max_zoom ?? undefined,
-        onClick: vectorPopup.onClick,
-      }),
-    ];
-  }, [
-    connection,
-    dataset,
-    renderMode,
-    canClientRender,
-    tileUrl,
-    opacity,
-    colormapName,
-    effectiveBand,
-    animation.activeIndex,
-    geojson,
-    vectorPopup.onClick,
+  // --- Layers ---
+  const { layers } = useLayerBuilder({
+    item,
+    renderMode: controls.renderMode,
+    canClientRender: controls.canClientRender,
+    opacity: controls.opacity,
+    colormapName: controls.colormapName,
+    effectiveBand: controls.effectiveBand,
+    isSingleBand: controls.isSingleBand,
+    isMultiBand: controls.isMultiBand,
+    activeTimestepIndex: animation.activeIndex,
     getLoadCallback,
-  ]);
+    tileCacheRef,
+    arrowTable,
+    onVectorClick: vectorPopup.onClick,
+  });
+
+  // --- Color scale for legend ---
+  const domain: [number, number] =
+    item?.rasterMin != null && item?.rasterMax != null
+      ? [item.rasterMin, item.rasterMax]
+      : [0, 1];
+
+  const { colors } = useColorScale({
+    domain,
+    colormap: controls.colormapName,
+  });
 
   // --- Event handlers ---
   const onHover =
-    renderMode === "client" && canClientRender
+    controls.renderMode === "client" && controls.canClientRender
       ? pixelInspector.onHover
       : undefined;
+
   const onMapClick =
-    dataset?.dataset_type === "vector" && renderMode !== "geojson"
+    item?.dataType === "vector" && controls.renderMode !== "geojson"
       ? vectorPopup.onClick
       : undefined;
 
   const getTooltip = useMemo(() => {
-    if (dataset?.dataset_type !== "vector" || renderMode !== "geojson")
+    if (item?.dataType !== "vector" || controls.renderMode !== "geojson")
       return undefined;
     return ({ object }: { object?: Record<string, unknown> }) => {
       if (!object) return null;
@@ -444,10 +224,10 @@ export default function MapPage() {
         .join("\n");
       return { text: props, style: { fontSize: "12px" } };
     };
-  }, [dataset?.dataset_type, renderMode]);
+  }, [item?.dataType, controls.renderMode]);
 
-  // --- Loading / error states ---
-  if (loading) {
+  // --- Render ---
+  if (isLoading) {
     return (
       <Box minH="100vh" bg="white">
         <Header />
@@ -474,29 +254,18 @@ export default function MapPage() {
           gap={4}
         >
           <Text color="red.500">{error}</Text>
-          <Button
-            bg="brand.orange"
-            color="white"
-            onClick={() => {
-              setError(null);
-              setLoading(true);
-              window.location.reload();
-            }}
-          >
-            Retry
-          </Button>
         </Flex>
       </Box>
     );
   }
 
-  if (!dataset && !connection) return null;
-
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header>
-        {dataset && <BugReportLink datasetId={dataset.id} />}
-        {connection && <BugReportLink connectionId={connection.id} />}
+        {item?.dataset && <BugReportLink datasetId={item.dataset.id} />}
+        {item?.connection && (
+          <BugReportLink connectionId={item.connection.id} />
+        )}
         <ShareButton />
       </Header>
 
@@ -514,14 +283,14 @@ export default function MapPage() {
               onClick={onMapClick}
               getTooltip={getTooltip}
             >
-              {showingColormap && renderMode !== "client" && (
+              {controls.showingColormap && controls.renderMode !== "client" && (
                 <Box position="absolute" bottom={3} left={3}>
                   <MapLegend
                     layers={[
                       {
                         type: "continuous" as const,
                         id: "raster",
-                        title: dataset?.filename ?? "",
+                        title: item?.dataset?.filename ?? "",
                         domain,
                         colors,
                       },
@@ -530,9 +299,9 @@ export default function MapPage() {
                 </Box>
               )}
 
-              {dataset?.is_temporal && renderMode !== "client" && (
+              {ds?.is_temporal && controls.renderMode !== "client" && (
                 <TemporalControls
-                  timesteps={dataset.timesteps}
+                  timesteps={ds.timesteps}
                   activeIndex={animation.activeIndex}
                   onIndexChange={animation.setActiveIndex}
                   isPlaying={animation.isPlaying}
@@ -541,9 +310,9 @@ export default function MapPage() {
                   onSpeedChange={animation.setSpeed}
                   preloadProgress={preloadProgress}
                   label={
-                    dataset.timesteps[animation.activeIndex]
+                    ds.timesteps[animation.activeIndex]
                       ? formatTimestepLabel(
-                          dataset.timesteps[animation.activeIndex].datetime,
+                          ds.timesteps[animation.activeIndex].datetime,
                           cadence
                         )
                       : ""
@@ -558,13 +327,13 @@ export default function MapPage() {
                 />
               )}
 
-              {pixelInspector.hoverInfo && renderMode === "client" && (
+              {pixelInspector.hoverInfo && controls.renderMode === "client" && (
                 <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />
               )}
 
               {vectorPopup.popup &&
-                dataset?.dataset_type === "vector" &&
-                renderMode !== "geojson" && (
+                item?.dataType === "vector" &&
+                controls.renderMode !== "geojson" && (
                   <VectorPopupOverlay
                     popup={vectorPopup.popup}
                     onDismiss={vectorPopup.dismiss}
@@ -583,73 +352,34 @@ export default function MapPage() {
             borderColor="brand.border"
             overflow="hidden"
           >
-            {connection ? (
-              <ConnectionSidePanel
-                connection={connection}
-                opacity={opacity}
-                onOpacityChange={setOpacity}
-                colormapName={colormapName}
-                onColormapChange={setColormapName}
-                showColormap={
-                  connection.connection_type === "cog" &&
-                  connection.band_count === 1
-                }
-              />
-            ) : dataset ? (
-              <SidePanel
-                dataset={dataset}
-                bytesTransferred={bytesTransferred}
-                onDetailsClick={() => setReportCardOpen(true)}
-              >
-                {dataset.dataset_type === "raster" && (
-                  <RasterSidebarControls
-                    opacity={opacity}
-                    onOpacityChange={setOpacity}
-                    colormapName={colormapName}
-                    onColormapChange={setColormapName}
-                    showColormap={showingColormap}
-                    bands={selectableBands}
-                    hasRgb={hasRgb}
-                    selectedBand={selectedBand}
-                    onBandChange={setSelectedBand}
-                    showBands={isMultiBand}
-                    canClientRender={canClientRender}
-                    renderMode={renderMode === "client" ? "client" : "server"}
-                    onRenderModeChange={(mode) => setRenderMode(mode)}
-                  />
-                )}
-                {dataset.dataset_type === "vector" && (
-                  <>
-                    <VectorSidebarControls
-                      renderMode={
-                        renderMode === "geojson" ? "geojson" : "vector-tiles"
-                      }
-                      onRenderModeChange={(mode) => {
-                        setRenderMode(mode);
-                        if (mode === "vector-tiles") setArrowTable(null);
-                      }}
-                      hasParquet={!!dataset.parquet_url}
-                    />
-                    {renderMode === "geojson" && dataset.parquet_url && (
-                      <ExploreTab
-                        dataset={dataset}
-                        active={true}
-                        onTableChange={handleTableChange}
-                      />
-                    )}
-                  </>
-                )}
-              </SidePanel>
-            ) : null}
+            <MapSidePanel
+              item={item}
+              opacity={controls.opacity}
+              onOpacityChange={controls.setOpacity}
+              colormapName={controls.colormapName}
+              onColormapChange={controls.setColormapName}
+              selectedBand={controls.selectedBand}
+              onBandChange={controls.setSelectedBand}
+              renderMode={controls.renderMode}
+              onRenderModeChange={controls.setRenderMode}
+              showingColormap={controls.showingColormap}
+              selectableBands={controls.selectableBands}
+              hasRgb={controls.hasRgb}
+              showBands={controls.isMultiBand}
+              canClientRender={controls.canClientRender}
+              bytesTransferred={bytesTransferred}
+              onDetailsClick={() => setReportCardOpen(true)}
+              onTableChange={handleTableChange}
+            />
           </Box>
         </Flex>
       </ErrorBoundary>
-      {dataset && (
+
+      {item?.dataset && (
         <ReportCard
-          dataset={dataset}
+          dataset={item.dataset}
           isOpen={reportCardOpen}
           onClose={() => setReportCardOpen(false)}
-          renderMode={renderMode}
         />
       )}
     </Box>

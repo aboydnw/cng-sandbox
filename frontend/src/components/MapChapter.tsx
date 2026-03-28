@@ -6,7 +6,6 @@ import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
 import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
-import { buildConnectionTileUrl } from "../lib/connections";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 

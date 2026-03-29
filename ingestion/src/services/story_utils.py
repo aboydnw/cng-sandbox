@@ -19,9 +19,7 @@ def _story_references_dataset(row: StoryRow, dataset_id: str) -> bool:
     return False
 
 
-def find_stories_referencing_dataset(
-    session: Session, dataset_id: str
-) -> list[str]:
+def find_stories_referencing_dataset(session: Session, dataset_id: str) -> list[str]:
     """Return IDs of stories that reference *dataset_id*."""
     return [
         row.id

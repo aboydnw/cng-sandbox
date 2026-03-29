@@ -54,7 +54,7 @@ jobs:
         with:
           node-version: "20"
 
-      - run: yarn install --frozen-lockfile
+      - run: corepack enable && yarn install --immutable
 
       - name: Lint
         run: npx eslint src/ --max-warnings 0

@@ -79,19 +79,24 @@ export function useStoryEditor() {
   useEffect(() => {
     if (!id) return;
     async function loadStory() {
-      const loaded = await getStoryFromServer(id!);
-      if (!loaded) {
-        setError("Story not found");
+      try {
+        const loaded = await getStoryFromServer(id!);
+        if (!loaded) {
+          setError("Story not found");
+          setLoading(false);
+          return;
+        }
+        const migrated = migrateStory(
+          loaded as unknown as Record<string, unknown>
+        );
+        setStory(migrated);
+        setActiveChapterId(migrated.chapters[0]?.id ?? "");
+        if (JSON.stringify(migrated) !== JSON.stringify(loaded)) {
+          saveStoryToServer(migrated).catch(console.error);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load story");
         setLoading(false);
-        return;
-      }
-      const migrated = migrateStory(
-        loaded as unknown as Record<string, unknown>
-      );
-      setStory(migrated);
-      setActiveChapterId(migrated.chapters[0]?.id ?? "");
-      if (JSON.stringify(migrated) !== JSON.stringify(loaded)) {
-        saveStoryToServer(migrated).catch(console.error);
       }
     }
     loadStory();

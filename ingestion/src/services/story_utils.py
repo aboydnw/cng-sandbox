@@ -1,4 +1,4 @@
-"""Shared utilities for story–dataset references."""
+"""Shared utilities for story-dataset references."""
 
 import json
 

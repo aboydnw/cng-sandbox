@@ -6,7 +6,10 @@ from src.dependencies import get_session
 from src.models.dataset import DatasetRow
 from src.services.dataset_delete import delete_dataset
 from src.services.storage import StorageService
-from src.services.story_utils import build_story_count_map, find_stories_referencing_dataset
+from src.services.story_utils import (
+    build_story_count_map,
+    find_stories_referencing_dataset,
+)
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")

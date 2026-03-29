@@ -1,15 +1,17 @@
 # --- Builder: produces optimized static assets in /app/dist ---
 FROM node:20 AS builder
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+RUN corepack enable
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 COPY . .
 RUN npx vite build
 
 # --- Dev: hot-reloading Vite dev server for local development ---
 FROM node:20 AS dev
 WORKDIR /app
-COPY package.json yarn.lock ./
+RUN corepack enable
+COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install
 COPY src/ ./src/
 COPY index.html ./

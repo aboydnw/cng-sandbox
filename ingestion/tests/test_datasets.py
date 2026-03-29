@@ -1,5 +1,6 @@
 from datetime import UTC
 
+import pytest
 from sqlalchemy import inspect
 
 
@@ -149,35 +150,32 @@ def test_delete_dataset_reports_affected_stories(client, db_engine):
     assert "story-1" in data["affected_stories"]
 
 
-def test_storage_delete_object(monkeypatch):
+def test_storage_delete_object():
+    import obstore
+    from obstore.store import MemoryStore
+
     from src.services.storage import StorageService
 
-    deleted_keys = []
-
-    class FakeS3:
-        def delete_object(self, Bucket, Key):
-            deleted_keys.append(Key)
-
-        def list_objects_v2(self, Bucket, Prefix):
-            return {"Contents": [{"Key": f"{Prefix}file1"}, {"Key": f"{Prefix}file2"}]}
-
-    storage = StorageService(s3_client=FakeS3(), bucket="test-bucket")
+    store = MemoryStore()
+    storage = StorageService(store=store, bucket="test-bucket")
+    obstore.put(store, "datasets/ds-001/converted/data.tif", b"data")
     storage.delete_object("datasets/ds-001/converted/data.tif")
-    assert deleted_keys == ["datasets/ds-001/converted/data.tif"]
+    with pytest.raises(FileNotFoundError):
+        obstore.get(store, "datasets/ds-001/converted/data.tif")
 
 
-def test_storage_delete_prefix(monkeypatch):
+def test_storage_delete_prefix():
+    import obstore
+    from obstore.store import MemoryStore
+
     from src.services.storage import StorageService
 
-    deleted_keys = []
-
-    class FakeS3:
-        def list_objects_v2(self, Bucket, Prefix):
-            return {"Contents": [{"Key": f"{Prefix}file1"}, {"Key": f"{Prefix}file2"}]}
-
-        def delete_object(self, Bucket, Key):
-            deleted_keys.append(Key)
-
-    storage = StorageService(s3_client=FakeS3(), bucket="test-bucket")
+    store = MemoryStore()
+    storage = StorageService(store=store, bucket="test-bucket")
+    obstore.put(store, "datasets/ds-001/file1", b"a")
+    obstore.put(store, "datasets/ds-001/file2", b"b")
     storage.delete_prefix("datasets/ds-001/")
-    assert len(deleted_keys) == 2
+    with pytest.raises(FileNotFoundError):
+        obstore.get(store, "datasets/ds-001/file1")
+    with pytest.raises(FileNotFoundError):
+        obstore.get(store, "datasets/ds-001/file2")

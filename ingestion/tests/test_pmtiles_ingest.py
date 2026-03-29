@@ -1,9 +1,9 @@
 import subprocess
 
-import boto3
 import geopandas as gpd
+import obstore
 import pytest
-from moto import mock_aws
+from obstore.store import MemoryStore
 from shapely.geometry import Polygon
 
 from src.services.pmtiles_ingest import get_pmtiles_tile_url, ingest_pmtiles
@@ -28,10 +28,8 @@ def test_get_pmtiles_tile_url():
 
 @pytest.fixture
 def mock_storage():
-    with mock_aws():
-        s3 = boto3.client("s3", region_name="us-east-1")
-        s3.create_bucket(Bucket="test-bucket")
-        yield StorageService(s3_client=s3, bucket="test-bucket")
+    store = MemoryStore()
+    return StorageService(store=store, bucket="test-bucket")
 
 
 @pytest.fixture
@@ -107,12 +105,9 @@ def test_ingest_pmtiles_uploads_to_storage(monkeypatch, polygon_parquet, mock_st
 
     ingest_pmtiles("abc-123", polygon_parquet, _storage=mock_storage)
 
-    # Verify the file was uploaded to S3
-    obj = mock_storage.s3.get_object(
-        Bucket="test-bucket",
-        Key="datasets/abc-123/converted/data.pmtiles",
-    )
-    assert len(obj["Body"].read()) == 102  # valid PMTiles header size
+    # Verify the file was uploaded to storage
+    result = obstore.get(mock_storage.store, "datasets/abc-123/converted/data.pmtiles")
+    assert len(bytes(result.bytes())) == 102  # valid PMTiles header size
 
 
 def test_ingest_pmtiles_raises_on_tippecanoe_failure(

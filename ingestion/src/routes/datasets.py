@@ -84,8 +84,7 @@ async def delete_dataset_endpoint(dataset_id: str, request: Request):
             raise HTTPException(status_code=404, detail="Dataset not found")
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
-        s3 = getattr(request.app.state, "s3", None)
-        storage = StorageService(s3_client=s3) if s3 else None
+        storage = StorageService()
         result = await delete_dataset(session, dataset_id, storage=storage)
         return result
     finally:

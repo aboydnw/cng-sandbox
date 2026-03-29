@@ -119,5 +119,11 @@ class Dataset(BaseModel):
     timesteps: list[Timestep] = []
     raster_min: float | None = None
     raster_max: float | None = None
+    crs: str | None = None
+    crs_name: str | None = None
+    pixel_width: int | None = None
+    pixel_height: int | None = None
+    resolution: float | None = None
+    compression: str | None = None
     created_at: datetime
     workspace_id: str | None = None

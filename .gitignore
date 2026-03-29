@@ -20,3 +20,4 @@ scripts/update-duckdns.sh
 .worktrees/
 docs/
 .yarn/
+package-lock.json

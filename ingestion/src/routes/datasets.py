@@ -1,38 +1,15 @@
 """Dataset metadata routes."""
 
-import json
-
 from fastapi import APIRouter, HTTPException, Request
-from sqlalchemy.orm import Session
 
+from src.dependencies import get_session
 from src.models.dataset import DatasetRow
-from src.models.story import StoryRow
 from src.services.dataset_delete import delete_dataset
 from src.services.storage import StorageService
+from src.services.story_utils import build_story_count_map, find_stories_referencing_dataset
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
-
-
-def _get_session(request: Request) -> Session:
-    return request.app.state.db_session_factory()
-
-
-def _story_count_for_dataset(session: Session, dataset_id: str) -> int:
-    """Count stories that reference a dataset (in dataset_id or chapters_json)."""
-    count = 0
-    rows = session.query(StoryRow).all()
-    for row in rows:
-        if row.dataset_id == dataset_id:
-            count += 1
-            continue
-        chapters = json.loads(row.chapters_json) if row.chapters_json else []
-        for ch in chapters:
-            lc = ch.get("layer_config") or {}
-            if lc.get("dataset_id") == dataset_id:
-                count += 1
-                break
-    return count
 
 
 @router.get("/datasets")
@@ -41,7 +18,7 @@ async def list_datasets(request: Request):
     if not workspace_id:
         return []
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         rows = (
             session.query(DatasetRow)
@@ -49,10 +26,11 @@ async def list_datasets(request: Request):
             .order_by(DatasetRow.created_at.desc())
             .all()
         )
+        story_counts = build_story_count_map(session)
         result = []
         for row in rows:
             d = row.to_dict()
-            d["story_count"] = _story_count_for_dataset(session, row.id)
+            d["story_count"] = story_counts.get(row.id, 0)
             result.append(d)
         return result
     finally:
@@ -61,13 +39,13 @@ async def list_datasets(request: Request):
 
 @router.get("/datasets/{dataset_id}")
 async def get_dataset(dataset_id: str, request: Request):
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(DatasetRow, dataset_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
         d = row.to_dict()
-        d["story_count"] = _story_count_for_dataset(session, row.id)
+        d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
         return d
     finally:
         session.close()
@@ -77,7 +55,7 @@ async def get_dataset(dataset_id: str, request: Request):
 async def delete_dataset_endpoint(dataset_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(DatasetRow, dataset_id)
         if row is None:

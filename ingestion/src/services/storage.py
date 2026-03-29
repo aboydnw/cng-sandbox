@@ -13,14 +13,18 @@ class StorageService:
         settings = get_settings()
         self.bucket = bucket or settings.s3_bucket
         if store is None:
-            store = S3Store(
-                bucket=self.bucket,
-                access_key_id=settings.aws_access_key_id or None,
-                secret_access_key=settings.aws_secret_access_key or None,
-                endpoint=settings.s3_endpoint or None,
-                region=settings.s3_region,
-                virtual_hosted_style_request="false",
-            )
+            kwargs = {
+                "bucket": self.bucket,
+                "region": settings.s3_region,
+                "virtual_hosted_style_request": "false",
+            }
+            if settings.aws_access_key_id:
+                kwargs["access_key_id"] = settings.aws_access_key_id
+            if settings.aws_secret_access_key:
+                kwargs["secret_access_key"] = settings.aws_secret_access_key
+            if settings.s3_endpoint:
+                kwargs["endpoint"] = settings.s3_endpoint
+            store = S3Store(**kwargs)
         self.store = store
 
     def _upload(self, file_path: str, key: str) -> None:

@@ -106,9 +106,7 @@ def test_ingest_pmtiles_uploads_to_storage(monkeypatch, polygon_parquet, mock_st
     ingest_pmtiles("abc-123", polygon_parquet, _storage=mock_storage)
 
     # Verify the file was uploaded to storage
-    result = obstore.get(
-        mock_storage.store, "datasets/abc-123/converted/data.pmtiles"
-    )
+    result = obstore.get(mock_storage.store, "datasets/abc-123/converted/data.pmtiles")
     assert len(bytes(result.bytes())) == 102  # valid PMTiles header size
 
 

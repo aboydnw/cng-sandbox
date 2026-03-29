@@ -16,7 +16,7 @@ class StorageService:
             kwargs = {
                 "bucket": self.bucket,
                 "region": settings.s3_region,
-                "virtual_hosted_style_request": "false",
+                "virtual_hosted_style_request": False,
             }
             if settings.aws_access_key_id:
                 kwargs["access_key_id"] = settings.aws_access_key_id
@@ -28,9 +28,8 @@ class StorageService:
         self.store = store
 
     def _upload(self, file_path: str, key: str) -> None:
-        """Read a local file and put it to object storage."""
-        data = Path(file_path).read_bytes()
-        obstore.put(self.store, key, data)
+        """Upload a local file to object storage."""
+        obstore.put(self.store, key, Path(file_path))
 
     def upload_raw(self, file_path: str, dataset_id: str, filename: str) -> str:
         """Upload a raw input file. Returns the S3 key."""

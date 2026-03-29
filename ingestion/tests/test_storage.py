@@ -61,9 +61,7 @@ def test_upload_file_with_explicit_key(storage):
         path = f.name
     try:
         storage.upload_file(path, "datasets/abc-123/timesteps/0/data.tif")
-        result = obstore.get(
-            storage.store, "datasets/abc-123/timesteps/0/data.tif"
-        )
+        result = obstore.get(storage.store, "datasets/abc-123/timesteps/0/data.tif")
         assert bytes(result.bytes()) == b"timestep data"
     finally:
         os.unlink(path)

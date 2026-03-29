@@ -159,7 +159,7 @@ async def run_temporal_pipeline(
             ):
                 cog_filename = os.path.basename(cog_path)
                 key = f"datasets/{job.dataset_id}/timesteps/{i}/{cog_filename}"
-                storage.s3.upload_file(cog_path, storage.bucket, key)
+                storage.upload_file(cog_path, key)
                 uploaded_keys.append(key)
                 s3_hrefs.append(storage.get_s3_uri(key))
                 converted_file_size += os.path.getsize(cog_path)
@@ -223,4 +223,4 @@ def _cleanup_uploaded(storage: StorageService, keys: list[str]) -> None:
     """Best-effort removal of already-uploaded S3 objects."""
     for key in keys:
         with contextlib.suppress(Exception):
-            storage.s3.delete_object(Bucket=storage.bucket, Key=key)
+            storage.delete_object(key)

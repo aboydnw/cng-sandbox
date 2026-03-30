@@ -10,9 +10,9 @@ export function HomepageHero() {
         lineHeight={1.3}
         letterSpacing="-0.02em"
       >
-        Test-drive the open source
+        Visualize your geospatial data
         <br />
-        geospatial stack
+        in the browser
       </Text>
       <Text
         color="brand.textSecondary"
@@ -21,7 +21,7 @@ export function HomepageHero() {
         maxW="65ch"
         mx="auto"
       >
-        Choose your starting point
+        Convert, connect, or start building
       </Text>
     </Box>
   );

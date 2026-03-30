@@ -36,125 +36,135 @@ export function useTemporalExport(
     [deckRef]
   );
 
-  const exportGif = useCallback(
-    async (setActiveIndex: (i: number) => void) => {
+  const runExport = useCallback(
+    async (
+      format: "gif" | "mp4",
+      setActiveIndex: (i: number) => void,
+      renderFrames: (
+        validTimesteps: Timestep[],
+        captureFrame: (index: number) => Promise<HTMLCanvasElement | null>,
+        onProgress: (current: number, total: number) => void
+      ) => Promise<void>
+    ) => {
       const reset = () =>
         setState({ isExporting: false, format: null, progress: null });
       try {
-        const GIF = (await import("gif.js")).default;
         setActiveIndexRef.current = setActiveIndex;
         const validTimesteps = timesteps.filter((_, i) => !gapIndices.has(i));
         setState({
           isExporting: true,
-          format: "gif",
+          format,
           progress: { current: 0, total: validTimesteps.length },
         });
+        const onProgress = (current: number, total: number) =>
+          setState((prev) => ({ ...prev, progress: { current, total } }));
 
-        const gif = new GIF({
-          workers: 2,
-          quality: 10,
-          workerScript: "/gif.worker.js",
-        });
-        for (let i = 0; i < validTimesteps.length; i++) {
-          const canvas = await captureFrame(validTimesteps[i].index);
-          if (canvas) gif.addFrame(canvas, { delay: speedMs });
-          setState((prev) => ({
-            ...prev,
-            progress: { current: i + 1, total: validTimesteps.length },
-          }));
-        }
-
-        gif.on("finished", (blob: Blob) => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "animation.gif";
-          a.click();
-          URL.revokeObjectURL(url);
-          reset();
-        });
-        gif.on("error", reset);
-        gif.render();
+        await renderFrames(validTimesteps, captureFrame, onProgress);
+        reset();
       } catch {
         reset();
       }
     },
-    [timesteps, gapIndices, speedMs, captureFrame]
+    [timesteps, gapIndices, captureFrame]
+  );
+
+  const exportGif = useCallback(
+    async (setActiveIndex: (i: number) => void) => {
+      await runExport(
+        "gif",
+        setActiveIndex,
+        async (validTimesteps, capture, onProgress) => {
+          const GIF = (await import("gif.js")).default;
+          const gif = new GIF({
+            workers: 2,
+            quality: 10,
+            workerScript: "/gif.worker.js",
+          });
+
+          for (let i = 0; i < validTimesteps.length; i++) {
+            const canvas = await capture(validTimesteps[i].index);
+            if (canvas) gif.addFrame(canvas, { delay: speedMs });
+            onProgress(i + 1, validTimesteps.length);
+          }
+
+          await new Promise<void>((resolve, reject) => {
+            gif.on("finished", (blob: Blob) => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "animation.gif";
+              a.click();
+              URL.revokeObjectURL(url);
+              resolve();
+            });
+            gif.on("error", reject);
+            gif.render();
+          });
+        }
+      );
+    },
+    [runExport, speedMs]
   );
 
   const exportMp4 = useCallback(
     async (setActiveIndex: (i: number) => void) => {
-      const reset = () =>
-        setState({ isExporting: false, format: null, progress: null });
-      try {
-        const { Muxer, ArrayBufferTarget } = await import("mp4-muxer");
-        setActiveIndexRef.current = setActiveIndex;
-        const validTimesteps = timesteps.filter((_, i) => !gapIndices.has(i));
-        setState({
-          isExporting: true,
-          format: "mp4",
-          progress: { current: 0, total: validTimesteps.length },
-        });
+      await runExport(
+        "mp4",
+        setActiveIndex,
+        async (validTimesteps, capture, onProgress) => {
+          const { Muxer, ArrayBufferTarget } = await import("mp4-muxer");
+          const canvas = deckRef.current?.deck?.canvas;
+          if (!canvas) return;
 
-        const canvas = deckRef.current?.deck?.canvas;
-        if (!canvas) {
-          reset();
-          return;
-        }
+          const muxer = new Muxer({
+            target: new ArrayBufferTarget(),
+            video: { codec: "avc", width: canvas.width, height: canvas.height },
+            fastStart: "in-memory",
+          });
 
-        const muxer = new Muxer({
-          target: new ArrayBufferTarget(),
-          video: { codec: "avc", width: canvas.width, height: canvas.height },
-          fastStart: "in-memory",
-        });
+          const encoder = new VideoEncoder({
+            output: (chunk, meta) =>
+              muxer.addVideoChunk(chunk, meta ?? undefined),
+            error: console.error,
+          });
+          encoder.configure({
+            codec: "avc1.42001f",
+            width: canvas.width,
+            height: canvas.height,
+            bitrate: 2_000_000,
+            framerate: 1000 / speedMs,
+          });
 
-        const encoder = new VideoEncoder({
-          output: (chunk, meta) =>
-            muxer.addVideoChunk(chunk, meta ?? undefined),
-          error: console.error,
-        });
-        encoder.configure({
-          codec: "avc1.42001f",
-          width: canvas.width,
-          height: canvas.height,
-          bitrate: 2_000_000,
-          framerate: 1000 / speedMs,
-        });
-
-        for (let i = 0; i < validTimesteps.length; i++) {
-          const frame = await captureFrame(validTimesteps[i].index);
-          if (frame) {
-            const videoFrame = new VideoFrame(frame, {
-              timestamp: i * speedMs * 1000,
-            });
-            encoder.encode(videoFrame);
-            videoFrame.close();
+          for (let i = 0; i < validTimesteps.length; i++) {
+            const frame = await capture(validTimesteps[i].index);
+            if (frame) {
+              const videoFrame = new VideoFrame(frame, {
+                timestamp: i * speedMs * 1000,
+              });
+              encoder.encode(videoFrame);
+              videoFrame.close();
+            }
+            onProgress(i + 1, validTimesteps.length);
           }
-          setState((prev) => ({
-            ...prev,
-            progress: { current: i + 1, total: validTimesteps.length },
-          }));
+
+          await encoder.flush();
+          encoder.close();
+          muxer.finalize();
+
+          const buffer = (
+            muxer.target as InstanceType<typeof ArrayBufferTarget>
+          ).buffer;
+          const blob = new Blob([buffer], { type: "video/mp4" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "animation.mp4";
+          a.click();
+          URL.revokeObjectURL(url);
         }
-
-        await encoder.flush();
-        encoder.close();
-        muxer.finalize();
-
-        const buffer = (muxer.target as InstanceType<typeof ArrayBufferTarget>)
-          .buffer;
-        const blob = new Blob([buffer], { type: "video/mp4" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "animation.mp4";
-        a.click();
-        URL.revokeObjectURL(url);
-        reset();
-      } catch {
-        reset();
-      }
+      );
     },
-    [timesteps, gapIndices, speedMs, deckRef, captureFrame]
+    [runExport, speedMs, deckRef]
   );
 
   return { ...state, exportGif, exportMp4 };

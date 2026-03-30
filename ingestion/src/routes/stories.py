@@ -5,8 +5,8 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
-from sqlalchemy.orm import Session
 
+from src.dependencies import get_session
 from src.models.story import (
     ChapterPayload,
     StoryCreate,
@@ -17,10 +17,6 @@ from src.models.story import (
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
-
-
-def _get_session(request: Request) -> Session:
-    return request.app.state.db_session_factory()
 
 
 def _row_to_response(row: StoryRow) -> StoryResponse:
@@ -52,7 +48,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
 @router.post("/stories", status_code=201)
 async def create_story(body: StoryCreate, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = StoryRow(
             id=str(uuid.uuid4()),
@@ -79,7 +75,7 @@ async def list_stories(request: Request):
     if not workspace_id:
         return []
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         rows = (
             session.query(StoryRow)
@@ -94,7 +90,7 @@ async def list_stories(request: Request):
 
 @router.get("/stories/{story_id}")
 async def get_story(story_id: str, request: Request):
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(StoryRow, story_id)
         if not row:
@@ -108,7 +104,7 @@ async def get_story(story_id: str, request: Request):
 async def update_story(story_id: str, body: StoryUpdate, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(StoryRow, story_id)
         if not row:
@@ -135,7 +131,7 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
 async def delete_story(story_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(StoryRow, story_id)
         if not row:

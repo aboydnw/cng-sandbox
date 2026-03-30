@@ -235,7 +235,6 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
         tolerance = 0.5
         with rasterio.open(output_path) as cog:
             cog_nodata = cog.nodata
-            cog_data = cog.read(1)
             cog_rows = np.empty(len(lons), dtype=np.int64)
             cog_cols = np.empty(len(lons), dtype=np.int64)
             for i, (lon, lat) in enumerate(zip(lons, lats)):
@@ -250,8 +249,11 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
             in_bounds = ((cog_rows >= 0) & (cog_rows < cog.height) &
                          (cog_cols >= 0) & (cog_cols < cog.width))
 
-        cog_vals = np.full(len(lons), np.nan, dtype=np.float32)
-        cog_vals[in_bounds] = cog_data[cog_rows[in_bounds], cog_cols[in_bounds]]
+            cog_vals = np.full(len(lons), np.nan, dtype=np.float32)
+            for idx in np.where(in_bounds)[0]:
+                cog_vals[idx] = cog.read(
+                    1, window=rasterio.windows.Window(int(cog_cols[idx]), int(cog_rows[idx]), 1, 1)
+                )[0, 0]
 
         valid = ~np.isnan(cog_vals) & in_bounds
         if cog_nodata is not None:
@@ -278,10 +280,6 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
         nc_data = da.values.astype(np.float32)
         ds.close()
 
-        with rasterio.open(output_path) as dst:
-            cog_data = dst.read(1)
-            nodata = dst.nodata
-
         tolerance = 1e-4
         rng = np.random.default_rng(42)
         height, width = nc_data.shape
@@ -289,7 +287,13 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
         cols = rng.integers(0, width, size=n)
 
         nc_vals = nc_data[rows, cols]
-        cog_vals = cog_data[rows, cols]
+
+        with rasterio.open(output_path) as dst:
+            nodata = dst.nodata
+            cog_vals = np.array([
+                dst.read(1, window=rasterio.windows.Window(int(c), int(r), 1, 1))[0, 0]
+                for r, c in zip(rows, cols)
+            ])
 
         mask = ~np.isnan(nc_vals)
         if nodata is not None:
@@ -330,9 +334,32 @@ def check_rendering_metadata(output_path: str) -> CheckResult:
                 "Single-band uint8. Tile server can apply colormap_name without rescale."
             )
 
-        data = dst.read(1)
-        valid = data[data != dst.nodata] if dst.nodata is not None else data
-        valid = valid[~np.isnan(valid)]
+        overviews = dst.overviews(1)
+        if overviews:
+            overview_level = overviews[-1]
+            data = dst.read(1, out_shape=(
+                dst.height // overview_level,
+                dst.width // overview_level,
+            ))
+        else:
+            rng = np.random.default_rng(42)
+            n_samples = min(10000, dst.height * dst.width)
+            sample_rows = rng.integers(0, dst.height, size=n_samples)
+            sample_cols = rng.integers(0, dst.width, size=n_samples)
+            data = np.array([
+                dst.read(1, window=rasterio.windows.Window(int(c), int(r), 1, 1))[0, 0]
+                for r, c in zip(sample_rows, sample_cols)
+            ])
+
+        valid = data.ravel()
+        if dst.nodata is not None:
+            if np.isnan(dst.nodata):
+                valid = valid[~np.isnan(valid)]
+            else:
+                valid = valid[valid != dst.nodata]
+                valid = valid[~np.isnan(valid)]
+        else:
+            valid = valid[~np.isnan(valid)]
         if valid.size == 0:
             return CheckResult(
                 "Rendering metadata", False,

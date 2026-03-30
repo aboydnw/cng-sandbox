@@ -63,4 +63,12 @@ describe("PathCard", () => {
     expect(screen.queryByText("Upload a geospatial file")).toBeNull();
     expect(screen.queryByText("Browse files")).toBeNull();
   });
+
+  it("applies reduced flex when faded for three-card layout", () => {
+    const { container } = renderWithChakra(
+      <PathCard {...defaultProps} faded={true} />
+    );
+    const card = container.firstChild as HTMLElement;
+    expect(card.style.flex).toMatch(/^0\.5/);
+  });
 });

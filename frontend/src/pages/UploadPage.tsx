@@ -151,7 +151,7 @@ export default function UploadPage() {
         maxW="900px"
         mx="auto"
         w="100%"
-        align="flex-start"
+        align={{ base: "stretch", md: "flex-start" }}
         direction={{ base: "column", md: "row" }}
       >
         {/* Left card: Convert a file */}

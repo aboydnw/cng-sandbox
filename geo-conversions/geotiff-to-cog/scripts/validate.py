@@ -43,13 +43,6 @@ def check_cog_valid(output_path: str) -> CheckResult:
     return CheckResult("COG structure", False, f"Invalid COG: {errors}")
 
 
-def check_crs_match(input_path: str, output_path: str) -> CheckResult:
-    """Check that CRS is preserved."""
-    with rasterio.open(input_path) as src, rasterio.open(output_path) as dst:
-        if src.crs == dst.crs:
-            return CheckResult("CRS preserved", True, f"{src.crs}")
-        return CheckResult("CRS preserved", False, f"Source: {src.crs}, Output: {dst.crs}")
-
 
 def check_bounds_match(input_path: str, output_path: str, tolerance: float = 1e-6) -> CheckResult:
     """Check that bounding box is preserved."""
@@ -384,16 +377,27 @@ def run_checks(input_path: str, output_path: str) -> list[CheckResult]:
     corruption) are in run_advisory_checks and are NOT included here so that
     pipeline callers can treat failures as hard errors without false positives.
     """
-    return [
+    with rasterio.open(input_path) as src:
+        input_is_4326 = src.crs and src.crs.to_epsg() == 4326
+
+    checks = [
         check_cog_valid(output_path),
         check_crs_4326(output_path),
-        check_bounds_match(input_path, output_path),
-        check_dimensions_match(input_path, output_path),
+    ]
+
+    if input_is_4326:
+        checks.extend([
+            check_bounds_match(input_path, output_path),
+            check_dimensions_match(input_path, output_path),
+        ])
+
+    checks.extend([
         check_band_count(input_path, output_path),
         check_pixel_fidelity(input_path, output_path),
         check_nodata_match(input_path, output_path),
         check_overviews(output_path),
-    ]
+    ])
+    return checks
 
 
 def run_advisory_checks(input_path: str, output_path: str) -> list[CheckResult]:

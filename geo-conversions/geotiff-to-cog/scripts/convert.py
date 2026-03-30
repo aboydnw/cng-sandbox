@@ -37,6 +37,9 @@ def convert(input_path: str, output_path: str, compression: str = "DEFLATE", ver
             print(f"Input: {src.width}x{src.height}, {src.count} band(s), dtype={src.dtypes[0]}")
             print(f"CRS: {src.crs}")
             print(f"Bounds: {src.bounds}")
+        if src.crs is None:
+            print(f"Error: input GeoTIFF has no CRS metadata: {input_path}")
+            sys.exit(1)
         needs_reproject = src.crs != rasterio.crs.CRS.from_epsg(4326)
 
     if needs_reproject:

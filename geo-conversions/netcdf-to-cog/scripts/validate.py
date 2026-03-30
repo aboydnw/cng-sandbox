@@ -85,8 +85,12 @@ def _detect_grid_mapping(ds, variable: str | None = None):
     try:
         proj_crs = ProjCRS.from_cf(cf_params)
         return True, CRS.from_user_input(proj_crs), None
-    except Exception:
-        return False, None, None
+    except Exception as e:
+        raise ValueError(
+            f"Cannot parse grid_mapping '{grid_mapping_attr}' with "
+            f"grid_mapping_name='{gm_name}' into a CRS. "
+            f"Attributes: {dict(gm.attrs)}. Error: {e}"
+        )
 
 
 def check_cog_valid(output_path: str) -> CheckResult:

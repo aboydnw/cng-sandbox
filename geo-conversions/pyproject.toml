@@ -12,7 +12,7 @@ dependencies = []
 [project.optional-dependencies]
 raster = ["rasterio", "rio-cogeo", "numpy", "pyproj"]
 vector = ["geopandas", "pyarrow", "shapely"]
-netcdf = ["xarray", "netcdf4", "rasterio", "rio-cogeo", "numpy"]
+netcdf = ["xarray", "netcdf4", "rasterio", "rio-cogeo", "numpy", "pyproj"]
 hdf5 = ["h5py", "rasterio", "rio-cogeo", "numpy"]
 all = ["rasterio", "rio-cogeo", "numpy", "pyproj", "geopandas", "pyarrow", "shapely", "xarray", "netcdf4", "h5py"]
 

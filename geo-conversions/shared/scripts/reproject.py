@@ -26,6 +26,8 @@ def reproject_to_cog(
 
     with rasterio.open(input_tif) as src:
         src_crs = src.crs
+        if src_crs is None:
+            raise ValueError(f"Input GeoTIFF has no CRS defined: {input_tif}")
         needs_reproject = src_crs.to_epsg() != 4326
 
     if verbose:

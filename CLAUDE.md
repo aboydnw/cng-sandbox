@@ -16,6 +16,19 @@ Ingestion API → Cloudflare R2 (S3-compatible object store)
 
 All services run in Docker. The frontend proxies all API and tiler requests through Vite's dev server, so the browser only talks to port 5185.
 
+## Project Documentation
+
+All project docs live in Obsidian at `~/Obsidian/Project Docs/CNG Sandbox/`. Start with `index.md` for a linked overview.
+
+- `product/` — PRDs, product specs, competitive analysis, feature specs
+- `architecture/` — system design, integration plans
+- `research/` — technical investigations, conversion shootout results
+- `specs/` — superpowers design specs (dated, paired with plans)
+- `plans/` — superpowers implementation plans (dated, checkbox-tracked)
+- `devlog/` — progress updates, test results, deployment notes
+
+After pushing a branch and opening a PR for a significant feature or fix, write a devlog entry to `devlog/YYYY-MM-DD-<topic>.md` summarizing what was built, what diverged from the plan (if any), and lessons learned. Update `index.md` to link to it.
+
 ## Local Deployment
 
 ### Prerequisites
@@ -57,7 +70,7 @@ The sandbox can be deployed to a public URL with HTTPS and basic auth using the 
 
 ### Prerequisites
 
-1. **DuckDNS subdomain:** Sign up at [duckdns.org](https://www.duckdns.org), create a subdomain, note the token
+1. **Domain:** Point an A record for your domain (e.g. `cngsandbox.org`) to the Hetzner VM's public IPv4 address. Caddy auto-obtains Let's Encrypt certs via HTTP-01 challenge.
 2. **Hetzner firewall:** Allow inbound TCP 22, 80, 443 only (block all other ports from external access). Configure in the Hetzner Cloud console (Firewalls section). Also check the OS-level firewall: `sudo ufw status` — if active, ensure ports 80 and 443 are allowed (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)
 3. **Generate a password hash:**
    ```bash
@@ -68,18 +81,9 @@ The sandbox can be deployed to a public URL with HTTPS and basic auth using the 
 
 1. Edit `.env` on the VM and fill in the deployment variables:
    ```
-   SITE_ADDRESS=your-subdomain.duckdns.org
-   DUCKDNS_TOKEN=your-token-here
+   SITE_ADDRESS=cngsandbox.org
    AUTH_USER=demo
    AUTH_PASSWORD_HASH=$$2a$$14$$... (escape $ as $$ for Docker Compose)
-   ```
-
-2. Edit `scripts/update-duckdns.sh` and set `SUBDOMAIN` and `TOKEN`
-
-3. Add the cron job:
-   ```bash
-   crontab -e
-   # Add: */5 * * * * /path/to/scripts/update-duckdns.sh >> /var/log/duckdns.log 2>&1
    ```
 
 ### Start
@@ -90,7 +94,7 @@ docker compose --profile prod up -d --build
 
 ### Verify
 
-- Visit `https://your-subdomain.duckdns.org` — should prompt for username/password
+- Visit `https://cngsandbox.org` — should prompt for username/password
 - After auth, the sandbox should load normally
 - Upload a file to verify CORS works end-to-end
 

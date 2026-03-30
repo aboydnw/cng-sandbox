@@ -52,15 +52,18 @@ async def _cleanup_expired(app):
 def _migrate_schema(engine):
     """Add columns that create_all won't add to existing tables."""
     from sqlalchemy import text
-    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.exc import DBAPIError
 
     with engine.connect() as conn:
         for col, typ in [("band_count", "INTEGER"), ("rescale", "TEXT")]:
             try:
                 conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
                 conn.commit()
-            except OperationalError:
+            except DBAPIError as exc:
                 conn.rollback()
+                if getattr(getattr(exc, "orig", None), "pgcode", None) == "42701":
+                    continue
+                raise
 
 
 @asynccontextmanager

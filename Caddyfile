@@ -1,7 +1,4 @@
 {$SITE_ADDRESS} {
-	tls {
-		dns duckdns {$DUCKDNS_TOKEN}
-	}
 
 	# Data-serving paths: proxy to R2 public URL.
 	# No auth: programmatic clients (PMTiles, DuckDB WASM) can't

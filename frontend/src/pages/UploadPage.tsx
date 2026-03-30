@@ -105,20 +105,25 @@ export default function UploadPage() {
   const connectCardExpanded = mode === "connect-idle";
   const storyExpanded = activeCard === "story" && mode === "initial";
 
-  const handleUploadCardClick = () => {
+  const handleUploadCardClick = useCallback(() => {
     setActiveCard("upload");
     setMode("upload-idle");
-  };
+  }, []);
 
-  const handleConnectCardClick = () => {
+  const handleConnectCardClick = useCallback(() => {
     setActiveCard("connect");
     setMode("connect-idle");
-  };
+  }, []);
 
-  const handleStoryCardClick = () => {
+  const handleStoryCardClick = useCallback(() => {
     setActiveCard("story");
     setMode("initial");
-  };
+  }, []);
+
+  const handleCollapse = useCallback(() => {
+    setActiveCard("none");
+    setMode("initial");
+  }, []);
 
   const handleConnectionCreated = useCallback(
     (conn: Connection) => {
@@ -151,14 +156,7 @@ export default function UploadPage() {
           onClick={handleUploadCardClick}
           expanded={uploadCardExpanded}
           faded={!uploadCardExpanded && (connectCardExpanded || storyExpanded)}
-          onCollapse={
-            mode === "upload-idle"
-              ? () => {
-                  setActiveCard("none");
-                  setMode("initial");
-                }
-              : undefined
-          }
+          onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
         >
           <Box
             as="ul"
@@ -214,14 +212,7 @@ export default function UploadPage() {
           onClick={handleConnectCardClick}
           expanded={connectCardExpanded}
           faded={!connectCardExpanded && (uploadCardExpanded || storyExpanded)}
-          onCollapse={
-            connectCardExpanded
-              ? () => {
-                  setActiveCard("none");
-                  setMode("initial");
-                }
-              : undefined
-          }
+          onCollapse={connectCardExpanded ? handleCollapse : undefined}
         >
           <Box
             as="ul"
@@ -254,9 +245,7 @@ export default function UploadPage() {
           onClick={handleStoryCardClick}
           expanded={storyExpanded}
           faded={!storyExpanded && (uploadCardExpanded || connectCardExpanded)}
-          onCollapse={() => {
-            setActiveCard("none");
-          }}
+          onCollapse={storyExpanded ? handleCollapse : undefined}
         >
           <Box
             as="ul"

@@ -26,15 +26,14 @@ def reproject_to_cog(
 
     with rasterio.open(input_tif) as src:
         src_crs = src.crs
-        needs_reproject = src_crs != dst_crs
+        needs_reproject = src_crs.to_epsg() != 4326
 
     if verbose:
         label = "already EPSG:4326" if not needs_reproject else f"reprojecting from {src_crs}"
         print(f"reproject_to_cog: {label}")
 
-    try:
-        output_profile = cog_profiles.get(compression.lower())
-    except KeyError:
+    output_profile = cog_profiles.get(compression.lower())
+    if output_profile is None:
         output_profile = cog_profiles.get("deflate")
     output_profile["blockxsize"] = 512
     output_profile["blockysize"] = 512

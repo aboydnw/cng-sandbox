@@ -146,6 +146,7 @@ export default function UploadPage() {
         mx="auto"
         w="100%"
         align="flex-start"
+        direction={{ base: "column", md: "row" }}
       >
         {/* Left card: Convert a file */}
         <PathCard

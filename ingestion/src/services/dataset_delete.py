@@ -9,27 +9,11 @@ from sqlalchemy.orm import Session
 
 from src.config import get_settings
 from src.models.dataset import DatasetRow
-from src.models.story import StoryRow
 from src.services import vector_ingest
 from src.services.storage import StorageService
+from src.services.story_utils import find_stories_referencing_dataset
 
 logger = logging.getLogger(__name__)
-
-
-def find_affected_stories(session: Session, dataset_id: str) -> list[str]:
-    """Return IDs of stories that reference this dataset."""
-    affected = []
-    for row in session.query(StoryRow).all():
-        if row.dataset_id == dataset_id:
-            affected.append(row.id)
-            continue
-        chapters = json.loads(row.chapters_json) if row.chapters_json else []
-        for ch in chapters:
-            lc = ch.get("layer_config") or {}
-            if lc.get("dataset_id") == dataset_id:
-                affected.append(row.id)
-                break
-    return affected
 
 
 async def delete_stac_collection(collection_id: str) -> None:
@@ -80,7 +64,7 @@ async def delete_dataset(
         return None
 
     meta = json.loads(row.metadata_json) if row.metadata_json else {}
-    affected = find_affected_stories(session, dataset_id)
+    affected = find_stories_referencing_dataset(session, dataset_id)
 
     stac_collection_id = meta.get("stac_collection_id")
     if stac_collection_id:

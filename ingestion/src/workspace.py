@@ -15,9 +15,3 @@ def validate_workspace_id(workspace_id: str) -> str:
 
 def get_workspace_id(x_workspace_id: str = Header(default="")) -> str:
     return validate_workspace_id(x_workspace_id)
-
-
-def get_optional_workspace_id(x_workspace_id: str = Header(default="")) -> str | None:
-    if not x_workspace_id:
-        return None
-    return validate_workspace_id(x_workspace_id)

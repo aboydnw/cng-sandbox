@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 def cleanup_expired_rows(
     session: Session,
     ttl_days: int = 30,
-    check_storage: bool = True,
-    storage_service=None,
 ) -> list[str]:
     """Delete datasets and stories older than ttl_days. Returns list of deleted IDs."""
     cutoff = datetime.now(UTC) - timedelta(days=ttl_days)

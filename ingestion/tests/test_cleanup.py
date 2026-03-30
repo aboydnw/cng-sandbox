@@ -44,7 +44,7 @@ def test_deletes_old_rows_without_workspace(db_session):
     )
     db_session.commit()
 
-    deleted = cleanup_expired_rows(db_session, ttl_days=30, check_storage=False)
+    deleted = cleanup_expired_rows(db_session, ttl_days=30)
     assert "old-orphan" in deleted
     assert "new-orphan" not in deleted
 
@@ -64,7 +64,7 @@ def test_preserves_workspace_rows_within_ttl(db_session):
     )
     db_session.commit()
 
-    deleted = cleanup_expired_rows(db_session, ttl_days=30, check_storage=False)
+    deleted = cleanup_expired_rows(db_session, ttl_days=30)
     assert "recent-ws" not in deleted
 
 
@@ -80,5 +80,5 @@ def test_deletes_expired_stories(db_session):
     )
     db_session.commit()
 
-    deleted = cleanup_expired_rows(db_session, ttl_days=30, check_storage=False)
+    deleted = cleanup_expired_rows(db_session, ttl_days=30)
     assert "old-story" in deleted

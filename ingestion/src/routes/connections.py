@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
+from src.dependencies import get_session
 from src.models.connection import ConnectionRow
 from src.workspace import validate_workspace_id
 
@@ -35,17 +35,13 @@ class ConnectionCreate(BaseModel):
             )
 
 
-def _get_session(request: Request) -> Session:
-    return request.app.state.db_session_factory()
-
-
 @router.get("/connections")
 async def list_connections(request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
     if not workspace_id:
         return []
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         rows = (
             session.query(ConnectionRow)
@@ -72,7 +68,7 @@ async def create_connection(body: ConnectionCreate, request: Request):
             status_code=422,
             detail=f"Invalid tile_type: {body.tile_type}",
         )
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = ConnectionRow(
             id=str(uuid.uuid4()),
@@ -99,7 +95,7 @@ async def create_connection(body: ConnectionCreate, request: Request):
 @router.get("/connections/{connection_id}")
 async def get_connection(connection_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(ConnectionRow, connection_id)
         if row is None:
@@ -115,7 +111,7 @@ async def get_connection(connection_id: str, request: Request):
 async def delete_connection(connection_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
-    session = _get_session(request)
+    session = get_session(request)
     try:
         row = session.get(ConnectionRow, connection_id)
         if row is None:

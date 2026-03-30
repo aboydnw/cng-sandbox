@@ -15,14 +15,6 @@ export const cardActive: SystemStyleObject = {
   transform: "scale(0.985)",
 };
 
-export const buttonHover: SystemStyleObject = {
-  transform: "translateY(-1px)",
-};
-
-export const buttonActive: SystemStyleObject = {
-  transform: "scale(0.98) translateY(0)",
-};
-
 export const focusRing: SystemStyleObject = {
   outline: "2px solid",
   outlineColor: "rgba(207, 63, 2, 0.4)",

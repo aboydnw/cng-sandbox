@@ -207,7 +207,6 @@ services:
       - frontend_dist:/srv/frontend:ro
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
-      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
       AUTH_USER: ${AUTH_USER:-demo}
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
       R2_PUBLIC_URL: ${R2_PUBLIC_URL}

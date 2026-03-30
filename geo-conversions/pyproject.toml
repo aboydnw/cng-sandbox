@@ -10,11 +10,11 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-raster = ["rasterio", "rio-cogeo", "numpy"]
+raster = ["rasterio", "rio-cogeo", "numpy", "pyproj"]
 vector = ["geopandas", "pyarrow", "shapely"]
 netcdf = ["xarray", "netcdf4", "rasterio", "rio-cogeo", "numpy"]
 hdf5 = ["h5py", "rasterio", "rio-cogeo", "numpy"]
-all = ["rasterio", "rio-cogeo", "numpy", "geopandas", "pyarrow", "shapely", "xarray", "netcdf4", "h5py"]
+all = ["rasterio", "rio-cogeo", "numpy", "pyproj", "geopandas", "pyarrow", "shapely", "xarray", "netcdf4", "h5py"]
 
 [project.scripts]
 cng = "cli:main"
@@ -27,6 +27,7 @@ packages = [
     "geojson_to_geoparquet",
     "netcdf_to_cog",
     "hdf5_to_cog",
+    "cng_shared",
 ]
 
 [tool.setuptools.package-dir]
@@ -35,6 +36,7 @@ shapefile_to_geoparquet = "shapefile-to-geoparquet"
 geojson_to_geoparquet = "geojson-to-geoparquet"
 netcdf_to_cog = "netcdf-to-cog"
 hdf5_to_cog = "hdf5-to-cog"
+cng_shared = "shared"
 
 [tool.setuptools.package-data]
 geotiff_to_cog = ["scripts/*.py"]
@@ -42,3 +44,4 @@ shapefile_to_geoparquet = ["scripts/*.py"]
 geojson_to_geoparquet = ["scripts/*.py"]
 netcdf_to_cog = ["scripts/*.py"]
 hdf5_to_cog = ["scripts/*.py"]
+cng_shared = ["scripts/*.py"]

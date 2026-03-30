@@ -184,8 +184,8 @@ services:
     profiles:
       - prod
     volumes:
-      - frontend_dist:/app/dist
-    command: ["echo", "Build complete"]
+      - frontend_dist:/dist
+    command: ["sh", "-c", "rm -rf /dist/* && cp -a /app/dist/. /dist/"]
 
   caddy:
     build:

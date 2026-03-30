@@ -51,7 +51,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "cd ${{ secrets.DEPLOY_PATH }} && git pull && docker compose --profile prod up -d --build"
+            "cd ${{ secrets.DEPLOY_PATH }} && git checkout main && git pull origin main && docker compose --profile prod up -d --build"
 
       - name: Verify deploy health
         run: |

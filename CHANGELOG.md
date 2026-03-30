@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.6.0](https://github.com/aboydnw/cng-sandbox/compare/v1.5.0...v1.6.0) (2026-03-30)
+
+
+### Features
+
+* add agentic development pipeline ([#53](https://github.com/aboydnw/cng-sandbox/issues/53)) ([4b49bd3](https://github.com/aboydnw/cng-sandbox/commit/4b49bd37152eaba16cdba7d1abc40c075d359bb4))
+* cloud-optimized data connections ([#67](https://github.com/aboydnw/cng-sandbox/issues/67)) ([a4ac6f1](https://github.com/aboydnw/cng-sandbox/commit/a4ac6f1eacdf2de072755332618bbe63d41454e7))
+* geostationary satellite reprojection for NetCDF conversion ([#60](https://github.com/aboydnw/cng-sandbox/issues/60)) ([251f977](https://github.com/aboydnw/cng-sandbox/commit/251f977cb6382f0a37560d409fedd4671fbe58af))
+* map zooms to data bounds in story editor ([#69](https://github.com/aboydnw/cng-sandbox/issues/69)) ([2cf151a](https://github.com/aboydnw/cng-sandbox/commit/2cf151a57695d8c4bc062eb1d3efbfbca24d5bbc))
+* replace boto3 with obstore for S3/R2 object storage ([#71](https://github.com/aboydnw/cng-sandbox/issues/71)) ([ec86916](https://github.com/aboydnw/cng-sandbox/commit/ec86916d80a629a5507252f5b20bbf1c62293862))
+* switch datasets and connections from map page ([#70](https://github.com/aboydnw/cng-sandbox/issues/70)) ([6baacbf](https://github.com/aboydnw/cng-sandbox/commit/6baacbf7926228876162527be5ef376035d86fd8))
+
+
+### Bug Fixes
+
+* consolidate colormap definitions and lowercase keys for titiler compatibility ([#59](https://github.com/aboydnw/cng-sandbox/issues/59)) ([97f57ec](https://github.com/aboydnw/cng-sandbox/commit/97f57ec567ade799c8204a16d7459424ef863aac))
+* migrate from DuckDNS to custom domain and fix prod build ([#77](https://github.com/aboydnw/cng-sandbox/issues/77)) ([b18f0af](https://github.com/aboydnw/cng-sandbox/commit/b18f0afc037cb16aacd0a88c8a28e0089078cb1a))
+* use correct claude-code-action API parameters ([#58](https://github.com/aboydnw/cng-sandbox/issues/58)) ([30da82e](https://github.com/aboydnw/cng-sandbox/commit/30da82eb044a649e14b227f3dbef8cbc95a98326))
+
 ## [1.5.0](https://github.com/aboydnw/cng-sandbox/compare/v1.4.0...v1.5.0) (2026-03-26)
 
 

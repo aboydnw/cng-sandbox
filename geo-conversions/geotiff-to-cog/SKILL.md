@@ -45,6 +45,10 @@ Install dependencies, convert a file, and validate the result:
 
 When both `--input` and `--output` are omitted, runs a self-test that generates synthetic data, converts it, and validates the result.
 
+## Known complexity
+
+- **CRS:** If the input GeoTIFF is not in EPSG:4326, it is automatically reprojected using the shared `reproject_to_cog` module. The output is always EPSG:4326.
+
 ## Known failure modes
 
 - Writing tiled GeoTIFFs with overviews directly via `rasterio.open()` does NOT produce valid COGs — the IFD ordering will be wrong. Must use `rio-cogeo`'s `cog_translate` function.
@@ -56,6 +60,7 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 
 ## Changelog
 
+- 2026-03-30: Add automatic reprojection to EPSG:4326 for projected input GeoTIFFs. Use shared `reproject_to_cog` module. Add projected self-test.
 - 2026-03-27: Added `check_rendering_metadata` advisory check — reports band count, dtype, and recommended rescale range for tile server colormap rendering. Documented colormap/rescale failure modes.
 - 2026-03-14: Added `check_mercator_bounds` to flag polar datasets whose WGS84 bounds exceed ±85.051129°. Documented that downstream map viewers (deck.gl `WebMercatorViewport`) must clamp bounds before `fitBounds`.
 - 2026-03-14: Added WGS84 bounds compatibility check for projected CRS datasets. Documented STAC bounds reprojection requirement.

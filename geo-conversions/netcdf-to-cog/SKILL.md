@@ -53,7 +53,7 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 
 - **Multi-variable NetCDFs:** Only one variable is extracted per conversion. If no `--variable` is specified, the first data variable is used.
 - **Temporal dimensions:** Only one timestep is extracted per conversion. Use `--time-index` to select.
-- **CRS:** Output is always EPSG:4326. Geographic NetCDFs are handled directly. Geostationary projection (`grid_mapping_name = "geostationary"`) is detected via CF conventions and reprojected automatically using `rasterio.warp`. Other projected CRS types (polar stereographic, Lambert conformal conic, etc.) are not yet supported and will raise a clear error.
+- **CRS:** Output is always EPSG:4326. Geographic NetCDFs are handled directly. Geostationary projection (`grid_mapping_name = "geostationary"`) is detected via CF conventions and reprojected automatically. All other projected CRS types (Albers, Lambert, polar stereographic, UTM, etc.) are detected via `pyproj.CRS.from_cf()` and reprojected automatically using the shared `reproject_to_cog` module. Any CRS expressible in CF conventions is supported.
 - **Geostationary coordinate scaling:** Geostationary satellite files (GOES-R, GOES-S, Himawari, Meteosat) store x/y as scanning angles in radians. These must be multiplied by `perspective_point_height` (satellite altitude in meters) to get the units that `+proj=geos` expects. The `sweep_angle_axis` attribute is also critical: GOES uses `x`, Meteosat uses `y`. Getting this wrong produces garbled output.
 - **Dimension naming:** The converter recognizes common dimension names: `lat`/`latitude`/`y` and `lon`/`longitude`/`x`. Non-standard names will cause a clear error.
 
@@ -79,6 +79,7 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 
 ## Changelog
 
+- 2026-03-30: Generalize CRS detection to support all CF-convention projected CRS types via `pyproj.CRS.from_cf()`. Use shared `reproject_to_cog` module. Add Albers Equal Area self-test.
 - 2026-03-27: Added `check_rendering_metadata` advisory check and `run_advisory_checks` pattern — reports recommended rescale range for tile server colormap rendering. Documented rescale failure mode.
 - 2026-03-27: Add geostationary projection detection and reprojection to EPSG:4326; update validator for projected sources; add geostationary self-test.
 - 2026-03-14: Document NetCDF4/HDF5 MIME type rejection failure mode.

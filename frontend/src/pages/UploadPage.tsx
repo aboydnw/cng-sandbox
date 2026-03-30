@@ -9,16 +9,23 @@ import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { BugReportModal } from "../components/BugReportModal";
-import { FolderOpen, GlobeHemisphereWest } from "@phosphor-icons/react";
+import { InlineConnectionForm } from "../components/InlineConnectionForm";
+import {
+  FolderOpen,
+  GlobeHemisphereWest,
+  LinkSimple,
+} from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { formatBytes } from "../utils/format";
+import type { Connection } from "../types";
 
 type PageMode =
   | "initial"
   | "upload-idle"
   | "uploading"
   | "error"
-  | "variable-picker";
+  | "variable-picker"
+  | "connect-idle";
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -35,7 +42,9 @@ export default function UploadPage() {
     size: "",
   });
   const [mode, setMode] = useState<PageMode>("initial");
-  const [storyExpanded, setStoryExpanded] = useState(false);
+  const [activeCard, setActiveCard] = useState<
+    "none" | "upload" | "connect" | "story"
+  >("none");
   const [reportOpen, setReportOpen] = useState(false);
 
   const isProcessing =
@@ -98,17 +107,36 @@ export default function UploadPage() {
     setReportOpen(true);
   }, []);
 
-  const uploadCardExpanded = mode !== "initial";
+  const uploadCardExpanded = mode !== "initial" && mode !== "connect-idle";
+  const connectCardExpanded = mode === "connect-idle";
+  const storyExpanded = activeCard === "story" && mode === "initial";
 
-  const handleUploadCardClick = () => {
-    setStoryExpanded(false);
+  const handleUploadCardClick = useCallback(() => {
+    setActiveCard("upload");
     setMode("upload-idle");
-  };
+  }, []);
 
-  const handleStoryCardClick = () => {
+  const handleConnectCardClick = useCallback(() => {
+    setActiveCard("connect");
+    setMode("connect-idle");
+  }, []);
+
+  const handleStoryCardClick = useCallback(() => {
+    setActiveCard("story");
     setMode("initial");
-    setStoryExpanded(true);
-  };
+  }, []);
+
+  const handleCollapse = useCallback(() => {
+    setActiveCard("none");
+    setMode("initial");
+  }, []);
+
+  const handleConnectionCreated = useCallback(
+    (conn: Connection) => {
+      navigate(workspacePath(`/map/connection/${conn.id}`));
+    },
+    [navigate, workspacePath]
+  );
 
   return (
     <Flex direction="column" h="100vh" bg="white" overflow="hidden">
@@ -123,7 +151,8 @@ export default function UploadPage() {
         maxW="900px"
         mx="auto"
         w="100%"
-        align="flex-start"
+        align={{ base: "stretch", md: "flex-start" }}
+        direction={{ base: "column", md: "row" }}
       >
         {/* Left card: Convert a file */}
         <PathCard
@@ -133,10 +162,8 @@ export default function UploadPage() {
           ctaLabel="Browse files"
           onClick={handleUploadCardClick}
           expanded={uploadCardExpanded}
-          faded={!uploadCardExpanded && storyExpanded}
-          onCollapse={
-            mode === "upload-idle" ? () => setMode("initial") : undefined
-          }
+          faded={!uploadCardExpanded && (connectCardExpanded || storyExpanded)}
+          onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
         >
           <Box
             as="ul"
@@ -183,6 +210,39 @@ export default function UploadPage() {
           )}
         </PathCard>
 
+        {/* Middle card: Connect a source */}
+        <PathCard
+          icon={<LinkSimple size={36} />}
+          title="Connect a source"
+          description="Point to data already hosted in the cloud"
+          ctaLabel="Add a URL"
+          onClick={handleConnectCardClick}
+          expanded={connectCardExpanded}
+          faded={!connectCardExpanded && (uploadCardExpanded || storyExpanded)}
+          onCollapse={connectCardExpanded ? handleCollapse : undefined}
+        >
+          <Box
+            as="ul"
+            mb={4}
+            pl={4}
+            fontSize="13px"
+            color="brand.textSecondary"
+            lineHeight={1.8}
+            listStyleType="disc"
+          >
+            <li>COGs, PMTiles, and XYZ tile endpoints</li>
+            <li>Auto-detects format from your URL</li>
+            <li>No upload or conversion needed</li>
+          </Box>
+          <InlineConnectionForm
+            onCancel={() => {
+              setActiveCard("none");
+              setMode("initial");
+            }}
+            onCreated={handleConnectionCreated}
+          />
+        </PathCard>
+
         {/* Right card: Build a story */}
         <PathCard
           icon={<GlobeHemisphereWest size={36} />}
@@ -191,8 +251,8 @@ export default function UploadPage() {
           ctaLabel="Start building"
           onClick={handleStoryCardClick}
           expanded={storyExpanded}
-          faded={!storyExpanded && uploadCardExpanded}
-          onCollapse={() => setStoryExpanded(false)}
+          faded={!storyExpanded && (uploadCardExpanded || connectCardExpanded)}
+          onCollapse={storyExpanded ? handleCollapse : undefined}
         >
           <Box
             as="ul"

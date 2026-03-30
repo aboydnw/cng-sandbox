@@ -10,7 +10,11 @@ import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { BugReportModal } from "../components/BugReportModal";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
-import { FolderOpen, GlobeHemisphereWest, LinkSimple } from "@phosphor-icons/react";
+import {
+  FolderOpen,
+  GlobeHemisphereWest,
+  LinkSimple,
+} from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { formatBytes } from "../utils/format";
 import type { Connection } from "../types";
@@ -38,7 +42,9 @@ export default function UploadPage() {
     size: "",
   });
   const [mode, setMode] = useState<PageMode>("initial");
-  const [activeCard, setActiveCard] = useState<"none" | "upload" | "connect" | "story">("none");
+  const [activeCard, setActiveCard] = useState<
+    "none" | "upload" | "connect" | "story"
+  >("none");
   const [reportOpen, setReportOpen] = useState(false);
 
   const isProcessing =

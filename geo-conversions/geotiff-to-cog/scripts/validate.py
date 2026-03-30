@@ -294,6 +294,30 @@ def generate_synthetic_geotiff(path: str):
             dst.write(data, band)
 
 
+def generate_projected_geotiff(path: str):
+    """Generate a small synthetic GeoTIFF in EPSG:5070 for self-testing."""
+    from rasterio.crs import CRS
+    with rasterio.open(
+        path, "w", driver="GTiff", width=64, height=64, count=1, dtype="float32",
+        crs=CRS.from_epsg(5070),
+        transform=rasterio.transform.from_bounds(1000000, 1500000, 1100000, 1600000, 64, 64),
+        nodata=-9999.0,
+    ) as dst:
+        rng = np.random.default_rng(456)
+        data = rng.standard_normal((64, 64)).astype(np.float32)
+        data[0:5, 0:5] = -9999.0
+        dst.write(data, 1)
+
+
+def check_crs_4326(output_path: str) -> CheckResult:
+    """Check that the output COG is in EPSG:4326."""
+    with rasterio.open(output_path) as dst:
+        epsg = dst.crs.to_epsg() if dst.crs else None
+        if epsg == 4326:
+            return CheckResult("CRS EPSG:4326", True, "EPSG:4326")
+        return CheckResult("CRS EPSG:4326", False, f"Expected EPSG:4326, got {dst.crs}")
+
+
 def run_self_test() -> bool:
     """Generate synthetic data, convert, and validate."""
     print("Running self-test...")
@@ -309,6 +333,7 @@ def run_self_test() -> bool:
     convert_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(convert_mod)
 
+    print("\n--- Test 1: EPSG:4326 GeoTIFF ---")
     with tempfile.TemporaryDirectory() as tmpdir:
         input_path = os.path.join(tmpdir, "test_input.tif")
         output_path = os.path.join(tmpdir, "test_output.tif")
@@ -320,7 +345,33 @@ def run_self_test() -> bool:
         convert_mod.convert(input_path, output_path, verbose=True)
 
         print("Validating...")
-        return run_validation(input_path, output_path)
+        all_passed = run_validation(input_path, output_path)
+
+    # Test 2: Projected GeoTIFF
+    print("\n--- Test 2: Projected GeoTIFF (EPSG:5070) ---")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        proj_input = os.path.join(tmpdir, "test_projected.tif")
+        proj_output = os.path.join(tmpdir, "test_projected_cog.tif")
+        print("Generating synthetic EPSG:5070 GeoTIFF...")
+        generate_projected_geotiff(proj_input)
+        print("Converting to COG (should reproject to EPSG:4326)...")
+        convert_mod.convert(proj_input, proj_output, verbose=True)
+        print("Validating...")
+        with rasterio.open(proj_output) as dst:
+            epsg = dst.crs.to_epsg() if dst.crs else None
+            if epsg != 4326:
+                print(f"FAIL: Expected EPSG:4326, got {dst.crs}")
+                all_passed = False
+            else:
+                is_valid, _, _ = cog_validate(proj_output)
+                if not is_valid:
+                    print("FAIL: Output is not a valid COG")
+                    all_passed = False
+                else:
+                    b = dst.bounds
+                    print(f"PASS: Valid COG in EPSG:4326 ({b.left:.2f}, {b.bottom:.2f}, "
+                          f"{b.right:.2f}, {b.top:.2f})")
+    return all_passed
 
 
 def run_checks(input_path: str, output_path: str) -> list[CheckResult]:
@@ -335,7 +386,7 @@ def run_checks(input_path: str, output_path: str) -> list[CheckResult]:
     """
     return [
         check_cog_valid(output_path),
-        check_crs_match(input_path, output_path),
+        check_crs_4326(output_path),
         check_bounds_match(input_path, output_path),
         check_dimensions_match(input_path, output_path),
         check_band_count(input_path, output_path),

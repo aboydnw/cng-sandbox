@@ -28,31 +28,36 @@ import rasterio
 
 
 def convert(input_path: str, output_path: str, compression: str = "DEFLATE", verbose: bool = False):
-    """Convert a GeoTIFF to a Cloud-Optimized GeoTIFF."""
+    """Convert a GeoTIFF to a Cloud-Optimized GeoTIFF.
+
+    If the input is not in EPSG:4326, reprojects to EPSG:4326 first.
+    """
     with rasterio.open(input_path) as src:
         if verbose:
             print(f"Input: {src.width}x{src.height}, {src.count} band(s), dtype={src.dtypes[0]}")
             print(f"CRS: {src.crs}")
             print(f"Bounds: {src.bounds}")
+        needs_reproject = src.crs != rasterio.crs.CRS.from_epsg(4326)
 
-    try:
-        output_profile = cog_profiles.get(compression.lower())
-    except KeyError:
-        output_profile = cog_profiles.get("deflate")
-    output_profile["blockxsize"] = 512
-    output_profile["blockysize"] = 512
-
-    if verbose:
-        print(f"Writing COG with {compression} compression...")
-
-    cog_translate(
-        input_path,
-        output_path,
-        output_profile,
-        overview_level=6,
-        overview_resampling="nearest",
-        quiet=not verbose,
-    )
+    if needs_reproject:
+        if verbose:
+            print("CRS is not EPSG:4326, reprojecting...")
+        from cng_shared import reproject_to_cog
+        reproject_to_cog(input_path, output_path, compression=compression, verbose=verbose)
+    else:
+        try:
+            output_profile = cog_profiles.get(compression.lower())
+        except KeyError:
+            output_profile = cog_profiles.get("deflate")
+        output_profile["blockxsize"] = 512
+        output_profile["blockysize"] = 512
+        if verbose:
+            print(f"Writing COG with {compression} compression...")
+        cog_translate(
+            input_path, output_path, output_profile,
+            overview_level=6, overview_resampling="nearest",
+            quiet=not verbose,
+        )
 
     size_mb = os.path.getsize(output_path) / (1024 * 1024)
     print(f"Output: {output_path} ({size_mb:.1f} MB)")

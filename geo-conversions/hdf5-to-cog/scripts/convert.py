@@ -30,7 +30,6 @@ import numpy as np
 import rasterio
 from rasterio.crs import CRS
 from rasterio.transform import Affine
-from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 _X_NAMES = ["xcoordinates", "x", "longitude", "lon"]
 _Y_NAMES = ["ycoordinates", "y", "latitude", "lat"]
@@ -165,71 +164,37 @@ def convert(input_path: str, output_path: str, variable: str = "",
         print(f"Native CRS: {src_crs}")
         print(f"NoData: {nodata}")
 
-    dst_crs = CRS.from_epsg(4326)
-    needs_reproject = src_crs != dst_crs
+    needs_reproject = src_crs.to_epsg() != 4326
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        # Write native-CRS GeoTIFF
+        native_path = os.path.join(tmpdir, "native.tif")
+        with rasterio.open(
+            native_path, "w", driver="GTiff",
+            width=width, height=height, count=1, dtype="float32",
+            crs=src_crs, transform=native_transform, nodata=nodata,
+        ) as dst:
+            dst.write(data, 1)
+
         if needs_reproject:
-            # Write native CRS raster, then reproject
-            native_path = os.path.join(tmpdir, "native.tif")
-            with rasterio.open(
-                native_path, "w", driver="GTiff",
-                width=width, height=height, count=1, dtype="float32",
-                crs=src_crs, transform=native_transform, nodata=nodata,
-            ) as dst:
-                dst.write(data, 1)
-
-            # Calculate reprojected dimensions
-            src_bounds = rasterio.transform.array_bounds(height, width, native_transform)
-            dst_transform, dst_width, dst_height = calculate_default_transform(
-                src_crs, dst_crs, width, height, *src_bounds)
-
-            reprojected_path = os.path.join(tmpdir, "reprojected.tif")
-            with rasterio.open(
-                reprojected_path, "w", driver="GTiff",
-                width=dst_width, height=dst_height, count=1, dtype="float32",
-                crs=dst_crs, transform=dst_transform, nodata=nodata,
-            ) as dst:
-                with rasterio.open(native_path) as src:
-                    reproject(
-                        source=rasterio.band(src, 1),
-                        destination=rasterio.band(dst, 1),
-                        src_transform=native_transform,
-                        src_crs=src_crs,
-                        dst_transform=dst_transform,
-                        dst_crs=dst_crs,
-                        resampling=Resampling.nearest,
-                    )
-
-            cog_input = reprojected_path
-            if verbose:
-                print(f"Reprojected to EPSG:4326 ({dst_width}x{dst_height})")
+            from cng_shared import reproject_to_cog
+            reproject_to_cog(native_path, output_path, compression=compression, verbose=verbose)
         else:
-            # Already in 4326, write directly
-            cog_input = os.path.join(tmpdir, "tmp.tif")
-            with rasterio.open(
-                cog_input, "w", driver="GTiff",
-                width=width, height=height, count=1, dtype="float32",
-                crs=dst_crs, transform=native_transform, nodata=nodata,
-            ) as dst:
-                dst.write(data, 1)
+            try:
+                output_profile = cog_profiles.get(compression.lower())
+            except KeyError:
+                output_profile = cog_profiles.get("deflate")
+            output_profile["blockxsize"] = 512
+            output_profile["blockysize"] = 512
 
-        # Convert to COG
-        try:
-            output_profile = cog_profiles.get(compression.lower())
-        except KeyError:
-            output_profile = cog_profiles.get("deflate")
-        output_profile["blockxsize"] = 512
-        output_profile["blockysize"] = 512
+            if verbose:
+                print(f"Writing COG with {compression} compression...")
 
-        if verbose:
-            print(f"Writing COG with {compression} compression...")
-
-        cog_translate(
-            cog_input, output_path, output_profile,
-            overview_level=6, overview_resampling="nearest",
-            quiet=not verbose,
-        )
+            cog_translate(
+                native_path, output_path, output_profile,
+                overview_level=6, overview_resampling="nearest",
+                quiet=not verbose,
+            )
 
     size_mb = os.path.getsize(output_path) / (1024 * 1024)
     print(f"Output: {output_path} ({size_mb:.1f} MB)")

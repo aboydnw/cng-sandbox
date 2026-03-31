@@ -410,12 +410,12 @@ def run_checks(input_path: str, output_path: str) -> list[CheckResult]:
         checks.extend([
             check_bounds_match(input_path, output_path),
             check_dimensions_match(input_path, output_path),
+            check_pixel_fidelity(input_path, output_path),
+            check_nodata_match(input_path, output_path),
         ])
 
     checks.extend([
         check_band_count(input_path, output_path),
-        check_pixel_fidelity(input_path, output_path),
-        check_nodata_match(input_path, output_path),
         check_overviews(output_path),
     ])
     return checks

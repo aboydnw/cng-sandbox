@@ -38,7 +38,7 @@ export function PathCard({
   return (
     <Box
       style={{
-        flex: expanded ? 2.3 : faded ? 0.7 : 1,
+        flex: expanded ? 2.3 : faded ? 0.5 : 1,
         opacity: faded ? 0.5 : 1,
       }}
       transition={TRANSITION}

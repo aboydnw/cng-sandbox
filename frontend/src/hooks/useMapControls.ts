@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import type { MapItem } from "../types";
+import { formatBytes } from "../utils/format";
+
+const CLIENT_RENDER_MAX_BYTES = 200 * 1024 * 1024; // 200MB
 
 export type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
 
@@ -24,6 +27,7 @@ interface UseMapControlsResult {
   effectiveBand: "rgb" | number;
   showingColormap: boolean;
   canClientRender: boolean;
+  clientRenderDisabledReason: string | null;
 }
 
 export function useMapControls(item: MapItem | null): UseMapControlsResult {
@@ -66,7 +70,15 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     !!item.cogUrl &&
     !!item.bounds &&
     Math.abs(item.bounds[1]) < 85.05 &&
-    Math.abs(item.bounds[3]) < 85.05;
+    Math.abs(item.bounds[3]) < 85.05 &&
+    (item.dataset?.converted_file_size ?? 0) <= CLIENT_RENDER_MAX_BYTES;
+
+  const clientRenderDisabledReason =
+    item?.cogUrl &&
+    item?.dataset?.converted_file_size != null &&
+    item.dataset.converted_file_size > CLIENT_RENDER_MAX_BYTES
+      ? `File exceeds 200 MB browser limit (${formatBytes(item.dataset.converted_file_size)})`
+      : null;
 
   return {
     opacity,
@@ -84,5 +96,6 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     effectiveBand,
     showingColormap,
     canClientRender,
+    clientRenderDisabledReason,
   };
 }

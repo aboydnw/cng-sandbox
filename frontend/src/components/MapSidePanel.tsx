@@ -38,6 +38,7 @@ interface MapSidePanelProps {
   hasRgb: boolean;
   showBands: boolean;
   canClientRender: boolean;
+  clientRenderDisabledReason: string | null;
   // Dataset metadata
   bytesTransferred: number | null;
   onDetailsClick: () => void;
@@ -60,6 +61,7 @@ export function MapSidePanel({
   hasRgb,
   showBands,
   canClientRender,
+  clientRenderDisabledReason,
   bytesTransferred,
   onDetailsClick,
   onTableChange,
@@ -128,6 +130,7 @@ export function MapSidePanel({
           onBandChange={onBandChange}
           showBands={showBands}
           canClientRender={canClientRender}
+          clientRenderDisabledReason={clientRenderDisabledReason}
           renderMode={
             renderMode === "server" || renderMode === "client"
               ? renderMode

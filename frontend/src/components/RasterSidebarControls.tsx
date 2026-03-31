@@ -20,6 +20,7 @@ interface RasterSidebarControlsProps {
   onBandChange: (band: "rgb" | number) => void;
   showBands: boolean;
   canClientRender?: boolean;
+  clientRenderDisabledReason?: string | null;
   renderMode?: "server" | "client";
   onRenderModeChange?: (mode: "server" | "client") => void;
 }
@@ -36,6 +37,7 @@ export function RasterSidebarControls({
   onBandChange,
   showBands,
   canClientRender,
+  clientRenderDisabledReason,
   renderMode,
   onRenderModeChange,
 }: RasterSidebarControlsProps) {
@@ -173,6 +175,16 @@ export function RasterSidebarControls({
               />
             </Box>
           </Flex>
+        </Box>
+      )}
+      {canClientRender === false && clientRenderDisabledReason && (
+        <Box mb={3}>
+          <Text fontSize="11px" color="brand.textSecondary">
+            Client-side rendering unavailable
+          </Text>
+          <Text fontSize="10px" color="brand.textSecondary">
+            {clientRenderDisabledReason}
+          </Text>
         </Box>
       )}
     </Box>

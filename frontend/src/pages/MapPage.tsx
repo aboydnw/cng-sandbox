@@ -367,6 +367,7 @@ export default function MapPage() {
               hasRgb={controls.hasRgb}
               showBands={controls.isMultiBand}
               canClientRender={controls.canClientRender}
+              clientRenderDisabledReason={controls.clientRenderDisabledReason}
               bytesTransferred={bytesTransferred}
               onDetailsClick={() => setReportCardOpen(true)}
               onTableChange={handleTableChange}

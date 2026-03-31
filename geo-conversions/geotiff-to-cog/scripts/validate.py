@@ -106,13 +106,16 @@ def check_pixel_fidelity(input_path: str, output_path: str, n: int = 1000,
         cols = rng.integers(0, src.width, size=n)
 
         for band_idx in range(1, src.count + 1):
-            src_data = src.read(band_idx)
-            dst_data = dst.read(band_idx)
+            src_vals = np.array([
+                src.read(band_idx, window=rasterio.windows.Window(int(c), int(r), 1, 1))[0, 0]
+                for r, c in zip(rows, cols)
+            ])
+            dst_vals = np.array([
+                dst.read(band_idx, window=rasterio.windows.Window(int(c), int(r), 1, 1))[0, 0]
+                for r, c in zip(rows, cols)
+            ])
 
-            src_vals = src_data[rows, cols]
-            dst_vals = dst_data[rows, cols]
-
-            if np.issubdtype(src_data.dtype, np.integer):
+            if np.issubdtype(src_vals.dtype, np.integer):
                 mismatches = np.sum(src_vals != dst_vals)
                 if mismatches > 0:
                     return CheckResult("Pixel fidelity", False,
@@ -203,14 +206,32 @@ def check_rendering_metadata(output_path: str) -> CheckResult:
             )
 
         if bands == 1:
-            data = dst.read(1)
+            # Use overview or sampling to avoid reading full band into memory
+            overviews = dst.overviews(1)
+            if overviews:
+                overview_level = overviews[-1]
+                data = dst.read(1, out_shape=(
+                    dst.height // overview_level,
+                    dst.width // overview_level,
+                ))
+            else:
+                rng = np.random.default_rng(42)
+                n_samples = min(10000, dst.height * dst.width)
+                sample_rows = rng.integers(0, dst.height, size=n_samples)
+                sample_cols = rng.integers(0, dst.width, size=n_samples)
+                data = np.array([
+                    dst.read(1, window=rasterio.windows.Window(int(c), int(r), 1, 1))[0, 0]
+                    for r, c in zip(sample_rows, sample_cols)
+                ])
+            valid = data.ravel()
             if dst.nodata is not None:
                 if np.isnan(dst.nodata):
-                    valid = data[~np.isnan(data)]
+                    valid = valid[~np.isnan(valid)]
                 else:
-                    valid = data[data != dst.nodata]
+                    valid = valid[valid != dst.nodata]
+                    valid = valid[~np.isnan(valid)]
             else:
-                valid = data
+                valid = valid[~np.isnan(valid)]
             if valid.size == 0:
                 return CheckResult(
                     "Rendering metadata", False,

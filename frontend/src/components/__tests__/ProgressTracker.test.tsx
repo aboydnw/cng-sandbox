@@ -64,4 +64,67 @@ describe("ProgressTracker", () => {
     renderWithChakra(<ProgressTracker {...baseProps} />);
     expect(screen.queryByText("Try again")).toBeNull();
   });
+
+  it("renders percent progress detail for active stage", () => {
+    const stages: StageInfo[] = [
+      { name: "Uploading", status: "done" },
+      {
+        name: "Converting",
+        status: "active",
+        progress: { percent: 67, current: null, total: null, detail: null },
+      },
+      { name: "Validating", status: "pending" },
+    ];
+    renderWithChakra(
+      <ProgressTracker stages={stages} filename="test.tif" fileSize="10 MB" />
+    );
+    expect(screen.getByText(/67%/)).toBeTruthy();
+  });
+
+  it("renders current/total progress detail for active stage", () => {
+    const stages: StageInfo[] = [
+      { name: "Uploading", status: "done" },
+      { name: "Scanning", status: "done" },
+      {
+        name: "Validating",
+        status: "active",
+        progress: { percent: null, current: 3, total: 7, detail: null },
+      },
+    ];
+    renderWithChakra(
+      <ProgressTracker stages={stages} filename="test.geojson" fileSize="5 MB" />
+    );
+    expect(screen.getByText(/3 of 7/)).toBeTruthy();
+  });
+
+  it("renders sub-phase detail for active stage", () => {
+    const stages: StageInfo[] = [
+      { name: "Uploading", status: "done" },
+      {
+        name: "Ingesting",
+        status: "active",
+        progress: { percent: null, current: null, total: null, detail: "uploading" },
+      },
+    ];
+    renderWithChakra(
+      <ProgressTracker stages={stages} filename="test.tif" fileSize="10 MB" />
+    );
+    expect(screen.getAllByText(/uploading/i).length).toBeGreaterThan(0);
+  });
+
+  it("renders upload bytes progress for Uploading stage", () => {
+    const stages: StageInfo[] = [
+      {
+        name: "Uploading",
+        status: "active",
+        progress: { percent: 50, current: 2200000, total: 4400000, detail: null },
+      },
+      { name: "Scanning", status: "pending" },
+    ];
+    renderWithChakra(
+      <ProgressTracker stages={stages} filename="test.tif" fileSize="4.2 MB" />
+    );
+    expect(screen.getByText(/2\.1 MB/)).toBeTruthy();
+    expect(screen.getAllByText(/4\.2 MB/).length).toBeGreaterThan(0);
+  });
 });

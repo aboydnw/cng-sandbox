@@ -1,6 +1,7 @@
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Check, SpinnerGap, X } from "@phosphor-icons/react";
-import type { StageInfo } from "../types";
+import { formatBytes } from "../lib/format";
+import type { StageInfo, StageProgress } from "../types";
 
 interface ProgressTrackerProps {
   stages: StageInfo[];
@@ -9,6 +10,35 @@ interface ProgressTrackerProps {
   onRetry?: () => void;
   onReport?: () => void;
   embedded?: boolean;
+}
+
+function formatProgressDetail(
+  stageName: string,
+  progress?: StageProgress,
+): string | null {
+  if (!progress) return null;
+
+  if (
+    stageName === "Uploading" &&
+    progress.current != null &&
+    progress.total != null
+  ) {
+    return `${formatBytes(progress.current)} / ${formatBytes(progress.total)}`;
+  }
+
+  if (progress.current != null && progress.total != null) {
+    return `${progress.current} of ${progress.total}`;
+  }
+
+  if (progress.percent != null) {
+    return `${progress.percent}%`;
+  }
+
+  if (progress.detail) {
+    return progress.detail.charAt(0).toUpperCase() + progress.detail.slice(1);
+  }
+
+  return null;
 }
 
 function StageIcon({ status }: { status: StageInfo["status"] }) {
@@ -122,14 +152,20 @@ export function ProgressTracker({
               >
                 {stage.name}
               </Text>
-              {stage.detail && (
+              {(stage.detail ||
+                (stage.status === "active" && stage.progress)) && (
                 <Text
                   color={
-                    stage.status === "error" ? "red.500" : "brand.textSecondary"
+                    stage.status === "error"
+                      ? "red.500"
+                      : "brand.textSecondary"
                   }
                   fontSize="12px"
                 >
-                  {stage.detail}
+                  {stage.status === "error"
+                    ? stage.detail
+                    : formatProgressDetail(stage.name, stage.progress) ||
+                      stage.detail}
                 </Text>
               )}
             </Box>

@@ -26,12 +26,23 @@
 	}
 
 	# API proxy — flush_interval -1 enables SSE streaming for upload progress.
+	# Large uploads (up to 15GB, matching ingestion service limit) and
+	# long-running conversions need generous timeouts — gdalwarp reprojection
+	# of continental-scale rasters can take 10+ minutes, and the SSE stream
+	# stays open the entire time.
 	handle /api/* {
 		basic_auth {
 			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
 		}
+		request_body {
+			max_size 15GB
+		}
 		reverse_proxy ingestion:8000 {
 			flush_interval -1
+			transport http {
+				read_timeout 30m
+				write_timeout 30m
+			}
 		}
 	}
 

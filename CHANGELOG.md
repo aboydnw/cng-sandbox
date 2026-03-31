@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/aboydnw/cng-sandbox/compare/v1.7.0...v1.8.0) (2026-03-31)
+
+
+### Features
+
+* add per-stage progress indicators to upload workflow ([#85](https://github.com/aboydnw/cng-sandbox/issues/85)) ([3cbd8ef](https://github.com/aboydnw/cng-sandbox/commit/3cbd8efe20674d03eac7cdd24c2bd2978946909a))
+
+
+### Bug Fixes
+
+* add item ID to bounds-zoom dependency ([56f23f6](https://github.com/aboydnw/cng-sandbox/commit/56f23f6c27ab55390f66ab4dc4b45e8c935e71b6))
+* add upload size limit and timeouts to Caddy proxy ([#86](https://github.com/aboydnw/cng-sandbox/issues/86)) ([3521fd7](https://github.com/aboydnw/cng-sandbox/commit/3521fd7ebaa010a46d3f8ae2f3f4c1e877d7da38))
+
 ## [1.7.0](https://github.com/aboydnw/cng-sandbox/compare/v1.6.0...v1.7.0) (2026-03-31)
 
 

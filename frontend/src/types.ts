@@ -80,10 +80,18 @@ export interface Connection {
   created_at: string;
 }
 
+export interface StageProgress {
+  percent: number | null;
+  current: number | null;
+  total: number | null;
+  detail: string | null;
+}
+
 export interface StageInfo {
   name: string;
   status: "pending" | "active" | "done" | "error";
   detail?: string;
+  progress?: StageProgress;
 }
 
 export interface ScannedVariable {

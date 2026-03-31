@@ -41,7 +41,11 @@ async def stream_job(job_id: str):
                 scan_result_emitted = True
                 yield {"event": "scan_result", "data": json.dumps(job.scan_result)}
 
-            current_snapshot = (job.status, job.progress_current)
+            current_snapshot = (
+                job.status,
+                job.progress_current,
+                job.stage_progress.model_dump() if job.stage_progress else None,
+            )
             if current_snapshot != last_status:
                 last_status = current_snapshot
                 data = {
@@ -58,6 +62,8 @@ async def stream_job(job_id: str):
                     data["progress_current"] = job.progress_current
                 if job.progress_total is not None:
                     data["progress_total"] = job.progress_total
+                if job.stage_progress is not None:
+                    data["stage_progress"] = job.stage_progress.model_dump()
                 yield {"event": "status", "data": json.dumps(data)}
 
                 if job.status in (JobStatus.READY, JobStatus.FAILED):

@@ -24,6 +24,7 @@ FROM python:3.13-slim-trixie
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal36 \
+    gdal-bin \
     libmagic1 \
     curl \
     tippecanoe \

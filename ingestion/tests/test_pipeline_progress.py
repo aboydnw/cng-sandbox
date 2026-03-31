@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from src.models import FormatPair, Job, StageProgress
+from src.models import FormatPair
 
 
 def test_validation_check_counts_are_defined():

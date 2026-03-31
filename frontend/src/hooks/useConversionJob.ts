@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import type {
   ConversionJobState,
   StageInfo,
+  StageProgress,
   JobStatus,
   ScanResult,
 } from "../types";
@@ -59,7 +60,8 @@ function updateStages(
   status: JobStatus,
   error?: string,
   progressCurrent?: number,
-  progressTotal?: number
+  progressTotal?: number,
+  stageProgress?: StageProgress,
 ): StageInfo[] {
   const idx = STATUS_ORDER.indexOf(status);
   const pipelineStages: StageInfo[] = STAGE_NAMES.map((name, i) => {
@@ -75,7 +77,7 @@ function updateStages(
         progressCurrent && progressTotal
           ? `${progressCurrent} of ${progressTotal}`
           : undefined;
-      return { name, status: "active" as const, detail };
+      return { name, status: "active" as const, detail, progress: stageProgress };
     }
     return { name, status: "pending" as const };
   });
@@ -116,6 +118,12 @@ export function useConversionJob() {
         error?: string;
         progress_current?: number;
         progress_total?: number;
+        stage_progress?: {
+          percent: number | null;
+          current: number | null;
+          total: number | null;
+          detail: string | null;
+        };
       };
       try {
         data = JSON.parse((event as MessageEvent).data);
@@ -137,7 +145,8 @@ export function useConversionJob() {
           status,
           error ?? undefined,
           data.progress_current,
-          data.progress_total
+          data.progress_total,
+          data.stage_progress ?? undefined,
         ),
       }));
 

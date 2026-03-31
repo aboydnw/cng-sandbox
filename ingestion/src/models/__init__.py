@@ -66,6 +66,13 @@ class ValidationCheck(BaseModel):
     detail: str
 
 
+class StageProgress(BaseModel):
+    percent: int | None = None
+    current: int | None = None
+    total: int | None = None
+    detail: str | None = None
+
+
 class Timestep(BaseModel):
     datetime: str
     index: int
@@ -83,6 +90,7 @@ class Job(BaseModel):
     validation_results: list[ValidationCheck] = []
     progress_current: int | None = None
     progress_total: int | None = None
+    stage_progress: StageProgress | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     variable: str | None = None
     group: str | None = None

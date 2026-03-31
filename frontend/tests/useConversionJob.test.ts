@@ -23,12 +23,46 @@ class MockEventSource {
   }
 }
 
+class MockXHR {
+  upload = { onprogress: null as ((e: ProgressEvent) => void) | null };
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  status = 200;
+  responseText = "";
+  private _headers: Record<string, string> = {};
+  open = vi.fn();
+  setRequestHeader = vi.fn((k: string, v: string) => {
+    this._headers[k] = v;
+  });
+  send = vi.fn();
+  resolve(responseBody: unknown) {
+    this.status = 200;
+    this.responseText = JSON.stringify(responseBody);
+    this.onload?.();
+  }
+  reject(status: number, body: unknown) {
+    this.status = status;
+    this.responseText = JSON.stringify(body);
+    this.onload?.();
+  }
+  static instances: MockXHR[] = [];
+  static reset() {
+    MockXHR.instances = [];
+  }
+}
+
 const mockFetch = vi.fn();
 
 beforeEach(() => {
   MockEventSource.reset();
+  MockXHR.reset();
   vi.stubGlobal("EventSource", MockEventSource);
   vi.stubGlobal("fetch", mockFetch);
+  vi.stubGlobal("XMLHttpRequest", function () {
+    const instance = new MockXHR();
+    MockXHR.instances.push(instance);
+    return instance;
+  });
   mockFetch.mockReset();
   setWorkspaceId("test1234");
 });
@@ -43,36 +77,34 @@ describe("useConversionJob", () => {
   });
 
   it("uploads file and transitions to scanning", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
-    });
-
     const { result } = renderHook(() => useConversionJob());
 
     const file = new File(["data"], "test.tif", { type: "image/tiff" });
     await act(async () => {
-      await result.current.startUpload(file);
+      const uploadPromise = result.current.startUpload(file);
+      // Resolve the XHR after it's been created
+      await Promise.resolve();
+      MockXHR.instances[0].resolve({ job_id: "j1", dataset_id: "d1" });
+      await uploadPromise;
     });
 
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(MockXHR.instances).toHaveLength(1);
+    expect(MockXHR.instances[0].open).toHaveBeenCalledWith("POST", expect.stringContaining("/api/upload"));
     expect(result.current.state.jobId).toBe("j1");
     expect(MockEventSource.instances).toHaveLength(1);
     expect(MockEventSource.instances[0].url).toContain("/api/jobs/j1/stream");
   });
 
   it("updates stages from SSE events", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
-    });
-
     const { result } = renderHook(() => useConversionJob());
 
     await act(async () => {
-      await result.current.startUpload(
+      const uploadPromise = result.current.startUpload(
         new File(["data"], "test.tif", { type: "image/tiff" }),
       );
+      await Promise.resolve();
+      MockXHR.instances[0].resolve({ job_id: "j1", dataset_id: "d1" });
+      await uploadPromise;
     });
 
     const es = MockEventSource.instances[0];
@@ -102,17 +134,15 @@ describe("useConversionJob", () => {
   });
 
   it("sets datasetId on ready", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
-    });
-
     const { result } = renderHook(() => useConversionJob());
 
     await act(async () => {
-      await result.current.startUpload(
+      const uploadPromise = result.current.startUpload(
         new File(["data"], "test.tif", { type: "image/tiff" }),
       );
+      await Promise.resolve();
+      MockXHR.instances[0].resolve({ job_id: "j1", dataset_id: "d1" });
+      await uploadPromise;
     });
 
     act(() => {
@@ -128,17 +158,15 @@ describe("useConversionJob", () => {
   });
 
   it("sets error on failed status", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
-    });
-
     const { result } = renderHook(() => useConversionJob());
 
     await act(async () => {
-      await result.current.startUpload(
+      const uploadPromise = result.current.startUpload(
         new File(["data"], "test.tif", { type: "image/tiff" }),
       );
+      await Promise.resolve();
+      MockXHR.instances[0].resolve({ job_id: "j1", dataset_id: "d1" });
+      await uploadPromise;
     });
 
     act(() => {

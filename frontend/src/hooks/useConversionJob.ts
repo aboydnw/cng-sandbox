@@ -2,11 +2,12 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import type {
   ConversionJobState,
   StageInfo,
+  StageProgress,
   JobStatus,
   ScanResult,
 } from "../types";
 import { config } from "../config";
-import { workspaceFetch } from "../lib/api";
+import { workspaceFetch, getWorkspaceId } from "../lib/api";
 
 export async function fetchWithRetry(
   input: RequestInfo,
@@ -55,11 +56,19 @@ function buildUploadingStages(): StageInfo[] {
   ];
 }
 
+function buildUploadFailedStages(error: string): StageInfo[] {
+  return [
+    { name: "Uploading", status: "error" as const, detail: error },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
+}
+
 function updateStages(
   status: JobStatus,
   error?: string,
   progressCurrent?: number,
-  progressTotal?: number
+  progressTotal?: number,
+  stageProgress?: StageProgress
 ): StageInfo[] {
   const idx = STATUS_ORDER.indexOf(status);
   const pipelineStages: StageInfo[] = STAGE_NAMES.map((name, i) => {
@@ -75,11 +84,32 @@ function updateStages(
         progressCurrent && progressTotal
           ? `${progressCurrent} of ${progressTotal}`
           : undefined;
-      return { name, status: "active" as const, detail };
+      return {
+        name,
+        status: "active" as const,
+        detail,
+        progress: stageProgress,
+      };
     }
     return { name, status: "pending" as const };
   });
   return [{ name: "Uploading", status: "done" as const }, ...pipelineStages];
+}
+
+function updateUploadProgress(loaded: number, total: number): StageInfo[] {
+  return [
+    {
+      name: "Uploading",
+      status: "active" as const,
+      progress: {
+        percent: Math.round((loaded / total) * 100),
+        current: loaded,
+        total,
+        detail: null,
+      },
+    },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
 }
 
 export function useConversionJob() {
@@ -116,6 +146,12 @@ export function useConversionJob() {
         error?: string;
         progress_current?: number;
         progress_total?: number;
+        stage_progress?: {
+          percent: number | null;
+          current: number | null;
+          total: number | null;
+          detail: string | null;
+        };
       };
       try {
         data = JSON.parse((event as MessageEvent).data);
@@ -137,7 +173,8 @@ export function useConversionJob() {
           status,
           error ?? undefined,
           data.progress_current,
-          data.progress_total
+          data.progress_total,
+          data.stage_progress ?? undefined
         ),
       }));
 
@@ -232,35 +269,59 @@ export function useConversionJob() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const resp = await fetchWithRetry(`${config.apiBase}/api/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      try {
+        const { jobId, datasetId } = await new Promise<{
+          jobId: string;
+          datasetId: string;
+        }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setState((prev) => ({
+                ...prev,
+                stages: updateUploadProgress(e.loaded, e.total),
+              }));
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const data = JSON.parse(xhr.responseText);
+              resolve({ jobId: data.job_id, datasetId: data.dataset_id });
+            } else {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                reject(new Error(data.detail || "Upload failed"));
+              } catch {
+                reject(new Error("Upload failed"));
+              }
+            }
+          };
+          xhr.onerror = () => reject(new Error("Upload failed"));
+          xhr.open("POST", `${config.apiBase}/api/upload`);
+          const wsId = getWorkspaceId();
+          if (wsId) xhr.setRequestHeader("X-Workspace-Id", wsId);
+          xhr.send(formData);
+        });
 
-      if (!resp.ok) {
-        const detail = await resp
-          .json()
-          .catch(() => ({ detail: "Upload failed" }));
+        datasetIdRef.current = datasetId;
+        setState((prev) => ({
+          ...prev,
+          jobId,
+          datasetId: null,
+          status: "pending",
+          error: null,
+        }));
+        connectSSE(jobId);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Upload failed";
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: detail.detail || "Upload failed",
-          stages: updateStages("failed", detail.detail),
+          error: msg,
+          stages: buildUploadFailedStages(msg),
         }));
-        return;
       }
-
-      const { job_id, dataset_id } = await resp.json();
-      datasetIdRef.current = dataset_id;
-      setState((prev) => ({
-        ...prev,
-        jobId: job_id,
-        datasetId: null,
-        status: "pending",
-        error: null,
-      }));
-      connectSSE(job_id);
     },
     [connectSSE]
   );
@@ -302,7 +363,7 @@ export function useConversionJob() {
           isUploading: false,
           status: "failed",
           error: msg,
-          stages: updateStages("failed", msg),
+          stages: buildUploadFailedStages(msg),
         }));
         return;
       }
@@ -336,38 +397,59 @@ export function useConversionJob() {
         formData.append("files", file);
       }
 
-      const resp = await fetchWithRetry(
-        `${config.apiBase}/api/upload-temporal`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      try {
+        const { jobId, datasetId } = await new Promise<{
+          jobId: string;
+          datasetId: string;
+        }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setState((prev) => ({
+                ...prev,
+                stages: updateUploadProgress(e.loaded, e.total),
+              }));
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const data = JSON.parse(xhr.responseText);
+              resolve({ jobId: data.job_id, datasetId: data.dataset_id });
+            } else {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                reject(new Error(data.detail || "Upload failed"));
+              } catch {
+                reject(new Error("Upload failed"));
+              }
+            }
+          };
+          xhr.onerror = () => reject(new Error("Upload failed"));
+          xhr.open("POST", `${config.apiBase}/api/upload-temporal`);
+          const wsId = getWorkspaceId();
+          if (wsId) xhr.setRequestHeader("X-Workspace-Id", wsId);
+          xhr.send(formData);
+        });
 
-      if (!resp.ok) {
-        const detail = await resp
-          .json()
-          .catch(() => ({ detail: "Upload failed" }));
+        datasetIdRef.current = datasetId;
+        setState((prev) => ({
+          ...prev,
+          jobId,
+          datasetId: null,
+          status: "pending",
+          error: null,
+        }));
+        connectSSE(jobId);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Upload failed";
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: detail.detail || "Upload failed",
-          stages: updateStages("failed", detail.detail),
+          error: msg,
+          stages: buildUploadFailedStages(msg),
         }));
-        return;
       }
-
-      const { job_id, dataset_id } = await resp.json();
-      datasetIdRef.current = dataset_id;
-      setState((prev) => ({
-        ...prev,
-        jobId: job_id,
-        datasetId: null,
-        status: "pending",
-        error: null,
-      }));
-      connectSSE(job_id);
     },
     [connectSSE]
   );

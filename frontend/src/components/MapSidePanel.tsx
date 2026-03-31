@@ -38,7 +38,7 @@ interface MapSidePanelProps {
   hasRgb: boolean;
   showBands: boolean;
   canClientRender: boolean;
-  clientRenderDisabledReason?: string | null;
+  clientRenderDisabledReason: string | null;
   // Dataset metadata
   bytesTransferred: number | null;
   onDetailsClick: () => void;

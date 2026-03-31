@@ -177,7 +177,7 @@ export function RasterSidebarControls({
           </Flex>
         </Box>
       )}
-      {!canClientRender && clientRenderDisabledReason && (
+      {canClientRender === false && clientRenderDisabledReason && (
         <Box mb={3}>
           <Text fontSize="11px" color="brand.textSecondary">
             Client-side rendering unavailable

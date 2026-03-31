@@ -71,12 +71,12 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     !!item.bounds &&
     Math.abs(item.bounds[1]) < 85.05 &&
     Math.abs(item.bounds[3]) < 85.05 &&
-    (item.dataset?.converted_file_size ?? 0) < CLIENT_RENDER_MAX_BYTES;
+    (item.dataset?.converted_file_size ?? 0) <= CLIENT_RENDER_MAX_BYTES;
 
   const clientRenderDisabledReason =
     item?.cogUrl &&
     item?.dataset?.converted_file_size != null &&
-    item.dataset.converted_file_size >= CLIENT_RENDER_MAX_BYTES
+    item.dataset.converted_file_size > CLIENT_RENDER_MAX_BYTES
       ? `File exceeds 200 MB browser limit (${formatBytes(item.dataset.converted_file_size)})`
       : null;
 

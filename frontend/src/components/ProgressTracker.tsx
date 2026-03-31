@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Check, SpinnerGap, X } from "@phosphor-icons/react";
 import { formatBytes } from "../lib/format";
@@ -12,33 +13,39 @@ interface ProgressTrackerProps {
   embedded?: boolean;
 }
 
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m ${s}s`;
+}
+
 function formatProgressDetail(
   stageName: string,
   progress?: StageProgress,
+  elapsed?: number,
 ): string | null {
-  if (!progress) return null;
+  const parts: string[] = [];
 
   if (
     stageName === "Uploading" &&
-    progress.current != null &&
-    progress.total != null
+    progress?.current != null &&
+    progress?.total != null
   ) {
-    return `${formatBytes(progress.current)} / ${formatBytes(progress.total)}`;
+    parts.push(`${formatBytes(progress.current)} / ${formatBytes(progress.total)}`);
+  } else if (progress?.current != null && progress?.total != null) {
+    parts.push(`${progress.current} of ${progress.total}`);
+  } else if (progress?.percent != null) {
+    parts.push(`${progress.percent}%`);
+  } else if (progress?.detail) {
+    parts.push(progress.detail.charAt(0).toUpperCase() + progress.detail.slice(1));
   }
 
-  if (progress.current != null && progress.total != null) {
-    return `${progress.current} of ${progress.total}`;
+  if (elapsed != null && elapsed > 0) {
+    parts.push(formatElapsed(elapsed));
   }
 
-  if (progress.percent != null) {
-    return `${progress.percent}%`;
-  }
-
-  if (progress.detail) {
-    return progress.detail.charAt(0).toUpperCase() + progress.detail.slice(1);
-  }
-
-  return null;
+  return parts.length > 0 ? parts.join(" \u00b7 ") : null;
 }
 
 function StageIcon({ status }: { status: StageInfo["status"] }) {
@@ -108,6 +115,20 @@ export function ProgressTracker({
   onReport,
   embedded,
 }: ProgressTrackerProps) {
+  const activeStage = stages.find((s) => s.status === "active");
+  const activeStageName = activeStage?.name ?? null;
+  const [elapsed, setElapsed] = useState(0);
+  const stageStartRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    stageStartRef.current = Date.now();
+    setElapsed(0);
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - stageStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeStageName]);
+
   return (
     <Flex
       direction="column"
@@ -153,7 +174,7 @@ export function ProgressTracker({
                 {stage.name}
               </Text>
               {(stage.detail ||
-                (stage.status === "active" && stage.progress)) && (
+                (stage.status === "active" && (stage.progress || elapsed > 0))) && (
                 <Text
                   color={
                     stage.status === "error"
@@ -164,8 +185,11 @@ export function ProgressTracker({
                 >
                   {stage.status === "error"
                     ? stage.detail
-                    : formatProgressDetail(stage.name, stage.progress) ||
-                      stage.detail}
+                    : formatProgressDetail(
+                        stage.name,
+                        stage.progress,
+                        stage.status === "active" ? elapsed : undefined,
+                      ) || stage.detail}
                 </Text>
               )}
             </Box>

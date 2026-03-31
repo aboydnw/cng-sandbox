@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { ProgressTracker } from "../ProgressTracker";
 import { system } from "../../theme";
@@ -110,6 +110,51 @@ describe("ProgressTracker", () => {
       <ProgressTracker stages={stages} filename="test.tif" fileSize="10 MB" />
     );
     expect(screen.getAllByText(/uploading/i).length).toBeGreaterThan(0);
+  });
+
+  it("displays elapsed time for active stage", () => {
+    vi.useFakeTimers();
+
+    const stages: StageInfo[] = [
+      { name: "Uploading", status: "done" },
+      { name: "Scanning", status: "active" },
+    ];
+    renderWithChakra(
+      <ProgressTracker stages={stages} filename="test.tif" fileSize="10 MB" />
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(screen.getByText(/3s/)).toBeTruthy();
+
+    vi.useRealTimers();
+  });
+
+  it("shows elapsed time combined with progress detail", () => {
+    vi.useFakeTimers();
+
+    const stages: StageInfo[] = [
+      { name: "Uploading", status: "done" },
+      {
+        name: "Converting",
+        status: "active",
+        progress: { percent: 42, current: null, total: null, detail: null },
+      },
+    ];
+    renderWithChakra(
+      <ProgressTracker stages={stages} filename="test.tif" fileSize="10 MB" />
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(screen.getByText(/42%/)).toBeTruthy();
+    expect(screen.getByText(/5s/)).toBeTruthy();
+
+    vi.useRealTimers();
   });
 
   it("renders upload bytes progress for Uploading stage", () => {

@@ -45,7 +45,10 @@ def _detect_grid_mapping(ds, variable: str | None = None):
     Returns a tuple of (is_projected, src_crs, scale_factor).
     For geographic sources: (False, None, None).
     For geostationary sources: (True, CRS, perspective_point_height).
+    For other projected sources: (True, CRS, None).
     """
+    from pyproj import CRS as ProjCRS
+
     data_vars = list(ds.data_vars)
     var_name = variable if variable else data_vars[0]
     da = ds[var_name]
@@ -56,6 +59,9 @@ def _detect_grid_mapping(ds, variable: str | None = None):
 
     gm = ds[grid_mapping_attr]
     gm_name = gm.attrs.get("grid_mapping_name", "")
+
+    if gm_name == "latitude_longitude":
+        return False, None, None
 
     if gm_name == "geostationary":
         required = ["perspective_point_height", "longitude_of_projection_origin",
@@ -74,7 +80,17 @@ def _detect_grid_mapping(ds, variable: str | None = None):
         )
         return True, crs, h
 
-    return False, None, None
+    # Generic projected CRS
+    cf_params = {k: v for k, v in gm.attrs.items()}
+    try:
+        proj_crs = ProjCRS.from_cf(cf_params)
+        return True, CRS.from_user_input(proj_crs), None
+    except Exception as e:
+        raise ValueError(
+            f"Cannot parse grid_mapping '{grid_mapping_attr}' with "
+            f"grid_mapping_name='{gm_name}' into a CRS. "
+            f"Attributes: {dict(gm.attrs)}. Error: {e}"
+        )
 
 
 def check_cog_valid(output_path: str) -> CheckResult:
@@ -200,8 +216,11 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
     if is_projected:
         y_names = [d for d in da.dims if d.lower() in ("y", "lat", "latitude")]
         x_names = [d for d in da.dims if d.lower() in ("x", "lon", "longitude")]
-        y_coords = da[y_names[0]].values.astype(np.float64) * scale_factor
-        x_coords = da[x_names[0]].values.astype(np.float64) * scale_factor
+        y_coords = da[y_names[0]].values.astype(np.float64)
+        x_coords = da[x_names[0]].values.astype(np.float64)
+        if scale_factor is not None:
+            y_coords = y_coords * scale_factor
+            x_coords = x_coords * scale_factor
 
         data = da.values.astype(np.float32)
         if y_coords[0] < y_coords[-1]:
@@ -443,6 +462,40 @@ def generate_geostationary_netcdf(path: str):
     ds.close()
 
 
+def generate_projected_netcdf(path: str):
+    """Generate a small synthetic NetCDF with Albers Equal Area (EPSG:5070) projection.
+
+    Creates a 64x64 grid with CF-convention grid_mapping attributes for
+    albers_conical_equal_area, mimicking USGS CONUS datasets.
+    """
+    x_coords = np.linspace(1000000, 1100000, 64).astype(np.float64)
+    y_coords = np.linspace(1600000, 1500000, 64).astype(np.float64)  # north-to-south
+
+    rng = np.random.default_rng(789)
+    data = rng.uniform(0.5, 1.0, (64, 64)).astype(np.float32)
+
+    ds = xr.Dataset(
+        {"temperature": (["y", "x"], data, {"grid_mapping": "crs",
+                                             "_FillValue": np.float32(-9999.0)})},
+        coords={"x": x_coords, "y": y_coords},
+    )
+    ds["crs"] = xr.DataArray(
+        np.int32(0),
+        attrs={
+            "grid_mapping_name": "albers_conical_equal_area",
+            "standard_parallel": [29.5, 45.5],
+            "latitude_of_projection_origin": 23.0,
+            "longitude_of_central_meridian": -96.0,
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "semi_major_axis": 6378137.0,
+            "inverse_flattening": 298.257222101,
+        },
+    )
+    ds.to_netcdf(path)
+    ds.close()
+
+
 def run_self_test() -> bool:
     """Generate synthetic NetCDFs, convert, and validate."""
     print("Running self-test...")
@@ -501,6 +554,31 @@ def run_self_test() -> bool:
                 all_passed = False
             else:
                 print(f"Reprojected bounds look correct: ({b.left:.2f}, {b.bottom:.2f}, "
+                      f"{b.right:.2f}, {b.top:.2f})")
+
+        # Test 3: Projected CRS NetCDF (Albers Equal Area)
+        print("\n--- Test 3: Projected CRS NetCDF (Albers / EPSG:5070) ---")
+        proj_input = os.path.join(tmpdir, "test_projected.nc")
+        proj_output = os.path.join(tmpdir, "test_projected.tif")
+
+        print("Generating synthetic Albers Equal Area NetCDF (64x64)...")
+        generate_projected_netcdf(proj_input)
+
+        print("Converting 'temperature' variable to COG (should detect + reproject)...")
+        convert_mod.convert(proj_input, proj_output, variable="temperature", verbose=True)
+
+        print("Validating reprojected COG...")
+        if not run_validation(proj_input, proj_output, variable="temperature"):
+            all_passed = False
+
+        with rasterio.open(proj_output) as dst:
+            epsg = dst.crs.to_epsg() if dst.crs else None
+            if epsg != 4326:
+                print(f"FAIL: Expected EPSG:4326, got {dst.crs}")
+                all_passed = False
+            else:
+                b = dst.bounds
+                print(f"Reprojected to EPSG:4326: ({b.left:.2f}, {b.bottom:.2f}, "
                       f"{b.right:.2f}, {b.top:.2f})")
 
     return all_passed

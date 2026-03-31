@@ -29,7 +29,6 @@ import numpy as np
 import rasterio
 from rasterio.crs import CRS
 from rasterio.transform import from_bounds, Affine
-from rasterio.warp import calculate_default_transform, reproject, Resampling
 import xarray as xr
 
 
@@ -58,7 +57,10 @@ def _detect_crs(ds, da):
     Returns a tuple of (crs, scale_factor). For geographic data, returns
     (EPSG:4326, None). For geostationary data, returns the geos CRS and
     the perspective_point_height needed to scale x/y from radians to meters.
+    For other projected CRS types, returns (CRS, None).
     """
+    from pyproj import CRS as ProjCRS
+
     grid_mapping_attr = da.attrs.get("grid_mapping")
     if grid_mapping_attr is None:
         return CRS.from_epsg(4326), None
@@ -92,10 +94,17 @@ def _detect_crs(ds, da):
         )
         return crs, h
 
-    raise ValueError(
-        f"Unsupported grid_mapping_name '{gm_name}' in '{grid_mapping_attr}'. "
-        f"Supported: 'latitude_longitude', 'geostationary'."
-    )
+    # Generic projected CRS — parse CF grid_mapping attributes via pyproj
+    cf_params = {k: v for k, v in gm.attrs.items()}
+    try:
+        proj_crs = ProjCRS.from_cf(cf_params)
+        return CRS.from_user_input(proj_crs), None
+    except Exception as e:
+        raise ValueError(
+            f"Cannot parse grid_mapping '{grid_mapping_attr}' with "
+            f"grid_mapping_name='{gm_name}' into a CRS. "
+            f"Attributes: {dict(gm.attrs)}. Error: {e}"
+        )
 
 
 def convert(input_path: str, output_path: str, variable: str | None = None,
@@ -137,7 +146,7 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
 
     # Detect CRS from CF grid_mapping conventions
     src_crs, scale_factor = _detect_crs(ds, da)
-    is_geographic = scale_factor is None
+    is_geographic = src_crs.is_geographic
 
     if verbose:
         print(f"Detected CRS: {src_crs}" + (" (geographic)" if is_geographic else " (projected)"))
@@ -210,7 +219,7 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
             os.unlink(tmp_path)
 
     else:
-        # Geostationary (projected) branch
+        # Projected CRS branch (geostationary and all other projected types)
         y_names = [d for d in da.dims if d.lower() in ("y", "lat", "latitude")]
         x_names = [d for d in da.dims if d.lower() in ("x", "lon", "longitude")]
         if not y_names or not x_names:
@@ -221,9 +230,11 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
         y_coords = da[y_dim].values.astype(np.float64)
         x_coords = da[x_dim].values.astype(np.float64)
 
-        # Scale from radians to meters
-        y_coords = y_coords * scale_factor
-        x_coords = x_coords * scale_factor
+        # Geostationary files store x/y as scanning angles in radians —
+        # must be scaled to meters by perspective_point_height
+        if scale_factor is not None:
+            y_coords = y_coords * scale_factor
+            x_coords = x_coords * scale_factor
 
         # Ensure y is descending (top-to-bottom)
         if y_coords[0] < y_coords[-1]:
@@ -246,42 +257,21 @@ def convert(input_path: str, output_path: str, variable: str | None = None,
             print(f"Variable: {variable}, shape: {data.shape}, dtype: {data.dtype}")
             print(f"NoData: {nodata}")
 
-        dst_crs = CRS.from_epsg(4326)
+        with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as tmp:
+            tmp_path = tmp.name
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            native_path = os.path.join(tmpdir, "native.tif")
+        try:
             with rasterio.open(
-                native_path, "w", driver="GTiff",
+                tmp_path, "w", driver="GTiff",
                 width=width, height=height, count=1, dtype="float32",
                 crs=src_crs, transform=native_transform, nodata=nodata,
             ) as dst:
                 dst.write(data, 1)
 
-            src_bounds = rasterio.transform.array_bounds(height, width, native_transform)
-            dst_transform, dst_width, dst_height = calculate_default_transform(
-                src_crs, dst_crs, width, height, *src_bounds)
-
-            reprojected_path = os.path.join(tmpdir, "reprojected.tif")
-            with rasterio.open(
-                reprojected_path, "w", driver="GTiff",
-                width=dst_width, height=dst_height, count=1, dtype="float32",
-                crs=dst_crs, transform=dst_transform, nodata=nodata,
-            ) as dst:
-                with rasterio.open(native_path) as src:
-                    reproject(
-                        source=rasterio.band(src, 1),
-                        destination=rasterio.band(dst, 1),
-                        src_transform=native_transform,
-                        src_crs=src_crs,
-                        dst_transform=dst_transform,
-                        dst_crs=dst_crs,
-                        resampling=Resampling.nearest,
-                    )
-
-            if verbose:
-                print(f"Reprojected to EPSG:4326 ({dst_width}x{dst_height})")
-
-            _write_cog(reprojected_path, output_path, compression, verbose)
+            from cng_shared import reproject_to_cog
+            reproject_to_cog(tmp_path, output_path, compression=compression, verbose=verbose)
+        finally:
+            os.unlink(tmp_path)
 
     ds.close()
     size_mb = os.path.getsize(output_path) / (1024 * 1024)

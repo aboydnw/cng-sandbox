@@ -23,7 +23,7 @@ function formatElapsed(seconds: number): string {
 function formatProgressDetail(
   stageName: string,
   progress?: StageProgress,
-  elapsed?: number,
+  elapsed?: number
 ): string | null {
   const parts: string[] = [];
 
@@ -32,13 +32,17 @@ function formatProgressDetail(
     progress?.current != null &&
     progress?.total != null
   ) {
-    parts.push(`${formatBytes(progress.current)} / ${formatBytes(progress.total)}`);
+    parts.push(
+      `${formatBytes(progress.current)} / ${formatBytes(progress.total)}`
+    );
   } else if (progress?.current != null && progress?.total != null) {
     parts.push(`${progress.current} of ${progress.total}`);
   } else if (progress?.percent != null) {
     parts.push(`${progress.percent}%`);
   } else if (progress?.detail) {
-    parts.push(progress.detail.charAt(0).toUpperCase() + progress.detail.slice(1));
+    parts.push(
+      progress.detail.charAt(0).toUpperCase() + progress.detail.slice(1)
+    );
   }
 
   if (elapsed != null && elapsed > 0) {
@@ -174,12 +178,11 @@ export function ProgressTracker({
                 {stage.name}
               </Text>
               {(stage.detail ||
-                (stage.status === "active" && (stage.progress || elapsed > 0))) && (
+                (stage.status === "active" &&
+                  (stage.progress || elapsed > 0))) && (
                 <Text
                   color={
-                    stage.status === "error"
-                      ? "red.500"
-                      : "brand.textSecondary"
+                    stage.status === "error" ? "red.500" : "brand.textSecondary"
                   }
                   fontSize="12px"
                 >
@@ -188,7 +191,7 @@ export function ProgressTracker({
                     : formatProgressDetail(
                         stage.name,
                         stage.progress,
-                        stage.status === "active" ? elapsed : undefined,
+                        stage.status === "active" ? elapsed : undefined
                       ) || stage.detail}
                 </Text>
               )}

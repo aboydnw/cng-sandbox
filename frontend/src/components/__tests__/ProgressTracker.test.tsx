@@ -92,7 +92,11 @@ describe("ProgressTracker", () => {
       },
     ];
     renderWithChakra(
-      <ProgressTracker stages={stages} filename="test.geojson" fileSize="5 MB" />
+      <ProgressTracker
+        stages={stages}
+        filename="test.geojson"
+        fileSize="5 MB"
+      />
     );
     expect(screen.getByText(/3 of 7/)).toBeTruthy();
   });
@@ -103,7 +107,12 @@ describe("ProgressTracker", () => {
       {
         name: "Ingesting",
         status: "active",
-        progress: { percent: null, current: null, total: null, detail: "uploading" },
+        progress: {
+          percent: null,
+          current: null,
+          total: null,
+          detail: "uploading",
+        },
       },
     ];
     renderWithChakra(
@@ -162,7 +171,12 @@ describe("ProgressTracker", () => {
       {
         name: "Uploading",
         status: "active",
-        progress: { percent: 50, current: 2200000, total: 4400000, detail: null },
+        progress: {
+          percent: 50,
+          current: 2200000,
+          total: 4400000,
+          detail: null,
+        },
       },
       { name: "Scanning", status: "pending" },
     ];

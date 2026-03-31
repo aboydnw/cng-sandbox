@@ -61,7 +61,7 @@ function updateStages(
   error?: string,
   progressCurrent?: number,
   progressTotal?: number,
-  stageProgress?: StageProgress,
+  stageProgress?: StageProgress
 ): StageInfo[] {
   const idx = STATUS_ORDER.indexOf(status);
   const pipelineStages: StageInfo[] = STAGE_NAMES.map((name, i) => {
@@ -77,7 +77,12 @@ function updateStages(
         progressCurrent && progressTotal
           ? `${progressCurrent} of ${progressTotal}`
           : undefined;
-      return { name, status: "active" as const, detail, progress: stageProgress };
+      return {
+        name,
+        status: "active" as const,
+        detail,
+        progress: stageProgress,
+      };
     }
     return { name, status: "pending" as const };
   });
@@ -162,7 +167,7 @@ export function useConversionJob() {
           error ?? undefined,
           data.progress_current,
           data.progress_total,
-          data.stage_progress ?? undefined,
+          data.stage_progress ?? undefined
         ),
       }));
 

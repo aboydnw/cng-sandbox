@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatBytes } from "../../lib/format";
+import { formatBytes } from "../format";
 
 describe("formatBytes", () => {
   it("formats bytes to human-readable string", () => {

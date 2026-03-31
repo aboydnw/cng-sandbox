@@ -31,9 +31,7 @@ def _write_parquet_chunked(
     chunk_size: int = 1000,
 ):
     """Write GeoParquet in chunks, calling on_progress(features_written) after each."""
-    from geopandas.io.arrow import _geopandas_to_arrow
-
-    table = _geopandas_to_arrow(gdf)
+    table = gdf.to_arrow()
     total = len(table)
 
     writer = pq.ParquetWriter(output_path, table.schema)

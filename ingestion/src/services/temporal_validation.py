@@ -76,7 +76,16 @@ def compute_global_stats(cog_paths: list[str]) -> tuple[float, float]:
     for path in cog_paths:
         with rasterio.open(path) as src:
             for band_idx in range(1, src.count + 1):
-                data = src.read(band_idx).astype(np.float64)
+                # Use coarsest overview to avoid reading full band into memory
+                overviews = src.overviews(band_idx)
+                if overviews:
+                    level = overviews[-1]
+                    data = src.read(
+                        band_idx,
+                        out_shape=(src.height // level, src.width // level),
+                    ).astype(np.float64)
+                else:
+                    data = src.read(band_idx).astype(np.float64)
                 if src.nodata is not None:
                     valid = data[data != src.nodata]
                 else:

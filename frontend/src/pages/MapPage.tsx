@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Text } from "@chakra-ui/react";
@@ -65,7 +72,8 @@ export default function MapPage() {
   const [basemap, setBasemap] = useState("streets");
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const boundsKey = item?.bounds?.join(",") ?? "";
+  useLayoutEffect(() => {
     if (item?.bounds) {
       const el = mapContainerRef.current;
       const size = el
@@ -73,7 +81,7 @@ export default function MapPage() {
         : undefined;
       setCamera(cameraFromBounds(item.bounds, size));
     }
-  }, [item?.bounds]);
+  }, [item?.id, boundsKey]);
 
   // --- Report card ---
   const [reportCardOpen, setReportCardOpen] = useState(false);

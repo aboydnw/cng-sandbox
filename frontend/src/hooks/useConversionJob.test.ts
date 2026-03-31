@@ -6,8 +6,39 @@ import { setWorkspaceId } from "../lib/api";
 
 const mockFetch = vi.fn();
 
+class MockXHR {
+  upload = { onprogress: null as ((e: ProgressEvent) => void) | null };
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  status = 200;
+  responseText = "";
+  open = vi.fn();
+  setRequestHeader = vi.fn();
+  send = vi.fn();
+  resolve(responseBody: unknown) {
+    this.status = 200;
+    this.responseText = JSON.stringify(responseBody);
+    this.onload?.();
+  }
+  reject(status: number, body: unknown) {
+    this.status = status;
+    this.responseText = JSON.stringify(body);
+    this.onload?.();
+  }
+  static instances: MockXHR[] = [];
+  static reset() {
+    MockXHR.instances = [];
+  }
+}
+
 beforeEach(() => {
+  MockXHR.reset();
   vi.stubGlobal("fetch", mockFetch);
+  vi.stubGlobal("XMLHttpRequest", function () {
+    const instance = new MockXHR();
+    MockXHR.instances.push(instance);
+    return instance;
+  });
   mockFetch.mockReset();
   vi.useFakeTimers();
   setWorkspaceId("test1234");
@@ -117,18 +148,16 @@ describe("useConversionJob", () => {
 
   it("sets error state on upload failure", async () => {
     vi.useRealTimers();
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      json: async () => ({ detail: "File too large" }),
-    });
 
     const { result } = renderHook(() => useConversionJob());
 
     await act(async () => {
-      await result.current.startUpload(
+      const uploadPromise = result.current.startUpload(
         new File(["data"], "test.tif", { type: "image/tiff" })
       );
+      await Promise.resolve();
+      MockXHR.instances[0].reject(400, { detail: "File too large" });
+      await uploadPromise;
     });
 
     expect(result.current.state.status).toBe("failed");
@@ -137,17 +166,15 @@ describe("useConversionJob", () => {
   });
 
   it("reconnects SSE on error up to 3 times", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
-    });
-
     const { result } = renderHook(() => useConversionJob());
 
     await act(async () => {
-      await result.current.startUpload(
+      const uploadPromise = result.current.startUpload(
         new File(["data"], "test.tif", { type: "image/tiff" })
       );
+      await Promise.resolve();
+      MockXHR.instances[0].resolve({ job_id: "j1", dataset_id: "d1" });
+      await uploadPromise;
     });
 
     expect(MockEventSource.instances).toHaveLength(1);
@@ -198,17 +225,15 @@ describe("useConversionJob", () => {
   });
 
   it("resets SSE retry count on successful message", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
-    });
-
     const { result } = renderHook(() => useConversionJob());
 
     await act(async () => {
-      await result.current.startUpload(
+      const uploadPromise = result.current.startUpload(
         new File(["data"], "test.tif", { type: "image/tiff" })
       );
+      await Promise.resolve();
+      MockXHR.instances[0].resolve({ job_id: "j1", dataset_id: "d1" });
+      await uploadPromise;
     });
 
     // Trigger SSE error and reconnect

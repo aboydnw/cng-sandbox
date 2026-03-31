@@ -10,6 +10,7 @@ import logging
 import os
 import tempfile
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC
 
@@ -378,12 +379,36 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                         pass
                     await asyncio.sleep(0.5)
 
-            done_event = asyncio.Event()
-            monitor_task = asyncio.create_task(
-                _monitor_file_size(output_path, estimated_size, done_event)
-            )
+            if format_pair.dataset_type == DatasetType.RASTER:
+                # Raster: monitor output file size growth
+                done_event = asyncio.Event()
+                monitor_task = asyncio.create_task(
+                    _monitor_file_size(output_path, estimated_size, done_event)
+                )
+                try:
+                    await asyncio.to_thread(
+                        _import_and_convert,
+                        format_pair,
+                        input_path,
+                        output_path,
+                        variable=job.variable,
+                        group=job.group,
+                    )
+                finally:
+                    done_event.set()
+                    await monitor_task
+                job.stage_progress = StageProgress(percent=100)
+            else:
+                # Vector: count features then convert with progress callback
+                feature_total = await asyncio.to_thread(
+                    _count_features, input_path, format_pair
+                )
+                if feature_total:
+                    job.stage_progress = StageProgress(current=0, total=feature_total)
 
-            try:
+                def _on_progress(written: int):
+                    job.stage_progress = StageProgress(current=written, total=feature_total or written)
+
                 await asyncio.to_thread(
                     _import_and_convert,
                     format_pair,
@@ -391,12 +416,8 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                     output_path,
                     variable=job.variable,
                     group=job.group,
+                    on_progress=_on_progress,
                 )
-            finally:
-                done_event.set()
-                await monitor_task
-
-            job.stage_progress = StageProgress(percent=100)
 
             # Stage 3: Validate
             job.status = JobStatus.VALIDATING
@@ -608,12 +629,24 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
             await asyncio.sleep(1.0)
 
 
+def _count_features(input_path: str, format_pair: FormatPair) -> int | None:
+    """Count features in a vector file for progress reporting."""
+    try:
+        import fiona
+
+        with fiona.open(input_path) as src:
+            return len(src)
+    except Exception:
+        return None
+
+
 def _import_and_convert(
     format_pair: FormatPair,
     input_path: str,
     output_path: str,
     variable: str | None = None,
     group: str | None = None,
+    on_progress: Callable[[int], None] | None = None,
 ) -> None:
     """Import the appropriate cng-toolkit converter and run it."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
@@ -623,11 +656,11 @@ def _import_and_convert(
     elif format_pair == FormatPair.SHAPEFILE_TO_GEOPARQUET:
         from shapefile_to_geoparquet import convert
 
-        convert(input_path, output_path, verbose=True)
+        convert(input_path, output_path, verbose=True, on_progress=on_progress)
     elif format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
         from geojson_to_geoparquet import convert
 
-        convert(input_path, output_path, verbose=True)
+        convert(input_path, output_path, verbose=True, on_progress=on_progress)
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import convert
 

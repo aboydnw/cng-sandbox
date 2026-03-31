@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.7.0](https://github.com/aboydnw/cng-sandbox/compare/v1.6.0...v1.7.0) (2026-03-31)
+
+
+### Features
+
+* disable client-side rendering for COGs over 200 MB ([#84](https://github.com/aboydnw/cng-sandbox/issues/84)) ([ab5fd74](https://github.com/aboydnw/cng-sandbox/commit/ab5fd74238aed92349e5180ddf02afb525b7a55b))
+* redesign homepage with three equal-weight cards ([#80](https://github.com/aboydnw/cng-sandbox/issues/80)) ([9bb65d2](https://github.com/aboydnw/cng-sandbox/commit/9bb65d2ee693d40b6e8b302a3b818462e793799c))
+* universal CRS reprojection for all raster formats ([#81](https://github.com/aboydnw/cng-sandbox/issues/81)) ([35011b4](https://github.com/aboydnw/cng-sandbox/commit/35011b45e31c21db4f918426daf6d998b32b91a5))
+
+
+### Bug Fixes
+
+* ensure fresh frontend assets on every deploy ([#78](https://github.com/aboydnw/cng-sandbox/issues/78)) ([a8dc212](https://github.com/aboydnw/cng-sandbox/commit/a8dc212dcfb9588425fc7f6de21f10c3e556ac1d))
+* handle large raster files without OOM crashes ([#82](https://github.com/aboydnw/cng-sandbox/issues/82)) ([b3d9589](https://github.com/aboydnw/cng-sandbox/commit/b3d95895582ecf77e802e0cb90e733fcbd472b19))
+* skip pixel fidelity check for reprojected GeoTIFFs ([#83](https://github.com/aboydnw/cng-sandbox/issues/83)) ([6a880d0](https://github.com/aboydnw/cng-sandbox/commit/6a880d0a1af5609105b0e77ab2a3f855eabb4ffb))
+* use overview reads in compute_global_stats to avoid OOM ([00f9899](https://github.com/aboydnw/cng-sandbox/commit/00f989940cd7a1489e342d9a18bc0dc86867fab6))
+
 ## [1.6.0](https://github.com/aboydnw/cng-sandbox/compare/v1.5.0...v1.6.0) (2026-03-30)
 
 

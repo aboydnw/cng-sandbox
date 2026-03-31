@@ -56,6 +56,13 @@ function buildUploadingStages(): StageInfo[] {
   ];
 }
 
+function buildUploadFailedStages(error: string): StageInfo[] {
+  return [
+    { name: "Uploading", status: "error" as const, detail: error },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
+}
+
 function updateStages(
   status: JobStatus,
   error?: string,
@@ -312,7 +319,7 @@ export function useConversionJob() {
           isUploading: false,
           status: "failed",
           error: msg,
-          stages: updateStages("failed", msg),
+          stages: buildUploadFailedStages(msg),
         }));
       }
     },
@@ -356,7 +363,7 @@ export function useConversionJob() {
           isUploading: false,
           status: "failed",
           error: msg,
-          stages: updateStages("failed", msg),
+          stages: buildUploadFailedStages(msg),
         }));
         return;
       }
@@ -440,7 +447,7 @@ export function useConversionJob() {
           isUploading: false,
           status: "failed",
           error: msg,
-          stages: updateStages("failed", msg),
+          stages: buildUploadFailedStages(msg),
         }));
       }
     },

@@ -368,7 +368,9 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
             estimated_size = _estimate_output_size(input_path, format_pair)
 
-            async def _monitor_file_size(path: str, estimated: int, done_event: asyncio.Event):
+            async def _monitor_file_size(
+                path: str, estimated: int, done_event: asyncio.Event
+            ):
                 """Poll output file size and update job.stage_progress."""
                 while not done_event.is_set():
                     try:
@@ -407,7 +409,12 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                     job.stage_progress = StageProgress(current=0, total=feature_total)
 
                 def _on_progress(written: int):
-                    job.stage_progress = StageProgress(current=written, total=feature_total or written)
+                    if feature_total:
+                        job.stage_progress = StageProgress(
+                            current=written, total=feature_total
+                        )
+                    else:
+                        job.stage_progress = StageProgress(percent=None)
 
                 await asyncio.to_thread(
                     _import_and_convert,
@@ -508,8 +515,8 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             job.status = JobStatus.INGESTING
             job.stage_progress = StageProgress(detail="uploading")
 
-            converted_key = storage.upload_converted(
-                output_path, job.dataset_id, out_filename
+            converted_key = await asyncio.to_thread(
+                storage.upload_converted, output_path, job.dataset_id, out_filename
             )
             job.stage_progress = StageProgress(detail="registering")
             s3_href = storage.get_s3_uri(converted_key)

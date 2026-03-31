@@ -31,4 +31,9 @@ def test_job_stage_progress_with_detail():
 def test_stage_progress_serializes():
     sp = StageProgress(percent=67, detail="converting")
     data = sp.model_dump()
-    assert data == {"percent": 67, "current": None, "total": None, "detail": "converting"}
+    assert data == {
+        "percent": 67,
+        "current": None,
+        "total": None,
+        "detail": "converting",
+    }

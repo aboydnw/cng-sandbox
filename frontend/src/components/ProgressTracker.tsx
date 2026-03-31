@@ -125,6 +125,11 @@ export function ProgressTracker({
   const stageStartRef = useRef<number>(Date.now());
 
   useEffect(() => {
+    if (!activeStageName) {
+      setElapsed(0);
+      return;
+    }
+
     stageStartRef.current = Date.now();
     setElapsed(0);
     const interval = setInterval(() => {

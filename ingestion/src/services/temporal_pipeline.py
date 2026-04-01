@@ -1,10 +1,13 @@
 """Pipeline orchestrator for temporal (multi-file) raster uploads."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import logging
 import os
 import tempfile
+from collections.abc import Callable
 
 from src.models import (
     Dataset,
@@ -32,7 +35,262 @@ from src.services.temporal_validation import (
     validate_cross_file_compatibility,
 )
 
+try:
+    import xarray as xr
+except ImportError:
+    xr = None
+
 logger = logging.getLogger(__name__)
+
+
+def _read_time_values(
+    input_path: str,
+    format_pair: FormatPair,
+    variable: str,
+    group: str,
+) -> list[str] | None:
+    """Read timestamps from a temporal file as ISO 8601 strings."""
+    try:
+        if format_pair == FormatPair.NETCDF_TO_COG:
+            if xr is None:
+                return None
+            ds = xr.open_dataset(input_path)
+            try:
+                da = ds[variable]
+                time_dims = [d for d in da.dims if d.lower() in ("time", "t")]
+                if not time_dims:
+                    return None
+                time_coord = ds[time_dims[0]]
+                return [
+                    v.isoformat().replace("+00:00", "") + "Z"
+                    for v in time_coord.values.astype("datetime64[ms]").astype("object")
+                ]
+            finally:
+                ds.close()
+
+        elif format_pair == FormatPair.HDF5_TO_COG:
+            import h5py
+
+            with h5py.File(input_path, "r") as f:
+                grp = f[group] if group else f
+                time_names = ["time", "Time", "TIME", "t"]
+                time_ds = None
+                for name in time_names:
+                    if name in grp and isinstance(grp[name], h5py.Dataset):
+                        time_ds = grp[name]
+                        break
+                if time_ds is None:
+                    return None
+
+                raw_times = time_ds[:]
+                units = time_ds.attrs.get("units", None)
+                if units is not None:
+                    units = units.decode() if isinstance(units, bytes) else str(units)
+                    try:
+                        import cftime
+
+                        decoded = cftime.num2date(raw_times, units)
+                        return [t.isoformat() + "Z" for t in decoded]
+                    except Exception:
+                        pass
+                return None
+    except Exception:
+        logger.debug("Failed to read time values from %s", input_path, exc_info=True)
+        return None
+
+
+def extract_temporal_cogs(
+    input_path: str,
+    output_dir: str,
+    format_pair: FormatPair,
+    variable: str,
+    group: str,
+    start_index: int,
+    end_index: int,
+    on_progress: Callable | None = None,
+) -> tuple[list[str], list[str]]:
+    """Extract COGs from a single file's time dimension."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    time_values = _read_time_values(input_path, format_pair, variable, group)
+
+    cog_paths: list[str] = []
+    datetimes: list[str] = []
+    count = end_index - start_index + 1
+
+    for i, time_idx in enumerate(range(start_index, end_index + 1)):
+        output_path = os.path.join(output_dir, f"t{time_idx:04d}.tif")
+
+        if format_pair == FormatPair.NETCDF_TO_COG:
+            from netcdf_to_cog import convert
+
+            convert(
+                input_path,
+                output_path,
+                variable=variable,
+                time_index=time_idx,
+                verbose=True,
+            )
+        elif format_pair == FormatPair.HDF5_TO_COG:
+            from hdf5_to_cog import convert
+
+            convert(
+                input_path,
+                output_path,
+                variable=variable,
+                group=group,
+                time_index=time_idx,
+                verbose=True,
+            )
+        else:
+            raise ValueError(
+                f"Unsupported format pair for temporal extraction: {format_pair}"
+            )
+
+        cog_paths.append(output_path)
+
+        if time_values is not None and time_idx < len(time_values):
+            datetimes.append(time_values[time_idx])
+        else:
+            datetimes.append(f"1970-01-{(i + 1):02d}T00:00:00Z")
+
+        if on_progress is not None:
+            on_progress(i + 1, count)
+
+    return cog_paths, datetimes
+
+
+async def run_infile_temporal_pipeline(
+    job: Job,
+    input_path: str,
+    variable: str,
+    group: str,
+    start_index: int,
+    end_index: int,
+    db_session_factory,
+) -> None:
+    """Execute the in-file temporal extraction pipeline.
+
+    Extracts multiple timesteps from a single NetCDF/HDF5 file, converts each
+    to a COG, then runs cross-file validation, global stats, and STAC ingestion.
+    """
+    storage = StorageService()
+    uploaded_keys: list[str] = []
+
+    try:
+        # Upload raw file
+        raw_key = storage.upload_raw(input_path, job.dataset_id, job.filename)
+        uploaded_keys.append(raw_key)
+        original_file_size = os.path.getsize(input_path)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Stage 2: Extract temporal COGs
+            job.status = JobStatus.CONVERTING
+            job.progress_total = end_index - start_index + 1
+
+            def on_progress(current: int, total: int) -> None:
+                job.progress_current = current
+
+            cog_paths, datetimes = await asyncio.to_thread(
+                extract_temporal_cogs,
+                input_path,
+                tmpdir,
+                job.format_pair,
+                variable,
+                group,
+                start_index,
+                end_index,
+                on_progress,
+            )
+
+            # Stage 3: Cross-file validation
+            job.status = JobStatus.VALIDATING
+            cross_errors = await asyncio.to_thread(
+                validate_cross_file_compatibility, cog_paths
+            )
+            if cross_errors:
+                job.status = JobStatus.FAILED
+                job.error = "; ".join(cross_errors)
+                _cleanup_uploaded(storage, uploaded_keys)
+                return
+
+            # Stage 4: Compute global stats
+            raster_min, raster_max = await asyncio.to_thread(
+                compute_global_stats, cog_paths
+            )
+
+            # Stage 5: Extract metadata from first COG
+            first_cog = cog_paths[0]
+            bounds = await asyncio.to_thread(
+                _extract_bounds, first_cog, DatasetType.RASTER
+            )
+            band_meta = await asyncio.to_thread(_extract_band_metadata, first_cog)
+            min_zoom, max_zoom = await asyncio.to_thread(
+                _extract_zoom_range_raster, first_cog
+            )
+
+            # Stage 6: Ingest
+            job.status = JobStatus.INGESTING
+
+            s3_hrefs: list[str] = []
+            converted_file_size = 0
+            for i, cog_path in enumerate(cog_paths):
+                cog_filename = os.path.basename(cog_path)
+                key = f"datasets/{job.dataset_id}/timesteps/{i}/{cog_filename}"
+                storage.upload_file(cog_path, key)
+                uploaded_keys.append(key)
+                s3_hrefs.append(storage.get_s3_uri(key))
+                converted_file_size += os.path.getsize(cog_path)
+
+            tile_url = await stac_ingest.ingest_temporal_raster(
+                dataset_id=job.dataset_id,
+                cog_paths=cog_paths,
+                s3_hrefs=s3_hrefs,
+                filename=job.filename,
+                datetimes=datetimes,
+            )
+
+            # Stage 7: Build Dataset
+            job.status = JobStatus.READY
+
+            timesteps = [
+                Timestep(datetime=dt, index=i) for i, dt in enumerate(datetimes)
+            ]
+
+            dataset = Dataset(
+                id=job.dataset_id,
+                filename=job.filename,
+                dataset_type=DatasetType.RASTER,
+                format_pair=job.format_pair,
+                tile_url=tile_url,
+                bounds=bounds,
+                band_count=band_meta.band_count,
+                band_names=band_meta.band_names,
+                color_interpretation=band_meta.color_interpretation,
+                dtype=band_meta.dtype,
+                original_file_size=original_file_size,
+                converted_file_size=converted_file_size,
+                min_zoom=min_zoom,
+                max_zoom=max_zoom,
+                stac_collection_id=f"sandbox-{job.dataset_id}",
+                validation_results=[],
+                credits=get_credits(job.format_pair),
+                workspace_id=job.workspace_id,
+                is_temporal=True,
+                timesteps=timesteps,
+                raster_min=raster_min,
+                raster_max=raster_max,
+                created_at=job.created_at,
+            )
+            from src.models.dataset import persist_dataset
+
+            persist_dataset(db_session_factory, dataset)
+
+    except Exception as e:
+        logger.exception("In-file temporal pipeline failed for job %s", job.id)
+        job.status = JobStatus.FAILED
+        job.error = str(e)
+        _cleanup_uploaded(storage, uploaded_keys)
 
 
 async def run_temporal_pipeline(

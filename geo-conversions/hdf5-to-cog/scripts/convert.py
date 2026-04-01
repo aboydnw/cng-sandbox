@@ -92,7 +92,8 @@ def _detect_crs(group, root, x_coords, y_coords):
 
 
 def convert(input_path: str, output_path: str, variable: str = "",
-            group: str = "", compression: str = "DEFLATE", verbose: bool = False):
+            group: str = "", time_index: int = 0, compression: str = "DEFLATE",
+            verbose: bool = False):
     """Convert an HDF5 variable to a Cloud-Optimized GeoTIFF.
 
     Opens the HDF5 file, navigates to the specified group, reads the variable
@@ -110,15 +111,27 @@ def convert(input_path: str, output_path: str, variable: str = "",
             )
 
         ds = grp[variable]
-        raw = ds[:]
+
+        if ds.ndim == 3:
+            n_times = ds.shape[0]
+            if time_index >= n_times:
+                raise ValueError(
+                    f"time_index {time_index} out of range (0-{n_times - 1})"
+                )
+            if verbose:
+                print(f"Selected timestep {time_index}/{n_times - 1}")
+            raw = ds[time_index, :, :]
+        elif ds.ndim == 2:
+            raw = ds[:]
+        else:
+            raise ValueError(f"Expected 2D or 3D variable, got shape {ds.shape}")
+
         if np.iscomplexobj(raw):
             if verbose:
                 print(f"Complex dtype ({raw.dtype}) — converting to magnitude")
             data = np.abs(raw).astype(np.float32)
         else:
             data = raw.astype(np.float32)
-        if data.ndim != 2:
-            raise ValueError(f"Expected 2D variable, got shape {data.shape}")
 
         nodata = float(ds.attrs.get("_FillValue", -9999.0))
 

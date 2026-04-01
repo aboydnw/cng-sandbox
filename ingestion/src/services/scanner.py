@@ -40,17 +40,16 @@ def _find_time_dataset(grp: h5py.Group, root: h5py.File) -> dict | None:
             units = ds.attrs.get("units", None)
             values = None
             if units is not None:
+                if isinstance(units, bytes):
+                    units = units.decode()
                 try:
                     import cftime
 
                     dates = cftime.num2date(ds[:], units)
                     values = [
-                        d.isoformat().replace("+00:00", "") + "Z"
-                        if "+" in d.isoformat()
-                        else d.isoformat() + "Z"
-                        for d in dates
+                        d.strftime("%Y-%m-%dT%H:%M:%SZ") for d in dates
                     ]
-                except Exception:
+                except (ValueError, TypeError, OverflowError):
                     pass
             return {"name": key, "size": size, "values": values}
     return None
@@ -123,7 +122,7 @@ def scan_netcdf(path: str) -> list[dict]:
                             "object"
                         )
                     ]
-                except Exception:
+                except (ValueError, TypeError, OverflowError, AttributeError):
                     values = None
                 time_dim_info = {"name": str(td), "size": size, "values": values}
 

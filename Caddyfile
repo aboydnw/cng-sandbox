@@ -94,8 +94,8 @@
 		@assets path /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
 
-		@html path /index.html /
-		header @html Cache-Control "no-cache"
+		@notAssets not path /assets/*
+		header @notAssets Cache-Control "no-cache"
 
 		try_files {path} /index.html
 		file_server

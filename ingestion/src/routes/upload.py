@@ -157,12 +157,20 @@ async def convert_url(
     return {"job_id": job.id, "dataset_id": job.dataset_id}
 
 
+class TemporalParams(PydanticBaseModel):
+    start_index: int
+    end_index: int
+
+
 class ScanConvertRequest(PydanticBaseModel):
     variable: str
     group: str = ""
+    temporal: TemporalParams | None = None
 
 
-async def _handle_scan_convert(scan_id: str, variable: str, group: str):
+async def _handle_scan_convert(
+    scan_id: str, variable: str, group: str, temporal: TemporalParams | None = None
+):
     """Core logic for scan-convert, extracted for testability."""
     async with scan_store_lock:
         entry = scan_store.get(scan_id)
@@ -177,9 +185,21 @@ async def _handle_scan_convert(scan_id: str, variable: str, group: str):
                 status_code=400,
                 detail="Variable not found in scan results.",
             )
+
+        if temporal is not None:
+            max_timesteps = 50
+            count = temporal.end_index - temporal.start_index + 1
+            if count < 2 or count > max_timesteps:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Temporal range must be 2-{max_timesteps} timesteps.",
+                )
+
         job = entry["job"]
         job.variable = variable
         job.group = group
+        if temporal is not None:
+            entry["temporal"] = temporal
         entry["state"] = "converting"
     job.scan_event.set()
 
@@ -187,7 +207,7 @@ async def _handle_scan_convert(scan_id: str, variable: str, group: str):
 @router.post("/scan/{scan_id}/convert")
 async def scan_convert(scan_id: str, body: ScanConvertRequest):
     """Resume a paused pipeline with the selected variable."""
-    await _handle_scan_convert(scan_id, body.variable, body.group)
+    await _handle_scan_convert(scan_id, body.variable, body.group, body.temporal)
     return {"status": "converting"}
 
 

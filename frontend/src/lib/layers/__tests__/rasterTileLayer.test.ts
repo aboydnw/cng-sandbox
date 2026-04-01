@@ -31,7 +31,27 @@ describe("buildRasterTileLayers", () => {
     expect(layers).toHaveLength(0);
   });
 
-  it("returns N layers for temporal dataset with opacity toggle", () => {
+  it("returns only layers in renderIndices", () => {
+    const layers = buildRasterTileLayers({
+      tileUrl: "/raster/tiles/{z}/{x}/{y}.png?colormap_name=viridis",
+      opacity: 0.8,
+      isTemporalActive: true,
+      timesteps: [
+        { datetime: "2020-01-01", index: 0 },
+        { datetime: "2020-02-01", index: 1 },
+        { datetime: "2020-03-01", index: 2 },
+      ],
+      activeTimestepIndex: 1,
+      renderIndices: new Set([0, 1]),
+    });
+    expect(layers).toHaveLength(2);
+    expect(layers[0].id).toBe("raster-ts-0");
+    expect(layers[1].id).toBe("raster-ts-1");
+    expect(layers[1].props.opacity).toBe(0.8);
+    expect(layers[0].props.opacity).toBe(0);
+  });
+
+  it("returns all layers when renderIndices is undefined", () => {
     const layers = buildRasterTileLayers({
       tileUrl: "/raster/tiles/{z}/{x}/{y}.png?colormap_name=viridis",
       opacity: 0.8,
@@ -44,7 +64,6 @@ describe("buildRasterTileLayers", () => {
       activeTimestepIndex: 1,
     });
     expect(layers).toHaveLength(3);
-    // Active layer gets full opacity, others get 0
     expect(layers[1].props.opacity).toBe(0.8);
     expect(layers[0].props.opacity).toBe(0);
     expect(layers[2].props.opacity).toBe(0);

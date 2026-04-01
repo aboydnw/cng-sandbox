@@ -141,6 +141,24 @@ export default function MapPage() {
     initialTimestep
   );
 
+  // Progressive preloading: only render the active layer + already-loaded
+  // layers + one more unloaded layer at a time. This lets the first timestep
+  // load fast while the rest preload sequentially in the background.
+  const renderIndices = useMemo(() => {
+    if (!ds?.is_temporal) return undefined;
+    const indices = new Set<number>();
+    indices.add(animation.activeIndex);
+    loadedRef.current.forEach((i) => indices.add(i));
+    for (let i = 0; i < frameCount; i++) {
+      if (!indices.has(i)) {
+        indices.add(i);
+        break;
+      }
+    }
+    return indices;
+    // loadedCount is the reactive trigger for loadedRef changes
+  }, [ds?.is_temporal, animation.activeIndex, loadedCount, frameCount]);
+
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;
   const deckRef = useRef(null);
   const exportHook = useTemporalExport(
@@ -193,6 +211,7 @@ export default function MapPage() {
     isSingleBand: controls.isSingleBand,
     isMultiBand: controls.isMultiBand,
     activeTimestepIndex: animation.activeIndex,
+    renderIndices,
     getLoadCallback,
     tileCacheRef,
     arrowTable,

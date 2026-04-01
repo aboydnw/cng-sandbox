@@ -21,9 +21,10 @@ export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
     variables[0].time_dim.size > 1
   ) {
     const v = variables[0];
+    const td = v.time_dim!;
     return (
       <TemporalRangePicker
-        timeDim={v.time_dim}
+        timeDim={td}
         onConfirm={(start, end) =>
           onSelect(v.name, v.group, { start_index: start, end_index: end })
         }
@@ -31,7 +32,7 @@ export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
     );
   }
 
-  if (selectedVar && selectedVar.time_dim && selectedVar.time_dim.size > 1) {
+  if (selectedVar?.time_dim && selectedVar.time_dim.size > 1) {
     return (
       <TemporalRangePicker
         timeDim={selectedVar.time_dim}

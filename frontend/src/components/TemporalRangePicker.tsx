@@ -132,41 +132,39 @@ export function TemporalRangePicker({
             <Text fontSize="13px" color="brand.brown" fontWeight={600} w="40px">
               Start
             </Text>
-            <Box
-              as="select"
-              flex={1}
-              p={2}
-              border="1px solid"
-              borderColor="brand.border"
-              borderRadius="6px"
-              fontSize="13px"
-              color="brand.brown"
+            <select
               value={startIndex}
               onChange={handleStartChange}
+              style={{
+                flex: 1,
+                padding: "8px",
+                border: "1px solid #e2e2e2",
+                borderRadius: "6px",
+                fontSize: "13px",
+              }}
             >
               {Array.from({ length: timeDim.size }, (_, i) => (
                 <option key={i} value={i}>
                   {labelFor(timeDim, i)}
                 </option>
               ))}
-            </Box>
+            </select>
           </Flex>
 
           <Flex align="center" gap={3}>
             <Text fontSize="13px" color="brand.brown" fontWeight={600} w="40px">
               End
             </Text>
-            <Box
-              as="select"
-              flex={1}
-              p={2}
-              border="1px solid"
-              borderColor="brand.border"
-              borderRadius="6px"
-              fontSize="13px"
-              color="brand.brown"
+            <select
               value={endIndex}
               onChange={handleEndChange}
+              style={{
+                flex: 1,
+                padding: "8px",
+                border: "1px solid #e2e2e2",
+                borderRadius: "6px",
+                fontSize: "13px",
+              }}
             >
               {Array.from(
                 { length: Math.min(MAX_TIMESTEPS, timeDim.size - startIndex) },
@@ -179,7 +177,7 @@ export function TemporalRangePicker({
                   );
                 }
               )}
-            </Box>
+            </select>
           </Flex>
         </Flex>
       )}

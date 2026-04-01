@@ -338,6 +338,24 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 async with scan_store_lock:
                     if scan_id in scan_store:
                         scan_store[scan_id]["state"] = "converting"
+                        temporal_params = scan_store[scan_id].get("temporal")
+
+                if temporal_params is not None:
+                    from src.services.temporal_pipeline import (
+                        run_infile_temporal_pipeline,
+                    )
+
+                    await run_infile_temporal_pipeline(
+                        job=job,
+                        input_path=input_path,
+                        variable=job.variable,
+                        group=job.group or "",
+                        start_index=temporal_params.start_index,
+                        end_index=temporal_params.end_index,
+                        db_session_factory=db_session_factory,
+                    )
+                    return
+
             elif len(variables) == 1:
                 job.variable = variables[0]["name"]
                 job.group = variables[0].get("group", "")

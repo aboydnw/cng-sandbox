@@ -30,7 +30,7 @@ def _find_time_dataset(grp: h5py.Group, root: h5py.File) -> dict | None:
         candidates.append(root[parent_path])
 
     for group in candidates:
-        for key in group.keys():
+        for key in group:
             if key.lower() not in _TIME_NAMES:
                 continue
             ds = group[key]

@@ -27,8 +27,8 @@ def temporal_netcdf(tmp_path):
 
 
 def test_extract_temporal_cogs_produces_correct_count(temporal_netcdf, tmp_path):
-    from src.services.temporal_pipeline import extract_temporal_cogs
     from src.models import FormatPair
+    from src.services.temporal_pipeline import extract_temporal_cogs
 
     cog_paths, datetimes = extract_temporal_cogs(
         input_path=temporal_netcdf,
@@ -46,8 +46,8 @@ def test_extract_temporal_cogs_produces_correct_count(temporal_netcdf, tmp_path)
 
 
 def test_extract_temporal_cogs_subset(temporal_netcdf, tmp_path):
-    from src.services.temporal_pipeline import extract_temporal_cogs
     from src.models import FormatPair
+    from src.services.temporal_pipeline import extract_temporal_cogs
 
     cog_paths, datetimes = extract_temporal_cogs(
         input_path=temporal_netcdf,

@@ -21,10 +21,7 @@ const timeDim12: TimeDimInfo = {
 const timeDim100: TimeDimInfo = {
   name: "time",
   size: 100,
-  values: Array.from({ length: 100 }, (_, i) => {
-    const d = String(i + 1).padStart(3, "0");
-    return `2020-01-01T00:00:00Z`;
-  }),
+  values: Array.from({ length: 100 }, () => `2020-01-01T00:00:00Z`),
 };
 
 const timeDimNoValues: TimeDimInfo = {

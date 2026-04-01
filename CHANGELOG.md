@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.3](https://github.com/aboydnw/cng-sandbox/compare/v1.9.2...v1.9.3) (2026-04-01)
+
+
+### Bug Fixes
+
+* add missing uri strip_prefix for COG tiler proxy ([#112](https://github.com/aboydnw/cng-sandbox/issues/112)) ([ef53ea1](https://github.com/aboydnw/cng-sandbox/commit/ef53ea138cfe63522458fd0b55b2da22287a471f)), closes [#111](https://github.com/aboydnw/cng-sandbox/issues/111)
+* progressively preload temporal timesteps instead of all at once ([#109](https://github.com/aboydnw/cng-sandbox/issues/109)) ([a28a838](https://github.com/aboydnw/cng-sandbox/commit/a28a838387a1b7d2c24f013c4ad9744f3d9153f1))
+
 ## [1.9.2](https://github.com/aboydnw/cng-sandbox/compare/v1.9.1...v1.9.2) (2026-04-01)
 
 

@@ -95,9 +95,7 @@ async def test_deletes_expired_stories(db_session):
     )
     db_session.commit()
 
-    with patch(
-        "src.services.cleanup.delete_dataset", new_callable=AsyncMock
-    ):
+    with patch("src.services.cleanup.delete_dataset", new_callable=AsyncMock):
         deleted = await cleanup_expired_rows(db_session, ttl_days=30)
 
     assert "old-story" in deleted

@@ -157,7 +157,6 @@ export default function MapPage() {
     }
     return indices;
     // loadedCount is the reactive trigger for loadedRef changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ds?.is_temporal, animation.activeIndex, loadedCount, frameCount]);
 
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;

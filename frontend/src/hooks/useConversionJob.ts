@@ -96,7 +96,6 @@ function updateStages(
   return [{ name: "Uploading", status: "done" as const }, ...pipelineStages];
 }
 
-
 export function useConversionJob() {
   const [state, setState] = useState<ConversionJobState>({
     jobId: null,

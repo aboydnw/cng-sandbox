@@ -80,12 +80,23 @@
 
 	# Frontend: serve static files from the production build.
 	# try_files falls back to index.html for SPA client-side routing.
+	#
+	# Cache policy: hashed assets (/assets/*) are immutable and cached
+	# for 1 year. index.html must always be revalidated so browsers
+	# pick up new asset hashes after a deploy.
 	handle {
 		basic_auth {
 			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
 		}
 		encode gzip
 		root * /srv/frontend
+
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+
+		@html path /index.html /
+		header @html Cache-Control "no-cache"
+
 		try_files {path} /index.html
 		file_server
 	}

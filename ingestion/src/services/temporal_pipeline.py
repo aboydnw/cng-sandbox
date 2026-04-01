@@ -62,10 +62,10 @@ def _read_time_values(
                     return None
                 time_coord = ds[time_dims[0]]
                 return [
-                    str(t.values)
-                    if hasattr(t.values, "isoformat")
-                    else str(t.values)
-                    for t in time_coord
+                    v.isoformat().replace("+00:00", "") + "Z"
+                    for v in time_coord.values.astype("datetime64[ms]").astype(
+                        "object"
+                    )
                 ]
             finally:
                 ds.close()

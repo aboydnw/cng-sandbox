@@ -335,6 +335,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
                 await job.scan_event.wait()
 
+                temporal_params = None
                 async with scan_store_lock:
                     if scan_id in scan_store:
                         scan_store[scan_id]["state"] = "converting"
@@ -357,8 +358,52 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                     return
 
             elif len(variables) == 1:
-                job.variable = variables[0]["name"]
-                job.group = variables[0].get("group", "")
+                v = variables[0]
+                job.variable = v["name"]
+                job.group = v.get("group", "")
+
+                if v.get("time_dim") and v["time_dim"]["size"] > 1:
+                    scan_id = str(uuid.uuid4())
+                    job.scan_result = {
+                        "scan_id": scan_id,
+                        "variables": variables,
+                    }
+                    job.scan_event = asyncio.Event()
+
+                    async with scan_store_lock:
+                        scan_store[scan_id] = {
+                            "path": input_path,
+                            "job": job,
+                            "created_at": dt.now(UTC),
+                            "variables": variables,
+                            "state": "waiting",
+                        }
+
+                    await job.scan_event.wait()
+
+                    temporal_params = None
+                    async with scan_store_lock:
+                        if scan_id in scan_store:
+                            scan_store[scan_id]["state"] = "converting"
+                            temporal_params = scan_store[scan_id].get(
+                                "temporal"
+                            )
+
+                    if temporal_params is not None:
+                        from src.services.temporal_pipeline import (
+                            run_infile_temporal_pipeline,
+                        )
+
+                        await run_infile_temporal_pipeline(
+                            job=job,
+                            input_path=input_path,
+                            variable=job.variable,
+                            group=job.group or "",
+                            start_index=temporal_params.start_index,
+                            end_index=temporal_params.end_index,
+                            db_session_factory=db_session_factory,
+                        )
+                        return
 
         # Upload raw file to S3
         storage.upload_raw(input_path, job.dataset_id, job.filename)

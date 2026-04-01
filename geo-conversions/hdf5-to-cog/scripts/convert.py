@@ -111,25 +111,27 @@ def convert(input_path: str, output_path: str, variable: str = "",
             )
 
         ds = grp[variable]
-        raw = ds[:]
-        if np.iscomplexobj(raw):
-            if verbose:
-                print(f"Complex dtype ({raw.dtype}) — converting to magnitude")
-            raw = np.abs(raw).astype(np.float32)
 
-        if raw.ndim == 3:
-            n_times = raw.shape[0]
+        if ds.ndim == 3:
+            n_times = ds.shape[0]
             if time_index >= n_times:
                 raise ValueError(
                     f"time_index {time_index} out of range (0-{n_times - 1})"
                 )
             if verbose:
                 print(f"Selected timestep {time_index}/{n_times - 1}")
-            data = raw[time_index].astype(np.float32)
-        elif raw.ndim == 2:
-            data = raw.astype(np.float32)
+            raw = ds[time_index, :, :]
+        elif ds.ndim == 2:
+            raw = ds[:]
         else:
-            raise ValueError(f"Expected 2D or 3D variable, got shape {raw.shape}")
+            raise ValueError(f"Expected 2D or 3D variable, got shape {ds.shape}")
+
+        if np.iscomplexobj(raw):
+            if verbose:
+                print(f"Complex dtype ({raw.dtype}) — converting to magnitude")
+            data = np.abs(raw).astype(np.float32)
+        else:
+            data = raw.astype(np.float32)
 
         nodata = float(ds.attrs.get("_FillValue", -9999.0))
 

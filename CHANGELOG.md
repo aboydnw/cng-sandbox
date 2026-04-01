@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/aboydnw/cng-sandbox/compare/v1.9.1...v1.9.2) (2026-04-01)
+
+
+### Bug Fixes
+
+* handle 3D HDF5 datasets in pixel fidelity validator ([#106](https://github.com/aboydnw/cng-sandbox/issues/106)) ([5461abb](https://github.com/aboydnw/cng-sandbox/commit/5461abb041e01818033ab99ceaa3b8620bb4dd1b))
+
 ## [1.9.1](https://github.com/aboydnw/cng-sandbox/compare/v1.9.0...v1.9.1) (2026-04-01)
 
 

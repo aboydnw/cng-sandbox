@@ -237,6 +237,35 @@ cd ingestion && uv run pytest -v
 - Uses GDAL internally. GDAL < 3.11 requires `AWS_S3_ENDPOINT` (hostname:port without protocol) for S3 access, in addition to `AWS_ENDPOINT_URL`.
 - `AWS_VIRTUAL_HOSTING=FALSE` is required for R2 (path-style access).
 
+## Agent Isolation & Worktrees
+
+All code changes happen in worktrees. The main session stays on `main` at all times.
+
+### Worktree directory
+
+Worktrees live in `.worktrees/` (already gitignored).
+
+### Lifecycle
+
+1. **Start work**: Create a worktree and branch at the beginning of every issue or feature. All code changes, commits, and pushes happen inside this worktree.
+   ```bash
+   git worktree add .worktrees/<branch-name> -b <branch-name>
+   ```
+2. **Open PR**: Push from the worktree and create the PR.
+3. **Monitor PR**: The monitoring loop runs in the main session (read-only `gh` commands, no isolation needed).
+4. **Fix review feedback**: When the monitoring loop detects feedback that needs code changes, spawn a subagent that works in the **existing worktree** — not a new one. Pass the worktree path so the subagent can `cd` into it, make fixes, commit, and push.
+5. **Post-merge cleanup**: After the PR is squash-merged, clean up from the main session:
+   ```bash
+   git worktree remove .worktrees/<branch-name>
+   git branch -D <branch-name>
+   ```
+
+### Rules
+
+- Never `git checkout` a feature branch in the main session. If you need to change code, do it in the worktree.
+- One worktree per branch. Multiple agents can work on different issues simultaneously without conflicts.
+- The monitoring loop must pass the worktree path when dispatching fix subagents so they reuse the same worktree and branch.
+
 ## Skill Feedback Loop
 
 When fixing bugs discovered during integration testing or E2E validation, **always propagate fixes back to the relevant conversion skills** in `geo-conversions/`. This is a core part of the validation/QA value of those skills.

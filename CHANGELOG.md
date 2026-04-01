@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.1](https://github.com/aboydnw/cng-sandbox/compare/v1.9.0...v1.9.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* add cache-control headers to prevent stale assets after deploy ([#102](https://github.com/aboydnw/cng-sandbox/issues/102)) ([e611bf6](https://github.com/aboydnw/cng-sandbox/commit/e611bf64824d453946c4665cd6db842f01f7e7a3))
+* rewrap 0-360 longitudes in NetCDF validator to match converter ([#104](https://github.com/aboydnw/cng-sandbox/issues/104)) ([84fd16f](https://github.com/aboydnw/cng-sandbox/commit/84fd16f2fc71ae468d30e9fffebaae7165e1896a)), closes [#101](https://github.com/aboydnw/cng-sandbox/issues/101)
+
 ## [1.9.0](https://github.com/aboydnw/cng-sandbox/compare/v1.8.1...v1.9.0) (2026-04-01)
 
 

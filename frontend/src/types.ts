@@ -94,12 +94,19 @@ export interface StageInfo {
   progress?: StageProgress;
 }
 
+export interface TimeDimInfo {
+  name: string;
+  size: number;
+  values: string[] | null;
+}
+
 export interface ScannedVariable {
   name: string;
   group: string;
   shape: number[];
   dtype: string;
   is_complex?: boolean;
+  time_dim: TimeDimInfo | null;
 }
 
 export interface ScanResult {

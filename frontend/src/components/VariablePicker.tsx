@@ -50,6 +50,13 @@ export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
               {v.shape.join(" × ")} · {v.dtype}
               {v.is_complex && " (magnitude will be extracted)"}
             </Text>
+            {v.time_dim && v.time_dim.size > 1 && (
+              <Text fontSize="12px" color="brand.orange" fontWeight={600} mt={1}>
+                {v.time_dim.size} timesteps
+                {v.time_dim.values &&
+                  ` · ${v.time_dim.values[0].slice(0, 10)} to ${v.time_dim.values[v.time_dim.values.length - 1].slice(0, 10)}`}
+              </Text>
+            )}
           </Box>
         ))}
       </Flex>

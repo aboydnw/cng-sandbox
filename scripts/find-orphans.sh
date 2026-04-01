@@ -24,15 +24,15 @@ if [[ "$MODE" == "--delete-workspace" ]]; then
   echo ""
 
   # Show what will be deleted
-  docker compose -f docker-compose.yml exec -T database \
-    psql -U sandbox -d postgis --no-align --tuples-only -c \
-    "SELECT COUNT(*) FROM datasets WHERE workspace_id = '$WS_ID';" \
-    | read DATASET_COUNT
+  DATASET_COUNT="$(docker compose -f docker-compose.yml exec -T database \
+    psql -v ws_id="$WS_ID" \
+    -U sandbox -d postgis --no-align --tuples-only -c \
+    "SELECT COUNT(*) FROM datasets WHERE workspace_id = :'ws_id';")"
 
-  docker compose -f docker-compose.yml exec -T database \
-    psql -U sandbox -d postgis --no-align --tuples-only -c \
-    "SELECT COUNT(*) FROM stories WHERE workspace_id = '$WS_ID';" \
-    | read STORY_COUNT
+  STORY_COUNT="$(docker compose -f docker-compose.yml exec -T database \
+    psql -v ws_id="$WS_ID" \
+    -U sandbox -d postgis --no-align --tuples-only -c \
+    "SELECT COUNT(*) FROM stories WHERE workspace_id = :'ws_id';")"
 
   echo "Found $DATASET_COUNT datasets and $STORY_COUNT stories"
 
@@ -43,8 +43,9 @@ if [[ "$MODE" == "--delete-workspace" ]]; then
 
   # Preview datasets
   docker compose -f docker-compose.yml exec -T database \
-    psql -U sandbox -d postgis -c \
-    "SELECT id, filename, dataset_type, created_at::date FROM datasets WHERE workspace_id = '$WS_ID' ORDER BY created_at;"
+    psql -v ws_id="$WS_ID" \
+    -U sandbox -d postgis -c \
+    "SELECT id, filename, dataset_type, created_at::date FROM datasets WHERE workspace_id = :'ws_id' ORDER BY created_at;"
 
   read -p "Delete everything in workspace $WS_ID? [y/N] " confirm
   if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -54,12 +55,14 @@ if [[ "$MODE" == "--delete-workspace" ]]; then
 
   # Get dataset IDs
   DS_IDS=$(docker compose -f docker-compose.yml exec -T database \
-    psql -U sandbox -d postgis --no-align --tuples-only -c \
-    "SELECT id FROM datasets WHERE workspace_id = '$WS_ID';")
+    psql -v ws_id="$WS_ID" \
+    -U sandbox -d postgis --no-align --tuples-only -c \
+    "SELECT id FROM datasets WHERE workspace_id = :'ws_id';")
 
   ST_IDS=$(docker compose -f docker-compose.yml exec -T database \
-    psql -U sandbox -d postgis --no-align --tuples-only -c \
-    "SELECT id FROM stories WHERE workspace_id = '$WS_ID';")
+    psql -v ws_id="$WS_ID" \
+    -U sandbox -d postgis --no-align --tuples-only -c \
+    "SELECT id FROM stories WHERE workspace_id = :'ws_id';")
 
   DS_JSON=$(echo "$DS_IDS" | awk 'NF{printf "\"%s\",",$0}' | sed 's/,$//')
   ST_JSON=$(echo "$ST_IDS" | awk 'NF{printf "\"%s\",",$0}' | sed 's/,$//')
@@ -101,6 +104,7 @@ async def main():
                 print(f'  Not found: {did}')
                 failed += 1
         except Exception as e:
+            session.rollback()
             print(f'  FAILED dataset {did}: {e}')
             failed += 1
 

@@ -33,6 +33,7 @@ async def cleanup_expired_rows(
         try:
             await delete_dataset(session, row.id, storage=storage)
         except Exception:
+            session.rollback()
             logger.exception("Failed cascading delete for dataset %s", row.id)
             continue
         deleted.append(row.id)

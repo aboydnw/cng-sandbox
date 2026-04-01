@@ -44,7 +44,13 @@ async def _cleanup_expired(app):
 
             session = app.state.db_session_factory()
             try:
-                storage = StorageService()
+                try:
+                    storage = StorageService()
+                except Exception:
+                    logger.exception(
+                        "Storage init failed; continuing without object-store cleanup"
+                    )
+                    storage = None
                 await cleanup_expired_rows(session, storage=storage)
             finally:
                 session.close()

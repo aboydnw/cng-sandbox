@@ -203,8 +203,8 @@ export default function UploadPage() {
           {mode === "variable-picker" && state.scanResult && (
             <VariablePicker
               variables={state.scanResult.variables}
-              onSelect={(variable, group) =>
-                confirmVariable(state.scanResult!.scan_id, variable, group)
+              onSelect={(variable, group, temporal) =>
+                confirmVariable(state.scanResult!.scan_id, variable, group, temporal)
               }
             />
           )}

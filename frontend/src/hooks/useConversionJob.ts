@@ -178,11 +178,16 @@ export function useConversionJob() {
       sseRetryCountRef.current = 0;
 
       if (data.variables.length === 1) {
-        confirmVariable(
-          data.scan_id,
-          data.variables[0].name,
-          data.variables[0].group
-        );
+        const v = data.variables[0];
+        if (v.time_dim && v.time_dim.size > 1) {
+          setState((prev) => ({
+            ...prev,
+            scanResult: data,
+            isUploading: false,
+          }));
+          return;
+        }
+        confirmVariable(data.scan_id, v.name, v.group);
         return;
       }
 
@@ -213,15 +218,23 @@ export function useConversionJob() {
   }, []);
 
   const confirmVariable = useCallback(
-    async (scanId: string, variable: string, group: string) => {
+    async (
+      scanId: string,
+      variable: string,
+      group: string,
+      temporal?: { start_index: number; end_index: number }
+    ) => {
       setState((prev) => ({ ...prev, scanResult: null }));
+
+      const body: Record<string, unknown> = { variable, group };
+      if (temporal) body.temporal = temporal;
 
       const resp = await fetchWithRetry(
         `${config.apiBase}/api/scan/${scanId}/convert`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ variable, group }),
+          body: JSON.stringify(body),
         }
       );
 

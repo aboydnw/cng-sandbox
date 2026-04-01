@@ -40,9 +40,12 @@ async def _cleanup_expired(app):
     while True:
         await asyncio.sleep(6 * 3600)
         try:
+            from src.services.storage import StorageService
+
             session = app.state.db_session_factory()
             try:
-                cleanup_expired_rows(session)
+                storage = StorageService()
+                await cleanup_expired_rows(session, storage=storage)
             finally:
                 session.close()
         except Exception:

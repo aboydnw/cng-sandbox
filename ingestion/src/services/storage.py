@@ -61,6 +61,21 @@ class StorageService:
         """Delete a single object from storage."""
         obstore.delete(self.store, key)
 
+    def list_prefixes(self, prefix: str) -> list[str]:
+        """List unique top-level 'directories' under a prefix.
+
+        For prefix="datasets/", returns dataset IDs like ["abc123", "def456"].
+        """
+        seen = set()
+        for chunk in obstore.list(self.store, prefix=prefix):
+            for item in chunk:
+                path = item["path"]
+                relative = path[len(prefix) :]
+                top_dir = relative.split("/")[0]
+                if top_dir:
+                    seen.add(top_dir)
+        return sorted(seen)
+
     def delete_prefix(self, prefix: str) -> None:
         """Delete all objects under a given prefix."""
         keys = []

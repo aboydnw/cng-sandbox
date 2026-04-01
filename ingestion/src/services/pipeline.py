@@ -385,9 +385,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                     async with scan_store_lock:
                         if scan_id in scan_store:
                             scan_store[scan_id]["state"] = "converting"
-                            temporal_params = scan_store[scan_id].get(
-                                "temporal"
-                            )
+                            temporal_params = scan_store[scan_id].get("temporal")
 
                     if temporal_params is not None:
                         from src.services.temporal_pipeline import (

@@ -242,16 +242,12 @@ def temporal_hdf5(tmp_path):
     path = tmp_path / "temporal.h5"
     with h5py.File(path, "w") as f:
         grp = f.create_group("science/data")
-        grp.create_dataset(
-            "temperature", data=np.zeros((6, 100, 80), dtype=np.float32)
-        )
+        grp.create_dataset("temperature", data=np.zeros((6, 100, 80), dtype=np.float32))
         grp.create_dataset("xCoordinates", data=np.linspace(0, 100, 80))
         grp.create_dataset("yCoordinates", data=np.linspace(0, 100, 100))
         grp.create_dataset(
             "time",
-            data=np.array(
-                [0, 1, 2, 3, 4, 5], dtype=np.float64
-            ),
+            data=np.array([0, 1, 2, 3, 4, 5], dtype=np.float64),
         )
         grp["time"].attrs["units"] = "days since 2020-01-01"
     return str(path)
@@ -264,9 +260,7 @@ def temporal_hdf5_no_time_dataset(tmp_path):
     path = tmp_path / "temporal_no_time.h5"
     with h5py.File(path, "w") as f:
         grp = f.create_group("data")
-        grp.create_dataset(
-            "values", data=np.zeros((10, 50, 40), dtype=np.float32)
-        )
+        grp.create_dataset("values", data=np.zeros((10, 50, 40), dtype=np.float32))
         grp.create_dataset("xCoordinates", data=np.linspace(0, 100, 40))
         grp.create_dataset("yCoordinates", data=np.linspace(0, 100, 50))
     return str(path)

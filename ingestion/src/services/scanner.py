@@ -46,9 +46,7 @@ def _find_time_dataset(grp: h5py.Group, root: h5py.File) -> dict | None:
                     import cftime
 
                     dates = cftime.num2date(ds[:], units)
-                    values = [
-                        d.strftime("%Y-%m-%dT%H:%M:%SZ") for d in dates
-                    ]
+                    values = [d.strftime("%Y-%m-%dT%H:%M:%SZ") for d in dates]
                 except (ValueError, TypeError, OverflowError):
                     pass
             return {"name": key, "size": size, "values": values}
@@ -79,7 +77,11 @@ def scan_hdf5(path: str) -> list[dict]:
             if obj.ndim == 3:
                 time_dim_info = _find_time_dataset(grp, f)
                 if time_dim_info is None:
-                    time_dim_info = {"name": "dim0", "size": obj.shape[0], "values": None}
+                    time_dim_info = {
+                        "name": "dim0",
+                        "size": obj.shape[0],
+                        "values": None,
+                    }
                 shape = list(obj.shape[1:])
             else:
                 time_dim_info = None
@@ -118,9 +120,7 @@ def scan_netcdf(path: str) -> list[dict]:
                 try:
                     values = [
                         v.isoformat().replace("+00:00", "") + "Z"
-                        for v in da[td].values.astype("datetime64[ms]").astype(
-                            "object"
-                        )
+                        for v in da[td].values.astype("datetime64[ms]").astype("object")
                     ]
                 except (ValueError, TypeError, OverflowError, AttributeError):
                     values = None

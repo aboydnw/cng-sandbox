@@ -15,7 +15,11 @@ interface VariablePickerProps {
 export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
   const [selectedVar, setSelectedVar] = useState<ScannedVariable | null>(null);
 
-  if (variables.length === 1 && variables[0].time_dim && variables[0].time_dim.size > 1) {
+  if (
+    variables.length === 1 &&
+    variables[0].time_dim &&
+    variables[0].time_dim.size > 1
+  ) {
     const v = variables[0];
     return (
       <TemporalRangePicker

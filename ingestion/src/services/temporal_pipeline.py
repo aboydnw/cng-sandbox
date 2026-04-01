@@ -63,9 +63,7 @@ def _read_time_values(
                 time_coord = ds[time_dims[0]]
                 return [
                     v.isoformat().replace("+00:00", "") + "Z"
-                    for v in time_coord.values.astype("datetime64[ms]").astype(
-                        "object"
-                    )
+                    for v in time_coord.values.astype("datetime64[ms]").astype("object")
                 ]
             finally:
                 ds.close()
@@ -145,7 +143,9 @@ def extract_temporal_cogs(
                 verbose=True,
             )
         else:
-            raise ValueError(f"Unsupported format pair for temporal extraction: {format_pair}")
+            raise ValueError(
+                f"Unsupported format pair for temporal extraction: {format_pair}"
+            )
 
         cog_paths.append(output_path)
 
@@ -254,8 +254,7 @@ async def run_infile_temporal_pipeline(
             job.status = JobStatus.READY
 
             timesteps = [
-                Timestep(datetime=dt, index=i)
-                for i, dt in enumerate(datetimes)
+                Timestep(datetime=dt, index=i) for i, dt in enumerate(datetimes)
             ]
 
             dataset = Dataset(

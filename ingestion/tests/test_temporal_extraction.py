@@ -11,9 +11,7 @@ def temporal_netcdf(tmp_path):
         {
             "temperature": (
                 ["time", "lat", "lon"],
-                np.stack(
-                    [np.full((180, 360), i, dtype=np.float32) for i in range(6)]
-                ),
+                np.stack([np.full((180, 360), i, dtype=np.float32) for i in range(6)]),
             ),
         },
         coords={

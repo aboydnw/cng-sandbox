@@ -8,6 +8,7 @@ interface RasterTileLayerOptions {
   isTemporalActive: boolean;
   timesteps?: Timestep[];
   activeTimestepIndex?: number;
+  renderIndices?: Set<number>;
   getLoadCallback?: (index: number) => () => void;
 }
 
@@ -18,6 +19,7 @@ export function buildRasterTileLayers({
   isTemporalActive,
   timesteps = [],
   activeTimestepIndex = 0,
+  renderIndices,
   getLoadCallback,
 }: RasterTileLayerOptions) {
   if (!isTemporalActive) {
@@ -30,12 +32,15 @@ export function buildRasterTileLayers({
     ];
   }
 
-  return timesteps.map((ts, i) =>
-    createCOGLayer({
-      id: `raster-ts-${i}`,
-      tileUrl: `${tileUrl}&datetime=${ts.datetime}`,
-      opacity: i === activeTimestepIndex ? opacity : 0,
-      onViewportLoad: getLoadCallback?.(i),
+  return timesteps
+    .map((ts, i) => {
+      if (renderIndices && !renderIndices.has(i)) return null;
+      return createCOGLayer({
+        id: `raster-ts-${i}`,
+        tileUrl: `${tileUrl}&datetime=${ts.datetime}`,
+        opacity: i === activeTimestepIndex ? opacity : 0,
+        onViewportLoad: getLoadCallback?.(i),
+      });
     })
-  );
+    .filter((l): l is NonNullable<typeof l> => l !== null);
 }

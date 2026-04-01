@@ -22,6 +22,7 @@ interface UseLayerBuilderOptions {
   isSingleBand: boolean;
   isMultiBand: boolean;
   activeTimestepIndex: number;
+  renderIndices?: Set<number>;
   getLoadCallback: (index: number) => () => void;
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   arrowTable: Table | null;
@@ -39,6 +40,7 @@ export function useLayerBuilder({
   isSingleBand,
   isMultiBand,
   activeTimestepIndex,
+  renderIndices,
   getLoadCallback,
   tileCacheRef,
   arrowTable,
@@ -168,6 +170,7 @@ export function useLayerBuilder({
         isTemporalActive: ds.is_temporal,
         timesteps: ds.timesteps,
         activeTimestepIndex,
+        renderIndices,
         getLoadCallback,
       });
     }
@@ -195,6 +198,7 @@ export function useLayerBuilder({
     colormapName,
     effectiveBand,
     activeTimestepIndex,
+    renderIndices,
     geojson,
     onVectorClick,
     getLoadCallback,

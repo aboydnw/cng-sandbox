@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/aboydnw/cng-sandbox/compare/v1.8.0...v1.8.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* simplify progress indicators to elapsed timers with context labels ([#90](https://github.com/aboydnw/cng-sandbox/issues/90)) ([1802d4f](https://github.com/aboydnw/cng-sandbox/commit/1802d4f64ba09f7cf10ad4825d45a75aa3950061))
+
 ## [1.8.0](https://github.com/aboydnw/cng-sandbox/compare/v1.7.0...v1.8.0) (2026-03-31)
 
 

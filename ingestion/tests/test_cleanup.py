@@ -131,10 +131,13 @@ async def test_continues_on_delete_failure(db_session):
     with patch(
         "src.services.cleanup.delete_dataset", new_callable=AsyncMock
     ) as mock_delete:
-        mock_delete.side_effect = [
-            RuntimeError("STAC unreachable"),
-            {"deleted": True, "affected_stories": []},
-        ]
+
+        async def side_effect_fn(session, dataset_id, storage=None):
+            if dataset_id == "fail-ds":
+                raise RuntimeError("STAC unreachable")
+            return {"deleted": True, "affected_stories": []}
+
+        mock_delete.side_effect = side_effect_fn
         deleted = await cleanup_expired_rows(db_session, ttl_days=30)
 
     assert "fail-ds" not in deleted

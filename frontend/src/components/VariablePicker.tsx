@@ -34,15 +34,27 @@ export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
 
   if (selectedVar?.time_dim && selectedVar.time_dim.size > 1) {
     return (
-      <TemporalRangePicker
-        timeDim={selectedVar.time_dim}
-        onConfirm={(start, end) =>
-          onSelect(selectedVar.name, selectedVar.group, {
-            start_index: start,
-            end_index: end,
-          })
-        }
-      />
+      <Box>
+        <Text
+          fontSize="13px"
+          color="brand.orange"
+          cursor="pointer"
+          mb={2}
+          px={8}
+          onClick={() => setSelectedVar(null)}
+        >
+          &larr; Back to variables
+        </Text>
+        <TemporalRangePicker
+          timeDim={selectedVar.time_dim}
+          onConfirm={(start, end) =>
+            onSelect(selectedVar.name, selectedVar.group, {
+              start_index: start,
+              end_index: end,
+            })
+          }
+        />
+      </Box>
     );
   }
 
@@ -104,6 +116,7 @@ export function VariablePicker({ variables, onSelect }: VariablePickerProps) {
               >
                 {v.time_dim.size} timesteps
                 {v.time_dim.values &&
+                  v.time_dim.values.length > 0 &&
                   ` · ${v.time_dim.values[0].slice(0, 10)} to ${v.time_dim.values[v.time_dim.values.length - 1].slice(0, 10)}`}
               </Text>
             )}

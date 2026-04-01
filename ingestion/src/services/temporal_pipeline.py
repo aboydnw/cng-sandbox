@@ -73,25 +73,39 @@ def _read_time_values(
 
             with h5py.File(input_path, "r") as f:
                 grp = f[group] if group else f
-                time_names = ["time", "Time", "TIME", "t"]
+                time_names = {"time", "t", "datetime"}
+
+                candidates = [grp]
+                parent_path = grp.name
+                while parent_path and parent_path != "/":
+                    parent_path = parent_path.rsplit("/", 1)[0] or "/"
+                    candidates.append(f[parent_path])
+
                 time_ds = None
-                for name in time_names:
-                    if name in grp and isinstance(grp[name], h5py.Dataset):
-                        time_ds = grp[name]
+                for cand in candidates:
+                    for key in cand:
+                        if key.lower() in time_names and isinstance(
+                            cand[key], h5py.Dataset
+                        ):
+                            time_ds = cand[key]
+                            break
+                    if time_ds is not None:
                         break
+
                 if time_ds is None:
                     return None
 
                 raw_times = time_ds[:]
                 units = time_ds.attrs.get("units", None)
                 if units is not None:
-                    units = units.decode() if isinstance(units, bytes) else str(units)
+                    if isinstance(units, bytes):
+                        units = units.decode()
                     try:
                         import cftime
 
                         decoded = cftime.num2date(raw_times, units)
-                        return [t.isoformat() + "Z" for t in decoded]
-                    except Exception:
+                        return [t.strftime("%Y-%m-%dT%H:%M:%SZ") for t in decoded]
+                    except (ValueError, TypeError, OverflowError):
                         pass
                 return None
     except Exception:
@@ -152,7 +166,12 @@ def extract_temporal_cogs(
         if time_values is not None and time_idx < len(time_values):
             datetimes.append(time_values[time_idx])
         else:
-            datetimes.append(f"1970-01-{(i + 1):02d}T00:00:00Z")
+            from datetime import UTC as _UTC
+            from datetime import datetime as _dt
+            from datetime import timedelta
+
+            fallback = _dt(1970, 1, 1, tzinfo=_UTC) + timedelta(days=i)
+            datetimes.append(fallback.strftime("%Y-%m-%dT%H:%M:%SZ"))
 
         if on_progress is not None:
             on_progress(i + 1, count)

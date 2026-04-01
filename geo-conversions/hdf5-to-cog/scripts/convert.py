@@ -114,7 +114,7 @@ def convert(input_path: str, output_path: str, variable: str = "",
 
         if ds.ndim == 3:
             n_times = ds.shape[0]
-            if time_index >= n_times:
+            if time_index < 0 or time_index >= n_times:
                 raise ValueError(
                     f"time_index {time_index} out of range (0-{n_times - 1})"
                 )

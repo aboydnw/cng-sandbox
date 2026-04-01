@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Check, SpinnerGap, X } from "@phosphor-icons/react";
-import { formatBytes } from "../lib/format";
+import { formatBytes } from "../utils/format";
 import type { StageInfo, StageProgress } from "../types";
 
 interface ProgressTrackerProps {

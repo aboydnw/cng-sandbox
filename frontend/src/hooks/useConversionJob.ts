@@ -7,7 +7,7 @@ import type {
   ScanResult,
 } from "../types";
 import { config } from "../config";
-import { workspaceFetch, getWorkspaceId } from "../lib/api";
+import { workspaceFetch } from "../lib/api";
 
 export async function fetchWithRetry(
   input: RequestInfo,
@@ -96,21 +96,6 @@ function updateStages(
   return [{ name: "Uploading", status: "done" as const }, ...pipelineStages];
 }
 
-function updateUploadProgress(loaded: number, total: number): StageInfo[] {
-  return [
-    {
-      name: "Uploading",
-      status: "active" as const,
-      progress: {
-        percent: Math.round((loaded / total) * 100),
-        current: loaded,
-        total,
-        detail: null,
-      },
-    },
-    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
-  ];
-}
 
 export function useConversionJob() {
   const [state, setState] = useState<ConversionJobState>({
@@ -269,59 +254,35 @@ export function useConversionJob() {
       const formData = new FormData();
       formData.append("file", file);
 
-      try {
-        const { jobId, datasetId } = await new Promise<{
-          jobId: string;
-          datasetId: string;
-        }>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              setState((prev) => ({
-                ...prev,
-                stages: updateUploadProgress(e.loaded, e.total),
-              }));
-            }
-          };
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const data = JSON.parse(xhr.responseText);
-              resolve({ jobId: data.job_id, datasetId: data.dataset_id });
-            } else {
-              try {
-                const data = JSON.parse(xhr.responseText);
-                reject(new Error(data.detail || "Upload failed"));
-              } catch {
-                reject(new Error("Upload failed"));
-              }
-            }
-          };
-          xhr.onerror = () => reject(new Error("Upload failed"));
-          xhr.open("POST", `${config.apiBase}/api/upload`);
-          const wsId = getWorkspaceId();
-          if (wsId) xhr.setRequestHeader("X-Workspace-Id", wsId);
-          xhr.send(formData);
-        });
+      const resp = await fetchWithRetry(`${config.apiBase}/api/upload`, {
+        method: "POST",
+        body: formData,
+      });
 
-        datasetIdRef.current = datasetId;
-        setState((prev) => ({
-          ...prev,
-          jobId,
-          datasetId: null,
-          status: "pending",
-          error: null,
-        }));
-        connectSSE(jobId);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Upload failed";
+      if (!resp.ok) {
+        const detail = await resp
+          .json()
+          .catch(() => ({ detail: "Upload failed" }));
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: msg,
-          stages: buildUploadFailedStages(msg),
+          error: detail.detail || "Upload failed",
+          stages: buildUploadFailedStages(detail.detail),
         }));
+        return;
       }
+
+      const { job_id, dataset_id } = await resp.json();
+      datasetIdRef.current = dataset_id;
+      setState((prev) => ({
+        ...prev,
+        jobId: job_id,
+        datasetId: null,
+        status: "pending",
+        error: null,
+      }));
+      connectSSE(job_id);
     },
     [connectSSE]
   );
@@ -397,59 +358,38 @@ export function useConversionJob() {
         formData.append("files", file);
       }
 
-      try {
-        const { jobId, datasetId } = await new Promise<{
-          jobId: string;
-          datasetId: string;
-        }>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              setState((prev) => ({
-                ...prev,
-                stages: updateUploadProgress(e.loaded, e.total),
-              }));
-            }
-          };
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const data = JSON.parse(xhr.responseText);
-              resolve({ jobId: data.job_id, datasetId: data.dataset_id });
-            } else {
-              try {
-                const data = JSON.parse(xhr.responseText);
-                reject(new Error(data.detail || "Upload failed"));
-              } catch {
-                reject(new Error("Upload failed"));
-              }
-            }
-          };
-          xhr.onerror = () => reject(new Error("Upload failed"));
-          xhr.open("POST", `${config.apiBase}/api/upload-temporal`);
-          const wsId = getWorkspaceId();
-          if (wsId) xhr.setRequestHeader("X-Workspace-Id", wsId);
-          xhr.send(formData);
-        });
+      const resp = await fetchWithRetry(
+        `${config.apiBase}/api/upload-temporal`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-        datasetIdRef.current = datasetId;
-        setState((prev) => ({
-          ...prev,
-          jobId,
-          datasetId: null,
-          status: "pending",
-          error: null,
-        }));
-        connectSSE(jobId);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Upload failed";
+      if (!resp.ok) {
+        const detail = await resp
+          .json()
+          .catch(() => ({ detail: "Upload failed" }));
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: msg,
-          stages: buildUploadFailedStages(msg),
+          error: detail.detail || "Upload failed",
+          stages: buildUploadFailedStages(detail.detail),
         }));
+        return;
       }
+
+      const { job_id, dataset_id } = await resp.json();
+      datasetIdRef.current = dataset_id;
+      setState((prev) => ({
+        ...prev,
+        jobId: job_id,
+        datasetId: null,
+        status: "pending",
+        error: null,
+      }));
+      connectSSE(job_id);
     },
     [connectSSE]
   );

@@ -3,7 +3,6 @@
 import argparse
 import os
 import sys
-from collections.abc import Callable
 
 _REQUIRED = {"geopandas": "geopandas", "pyarrow": "pyarrow", "shapely": "shapely"}
 _missing = []
@@ -21,27 +20,6 @@ import tempfile
 import zipfile
 
 import geopandas as gpd
-import pyarrow.parquet as pq
-
-
-def _write_parquet_chunked(
-    gdf: gpd.GeoDataFrame,
-    output_path: str,
-    on_progress: Callable[[int], None],
-    chunk_size: int = 1000,
-):
-    """Write GeoParquet in chunks, calling on_progress(features_written) after each."""
-    table = gdf.to_arrow()
-    total = len(table)
-
-    writer = pq.ParquetWriter(output_path, table.schema)
-    try:
-        for start in range(0, total, chunk_size):
-            end = min(start + chunk_size, total)
-            writer.write_table(table.slice(start, end - start))
-            on_progress(end)
-    finally:
-        writer.close()
 
 
 def _find_shp_in_zip(zip_path: str, extract_dir: str) -> str:
@@ -55,12 +33,7 @@ def _find_shp_in_zip(zip_path: str, extract_dir: str) -> str:
     raise FileNotFoundError(f"No .shp file found inside {zip_path}")
 
 
-def convert(
-    input_path: str,
-    output_path: str,
-    verbose: bool = False,
-    on_progress: Callable[[int], None] | None = None,
-):
+def convert(input_path: str, output_path: str, verbose: bool = False):
     """Convert a Shapefile (or zipped Shapefile) to GeoParquet."""
     if verbose:
         print(f"Reading Shapefile: {input_path}")
@@ -83,14 +56,7 @@ def convert(
         print(f"  Geometry type(s): {gdf.geometry.geom_type.unique().tolist()}")
         print(f"Writing GeoParquet: {output_path}")
 
-    if on_progress is not None:
-        try:
-            _write_parquet_chunked(gdf, output_path, on_progress)
-        except Exception:
-            gdf.to_parquet(output_path)
-            on_progress(len(gdf))
-    else:
-        gdf.to_parquet(output_path)
+    gdf.to_parquet(output_path)
 
     size_mb = os.path.getsize(output_path) / (1024 * 1024)
     print(f"Output: {output_path} ({size_mb:.2f} MB)")

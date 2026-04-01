@@ -56,15 +56,34 @@ def scan_netcdf(path: str) -> list[dict]:
     with xr.open_dataset(path) as ds:
         for name in ds.data_vars:
             da = ds[name]
+            time_dims = [d for d in da.dims if d.lower() in ("time", "t")]
             spatial_dims = [d for d in da.dims if d.lower() not in ("time", "t")]
             if len(spatial_dims) < 2:
                 continue
+
+            time_dim_info = None
+            if len(time_dims) == 1 and len(spatial_dims) == 2:
+                td = time_dims[0]
+                size = da.sizes[td]
+                try:
+                    values = [
+                        v.isoformat().replace("+00:00", "") + "Z"
+                        for v in da[td].values.astype("datetime64[ms]").astype(
+                            "object"
+                        )
+                    ]
+                except (ValueError, TypeError, OverflowError):
+                    values = None
+                time_dim_info = {"name": str(td), "size": size, "values": values}
+
+            spatial_shape = [da.sizes[d] for d in spatial_dims]
             variables.append(
                 {
                     "name": str(name),
                     "group": "",
-                    "shape": list(da.shape),
+                    "shape": spatial_shape,
                     "dtype": str(da.dtype),
+                    "time_dim": time_dim_info,
                 }
             )
     return variables

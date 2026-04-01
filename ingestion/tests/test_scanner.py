@@ -124,3 +124,80 @@ def test_scan_hdf5_real_variables_not_complex(sample_hdf5):
     variables = scan_hdf5(sample_hdf5)
     for v in variables:
         assert v["is_complex"] is False
+
+
+@pytest.fixture
+def temporal_netcdf(tmp_path):
+    import xarray as xr
+
+    path = tmp_path / "temporal.nc"
+    ds = xr.Dataset(
+        {
+            "temperature": (
+                ["time", "lat", "lon"],
+                np.zeros((12, 10, 20), dtype=np.float32),
+            ),
+            "precipitation": (
+                ["time", "lat", "lon"],
+                np.ones((12, 10, 20), dtype=np.float32),
+            ),
+        },
+        coords={
+            "time": xr.date_range("2020-01-01", periods=12, freq="MS"),
+            "lat": np.linspace(-10, 10, 10),
+            "lon": np.linspace(-20, 20, 20),
+        },
+    )
+    ds.to_netcdf(str(path))
+    return str(path)
+
+
+@pytest.fixture
+def single_timestep_netcdf(tmp_path):
+    import xarray as xr
+
+    path = tmp_path / "single_t.nc"
+    ds = xr.Dataset(
+        {
+            "temperature": (
+                ["time", "lat", "lon"],
+                np.zeros((1, 10, 20), dtype=np.float32),
+            ),
+        },
+        coords={
+            "time": xr.date_range("2020-01-01", periods=1, freq="MS"),
+            "lat": np.linspace(-10, 10, 10),
+            "lon": np.linspace(-20, 20, 20),
+        },
+    )
+    ds.to_netcdf(str(path))
+    return str(path)
+
+
+def test_scan_netcdf_detects_time_dimension(temporal_netcdf):
+    from src.services.scanner import scan_netcdf
+
+    variables = scan_netcdf(temporal_netcdf)
+    temp = next(v for v in variables if v["name"] == "temperature")
+    assert temp["time_dim"] is not None
+    assert temp["time_dim"]["name"] == "time"
+    assert temp["time_dim"]["size"] == 12
+    assert len(temp["time_dim"]["values"]) == 12
+    assert temp["time_dim"]["values"][0] == "2020-01-01T00:00:00Z"
+    assert temp["shape"] == [10, 20]
+
+
+def test_scan_netcdf_no_time_dim_returns_null(sample_netcdf):
+    from src.services.scanner import scan_netcdf
+
+    variables = scan_netcdf(sample_netcdf)
+    for v in variables:
+        assert v["time_dim"] is None
+
+
+def test_scan_netcdf_single_timestep_returns_size_one(single_timestep_netcdf):
+    from src.services.scanner import scan_netcdf
+
+    variables = scan_netcdf(single_timestep_netcdf)
+    temp = variables[0]
+    assert temp["time_dim"]["size"] == 1

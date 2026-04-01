@@ -139,6 +139,9 @@ def check_bounds_match(input_path: str, output_path: str, variable: str | None =
 
     lats = da[lat_names[0]].values
     lons = da[lon_names[0]].values
+    # Rewrap 0-360 longitudes to -180-180 to match converter output
+    if float(lons.max()) > 180:
+        lons = (lons + 180) % 360 - 180
     nc_bounds = (float(lons.min()), float(lats.min()), float(lons.max()), float(lats.max()))
     ds.close()
 
@@ -292,9 +295,15 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
 
     else:
         lat_names = [d for d in da.dims if d.lower() in ("lat", "latitude", "y")]
+        lon_names = [d for d in da.dims if d.lower() in ("lon", "longitude", "x")]
         lats = da[lat_names[0]].values
         if lats[0] < lats[-1]:
             da = da.isel({lat_names[0]: slice(None, None, -1)})
+        # Rewrap 0-360 longitudes to -180-180 and re-sort to match converter output
+        lons = da[lon_names[0]].values
+        if float(lons.max()) > 180:
+            da = da.assign_coords({lon_names[0]: (da[lon_names[0]].values + 180) % 360 - 180})
+            da = da.sortby(lon_names[0])
 
         nc_data = da.values.astype(np.float32)
         ds.close()
@@ -522,6 +531,23 @@ def generate_projected_netcdf(path: str):
     ds.close()
 
 
+def generate_wrapped_longitude_netcdf(path: str):
+    """Generate a synthetic NetCDF with 0-360 longitude convention."""
+    rng = np.random.default_rng(321)
+    lats = np.linspace(45, -45, 64)
+    lons = np.linspace(0.25, 359.75, 128)  # 0-360 convention
+
+    data = rng.standard_normal((64, 128)).astype(np.float32)
+
+    ds = xr.Dataset(
+        {"sst": (["lat", "lon"], data, {"_FillValue": np.float32(-9999.0)})},
+        coords={"lat": lats, "lon": lons},
+    )
+    ds.attrs["crs"] = "EPSG:4326"
+    ds.to_netcdf(path)
+    ds.close()
+
+
 def run_self_test() -> bool:
     """Generate synthetic NetCDFs, convert, and validate."""
     print("Running self-test...")
@@ -606,6 +632,21 @@ def run_self_test() -> bool:
                 b = dst.bounds
                 print(f"Reprojected to EPSG:4326: ({b.left:.2f}, {b.bottom:.2f}, "
                       f"{b.right:.2f}, {b.top:.2f})")
+
+        # Test 4: Geographic NetCDF with 0-360 longitude convention
+        print("\n--- Test 4: Geographic NetCDF (0-360 longitudes) ---")
+        wrap_input = os.path.join(tmpdir, "test_wrapped_lon.nc")
+        wrap_output = os.path.join(tmpdir, "test_wrapped_lon.tif")
+
+        print("Generating synthetic 0-360 longitude NetCDF (64x128)...")
+        generate_wrapped_longitude_netcdf(wrap_input)
+
+        print("Converting 'sst' variable to COG (should rewrap to -180-180)...")
+        convert_mod.convert(wrap_input, wrap_output, variable="sst", verbose=True)
+
+        print("Validating rewrapped COG...")
+        if not run_validation(wrap_input, wrap_output, variable="sst"):
+            all_passed = False
 
     return all_passed
 

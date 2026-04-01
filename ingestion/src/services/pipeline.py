@@ -10,7 +10,6 @@ import logging
 import os
 import tempfile
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC
 
@@ -39,14 +38,6 @@ VALIDATION_CHECK_COUNTS: dict[FormatPair, int] = {
     FormatPair.GEOJSON_TO_GEOPARQUET: 10,
     FormatPair.SHAPEFILE_TO_GEOPARQUET: 10,
 }
-
-
-def _estimate_output_size(input_path: str, format_pair: FormatPair) -> int:
-    """Estimate the output file size based on input size and format pair."""
-    input_size = os.path.getsize(input_path)
-    if format_pair.dataset_type == DatasetType.VECTOR:
-        return max(input_size // 4, 1)
-    return input_size
 
 
 def validate_geojson_structure(raw_bytes: bytes) -> None:
@@ -366,70 +357,19 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = os.path.join(tmpdir, out_filename)
 
-            estimated_size = _estimate_output_size(input_path, format_pair)
-
-            async def _monitor_file_size(
-                path: str, estimated: int, done_event: asyncio.Event
-            ):
-                """Poll output file size and update job.stage_progress."""
-                while not done_event.is_set():
-                    try:
-                        current = os.path.getsize(path)
-                        pct = min(int(current / estimated * 100), 99)
-                        job.stage_progress = StageProgress(percent=pct)
-                    except OSError:
-                        pass
-                    await asyncio.sleep(0.5)
-
-            if format_pair.dataset_type == DatasetType.RASTER:
-                # Raster: monitor output file size growth
-                done_event = asyncio.Event()
-                monitor_task = asyncio.create_task(
-                    _monitor_file_size(output_path, estimated_size, done_event)
-                )
-                try:
-                    await asyncio.to_thread(
-                        _import_and_convert,
-                        format_pair,
-                        input_path,
-                        output_path,
-                        variable=job.variable,
-                        group=job.group,
-                    )
-                finally:
-                    done_event.set()
-                    await monitor_task
-                job.stage_progress = StageProgress(percent=100)
-            else:
-                # Vector: count features then convert with progress callback
-                feature_total = await asyncio.to_thread(
-                    _count_features, input_path, format_pair
-                )
-                if feature_total:
-                    job.stage_progress = StageProgress(current=0, total=feature_total)
-
-                def _on_progress(written: int):
-                    if feature_total:
-                        job.stage_progress = StageProgress(
-                            current=written, total=feature_total
-                        )
-                    else:
-                        job.stage_progress = StageProgress(percent=None)
-
-                await asyncio.to_thread(
-                    _import_and_convert,
-                    format_pair,
-                    input_path,
-                    output_path,
-                    variable=job.variable,
-                    group=job.group,
-                    on_progress=_on_progress,
-                )
+            await asyncio.to_thread(
+                _import_and_convert,
+                format_pair,
+                input_path,
+                output_path,
+                variable=job.variable,
+                group=job.group,
+            )
 
             # Stage 3: Validate
             job.status = JobStatus.VALIDATING
             check_count = VALIDATION_CHECK_COUNTS.get(format_pair, 0)
-            job.stage_progress = StageProgress(current=0, total=check_count)
+            job.stage_progress = StageProgress(detail=f"{check_count} checks")
             check_results = await asyncio.to_thread(
                 _import_and_validate,
                 format_pair,
@@ -438,7 +378,6 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 variable=job.variable,
                 group=job.group,
             )
-            job.stage_progress = StageProgress(current=check_count, total=check_count)
             job.validation_results = [
                 ValidationCheck(name=c.name, passed=c.passed, detail=c.detail)
                 for c in check_results
@@ -513,7 +452,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
             # Stage 4: Ingest
             job.status = JobStatus.INGESTING
-            job.stage_progress = StageProgress(detail="uploading")
+            job.stage_progress = StageProgress(detail="storing")
 
             converted_key = await asyncio.to_thread(
                 storage.upload_converted, output_path, job.dataset_id, out_filename
@@ -636,24 +575,12 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
             await asyncio.sleep(1.0)
 
 
-def _count_features(input_path: str, format_pair: FormatPair) -> int | None:
-    """Count features in a vector file for progress reporting."""
-    try:
-        import fiona
-
-        with fiona.open(input_path) as src:
-            return len(src)
-    except Exception:
-        return None
-
-
 def _import_and_convert(
     format_pair: FormatPair,
     input_path: str,
     output_path: str,
     variable: str | None = None,
     group: str | None = None,
-    on_progress: Callable[[int], None] | None = None,
 ) -> None:
     """Import the appropriate cng-toolkit converter and run it."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
@@ -663,11 +590,11 @@ def _import_and_convert(
     elif format_pair == FormatPair.SHAPEFILE_TO_GEOPARQUET:
         from shapefile_to_geoparquet import convert
 
-        convert(input_path, output_path, verbose=True, on_progress=on_progress)
+        convert(input_path, output_path, verbose=True)
     elif format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
         from geojson_to_geoparquet import convert
 
-        convert(input_path, output_path, verbose=True, on_progress=on_progress)
+        convert(input_path, output_path, verbose=True)
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import convert
 

@@ -7,15 +7,21 @@ from sqlalchemy.orm import Session
 
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
+from src.services.dataset_delete import delete_dataset
+from src.services.storage import StorageService
 
 logger = logging.getLogger(__name__)
 
 
-def cleanup_expired_rows(
+async def cleanup_expired_rows(
     session: Session,
     ttl_days: int = 30,
+    storage: StorageService | None = None,
 ) -> list[str]:
-    """Delete datasets and stories older than ttl_days. Returns list of deleted IDs."""
+    """Delete expired datasets (with full cascading cleanup) and stories.
+
+    Returns list of deleted IDs.
+    """
     cutoff = datetime.now(UTC) - timedelta(days=ttl_days)
     deleted = []
 
@@ -24,7 +30,12 @@ def cleanup_expired_rows(
     )
     for row in expired_datasets:
         logger.info("Cleaning up expired dataset %s (%s)", row.id, row.filename)
-        session.delete(row)
+        try:
+            await delete_dataset(session, row.id, storage=storage)
+        except Exception:
+            session.rollback()
+            logger.exception("Failed cascading delete for dataset %s", row.id)
+            continue
         deleted.append(row.id)
 
     expired_stories = session.query(StoryRow).filter(StoryRow.created_at < cutoff).all()
@@ -33,8 +44,10 @@ def cleanup_expired_rows(
         session.delete(row)
         deleted.append(row.id)
 
-    if deleted:
+    if expired_stories:
         session.commit()
+
+    if deleted:
         logger.info("Cleaned up %d expired rows", len(deleted))
 
     return deleted

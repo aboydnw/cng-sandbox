@@ -18,9 +18,46 @@ _COORD_NAMES = {
     "easegridrowindex",
 }
 
+_TIME_NAMES = {"time", "t", "datetime"}
+
+
+def _find_time_dataset(grp: h5py.Group, root: h5py.File) -> dict | None:
+    """Search grp and its ancestors for a 1D time dataset."""
+    candidates = [grp]
+    parent_path = grp.name
+    while parent_path and parent_path != "/":
+        parent_path = parent_path.rsplit("/", 1)[0] or "/"
+        candidates.append(root[parent_path])
+
+    for group in candidates:
+        for key in group.keys():
+            if key.lower() not in _TIME_NAMES:
+                continue
+            ds = group[key]
+            if not isinstance(ds, h5py.Dataset) or ds.ndim != 1:
+                continue
+            size = ds.shape[0]
+            units = ds.attrs.get("units", None)
+            values = None
+            if units is not None:
+                try:
+                    import cftime
+
+                    dates = cftime.num2date(ds[:], units)
+                    values = [
+                        d.isoformat().replace("+00:00", "") + "Z"
+                        if "+" in d.isoformat()
+                        else d.isoformat() + "Z"
+                        for d in dates
+                    ]
+                except Exception:
+                    pass
+            return {"name": key, "size": size, "values": values}
+    return None
+
 
 def scan_hdf5(path: str) -> list[dict]:
-    """Walk an HDF5 file and return eligible 2D raster variables."""
+    """Walk an HDF5 file and return eligible 2D/3D raster variables."""
     variables = []
     with h5py.File(path, "r") as f:
 
@@ -31,18 +68,32 @@ def scan_hdf5(path: str) -> list[dict]:
                 return
             if obj.dtype.kind in ("S", "U", "O"):
                 return
-            is_complex = obj.dtype.kind == "c"
             basename = name.rsplit("/", 1)[-1]
             if basename.lower() in _COORD_NAMES:
                 return
-            group = name.rsplit("/", 1)[0] if "/" in name else ""
+            if basename.lower() in _TIME_NAMES:
+                return
+            is_complex = obj.dtype.kind == "c"
+            group_path = name.rsplit("/", 1)[0] if "/" in name else ""
+            grp = f[group_path] if group_path else f
+
+            if obj.ndim == 3:
+                time_dim_info = _find_time_dataset(grp, f)
+                if time_dim_info is None:
+                    time_dim_info = {"name": "dim0", "size": obj.shape[0], "values": None}
+                shape = list(obj.shape[1:])
+            else:
+                time_dim_info = None
+                shape = list(obj.shape)
+
             variables.append(
                 {
                     "name": basename,
-                    "group": group,
-                    "shape": list(obj.shape),
+                    "group": group_path,
+                    "shape": shape,
                     "dtype": str(obj.dtype),
                     "is_complex": is_complex,
+                    "time_dim": time_dim_info,
                 }
             )
 
@@ -72,7 +123,7 @@ def scan_netcdf(path: str) -> list[dict]:
                             "object"
                         )
                     ]
-                except (ValueError, TypeError, OverflowError):
+                except Exception:
                     values = None
                 time_dim_info = {"name": str(td), "size": size, "values": values}
 

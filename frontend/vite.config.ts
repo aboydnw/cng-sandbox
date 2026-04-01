@@ -22,6 +22,7 @@ export default defineConfig({
       },
       "/cog": {
         target: process.env.COG_TILER_PROXY_TARGET || "http://localhost:8084",
+        rewrite: (path: string) => path.replace(/^\/cog/, ""),
         configure: (proxy) => {
           proxy.on("proxyRes", (proxyRes) => {
             proxyRes.headers["cache-control"] = "no-store";

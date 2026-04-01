@@ -51,6 +51,7 @@
 		basic_auth {
 			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
 		}
+		uri strip_prefix /cog
 		reverse_proxy cog-tiler:80 {
 			header_down Cache-Control "no-store"
 		}

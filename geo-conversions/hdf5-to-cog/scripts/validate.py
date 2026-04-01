@@ -93,7 +93,8 @@ def check_overviews(output_path: str, min_levels: int = 3) -> CheckResult:
 
 
 def check_pixel_fidelity(input_path: str, output_path: str, variable: str = "",
-                          group: str = "", n: int = 1000, tolerance: float = 0.5) -> CheckResult:
+                          group: str = "", time_index: int = 0,
+                          n: int = 1000, tolerance: float = 0.5) -> CheckResult:
     """Sample random pixels from HDF5, reproject coords, compare against COG values."""
     _X_NAMES = ["xcoordinates", "x", "longitude", "lon"]
     _Y_NAMES = ["ycoordinates", "y", "latitude", "lat"]
@@ -102,7 +103,16 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str = "",
         grp = f[group] if group else f
 
         ds = grp[variable]
-        raw = ds[:]
+        if ds.ndim == 2:
+            raw = ds[:]
+        elif ds.ndim == 3:
+            if time_index < 0 or time_index >= ds.shape[0]:
+                return CheckResult("Pixel fidelity", False,
+                                   f"time_index {time_index} out of range [0, {ds.shape[0]})")
+            raw = ds[time_index, :, :]
+        else:
+            return CheckResult("Pixel fidelity", False,
+                               f"Unsupported dataset dimensionality: {ds.ndim}D (expected 2D or 3D)")
         if np.iscomplexobj(raw):
             src_data = np.abs(raw).astype(np.float32)
         else:
@@ -211,7 +221,7 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str = "",
 
 
 def run_checks(input_path: str, output_path: str, variable: str = "",
-               group: str = "") -> list[CheckResult]:
+               group: str = "", time_index: int = 0) -> list[CheckResult]:
     """Run all validation checks and return structured results."""
     return [
         check_cog_valid(output_path),
@@ -220,7 +230,8 @@ def run_checks(input_path: str, output_path: str, variable: str = "",
         check_band_count(output_path),
         check_nodata_present(output_path),
         check_overviews(output_path),
-        check_pixel_fidelity(input_path, output_path, variable=variable, group=group),
+        check_pixel_fidelity(input_path, output_path, variable=variable,
+                             group=group, time_index=time_index),
     ]
 
 
@@ -251,9 +262,10 @@ def print_report(results: list[CheckResult]):
 
 
 def run_validation(input_path: str, output_path: str, variable: str = "",
-                   group: str = "") -> bool:
+                   group: str = "", time_index: int = 0) -> bool:
     """Run all validation checks and print report."""
-    results = run_checks(input_path, output_path, variable=variable, group=group)
+    results = run_checks(input_path, output_path, variable=variable, group=group,
+                         time_index=time_index)
     return print_report(results)
 
 
@@ -263,6 +275,7 @@ def main():
     parser.add_argument("--output", required=True, help="Path to converted COG")
     parser.add_argument("--variable", required=True, help="HDF5 dataset name to validate against")
     parser.add_argument("--group", default="", help="HDF5 group path (default: root)")
+    parser.add_argument("--time-index", type=int, default=0, help="Time slice index for 3D datasets (default: 0)")
     args = parser.parse_args()
 
     if not os.path.isfile(args.input):
@@ -272,7 +285,8 @@ def main():
         print(f"Error: output file not found: {args.output}")
         sys.exit(1)
 
-    passed = run_validation(args.input, args.output, variable=args.variable, group=args.group)
+    passed = run_validation(args.input, args.output, variable=args.variable,
+                            group=args.group, time_index=args.time_index)
     sys.exit(0 if passed else 1)
 
 

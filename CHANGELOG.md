@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.0](https://github.com/aboydnw/cng-sandbox/compare/v1.8.1...v1.9.0) (2026-04-01)
+
+
+### Features
+
+* in-file temporal extraction for NetCDF and HDF5 ([#99](https://github.com/aboydnw/cng-sandbox/issues/99)) ([1e33653](https://github.com/aboydnw/cng-sandbox/commit/1e33653e7a80593ddc8a1927edfbcc0382d6e9bd))
+
+
+### Bug Fixes
+
+* address CodeRabbit review feedback ([86984d5](https://github.com/aboydnw/cng-sandbox/commit/86984d523c06b264aa1297c036d5358d88caebd4))
+* use cascading delete in TTL cleanup and add orphan detection script ([#92](https://github.com/aboydnw/cng-sandbox/issues/92)) ([2555d9b](https://github.com/aboydnw/cng-sandbox/commit/2555d9b8eb1d64009a175873f755e1388ab532cc))
+
 ## [1.8.1](https://github.com/aboydnw/cng-sandbox/compare/v1.8.0...v1.8.1) (2026-04-01)
 
 

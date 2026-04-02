@@ -40,6 +40,7 @@ function ScrollytellingBlock({
     number | undefined
   >(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
+  const isTransitioningRef = useRef(false);
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
 
@@ -84,7 +85,14 @@ function ScrollytellingBlock({
     if (!chapter) return;
 
     setBasemap(chapter.map_state.basemap);
-    setTransitionDuration(chapter.transition === "fly-to" ? 2000 : undefined);
+
+    if (chapter.transition === "fly-to") {
+      isTransitioningRef.current = true;
+      setTransitionDuration(2000);
+    } else {
+      setTransitionDuration(undefined);
+    }
+
     setCamera({
       longitude: chapter.map_state.center[0],
       latitude: chapter.map_state.center[1],
@@ -101,7 +109,13 @@ function ScrollytellingBlock({
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
+    if (isTransitioningRef.current) return;
     setCamera(c);
+    setTransitionDuration(undefined);
+  }, []);
+
+  const handleTransitionEnd = useCallback(() => {
+    isTransitioningRef.current = false;
     setTransitionDuration(undefined);
   }, []);
 
@@ -114,29 +128,81 @@ function ScrollytellingBlock({
     : undefined;
 
   return (
-    <Flex h="100vh" overflow="hidden" position="relative">
-      <Box w="40%" overflowY="auto" bg="gray.50" ref={stepsRef}>
+    <Box h="100vh" position="relative" overflow="hidden">
+      {/* Full-width map background */}
+      <Box position="absolute" inset={0}>
+        {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
+          <UnifiedMap
+            camera={camera}
+            onCameraChange={handleCameraChange}
+            layers={layers}
+            basemap={basemap}
+            onBasemapChange={setBasemap}
+            transitionDuration={transitionDuration}
+            transitionInterpolator={
+              transitionDuration ? flyToRef.current : undefined
+            }
+            interactive={false}
+            onTransitionEnd={handleTransitionEnd}
+          />
+        )}
+        {activeDataset === null && !hasConnection && (
+          <Flex
+            position="absolute"
+            inset={0}
+            align="center"
+            justify="center"
+            bg="blackAlpha.600"
+            zIndex={10}
+          >
+            <Text color="white" fontSize="lg" fontWeight={500}>
+              Data no longer available
+            </Text>
+          </Flex>
+        )}
+      </Box>
+
+      {/* Floating overlay — full-width scroll container, cards float per-chapter */}
+      <Box
+        ref={stepsRef}
+        position="absolute"
+        inset={0}
+        overflowY="auto"
+        zIndex={5}
+        pointerEvents="none"
+      >
         {chapters.map((chapter, i) => (
           <Box
             key={chapter.id}
             data-step
-            px={8}
+            w="35%"
+            minW="320px"
+            maxW="480px"
+            px={6}
             pt={i === 0 ? 12 : 4}
             pb="80vh"
             opacity={activeIndex === i ? 1 : 0.3}
             transition="opacity 400ms cubic-bezier(0.32, 0.72, 0, 1)"
+            pointerEvents="auto"
+            ml={chapter.overlay_position === "right" ? "auto" : 0}
+            mr={chapter.overlay_position === "right" ? 0 : "auto"}
             onClick={
               onChapterClick ? () => onChapterClick(chapter.id) : undefined
             }
             cursor={onChapterClick ? "pointer" : undefined}
           >
             <Box
-              bg="white"
-              borderRadius="8px"
+              bg="rgba(255, 255, 255, 0.85)"
+              backdropFilter="blur(12px)"
+              borderRadius="12px"
               p={6}
-              shadow="sm"
+              shadow="lg"
               border="1px solid"
-              borderColor={activeIndex === i ? "brand.bgSubtle" : "gray.200"}
+              borderColor={
+                activeIndex === i
+                  ? "rgba(200, 150, 100, 0.4)"
+                  : "rgba(255, 255, 255, 0.3)"
+              }
             >
               <Text
                 fontSize="10px"
@@ -170,38 +236,7 @@ function ScrollytellingBlock({
           </Box>
         ))}
       </Box>
-
-      <Box w="60%" position="sticky" top={0} h="100vh">
-        {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
-          <UnifiedMap
-            camera={camera}
-            onCameraChange={handleCameraChange}
-            layers={layers}
-            basemap={basemap}
-            onBasemapChange={setBasemap}
-            transitionDuration={transitionDuration}
-            transitionInterpolator={
-              transitionDuration ? flyToRef.current : undefined
-            }
-            interactive={false}
-          />
-        )}
-        {activeDataset === null && !hasConnection && (
-          <Flex
-            position="absolute"
-            inset={0}
-            align="center"
-            justify="center"
-            bg="blackAlpha.600"
-            zIndex={10}
-          >
-            <Text color="white" fontSize="lg" fontWeight={500}>
-              Data no longer available
-            </Text>
-          </Flex>
-        )}
-      </Box>
-    </Flex>
+    </Box>
   );
 }
 

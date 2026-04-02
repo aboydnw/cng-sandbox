@@ -10,7 +10,12 @@ export function migrateStory(story: Record<string, unknown>): Story {
     if (!lc.dataset_id) {
       lc.dataset_id = story.dataset_id;
     }
-    return { ...ch, layer_config: lc, type: ch.type ?? "scrollytelling" };
+    return {
+      ...ch,
+      layer_config: lc,
+      type: ch.type ?? "scrollytelling",
+      overlay_position: ch.overlay_position ?? "left",
+    };
   });
 
   const chapterDatasetIds = chapters

@@ -371,6 +371,15 @@ export function useStoryEditor() {
     }));
   }
 
+  function updateChapterOverlayPosition(position: "left" | "right") {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) =>
+        ch.id === activeChapterId ? { ...ch, overlay_position: position } : ch
+      ),
+    }));
+  }
+
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
     try {
@@ -526,6 +535,7 @@ export function useStoryEditor() {
     updateChapterNarrative,
     updateChapterLayerConfig,
     updateChapterType,
+    updateChapterOverlayPosition,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,

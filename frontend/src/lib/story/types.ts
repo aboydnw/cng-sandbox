@@ -36,6 +36,7 @@ export interface Chapter {
   narrative: string;
   map_state: MapState;
   transition: "fly-to" | "instant";
+  overlay_position: "left" | "right";
   layer_config: LayerConfig;
 }
 
@@ -82,6 +83,7 @@ export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
     narrative: "",
     map_state: { ...DEFAULT_MAP_STATE },
     transition: "fly-to",
+    overlay_position: "left",
     layer_config: { ...DEFAULT_LAYER_CONFIG },
     ...overrides,
   };

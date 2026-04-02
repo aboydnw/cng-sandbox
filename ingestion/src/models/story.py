@@ -36,6 +36,7 @@ class ChapterPayload(BaseModel):
     narrative: str
     map_state: dict
     transition: str = "fly-to"
+    overlay_position: str = "left"
     layer_config: dict | None = None
 
 

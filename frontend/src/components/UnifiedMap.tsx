@@ -119,17 +119,19 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         />
       </DeckGL>
 
-      <Box
-        position="absolute"
-        top={3}
-        left={3}
-        bg="white"
-        borderRadius="4px"
-        shadow="sm"
-        p={1}
-      >
-        <BasemapPicker value={basemap} onChange={onBasemapChange} />
-      </Box>
+      {interactive && (
+        <Box
+          position="absolute"
+          top={3}
+          left={3}
+          bg="white"
+          borderRadius="4px"
+          shadow="sm"
+          p={1}
+        >
+          <BasemapPicker value={basemap} onChange={onBasemapChange} />
+        </Box>
+      )}
 
       {children}
     </Box>

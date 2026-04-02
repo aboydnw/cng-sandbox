@@ -10,6 +10,7 @@ import type { Dataset, Connection } from "../types";
 import type { Story } from "../lib/story/types";
 import { ConnectionModal } from "../components/ConnectionModal";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
+import { detectCadence, formatDateRangeBadge } from "../utils/temporal";
 
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return "\u2014";
@@ -196,6 +197,16 @@ export default function LibraryPage() {
                         {ds.filename}
                       </Text>
                     </Link>
+                    {ds.is_temporal && ds.timesteps.length > 0 && (
+                      <Text fontSize="xs" color="fg.subtle" mt={0.5}>
+                        {formatDateRangeBadge(
+                          ds.timesteps[0].datetime,
+                          ds.timesteps[ds.timesteps.length - 1].datetime,
+                          ds.timesteps.length,
+                          detectCadence(ds.timesteps.map((t) => t.datetime))
+                        )}
+                      </Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell>
                     <Text

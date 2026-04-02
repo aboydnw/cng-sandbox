@@ -57,6 +57,10 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     pixel_height: null,
     resolution: null,
     compression: null,
+    is_mosaic: false,
+    is_zero_copy: false,
+    source_url: null,
+    expires_at: null,
     ...overrides,
   };
 }

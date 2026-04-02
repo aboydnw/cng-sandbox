@@ -61,6 +61,10 @@ export interface Dataset {
   pixel_height: number | null;
   resolution: number | null;
   compression: string | null;
+  is_mosaic: boolean;
+  is_zero_copy: boolean;
+  source_url: string | null;
+  expires_at: string | null;
 }
 
 export type ConnectionType = "xyz_raster" | "xyz_vector" | "cog" | "pmtiles";

@@ -21,6 +21,7 @@ class DatasetRow(Base):
     metadata_json = Column(Text, nullable=False, default="{}")
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     workspace_id = Column(String, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Dataset API response format."""
@@ -36,6 +37,7 @@ class DatasetRow(Base):
             "bounds": bounds,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "workspace_id": self.workspace_id,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
         }
 
 
@@ -49,6 +51,7 @@ _TOP_LEVEL_COLUMNS = frozenset(
         "bounds",
         "created_at",
         "workspace_id",
+        "expires_at",
     )
 )
 
@@ -74,6 +77,7 @@ def persist_dataset(db_session_factory, dataset) -> None:
             ),
             created_at=dataset.created_at,
             workspace_id=getattr(dataset, "workspace_id", None),
+            expires_at=getattr(dataset, "expires_at", None),
         )
         session.add(row)
         session.commit()

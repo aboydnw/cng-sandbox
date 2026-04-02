@@ -1,4 +1,6 @@
-type Cadence = "annual" | "monthly" | "daily" | "hourly" | "irregular";
+import type { Timestep } from "../types";
+
+export type Cadence = "annual" | "monthly" | "daily" | "hourly" | "irregular";
 
 const MS_HOUR = 3_600_000;
 const MS_DAY = 86_400_000;
@@ -152,4 +154,48 @@ export function formatDateRange(datetimes: string[], cadence: Cadence): string {
   const start = formatTimestepLabel(sorted[0], cadence);
   const end = formatTimestepLabel(sorted[sorted.length - 1], cadence);
   return `${start} – ${end}`;
+}
+
+export function formatDateRangeBadge(
+  startDatetime: string,
+  endDatetime: string,
+  count: number,
+  cadence: Cadence
+): string {
+  const start = new Date(startDatetime);
+  const end = new Date(endDatetime);
+  const unit = count === 1 ? "timestep" : "timesteps";
+
+  let startLabel: string;
+  let endLabel: string;
+
+  switch (cadence) {
+    case "annual":
+      startLabel = String(start.getUTCFullYear());
+      endLabel = String(end.getUTCFullYear());
+      break;
+    case "monthly":
+      startLabel = `${MONTH_NAMES[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
+      endLabel = `${MONTH_NAMES[end.getUTCMonth()]} ${end.getUTCFullYear()}`;
+      break;
+    default:
+      startLabel = `${MONTH_NAMES[start.getUTCMonth()]} ${start.getUTCDate()}, ${start.getUTCFullYear()}`;
+      endLabel = `${MONTH_NAMES[end.getUTCMonth()]} ${end.getUTCDate()}, ${end.getUTCFullYear()}`;
+  }
+
+  return `${startLabel} — ${endLabel} · ${count} ${unit}`;
+}
+
+export function groupTimestepsByDate(
+  timesteps: Timestep[]
+): Map<string, Timestep[]> {
+  const groups = new Map<string, Timestep[]>();
+  for (const ts of timesteps) {
+    const d = new Date(ts.datetime);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    const group = groups.get(key) ?? [];
+    group.push(ts);
+    groups.set(key, group);
+  }
+  return groups;
 }

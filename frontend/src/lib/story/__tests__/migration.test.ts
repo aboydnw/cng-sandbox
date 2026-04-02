@@ -79,6 +79,7 @@ describe("migrateStory", () => {
             basemap: "streets",
           },
           transition: "fly-to" as const,
+          overlay_position: "left" as const,
           layer_config: {
             dataset_id: "ds-1",
             colormap: "viridis",
@@ -100,6 +101,7 @@ describe("migrateStory", () => {
             basemap: "streets",
           },
           transition: "fly-to" as const,
+          overlay_position: "left" as const,
           layer_config: {
             dataset_id: "ds-2",
             colormap: "plasma",

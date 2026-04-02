@@ -1,4 +1,5 @@
 import { Box, Button, Flex, Input, Text, Link } from "@chakra-ui/react";
+import { useMemo } from "react";
 import {
   PencilSimple,
   X as XIcon,
@@ -97,6 +98,13 @@ export default function StoryEditorPage() {
     setUploadModalOpen,
     activeChapterId,
   } = useStoryEditor();
+
+  const activeDatasetTimesteps = useMemo(() => {
+    const config = activeChapter?.layer_config;
+    if (!config) return undefined;
+    const ds = config.dataset_id ? allDatasets.find((d) => d.id === config.dataset_id) : undefined;
+    return ds?.is_temporal ? ds.timesteps : undefined;
+  }, [activeChapter?.layer_config, allDatasets]);
 
   const { shouldShow, dismiss } = useTooltipDismiss();
   const TOOLTIP_KEYS = ["chapters", "map", "narrative"] as const;
@@ -389,6 +397,7 @@ export default function StoryEditorPage() {
               onAddDataset={() => setUploadModalOpen(true)}
               overlayPosition={activeChapter?.overlay_position ?? "left"}
               onOverlayPositionChange={updateChapterOverlayPosition}
+              temporalTimesteps={activeDatasetTimesteps}
             />
           ) : (
             <Flex h="100%" align="center" justify="center">

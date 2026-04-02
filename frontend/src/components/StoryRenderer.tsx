@@ -125,9 +125,10 @@ function ScrollytellingBlock({
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
-    if (isTransitioningRef.current) return;
     setCamera(c);
-    setTransitionDuration(undefined);
+    if (!isTransitioningRef.current) {
+      setTransitionDuration(undefined);
+    }
   }, []);
 
   const handleTransitionEnd = useCallback(() => {

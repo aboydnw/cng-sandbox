@@ -34,9 +34,11 @@ export function MapChapter({
   const [basemap, setBasemap] = useState(chapter.map_state.basemap);
 
   const defaultTimestep = chapter.layer_config.timestep ?? 0;
-  const [activeTimestepIndex, setActiveTimestepIndex] = useState(defaultTimestep);
+  const [activeTimestepIndex, setActiveTimestepIndex] =
+    useState(defaultTimestep);
 
-  const isTemporalInteractive = dataset?.is_temporal && dataset.timesteps.length > 0;
+  const isTemporalInteractive =
+    dataset?.is_temporal && dataset.timesteps.length > 0;
 
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
@@ -64,7 +66,10 @@ export function MapChapter({
         tileUrl += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
       }
       if (dataset.is_temporal && dataset.timesteps.length > 0) {
-        const ts = dataset.timesteps[Math.min(activeTimestepIndex, dataset.timesteps.length - 1)];
+        const ts =
+          dataset.timesteps[
+            Math.min(activeTimestepIndex, dataset.timesteps.length - 1)
+          ];
         const separator = tileUrl.includes("?") ? "&" : "?";
         tileUrl = `${tileUrl}${separator}datetime=${ts.datetime}`;
       }
@@ -142,12 +147,20 @@ export function MapChapter({
           >
             {/* Temporal date picker */}
             {isTemporalInteractive && (
-              <Box position="absolute" top={3} left="50%" transform="translateX(-50%)" zIndex={10}>
+              <Box
+                position="absolute"
+                top={3}
+                left="50%"
+                transform="translateX(-50%)"
+                zIndex={10}
+              >
                 <CalendarPopover
                   timesteps={dataset!.timesteps}
                   activeIndex={activeTimestepIndex}
                   onIndexChange={setActiveTimestepIndex}
-                  cadence={detectCadence(dataset!.timesteps.map((t) => t.datetime))}
+                  cadence={detectCadence(
+                    dataset!.timesteps.map((t) => t.datetime)
+                  )}
                 />
               </Box>
             )}

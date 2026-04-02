@@ -94,14 +94,19 @@ export function CalendarPopover({
   }
 
   const timesForSelectedDate =
-    selectedDateKey && dateGroups ? dateGroups.get(selectedDateKey) ?? [] : [];
+    selectedDateKey && dateGroups
+      ? (dateGroups.get(selectedDateKey) ?? [])
+      : [];
 
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     function handleClickOutside(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
         setSelectedDateKey(null);
       }
@@ -185,12 +190,7 @@ export function CalendarPopover({
           />
 
           {selectedDateKey && timesForSelectedDate.length > 0 && (
-            <Box
-              borderTop="1px solid"
-              borderColor="brand.border"
-              mt={2}
-              pt={2}
-            >
+            <Box borderTop="1px solid" borderColor="brand.border" mt={2} pt={2}>
               <Text
                 fontSize="xs"
                 fontWeight="semibold"
@@ -213,7 +213,9 @@ export function CalendarPopover({
                       fontSize="sm"
                       textAlign="left"
                       bg={
-                        ts.index === activeIndex ? "brand.orange" : "transparent"
+                        ts.index === activeIndex
+                          ? "brand.orange"
+                          : "transparent"
                       }
                       color={ts.index === activeIndex ? "white" : "inherit"}
                       _hover={{

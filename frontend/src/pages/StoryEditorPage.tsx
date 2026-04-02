@@ -102,7 +102,9 @@ export default function StoryEditorPage() {
   const activeDatasetTimesteps = useMemo(() => {
     const config = activeChapter?.layer_config;
     if (!config) return undefined;
-    const ds = config.dataset_id ? allDatasets.find((d) => d.id === config.dataset_id) : undefined;
+    const ds = config.dataset_id
+      ? allDatasets.find((d) => d.id === config.dataset_id)
+      : undefined;
     return ds?.is_temporal ? ds.timesteps : undefined;
   }, [activeChapter?.layer_config, allDatasets]);
 

@@ -71,12 +71,16 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
         timestep: 2,
       },
     });
-    const datasetMap = new Map<string, Dataset | null>([["ds-1", TEMPORAL_DATASET]]);
+    const datasetMap = new Map<string, Dataset | null>([
+      ["ds-1", TEMPORAL_DATASET],
+    ]);
 
     const layers = buildLayersForChapter(chapter, datasetMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("datetime=2024-03-01T00:00:00Z");
   });
 
@@ -89,12 +93,16 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
         basemap: "streets",
       },
     });
-    const datasetMap = new Map<string, Dataset | null>([["ds-1", TEMPORAL_DATASET]]);
+    const datasetMap = new Map<string, Dataset | null>([
+      ["ds-1", TEMPORAL_DATASET],
+    ]);
 
     const layers = buildLayersForChapter(chapter, datasetMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("datetime=2024-01-01T00:00:00Z");
   });
 
@@ -108,12 +116,16 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
         timestep: 1,
       },
     });
-    const datasetMap = new Map<string, Dataset | null>([["ds-1", BASE_DATASET]]);
+    const datasetMap = new Map<string, Dataset | null>([
+      ["ds-1", BASE_DATASET],
+    ]);
 
     const layers = buildLayersForChapter(chapter, datasetMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).not.toContain("datetime=");
   });
 });

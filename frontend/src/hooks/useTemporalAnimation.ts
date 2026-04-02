@@ -79,5 +79,12 @@ export function useTemporalAnimation(
     }
   }, [isReady, state.isPlaying]);
 
-  return { ...state, togglePlay, setSpeed, setActiveIndex, enterAnimateMode, exitAnimateMode };
+  return {
+    ...state,
+    togglePlay,
+    setSpeed,
+    setActiveIndex,
+    enterAnimateMode,
+    exitAnimateMode,
+  };
 }

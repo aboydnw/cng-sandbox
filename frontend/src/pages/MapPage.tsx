@@ -329,8 +329,9 @@ export default function MapPage() {
                 </Box>
               )}
 
-              {ds?.is_temporal && controls.renderMode !== "client" && (
-                animation.isAnimateMode ? (
+              {ds?.is_temporal &&
+                controls.renderMode !== "client" &&
+                (animation.isAnimateMode ? (
                   <TemporalControls
                     timesteps={ds.timesteps}
                     activeIndex={animation.activeIndex}
@@ -372,8 +373,7 @@ export default function MapPage() {
                       onEnterAnimateMode={animation.enterAnimateMode}
                     />
                   </Box>
-                )
-              )}
+                ))}
 
               {pixelInspector.hoverInfo && controls.renderMode === "client" && (
                 <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />

@@ -341,7 +341,12 @@ export function NarrativeEditor({
           )}
           {temporalTimesteps && temporalTimesteps.length > 0 && (
             <Box>
-              <Text fontSize="xs" fontWeight="semibold" color="fg.subtle" mb={1}>
+              <Text
+                fontSize="xs"
+                fontWeight="semibold"
+                color="fg.subtle"
+                mb={1}
+              >
                 Timestep
               </Text>
               <CalendarPopover
@@ -350,7 +355,9 @@ export function NarrativeEditor({
                 onIndexChange={(index) =>
                   onLayerConfigChange({ ...layerConfig, timestep: index })
                 }
-                cadence={detectCadence(temporalTimesteps.map((t) => t.datetime))}
+                cadence={detectCadence(
+                  temporalTimesteps.map((t) => t.datetime)
+                )}
               />
             </Box>
           )}

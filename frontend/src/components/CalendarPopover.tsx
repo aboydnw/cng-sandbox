@@ -169,7 +169,7 @@ export function CalendarPopover({
           borderColor="brand.border"
           zIndex={1000}
           p={2}
-          sx={{
+          css={{
             ".rdp-day_selected": {
               bg: "brand.orange",
               color: "white",

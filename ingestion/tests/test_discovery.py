@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.discovery import DiscoveredFile, extract_file_links, fetch_and_discover
+from src.services.discovery import DiscoveredFile, _parse_s3_listing, extract_file_links, fetch_and_discover
 
 
 class TestExtractFileLinks:
@@ -20,7 +20,7 @@ class TestExtractFileLinks:
         assert len(results) == 2
         assert all(r.url.endswith(".tif") for r in results)
 
-    def test_extracts_multiple_formats(self):
+    def test_filters_tie_to_single_extension(self):
         html = """
         <html><body>
           <a href="raster.tif">tif</a>
@@ -70,6 +70,26 @@ class TestExtractFileLinks:
         assert all(r.url.endswith(".tif") for r in results)
 
 
+class TestParseS3Listing:
+    def test_extracts_tif_keys_and_ignores_non_geo_files(self):
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        <ListBucketResult>
+          <Key>data/elevation.tif</Key>
+          <Key>data/landcover.tif</Key>
+          <Key>data/readme.txt</Key>
+          <Key>data/notes.html</Key>
+          <Key>data/boundaries.geojson</Key>
+        </ListBucketResult>
+        """
+        results = _parse_s3_listing(xml, "https://mybucket.s3.amazonaws.com/")
+        urls = {r.url for r in results}
+        assert urls == {
+            "https://mybucket.s3.amazonaws.com/data/elevation.tif",
+            "https://mybucket.s3.amazonaws.com/data/landcover.tif",
+        }
+        assert all(r.filename.endswith(".tif") for r in results)
+
+
 class TestFetchAndDiscover:
     @pytest.mark.asyncio
     async def test_fetches_html_and_extracts_links(self, monkeypatch):
@@ -83,7 +103,13 @@ class TestFetchAndDiscover:
             headers = {"content-type": "text/html"}
             text = html
 
+            def raise_for_status(self):
+                pass
+
         class FakeClient:
+            def __init__(self, **kwargs):
+                pass
+
             async def __aenter__(self):
                 return self
 

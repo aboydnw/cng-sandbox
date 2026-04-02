@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 _SUPPORTED_EXTENSIONS = {".tif", ".tiff", ".geojson", ".json", ".nc", ".nc4", ".h5", ".hdf5"}
+
+
+class DiscoveryError(Exception):
+    pass
 
 
 @dataclass
@@ -36,11 +41,13 @@ def extract_file_links(html: str, base_url: str) -> list[DiscoveredFile]:
 
 def _parse_s3_listing(xml_text: str, base_url: str) -> list[DiscoveredFile]:
     """Parse an S3 ListBucket XML response and return geospatial file links."""
-    soup = BeautifulSoup(xml_text, "xml")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+        soup = BeautifulSoup(xml_text, "html.parser")
     origin = _origin(base_url)
     seen: dict[str, DiscoveredFile] = {}
 
-    for key_tag in soup.find_all("Key"):
+    for key_tag in soup.find_all("key"):
         key = key_tag.get_text()
         ext = _get_extension(key)
         if ext not in _SUPPORTED_EXTENSIONS:
@@ -55,14 +62,22 @@ def _parse_s3_listing(xml_text: str, base_url: str) -> list[DiscoveredFile]:
 
 async def fetch_and_discover(url: str) -> list[DiscoveredFile]:
     """Fetch a URL and discover geospatial files from its content."""
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        content_type = response.headers.get("content-type", "")
-        text = response.text
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "")
+            text = response.text
 
-        if "xml" in content_type or text.lstrip().startswith("<?xml"):
-            return _parse_s3_listing(text, url)
-        return extract_file_links(text, url)
+            if "xml" in content_type or text.lstrip().startswith("<?xml"):
+                return _parse_s3_listing(text, url)
+            return extract_file_links(text, url)
+    except httpx.ConnectError as e:
+        raise DiscoveryError(f"Could not connect to {url}") from e
+    except httpx.TimeoutException as e:
+        raise DiscoveryError(f"Request timed out fetching {url}") from e
+    except httpx.HTTPStatusError as e:
+        raise DiscoveryError(f"HTTP {e.response.status_code} fetching {url}") from e
 
 
 def _get_extension(path: str) -> str:

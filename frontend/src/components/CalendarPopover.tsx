@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
 import { CaretLeft, CaretRight, CalendarBlank } from "@phosphor-icons/react";
 import { DayPicker } from "react-day-picker";
@@ -10,6 +10,10 @@ import {
   isSubDaily,
   groupTimestepsByDate,
 } from "../utils/temporal";
+
+function localDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 interface CalendarPopoverProps {
   timesteps: Timestep[];
@@ -36,17 +40,23 @@ export function CalendarPopover({
     [timesteps]
   );
 
-  const dateGroups = useMemo(
-    () => (subDaily ? groupTimestepsByDate(timesteps) : null),
-    [timesteps, subDaily]
-  );
+  const dateGroups = useMemo(() => {
+    if (!subDaily) return null;
+    const groups = new Map<string, Timestep[]>();
+    for (const ts of timesteps) {
+      const key = localDateKey(new Date(ts.datetime));
+      const group = groups.get(key) ?? [];
+      group.push(ts);
+      groups.set(key, group);
+    }
+    return groups;
+  }, [timesteps, subDaily]);
 
   const dateToIndex = useMemo(() => {
     const map = new Map<string, number>();
     timesteps.forEach((ts, i) => {
       const d = new Date(ts.datetime);
-      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-      if (!map.has(key)) map.set(key, i);
+      if (!map.has(localDateKey(d))) map.set(localDateKey(d), i);
     });
     return map;
   }, [timesteps]);
@@ -55,7 +65,7 @@ export function CalendarPopover({
   const endMonth = new Date(timesteps[timesteps.length - 1].datetime);
 
   function handleDayClick(day: Date) {
-    const key = `${day.getUTCFullYear()}-${String(day.getUTCMonth() + 1).padStart(2, "0")}-${String(day.getUTCDate()).padStart(2, "0")}`;
+    const key = localDateKey(day);
 
     if (subDaily && dateGroups) {
       const times = dateGroups.get(key);
@@ -90,8 +100,22 @@ export function CalendarPopover({
   const timesForSelectedDate =
     selectedDateKey && dateGroups ? dateGroups.get(selectedDateKey) ?? [] : [];
 
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setSelectedDateKey(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <Box position="relative">
+    <Box position="relative" ref={popoverRef}>
       <Flex align="center" gap={1}>
         <IconButton
           aria-label="Previous timestep"
@@ -158,10 +182,7 @@ export function CalendarPopover({
             mode="single"
             selected={currentDate}
             onDayClick={(day) => handleDayClick(day)}
-            disabled={(date) => {
-              const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
-              return !dateToIndex.has(key);
-            }}
+            disabled={(date) => !dateToIndex.has(localDateKey(date))}
             startMonth={startMonth}
             endMonth={endMonth}
             defaultMonth={currentDate}

@@ -201,6 +201,7 @@ export function useLayerBuilder({
     colormapName,
     effectiveBand,
     activeTimestepIndex,
+    isAnimateMode,
     renderIndices,
     geojson,
     onVectorClick,

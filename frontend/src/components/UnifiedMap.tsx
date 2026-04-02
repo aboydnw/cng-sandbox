@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useMemo } from "react";
+import { forwardRef, useCallback, useMemo, useRef } from "react";
 import { Box } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
 import { MapView, FlyToInterpolator } from "@deck.gl/core";
@@ -45,6 +45,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   },
   ref
 ) {
+  const wasTransitioningRef = useRef(false);
+
   const handleViewStateChange = useCallback(
     ({
       viewState,
@@ -66,13 +68,12 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         bearing: viewState.bearing ?? 0,
         pitch: viewState.pitch ?? 0,
       });
-      if (
-        onTransitionEnd &&
-        interactionState &&
-        !interactionState.inTransition
-      ) {
+
+      const isTransitioning = interactionState?.inTransition ?? false;
+      if (wasTransitioningRef.current && !isTransitioning && onTransitionEnd) {
         onTransitionEnd();
       }
+      wasTransitioningRef.current = isTransitioning;
     },
     [onCameraChange, onTransitionEnd]
   );

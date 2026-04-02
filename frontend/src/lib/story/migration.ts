@@ -14,7 +14,10 @@ export function migrateStory(story: Record<string, unknown>): Story {
       ...ch,
       layer_config: lc,
       type: ch.type ?? "scrollytelling",
-      overlay_position: ch.overlay_position ?? "left",
+      overlay_position:
+        ch.overlay_position === "left" || ch.overlay_position === "right"
+          ? ch.overlay_position
+          : "left",
     };
   });
 

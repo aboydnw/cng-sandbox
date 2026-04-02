@@ -26,7 +26,9 @@ class TestReadRemoteBounds:
 
         class FakeSrc:
             crs = None
-            bounds = type("B", (), {"left": -10, "bottom": -20, "right": 10, "top": 20})()
+            bounds = type(
+                "B", (), {"left": -10, "bottom": -20, "right": 10, "top": 20}
+            )()
 
             def __enter__(self):
                 return self
@@ -36,7 +38,9 @@ class TestReadRemoteBounds:
 
         monkeypatch.setattr(rasterio, "open", lambda path: FakeSrc())
 
-        bbox, geom = await remote_pipeline.read_remote_bounds("https://example.com/file.tif")
+        bbox, geom = await remote_pipeline.read_remote_bounds(
+            "https://example.com/file.tif"
+        )
         assert bbox == [-10, -20, 10, 20]
         assert geom["type"] == "Polygon"
         assert len(geom["coordinates"][0]) == 5
@@ -62,7 +66,9 @@ class TestEstimateTotalSize:
             async def head(self, url, follow_redirects=True):
                 return FakeResponse()
 
-        monkeypatch.setattr(remote_pipeline.httpx, "AsyncClient", lambda **kw: FakeClient())
+        monkeypatch.setattr(
+            remote_pipeline.httpx, "AsyncClient", lambda **kw: FakeClient()
+        )
 
         result = await remote_pipeline._estimate_total_size(
             ["http://a.tif", "http://b.tif", "http://c.tif", "http://d.tif"]
@@ -88,7 +94,9 @@ class TestEstimateTotalSize:
             async def head(self, url, follow_redirects=True):
                 return FakeResponse()
 
-        monkeypatch.setattr(remote_pipeline.httpx, "AsyncClient", lambda **kw: FakeClient())
+        monkeypatch.setattr(
+            remote_pipeline.httpx, "AsyncClient", lambda **kw: FakeClient()
+        )
 
         result = await remote_pipeline._estimate_total_size(["http://a.tif"])
         assert result is None
@@ -104,7 +112,9 @@ class TestRunRemotePipeline:
         monkeypatch.setattr(
             remote_pipeline,
             "check_remote_is_cog",
-            lambda url: _async_return(CogCheckResult(is_cog=True, has_tiling=True, has_overviews=True)),
+            lambda url: _async_return(
+                CogCheckResult(is_cog=True, has_tiling=True, has_overviews=True)
+            ),
         )
 
         sample_bbox = [-10.0, -20.0, 10.0, 20.0]
@@ -121,7 +131,9 @@ class TestRunRemotePipeline:
         monkeypatch.setattr(
             remote_pipeline.stac_ingest,
             "ingest_mosaic_raster",
-            lambda **kw: _async_return("/raster/collections/sandbox-x/tiles/{z}/{x}/{y}"),
+            lambda **kw: _async_return(
+                "/raster/collections/sandbox-x/tiles/{z}/{x}/{y}"
+            ),
         )
 
         persisted = []
@@ -176,7 +188,9 @@ class TestRunRemotePipeline:
         monkeypatch.setattr(
             remote_pipeline,
             "check_remote_is_cog",
-            lambda url: _async_return(CogCheckResult(is_cog=True, has_tiling=True, has_overviews=True)),
+            lambda url: _async_return(
+                CogCheckResult(is_cog=True, has_tiling=True, has_overviews=True)
+            ),
         )
 
         sample_bbox = [0.0, 0.0, 1.0, 1.0]
@@ -196,7 +210,9 @@ class TestRunRemotePipeline:
             ingested_datetimes.extend(kw.get("datetimes", []))
             return "/raster/tiles/{z}/{x}/{y}"
 
-        monkeypatch.setattr(remote_pipeline.stac_ingest, "ingest_mosaic_raster", fake_ingest)
+        monkeypatch.setattr(
+            remote_pipeline.stac_ingest, "ingest_mosaic_raster", fake_ingest
+        )
 
         persisted = []
         monkeypatch.setattr(
@@ -222,8 +238,14 @@ class TestRunRemotePipeline:
         monkeypatch.setattr("rasterio.open", lambda path: FakeRemoteSrc())
 
         discovered = [
-            {"url": "https://example.com/data_2024-03-01.tif", "filename": "data_2024-03-01.tif"},
-            {"url": "https://example.com/data_2024-01-01.tif", "filename": "data_2024-01-01.tif"},
+            {
+                "url": "https://example.com/data_2024-03-01.tif",
+                "filename": "data_2024-03-01.tif",
+            },
+            {
+                "url": "https://example.com/data_2024-01-01.tif",
+                "filename": "data_2024-01-01.tif",
+            },
         ]
 
         await remote_pipeline.run_remote_pipeline(
@@ -268,7 +290,9 @@ class TestRunRemotePipeline:
         monkeypatch.setattr(
             remote_pipeline,
             "check_remote_is_cog",
-            lambda url: _async_return(CogCheckResult(is_cog=False, has_tiling=False, has_overviews=False)),
+            lambda url: _async_return(
+                CogCheckResult(is_cog=False, has_tiling=False, has_overviews=False)
+            ),
         )
 
         monkeypatch.setattr(

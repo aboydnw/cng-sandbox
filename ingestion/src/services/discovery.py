@@ -9,7 +9,16 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
-_SUPPORTED_EXTENSIONS = {".tif", ".tiff", ".geojson", ".json", ".nc", ".nc4", ".h5", ".hdf5"}
+_SUPPORTED_EXTENSIONS = {
+    ".tif",
+    ".tiff",
+    ".geojson",
+    ".json",
+    ".nc",
+    ".nc4",
+    ".h5",
+    ".hdf5",
+}
 
 
 class DiscoveryError(Exception):
@@ -34,7 +43,9 @@ def extract_file_links(html: str, base_url: str) -> list[DiscoveredFile]:
             continue
         absolute = urljoin(base_url, href)
         if absolute not in seen:
-            seen[absolute] = DiscoveredFile(url=absolute, filename=_filename_from_url(absolute))
+            seen[absolute] = DiscoveredFile(
+                url=absolute, filename=_filename_from_url(absolute)
+            )
 
     return _filter_to_most_common_extension(list(seen.values()))
 
@@ -55,7 +66,9 @@ def _parse_s3_listing(xml_text: str, base_url: str) -> list[DiscoveredFile]:
         path = key if key.startswith("/") else f"/{key}"
         absolute = origin + path
         if absolute not in seen:
-            seen[absolute] = DiscoveredFile(url=absolute, filename=_filename_from_url(absolute))
+            seen[absolute] = DiscoveredFile(
+                url=absolute, filename=_filename_from_url(absolute)
+            )
 
     return _filter_to_most_common_extension(list(seen.values()))
 
@@ -97,7 +110,9 @@ def _origin(url: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}"
 
 
-def _filter_to_most_common_extension(files: list[DiscoveredFile]) -> list[DiscoveredFile]:
+def _filter_to_most_common_extension(
+    files: list[DiscoveredFile],
+) -> list[DiscoveredFile]:
     if not files:
         return files
 

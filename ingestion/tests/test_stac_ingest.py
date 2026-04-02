@@ -177,7 +177,9 @@ class TestBuildStacItemFromHref:
             bbox=[-10, -10, 10, 10],
             geometry={
                 "type": "Polygon",
-                "coordinates": [[[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]],
+                "coordinates": [
+                    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]
+                ],
             },
         )
         assert item.collection_id == "sandbox-abc123"
@@ -196,7 +198,9 @@ class TestBuildStacItemFromHref:
             bbox=[-10, -10, 10, 10],
             geometry={
                 "type": "Polygon",
-                "coordinates": [[[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]],
+                "coordinates": [
+                    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]
+                ],
             },
             input_datetime=dt,
         )
@@ -213,7 +217,9 @@ class TestBuildStacItemFromHref:
             bbox=[-10, -10, 10, 10],
             geometry={
                 "type": "Polygon",
-                "coordinates": [[[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]],
+                "coordinates": [
+                    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]
+                ],
             },
         )
         assert item.assets["data"].media_type == COG_MEDIA_TYPE

@@ -21,7 +21,9 @@ class DiscoverRequest(PydanticBaseModel):
     @field_validator("url")
     @classmethod
     def validate_url_scheme(cls, v: str) -> str:
-        if not (v.startswith("http://") or v.startswith("https://") or v.startswith("s3://")):
+        if not (
+            v.startswith("http://") or v.startswith("https://") or v.startswith("s3://")
+        ):
             raise ValueError("URL must start with http://, https://, or s3://")
         return v
 
@@ -65,7 +67,9 @@ async def discover(body: DiscoverRequest):
     first_filename = files[0]["filename"]
     dominant_extension = os.path.splitext(first_filename)[1]
 
-    return DiscoverResponse(files=files, count=len(files), dominant_extension=dominant_extension)
+    return DiscoverResponse(
+        files=files, count=len(files), dominant_extension=dominant_extension
+    )
 
 
 @router.post("/connect-remote")

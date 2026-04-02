@@ -23,7 +23,9 @@ def check_is_cog(path: str) -> CogCheckResult:
         has_overviews = any(len(ds.overviews(i + 1)) > 0 for i in range(ds.count))
 
     is_cog = has_tiling and has_overviews
-    return CogCheckResult(is_cog=is_cog, has_tiling=has_tiling, has_overviews=has_overviews)
+    return CogCheckResult(
+        is_cog=is_cog, has_tiling=has_tiling, has_overviews=has_overviews
+    )
 
 
 async def check_remote_is_cog(url: str) -> CogCheckResult:

@@ -75,9 +75,7 @@ async def read_remote_bounds(url: str) -> tuple[list[float], dict]:
     return await asyncio.to_thread(_read, f"/vsicurl/{url}")
 
 
-async def _estimate_total_size(
-    urls: list[str], sample_count: int = 5
-) -> int | None:
+async def _estimate_total_size(urls: list[str], sample_count: int = 5) -> int | None:
     """HEAD-request a sample of URLs and extrapolate total download size."""
     sample = urls[:sample_count]
     sizes: list[int] = []
@@ -210,9 +208,7 @@ async def _run_zero_copy(
 
     timesteps = []
     if mode == "temporal" and datetimes:
-        timesteps = [
-            Timestep(datetime=dt, index=i) for i, dt in enumerate(datetimes)
-        ]
+        timesteps = [Timestep(datetime=dt, index=i) for i, dt in enumerate(datetimes)]
 
     display_name = common_filename_prefix(filenames)
     overall_bbox = [
@@ -385,8 +381,7 @@ async def _run_with_conversion(
             timesteps = []
             if mode == "temporal":
                 timesteps = [
-                    Timestep(datetime=dt, index=i)
-                    for i, dt in enumerate(datetimes)
+                    Timestep(datetime=dt, index=i) for i, dt in enumerate(datetimes)
                 ]
 
             expires_at = datetime.now(UTC) + timedelta(days=30)

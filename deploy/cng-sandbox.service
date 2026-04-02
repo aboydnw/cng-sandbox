@@ -1,0 +1,15 @@
+[Unit]
+Description=CNG Sandbox Docker Compose Stack
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/anthony/projects/cng-sandbox
+ExecStart=/usr/bin/docker compose --profile prod up -d
+ExecStop=/usr/bin/docker compose --profile prod down
+User=anthony
+
+[Install]
+WantedBy=multi-user.target

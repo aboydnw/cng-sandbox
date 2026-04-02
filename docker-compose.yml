@@ -41,10 +41,15 @@ services:
       DB_MAX_CONN_SIZE: 1
       ENABLE_TRANSACTIONS_EXTENSIONS: "TRUE"
     ports:
-      - "8081:8080"
+      - "${STAC_API_PORT:-8081}:8080"
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/_mgmt/ping')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   raster-tiler:
     image: ghcr.io/stac-utils/titiler-pgstac:1.7.2
@@ -70,12 +75,17 @@ services:
       VSI_CACHE_SIZE: "536870912"
       MOSAIC_CONCURRENCY: 1
     ports:
-      - "8082:80"
+      - "${RASTER_TILER_PORT:-8082}:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   cog-tiler:
     image: ghcr.io/developmentseed/titiler:0.19.1
@@ -89,7 +99,12 @@ services:
       VSI_CACHE: "TRUE"
       VSI_CACHE_SIZE: "536870912"
     ports:
-      - "8084:80"
+      - "${COG_TILER_PORT:-8084}:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   vector-tiler:
     image: ghcr.io/developmentseed/tipg:1.0.1
@@ -106,10 +121,15 @@ services:
       POSTGRES_PORT: 5432
       TIPG_CATALOG_TTL: 5
     ports:
-      - "8083:80"
+      - "${VECTOR_TILER_PORT:-8083}:80"
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   ingestion:
     build:
@@ -121,7 +141,7 @@ services:
         limits:
           memory: 2G
     ports:
-      - "8086:8000"
+      - "${INGESTION_PORT:-8086}:8000"
     environment:
       S3_BUCKET: ${S3_BUCKET}
       S3_ENDPOINT: ${R2_ENDPOINT}
@@ -141,11 +161,11 @@ services:
       database:
         condition: service_healthy
       stac-api:
-        condition: service_started
+        condition: service_healthy
       raster-tiler:
-        condition: service_started
+        condition: service_healthy
       vector-tiler:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 10s
@@ -162,7 +182,7 @@ services:
         limits:
           memory: 1G
     ports:
-      - "5185:5185"
+      - "${FRONTEND_PORT:-5185}:5185"
     environment:
       VITE_API_BASE: ""
       VITE_RASTER_TILER_URL: ""

@@ -266,6 +266,33 @@ Worktrees live in `.worktrees/` (already gitignored).
 - Never `git checkout` a feature branch in the main session. If you need to change code, do it in the worktree.
 - One worktree per branch. Multiple agents can work on different issues simultaneously without conflicts.
 - The monitoring loop must pass the worktree path when dispatching fix subagents so they reuse the same worktree and branch.
+- **Never touch the prod Docker stack.** Do not run `docker compose up`, `docker compose down`, or `docker compose build` against the default project. The prod stack serves live users and must not be disrupted by development work.
+
+### Visual testing with Docker
+
+When you need to test changes that require the full Docker stack (backend, tilers, database), use the **worktree stack** — an isolated compose stack with offset ports that runs alongside prod:
+
+```bash
+# From inside a worktree directory:
+scripts/worktree-stack.sh up              # Start (infers branch name from git)
+scripts/worktree-stack.sh down            # Stop and remove volumes
+scripts/worktree-stack.sh ps              # Check status
+scripts/worktree-stack.sh logs ingestion  # Tail a service's logs
+```
+
+| Service | Prod port | Worktree port |
+|---------|-----------|---------------|
+| Frontend | 5185 | 5285 |
+| Ingestion API | 8086 | 8186 |
+| STAC API | 8081 | 8181 |
+| Raster tiler | 8082 | 8182 |
+| Vector tiler | 8083 | 8183 |
+| COG tiler | 8084 | 8184 |
+| PostgreSQL | 5439 | 5539 |
+
+The worktree stack gets its own containers, network, and database volume (via the `-p` project name). Use `down` (not just `stop`) when done to free resources — it removes volumes too.
+
+For **frontend-only changes**, you can skip Docker entirely and just run `cd frontend && npx vite dev --port 5285` — this uses the prod backend services through the Vite proxy.
 
 ## Skill Feedback Loop
 

@@ -100,7 +100,7 @@ function ScrollytellingBlock({
 
     setBasemap(chapter.map_state.basemap);
 
-    setTransitionDuration(chapter.transition === "fly-to" ? 2000 : undefined);
+    setTransitionDuration(chapter.transition === "fly-to" ? 2500 : undefined);
 
     setCamera({
       longitude: chapter.map_state.center[0],

@@ -85,17 +85,24 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     : camera;
 
   return (
-    <Box
-      position="relative"
-      w="100%"
-      h="100%"
-      pointerEvents={interactive ? "auto" : "none"}
-    >
+    <Box position="relative" w="100%" h="100%">
       <DeckGL
         ref={ref}
         viewState={viewState}
         onViewStateChange={handleViewStateChange}
-        controller={interactive ? { dragRotate: true } : true}
+        controller={
+          interactive
+            ? { dragRotate: true }
+            : {
+                dragPan: false,
+                dragRotate: false,
+                scrollZoom: false,
+                doubleClickZoom: false,
+                touchZoom: false,
+                touchRotate: false,
+                keyboard: false,
+              }
+        }
         layers={layers}
         views={views}
         onHover={onHover}
@@ -112,17 +119,19 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         />
       </DeckGL>
 
-      <Box
-        position="absolute"
-        top={3}
-        left={3}
-        bg="white"
-        borderRadius="4px"
-        shadow="sm"
-        p={1}
-      >
-        <BasemapPicker value={basemap} onChange={onBasemapChange} />
-      </Box>
+      {interactive && (
+        <Box
+          position="absolute"
+          top={3}
+          left={3}
+          bg="white"
+          borderRadius="4px"
+          shadow="sm"
+          p={1}
+        >
+          <BasemapPicker value={basemap} onChange={onBasemapChange} />
+        </Box>
+      )}
 
       {children}
     </Box>

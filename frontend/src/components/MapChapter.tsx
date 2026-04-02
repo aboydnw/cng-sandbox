@@ -2,12 +2,14 @@ import { useCallback, useMemo, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
+import { CalendarPopover } from "./CalendarPopover";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
 import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
+import { detectCadence } from "../utils/temporal";
 
 interface MapChapterProps {
   chapter: Chapter;
@@ -30,6 +32,13 @@ export function MapChapter({
     pitch: chapter.map_state.pitch,
   });
   const [basemap, setBasemap] = useState(chapter.map_state.basemap);
+
+  const defaultTimestep = chapter.layer_config.timestep ?? 0;
+  const [activeTimestepIndex, setActiveTimestepIndex] =
+    useState(defaultTimestep);
+
+  const isTemporalInteractive =
+    dataset?.is_temporal && dataset.timesteps.length > 0;
 
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
@@ -56,6 +65,15 @@ export function MapChapter({
       if (dataset.raster_min != null && dataset.raster_max != null) {
         tileUrl += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
       }
+      if (dataset.is_temporal && dataset.timesteps.length > 0) {
+        const clampedIndex = Math.max(
+          0,
+          Math.min(activeTimestepIndex, dataset.timesteps.length - 1)
+        );
+        const ts = dataset.timesteps[clampedIndex];
+        const separator = tileUrl.includes("?") ? "&" : "?";
+        tileUrl = `${tileUrl}${separator}datetime=${ts.datetime}`;
+      }
       return buildRasterTileLayers({
         tileUrl,
         opacity: lc.opacity,
@@ -71,7 +89,7 @@ export function MapChapter({
         maxZoom: dataset.max_zoom ?? undefined,
       }),
     ];
-  }, [dataset, connection, chapter]);
+  }, [dataset, connection, chapter, activeTimestepIndex]);
 
   return (
     <Box maxW="900px" mx="auto" px={8} py={12}>
@@ -128,6 +146,26 @@ export function MapChapter({
             basemap={basemap}
             onBasemapChange={setBasemap}
           >
+            {/* Temporal date picker */}
+            {isTemporalInteractive && (
+              <Box
+                position="absolute"
+                top={3}
+                left="50%"
+                transform="translateX(-50%)"
+                zIndex={10}
+              >
+                <CalendarPopover
+                  timesteps={dataset!.timesteps}
+                  activeIndex={activeTimestepIndex}
+                  onIndexChange={setActiveTimestepIndex}
+                  cadence={detectCadence(
+                    dataset!.timesteps.map((t) => t.datetime)
+                  )}
+                />
+              </Box>
+            )}
+
             {/* Zoom controls */}
             <Flex
               position="absolute"

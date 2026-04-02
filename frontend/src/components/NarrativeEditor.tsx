@@ -2,7 +2,9 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { Plus } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
-import type { Connection, Dataset } from "../types";
+import type { Connection, Dataset, Timestep } from "../types";
+import { detectCadence } from "../utils/temporal";
+import { CalendarPopover } from "./CalendarPopover";
 import { ChapterTypePicker } from "./ChapterTypePicker";
 import { ColormapPicker } from "./ColormapPicker";
 import { MarkdownToolbar } from "./MarkdownToolbar";
@@ -22,6 +24,7 @@ interface NarrativeEditorProps {
   onAddDataset?: () => void;
   overlayPosition: "left" | "right";
   onOverlayPositionChange: (position: "left" | "right") => void;
+  temporalTimesteps?: Timestep[];
 }
 
 export function NarrativeEditor({
@@ -39,6 +42,7 @@ export function NarrativeEditor({
   onAddDataset,
   overlayPosition,
   onOverlayPositionChange,
+  temporalTimesteps,
 }: NarrativeEditorProps) {
   const [activeTab, setActiveTab] = useState<"content" | "style">("content");
   const narrativeRef = useRef<HTMLTextAreaElement>(null);
@@ -334,6 +338,28 @@ export function NarrativeEditor({
                 />
               </Box>
             </>
+          )}
+          {temporalTimesteps && temporalTimesteps.length > 0 && (
+            <Box>
+              <Text
+                fontSize="xs"
+                fontWeight="semibold"
+                color="fg.subtle"
+                mb={1}
+              >
+                Timestep
+              </Text>
+              <CalendarPopover
+                timesteps={temporalTimesteps}
+                activeIndex={layerConfig.timestep ?? 0}
+                onIndexChange={(index) =>
+                  onLayerConfigChange({ ...layerConfig, timestep: index })
+                }
+                cadence={detectCadence(
+                  temporalTimesteps.map((t) => t.datetime)
+                )}
+              />
+            </Box>
           )}
         </Flex>
       )}

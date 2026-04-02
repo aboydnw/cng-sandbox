@@ -4,6 +4,7 @@ const SPEED_MS: Record<number, number> = { 0.5: 1600, 1: 800, 2: 400 };
 
 interface AnimationState {
   isPlaying: boolean;
+  isAnimateMode: boolean;
   speed: number;
   activeIndex: number;
 }
@@ -16,6 +17,7 @@ export function useTemporalAnimation(
 ) {
   const [state, setState] = useState<AnimationState>({
     isPlaying: false,
+    isAnimateMode: false,
     speed: 1,
     activeIndex: initialIndex,
   });
@@ -52,6 +54,14 @@ export function useTemporalAnimation(
     setState((prev) => ({ ...prev, activeIndex: index, isPlaying: false }));
   }, []);
 
+  const enterAnimateMode = useCallback(() => {
+    setState((s) => ({ ...s, isAnimateMode: true, isPlaying: true }));
+  }, []);
+
+  const exitAnimateMode = useCallback(() => {
+    setState((s) => ({ ...s, isAnimateMode: false, isPlaying: false }));
+  }, []);
+
   useEffect(() => {
     clearTimer();
     if (state.isPlaying && isReady) {
@@ -69,5 +79,12 @@ export function useTemporalAnimation(
     }
   }, [isReady, state.isPlaying]);
 
-  return { ...state, togglePlay, setSpeed, setActiveIndex };
+  return {
+    ...state,
+    togglePlay,
+    setSpeed,
+    setActiveIndex,
+    enterAnimateMode,
+    exitAnimateMode,
+  };
 }

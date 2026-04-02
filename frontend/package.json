@@ -39,6 +39,7 @@
     "mp4-muxer": "^5.2.2",
     "pmtiles": "^4.4.0",
     "react": "^19.0.0",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.0.0",
     "react-map-gl": "^8.0.0",
     "react-markdown": "^10.1.0",

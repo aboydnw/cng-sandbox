@@ -28,6 +28,7 @@ import {
 } from "../lib/layers";
 import { useColorScale, MapLegend } from "../lib/maptool";
 import { TemporalControls } from "../components/TemporalControls";
+import { TemporalBrowseBar } from "../components/TemporalBrowseBar";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
@@ -144,8 +145,9 @@ export default function MapPage() {
   // Progressive preloading: only render the active layer + already-loaded
   // layers + one more unloaded layer at a time. This lets the first timestep
   // load fast while the rest preload sequentially in the background.
+  // Only computed in animate mode — browse mode uses a single layer.
   const renderIndices = useMemo(() => {
-    if (!ds?.is_temporal) return undefined;
+    if (!animation.isAnimateMode) return undefined;
     const indices = new Set<number>();
     indices.add(animation.activeIndex);
     loadedRef.current.forEach((i) => indices.add(i));
@@ -157,7 +159,7 @@ export default function MapPage() {
     }
     return indices;
     // loadedCount is the reactive trigger for loadedRef changes
-  }, [ds?.is_temporal, animation.activeIndex, loadedCount, frameCount]);
+  }, [animation.isAnimateMode, animation.activeIndex, loadedCount, frameCount]);
 
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;
   const deckRef = useRef(null);
@@ -212,6 +214,7 @@ export default function MapPage() {
     isMultiBand: controls.isMultiBand,
     activeTimestepIndex: animation.activeIndex,
     renderIndices,
+    isAnimateMode: animation.isAnimateMode,
     getLoadCallback,
     tileCacheRef,
     arrowTable,
@@ -326,33 +329,51 @@ export default function MapPage() {
                 </Box>
               )}
 
-              {ds?.is_temporal && controls.renderMode !== "client" && (
-                <TemporalControls
-                  timesteps={ds.timesteps}
-                  activeIndex={animation.activeIndex}
-                  onIndexChange={animation.setActiveIndex}
-                  isPlaying={animation.isPlaying}
-                  onTogglePlay={animation.togglePlay}
-                  speed={animation.speed}
-                  onSpeedChange={animation.setSpeed}
-                  preloadProgress={preloadProgress}
-                  label={
-                    ds.timesteps[animation.activeIndex]
-                      ? formatTimestepLabel(
-                          ds.timesteps[animation.activeIndex].datetime,
-                          cadence
-                        )
-                      : ""
-                  }
-                  onExportGif={() =>
-                    exportHook.exportGif(animation.setActiveIndex)
-                  }
-                  onExportMp4={() =>
-                    exportHook.exportMp4(animation.setActiveIndex)
-                  }
-                  isExporting={exportHook.isExporting}
-                />
-              )}
+              {ds?.is_temporal &&
+                controls.renderMode !== "client" &&
+                (animation.isAnimateMode ? (
+                  <TemporalControls
+                    timesteps={ds.timesteps}
+                    activeIndex={animation.activeIndex}
+                    onIndexChange={animation.setActiveIndex}
+                    isPlaying={animation.isPlaying}
+                    onTogglePlay={animation.togglePlay}
+                    speed={animation.speed}
+                    onSpeedChange={animation.setSpeed}
+                    preloadProgress={preloadProgress}
+                    label={
+                      ds.timesteps[animation.activeIndex]
+                        ? formatTimestepLabel(
+                            ds.timesteps[animation.activeIndex].datetime,
+                            cadence
+                          )
+                        : ""
+                    }
+                    onExportGif={() =>
+                      exportHook.exportGif(animation.setActiveIndex)
+                    }
+                    onExportMp4={() =>
+                      exportHook.exportMp4(animation.setActiveIndex)
+                    }
+                    isExporting={exportHook.isExporting}
+                    onExitAnimateMode={animation.exitAnimateMode}
+                  />
+                ) : (
+                  <Box
+                    position="absolute"
+                    bottom={4}
+                    left="50%"
+                    transform="translateX(-50%)"
+                    zIndex={10}
+                  >
+                    <TemporalBrowseBar
+                      timesteps={ds.timesteps}
+                      activeIndex={animation.activeIndex}
+                      onIndexChange={animation.setActiveIndex}
+                      onEnterAnimateMode={animation.enterAnimateMode}
+                    />
+                  </Box>
+                ))}
 
               {pixelInspector.hoverInfo && controls.renderMode === "client" && (
                 <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />

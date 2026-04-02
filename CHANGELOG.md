@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.10.0](https://github.com/aboydnw/cng-sandbox/compare/v1.9.3...v1.10.0) (2026-04-02)
+
+
+### Features
+
+* improve guided tour with overlay layout and fly-to fix ([#120](https://github.com/aboydnw/cng-sandbox/issues/120)) ([6e1e47c](https://github.com/aboydnw/cng-sandbox/commit/6e1e47c14215464c3989f5c517077025f61f82af))
+* production stability improvements ([63a09a2](https://github.com/aboydnw/cng-sandbox/commit/63a09a2b453d537dfcc3a0864e3a8caad805c818))
+* remote data connection with mosaic and temporal ingestion ([#119](https://github.com/aboydnw/cng-sandbox/issues/119)) ([30fc497](https://github.com/aboydnw/cng-sandbox/commit/30fc497ad0b337aa4225c9cd5b1be8ce7f625c5e))
+
+
+### Bug Fixes
+
+* enable deck.gl controller for transitions in non-interactive maps ([#124](https://github.com/aboydnw/cng-sandbox/issues/124)) ([eef4c5c](https://github.com/aboydnw/cng-sandbox/commit/eef4c5c8de94de285c480edbc7272d084d895253))
+* enable deck.gl controller for transitions in non-interactive maps ([#128](https://github.com/aboydnw/cng-sandbox/issues/128)) ([e43e752](https://github.com/aboydnw/cng-sandbox/commit/e43e752a7a3b19f920567fe236262a9bbfc2ab8a))
+* feed intermediate camera frames back to deck.gl during fly-to ([#125](https://github.com/aboydnw/cng-sandbox/issues/125)) ([6d18edf](https://github.com/aboydnw/cng-sandbox/commit/6d18edf1d7a7a95fd56ecb94c3761d2c845820ab))
+* feed intermediate camera frames back to deck.gl during fly-to ([#125](https://github.com/aboydnw/cng-sandbox/issues/125)) ([#127](https://github.com/aboydnw/cng-sandbox/issues/127)) ([03381b1](https://github.com/aboydnw/cng-sandbox/commit/03381b1813e0db5fb39aeb90cd0f226804cfd5c3))
+* guided tour overlay follow-up improvements ([#122](https://github.com/aboydnw/cng-sandbox/issues/122)) ([2636fa1](https://github.com/aboydnw/cng-sandbox/commit/2636fa1bd5a625ae965343cf1f5f055af7d2f507))
+* scrollytelling initialization and scroll context for overlay layout ([#123](https://github.com/aboydnw/cng-sandbox/issues/123)) ([a484eac](https://github.com/aboydnw/cng-sandbox/commit/a484eac808159e9e44c4f825fb506857f0b8f1ec))
+* use controller={true} with pointer-events for fly-to transitions ([#126](https://github.com/aboydnw/cng-sandbox/issues/126)) ([b0b2227](https://github.com/aboydnw/cng-sandbox/commit/b0b222756e4b34b7765bf3b43e3fbb910f59e6ea))
+
 ## [1.9.3](https://github.com/aboydnw/cng-sandbox/compare/v1.9.2...v1.9.3) (2026-04-01)
 
 

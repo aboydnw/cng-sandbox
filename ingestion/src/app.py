@@ -116,6 +116,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
         return {"status": "ok"}
 
     from src.routes.bug_report import router as bug_report_router
+    from src.routes.connect_remote import router as connect_remote_router
     from src.routes.connections import router as connections_router
     from src.routes.datasets import router as datasets_router
     from src.routes.jobs import router as jobs_router
@@ -130,6 +131,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(bug_report_router)
     app.include_router(connections_router)
     app.include_router(proxy_router)
+    app.include_router(connect_remote_router)
 
     return app
 

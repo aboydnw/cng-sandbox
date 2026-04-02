@@ -10,6 +10,7 @@ import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { BugReportModal } from "../components/BugReportModal";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
+import { RemoteConnectFlow } from "../components/RemoteConnectFlow";
 import {
   FolderOpen,
   GlobeHemisphereWest,

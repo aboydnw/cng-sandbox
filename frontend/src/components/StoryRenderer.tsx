@@ -60,6 +60,20 @@ function ScrollytellingBlock({
   useEffect(() => {
     if (!stepsRef.current || chapters.length === 0) return;
 
+    // Find the nearest scrollable ancestor for scrollama's container option.
+    // StoryReaderPage wraps us in an overflowY:auto container; scrollama
+    // needs to observe that element instead of the window.
+    let scrollParent: HTMLElement | undefined;
+    let el: HTMLElement | null = stepsRef.current.parentElement;
+    while (el) {
+      const overflow = getComputedStyle(el).overflowY;
+      if (overflow === "auto" || overflow === "scroll") {
+        scrollParent = el;
+        break;
+      }
+      el = el.parentElement;
+    }
+
     const scroller = scrollama();
     scrollerRef.current = scroller;
 
@@ -69,7 +83,8 @@ function ScrollytellingBlock({
           "[data-step]"
         ) as unknown as HTMLElement[],
         offset: 0.8,
-      })
+        ...(scrollParent ? { container: scrollParent } : {}),
+      } as Parameters<typeof scroller.setup>[0])
       .onStepEnter(({ index }) => {
         setActiveIndex(index);
       });
@@ -129,9 +144,9 @@ function ScrollytellingBlock({
     : undefined;
 
   return (
-    <Box h="100vh" position="relative" overflow="hidden">
-      {/* Full-width map background */}
-      <Box position="absolute" inset={0}>
+    <Box position="relative">
+      {/* Sticky map — stays fixed in viewport while steps scroll past */}
+      <Box position="sticky" top={0} h="100vh" zIndex={0}>
         {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
           <UnifiedMap
             camera={camera}
@@ -163,13 +178,12 @@ function ScrollytellingBlock({
         )}
       </Box>
 
-      {/* Floating overlay — full-width scroll container, cards float per-chapter */}
+      {/* Steps in normal document flow — pulled up over the sticky map */}
       <Box
         ref={stepsRef}
-        position="absolute"
-        inset={0}
-        overflowY="auto"
+        position="relative"
         zIndex={5}
+        mt="-100vh"
         pointerEvents="none"
       >
         {chapters.map((chapter, i) => (

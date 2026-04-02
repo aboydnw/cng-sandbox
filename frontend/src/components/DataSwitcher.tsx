@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { CaretDown, Plus, Upload } from "@phosphor-icons/react";
+import { CaretDown, Lightning, Plus, SquaresFour, Upload } from "@phosphor-icons/react";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import { transition } from "../lib/interactionStyles";
 import type { Dataset, MapItemSource } from "../types";
+import { ExpiryBadge } from "./ExpiryBadge";
 
 interface DataSwitcherProps {
   activeId: string;
@@ -20,6 +21,9 @@ interface ListItem {
   name: string;
   source: MapItemSource;
   dataType: "raster" | "vector";
+  isZeroCopy?: boolean;
+  isMosaic?: boolean;
+  expiresAt?: string | null;
 }
 
 function dotColor(item: ListItem): string {
@@ -57,6 +61,9 @@ export function DataSwitcher({
             name: d.filename,
             source: "dataset" as const,
             dataType: d.dataset_type,
+            isZeroCopy: d.is_zero_copy,
+            isMosaic: d.is_mosaic,
+            expiresAt: d.expires_at,
           }))
         )
       )
@@ -216,6 +223,21 @@ export function DataSwitcher({
                   {typeBadge(item)}
                 </Text>
               )}
+              {item.isZeroCopy && (
+                <Flex align="center" gap={1} px={2} py={0.5} borderRadius="full"
+                      bg="green.50" color="green.600" fontSize="11px" fontWeight={500}>
+                  <Lightning size={12} />
+                  <Text>Zero-copy</Text>
+                </Flex>
+              )}
+              {item.isMosaic && (
+                <Flex align="center" gap={1} px={2} py={0.5} borderRadius="full"
+                      bg="purple.50" color="purple.600" fontSize="11px" fontWeight={500}>
+                  <SquaresFour size={12} />
+                  <Text>Mosaic</Text>
+                </Flex>
+              )}
+              {item.expiresAt && <ExpiryBadge expiresAt={item.expiresAt} />}
             </Flex>
           ))}
           {datasets.length === 0 && (

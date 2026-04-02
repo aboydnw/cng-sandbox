@@ -1,4 +1,5 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
+import { Stop } from "@phosphor-icons/react";
 import type { Timestep } from "../types";
 
 interface TemporalControlsProps {
@@ -14,6 +15,7 @@ interface TemporalControlsProps {
   onExportGif: () => void;
   onExportMp4: () => void;
   isExporting: boolean;
+  onExitAnimateMode?: () => void;
 }
 
 const SPEEDS = [0.5, 1, 2];
@@ -31,6 +33,7 @@ export function TemporalControls({
   onExportGif,
   onExportMp4,
   isExporting,
+  onExitAnimateMode,
 }: TemporalControlsProps) {
   const isLoading =
     preloadProgress !== null && preloadProgress.current < preloadProgress.total;
@@ -115,6 +118,18 @@ export function TemporalControls({
           >
             {isPlaying ? "⏸" : "▶"}
           </Box>
+
+          {/* Exit animate mode button */}
+          {onExitAnimateMode && (
+            <IconButton
+              aria-label="Exit animation"
+              size="sm"
+              variant="ghost"
+              onClick={onExitAnimateMode}
+            >
+              <Stop />
+            </IconButton>
+          )}
 
           {/* Slider */}
           <Box flex={1}>

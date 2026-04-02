@@ -23,6 +23,7 @@ interface UseLayerBuilderOptions {
   isMultiBand: boolean;
   activeTimestepIndex: number;
   renderIndices?: Set<number>;
+  isAnimateMode?: boolean;
   getLoadCallback: (index: number) => () => void;
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   arrowTable: Table | null;
@@ -41,6 +42,7 @@ export function useLayerBuilder({
   isMultiBand,
   activeTimestepIndex,
   renderIndices,
+  isAnimateMode,
   getLoadCallback,
   tileCacheRef,
   arrowTable,
@@ -168,6 +170,7 @@ export function useLayerBuilder({
         tileUrl,
         opacity,
         isTemporalActive: ds.is_temporal,
+        isAnimateMode,
         timesteps: ds.timesteps,
         activeTimestepIndex,
         renderIndices,

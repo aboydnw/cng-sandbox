@@ -90,7 +90,19 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         ref={ref}
         viewState={viewState}
         onViewStateChange={handleViewStateChange}
-        controller={interactive ? { dragRotate: true } : false}
+        controller={
+          interactive
+            ? { dragRotate: true }
+            : {
+                dragPan: false,
+                dragRotate: false,
+                scrollZoom: false,
+                doubleClickZoom: false,
+                touchZoom: false,
+                touchRotate: false,
+                keyboard: false,
+              }
+        }
         layers={layers}
         views={views}
         onHover={onHover}

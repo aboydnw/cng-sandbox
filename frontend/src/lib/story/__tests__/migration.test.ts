@@ -139,4 +139,19 @@ describe("migrateStory", () => {
     expect(migrated.chapters[0].type).toBe("prose");
     expect(migrated.chapters[1].type).toBe("scrollytelling");
   });
+
+  it("backfills overlay_position as left when missing", () => {
+    const old = makeOldStory();
+    const migrated = migrateStory(old);
+    expect(migrated.chapters[0].overlay_position).toBe("left");
+    expect(migrated.chapters[1].overlay_position).toBe("left");
+  });
+
+  it("preserves existing overlay_position", () => {
+    const old = makeOldStory();
+    (old.chapters as Record<string, unknown>[])[1].overlay_position = "right";
+    const migrated = migrateStory(old);
+    expect(migrated.chapters[0].overlay_position).toBe("left");
+    expect(migrated.chapters[1].overlay_position).toBe("right");
+  });
 });

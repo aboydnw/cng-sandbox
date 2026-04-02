@@ -269,12 +269,14 @@ async def _run_with_conversion(
             for i, (url, filename) in enumerate(zip(urls, filenames, strict=False)):
                 raw_path = os.path.join(tmpdir, f"raw_{i}_{filename}")
 
-                async with httpx.AsyncClient(timeout=120.0) as client:
-                    async with client.stream("GET", url, follow_redirects=True) as resp:
-                        resp.raise_for_status()
-                        with open(raw_path, "wb") as f:
-                            async for chunk in resp.aiter_bytes(chunk_size=1_048_576):
-                                f.write(chunk)
+                async with (
+                    httpx.AsyncClient(timeout=120.0) as client,
+                    client.stream("GET", url, follow_redirects=True) as resp,
+                ):
+                    resp.raise_for_status()
+                    with open(raw_path, "wb") as f:
+                        async for chunk in resp.aiter_bytes(chunk_size=1_048_576):
+                            f.write(chunk)
 
                 format_pair = detect_format(filename)
                 out_filename = os.path.splitext(filename)[0] + ".tif"

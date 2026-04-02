@@ -88,6 +88,7 @@ export default function StoryEditorPage() {
     updateChapterNarrative,
     updateChapterLayerConfig,
     updateChapterType,
+    updateChapterOverlayPosition,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,
@@ -386,6 +387,8 @@ export default function StoryEditorPage() {
               datasets={allDatasets}
               connections={allConnections}
               onAddDataset={() => setUploadModalOpen(true)}
+              overlayPosition={activeChapter?.overlay_position ?? "left"}
+              onOverlayPositionChange={updateChapterOverlayPosition}
             />
           ) : (
             <Flex h="100%" align="center" justify="center">

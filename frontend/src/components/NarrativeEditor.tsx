@@ -20,6 +20,8 @@ interface NarrativeEditorProps {
   datasets: Dataset[];
   connections?: Connection[];
   onAddDataset?: () => void;
+  overlayPosition: "left" | "right";
+  onOverlayPositionChange: (position: "left" | "right") => void;
 }
 
 export function NarrativeEditor({
@@ -35,6 +37,8 @@ export function NarrativeEditor({
   datasets,
   connections,
   onAddDataset,
+  overlayPosition,
+  onOverlayPositionChange,
 }: NarrativeEditorProps) {
   const [activeTab, setActiveTab] = useState<"content" | "style">("content");
   const narrativeRef = useRef<HTMLTextAreaElement>(null);
@@ -61,6 +65,50 @@ export function NarrativeEditor({
         value={chapterType}
         onChange={handleChapterTypeChange}
       />
+
+      {chapterType === "scrollytelling" && (
+        <Box>
+          <Text
+            fontSize="12px"
+            color="gray.500"
+            fontWeight={600}
+            letterSpacing="1px"
+            textTransform="uppercase"
+            mb={1}
+          >
+            Overlay position
+          </Text>
+          <Flex
+            gap={0}
+            border="1px solid"
+            borderColor="gray.200"
+            borderRadius="6px"
+            overflow="hidden"
+            w="fit-content"
+          >
+            {(["left", "right"] as const).map((pos) => (
+              <Box
+                key={pos}
+                as="button"
+                px={3}
+                py={1}
+                fontSize="12px"
+                fontWeight={600}
+                bg={overlayPosition === pos ? "brand.orange" : "transparent"}
+                color={overlayPosition === pos ? "white" : "gray.600"}
+                cursor="pointer"
+                onClick={() => onOverlayPositionChange(pos)}
+                _hover={{
+                  bg: overlayPosition === pos ? "brand.orange" : "gray.50",
+                }}
+                textTransform="capitalize"
+              >
+                {pos}
+              </Box>
+            ))}
+          </Flex>
+        </Box>
+      )}
 
       {showStyleTab && (
         <Box>

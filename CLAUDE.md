@@ -5,7 +5,7 @@ Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefi
 ## Architecture
 
 ```
-Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8000)
+Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8086)
                                 → /raster proxy → titiler-pgstac (:80)
                                 → /vector proxy → tipg (:80)
 
@@ -101,7 +101,7 @@ docker compose --profile prod up -d --build
 ### Notes
 
 - `docker compose up` (without `--profile prod`) still runs local dev without Caddy
-- Backend service ports (8000, 8081-8083) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
+- Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 
 ## CI/CD
@@ -146,7 +146,8 @@ All commits to `main` must use conventional prefixes:
 | Port | Service | Image |
 |------|---------|-------|
 | 5185 | Frontend (Vite dev server) | Local build |
-| 8000 | Ingestion API (FastAPI) | Local build |
+| 8084 | COG tiler | titiler 0.19.1 |
+| 8086 | Ingestion API (FastAPI) | Local build |
 | 8081 | STAC API | stac-fastapi-pgstac 5.0.2 |
 | 8082 | Raster tiler | titiler-pgstac 1.7.2 |
 | 8083 | Vector tiler | tipg 1.0.1 |
@@ -170,11 +171,11 @@ This is the trickiest part of the stack. There are two URL contexts:
    - `PUBLIC_VECTOR_TILER_URL=/vector`
 
 The frontend's Vite dev server proxies `/api` → ingestion, `/raster` → titiler, `/vector` → tipg. This is configured via server-side env vars (NOT `VITE_` prefixed):
-- `API_PROXY_TARGET=http://ingestion:8000`
+- `API_PROXY_TARGET=http://ingestion:8000` (internal container port; host-mapped to 8086)
 - `RASTER_TILER_PROXY_TARGET=http://raster-tiler:80`
 - `VECTOR_TILER_PROXY_TARGET=http://vector-tiler:80`
 
-**Key rule**: `VITE_*` env vars are baked into client-side JS at build time. Never set them to Docker-internal hostnames (like `http://ingestion:8000`) — the browser can't resolve those. Use empty strings and let the Vite proxy handle routing.
+**Key rule**: `VITE_*` env vars are baked into client-side JS at build time. Never set them to Docker-internal hostnames (like `http://ingestion:8000`) — the browser can't resolve those. Note: internal container ports (like 8000) differ from host-mapped ports (like 8086). Use empty strings and let the Vite proxy handle routing.
 
 ## Frontend
 

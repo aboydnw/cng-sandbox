@@ -18,7 +18,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       "/api": {
-        target: process.env.API_PROXY_TARGET || "http://localhost:8000",
+        target: process.env.API_PROXY_TARGET || "http://localhost:8086",
       },
       "/cog": {
         target: process.env.COG_TILER_PROXY_TARGET || "http://localhost:8084",

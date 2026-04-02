@@ -121,7 +121,7 @@ services:
         limits:
           memory: 2G
     ports:
-      - "8000:8000"
+      - "8086:8000"
     environment:
       S3_BUCKET: ${S3_BUCKET}
       S3_ENDPOINT: ${R2_ENDPOINT}

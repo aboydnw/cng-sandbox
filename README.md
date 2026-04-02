@@ -41,7 +41,7 @@ docker compose down -v    # stop and wipe all data
 ## Architecture
 
 ```
-Browser ── Frontend (:5185) ──┬── Ingestion API (:8000)
+Browser ── Frontend (:5185) ──┬── Ingestion API (:8086)
                               ├── Raster tiler  (:8082)
                               └── Vector tiler  (:8083)
 
@@ -75,7 +75,7 @@ Then run the backend and frontend locally for faster iteration:
 cd ingestion
 pip install -e "../geo-conversions[all]"
 pip install -e ".[dev]"
-uvicorn src.app:app --reload --port 8000
+uvicorn src.app:app --reload --port 8086
 
 # Frontend (in another terminal)
 cd frontend
@@ -112,7 +112,7 @@ Copy `.env.example` to `.env` before starting. R2 credentials must be configured
 | Port | Service | Purpose |
 |------|---------|---------|
 | 5185 | Frontend | Vite dev server — the main entry point |
-| 8000 | Ingestion API | File upload and conversion |
+| 8086 | Ingestion API | File upload and conversion |
 | 8081 | STAC API | Spatiotemporal catalog |
 | 8082 | Raster tiler | COG tile serving (titiler) |
 | 8083 | Vector tiler | Vector tile serving (tipg) |

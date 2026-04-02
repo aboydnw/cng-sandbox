@@ -135,3 +135,7 @@ class Dataset(BaseModel):
     compression: str | None = None
     created_at: datetime
     workspace_id: str | None = None
+    is_mosaic: bool = False
+    is_zero_copy: bool = False
+    source_url: str | None = None
+    expires_at: datetime | None = None

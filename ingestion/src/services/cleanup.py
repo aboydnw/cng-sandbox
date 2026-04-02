@@ -22,11 +22,21 @@ async def cleanup_expired_rows(
 
     Returns list of deleted IDs.
     """
-    cutoff = datetime.now(UTC) - timedelta(days=ttl_days)
+    from sqlalchemy import or_
+
+    now = datetime.now(UTC)
+    cutoff = now - timedelta(days=ttl_days)
     deleted = []
 
     expired_datasets = (
-        session.query(DatasetRow).filter(DatasetRow.created_at < cutoff).all()
+        session.query(DatasetRow)
+        .filter(
+            or_(
+                (DatasetRow.expires_at.isnot(None)) & (DatasetRow.expires_at < now),
+                (DatasetRow.expires_at.is_(None)) & (DatasetRow.created_at < cutoff),
+            )
+        )
+        .all()
     )
     for row in expired_datasets:
         logger.info("Cleaning up expired dataset %s (%s)", row.id, row.filename)

@@ -143,3 +143,83 @@ def test_geometry_is_valid_geojson():
 
         assert -123 < item.bbox[0] < -121
         assert 37 < item.bbox[1] < 39
+
+
+class TestBuildStacItemFromHref:
+    def test_builds_item_with_remote_href(self):
+        from src.services.stac_ingest import build_stac_item_from_href
+
+        item = build_stac_item_from_href(
+            href="https://data.example.com/scene_01.tif",
+            dataset_id="abc123",
+            collection_id="sandbox-abc123",
+            item_id="abc123-0",
+            bbox=[-180, -90, 180, 90],
+            geometry={
+                "type": "Polygon",
+                "coordinates": [
+                    [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]
+                ],
+            },
+        )
+        assert item.id == "abc123-0"
+        assert item.assets["data"].href == "https://data.example.com/scene_01.tif"
+        assert list(item.bbox) == [-180, -90, 180, 90]
+
+    def test_sets_collection_id(self):
+        from src.services.stac_ingest import build_stac_item_from_href
+
+        item = build_stac_item_from_href(
+            href="s3://bucket/scene.tif",
+            dataset_id="abc123",
+            collection_id="sandbox-abc123",
+            item_id="abc123-0",
+            bbox=[-10, -10, 10, 10],
+            geometry={
+                "type": "Polygon",
+                "coordinates": [
+                    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]
+                ],
+            },
+        )
+        assert item.collection_id == "sandbox-abc123"
+
+    def test_uses_provided_datetime(self):
+        from datetime import UTC, datetime
+
+        from src.services.stac_ingest import build_stac_item_from_href
+
+        dt = datetime(2020, 6, 15, tzinfo=UTC)
+        item = build_stac_item_from_href(
+            href="s3://bucket/scene.tif",
+            dataset_id="abc123",
+            collection_id="sandbox-abc123",
+            item_id="abc123-0",
+            bbox=[-10, -10, 10, 10],
+            geometry={
+                "type": "Polygon",
+                "coordinates": [
+                    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]
+                ],
+            },
+            input_datetime=dt,
+        )
+        assert item.datetime == dt
+
+    def test_asset_has_cog_media_type(self):
+        from src.services.stac_ingest import COG_MEDIA_TYPE, build_stac_item_from_href
+
+        item = build_stac_item_from_href(
+            href="https://data.example.com/scene.tif",
+            dataset_id="abc123",
+            collection_id="sandbox-abc123",
+            item_id="abc123-0",
+            bbox=[-10, -10, 10, 10],
+            geometry={
+                "type": "Polygon",
+                "coordinates": [
+                    [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]]
+                ],
+            },
+        )
+        assert item.assets["data"].media_type == COG_MEDIA_TYPE

@@ -10,6 +10,7 @@ import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { BugReportModal } from "../components/BugReportModal";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
+import { RemoteConnectFlow } from "../components/RemoteConnectFlow";
 import {
   FolderOpen,
   GlobeHemisphereWest,
@@ -235,9 +236,32 @@ export default function UploadPage() {
             lineHeight={1.8}
             listStyleType="disc"
           >
-            <li>COGs, PMTiles, and XYZ tile endpoints</li>
+            <li>COGs, PMTiles, XYZ tiles, or a page of files</li>
             <li>Auto-detects format from your URL</li>
-            <li>No upload or conversion needed</li>
+            <li>Cloud-optimized files served directly — no upload needed</li>
+          </Box>
+          <RemoteConnectFlow
+            onDatasetReady={(id) => navigate(workspacePath(`/map/${id}`))}
+          />
+          <Box
+            my={4}
+            borderTop="1px solid"
+            borderColor="brand.border"
+            position="relative"
+          >
+            <Box
+              position="absolute"
+              top="-10px"
+              left="50%"
+              transform="translateX(-50%)"
+              bg="white"
+              px={2}
+              fontSize="11px"
+              color="brand.textSecondary"
+              whiteSpace="nowrap"
+            >
+              Or connect a single tile source:
+            </Box>
           </Box>
           <InlineConnectionForm
             onCancel={() => {

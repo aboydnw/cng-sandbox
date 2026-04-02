@@ -27,6 +27,7 @@ dependencies = [
     "pystac[validation]>=1.10.0",
     "geojson-pydantic>=1.1.0",
     "h5py>=3.10.0",
+    "beautifulsoup4>=4.14.3",
 ]
 
 [project.optional-dependencies]

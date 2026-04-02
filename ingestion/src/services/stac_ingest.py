@@ -117,6 +117,101 @@ async def ingest_raster(
     return tile_url
 
 
+def build_stac_item_from_href(
+    href: str,
+    dataset_id: str,
+    collection_id: str,
+    item_id: str,
+    bbox: list[float],
+    geometry: dict,
+    input_datetime: datetime | None = None,
+) -> pystac.Item:
+    """Build a STAC item from a remote href without reading the file."""
+    item = pystac.Item(
+        id=item_id,
+        geometry=geometry,
+        bbox=bbox,
+        datetime=input_datetime or datetime.now(UTC),
+        properties={},
+    )
+    item.add_asset(
+        "data",
+        pystac.Asset(href=href, media_type=COG_MEDIA_TYPE, roles=["data"]),
+    )
+    item.collection_id = collection_id
+    return item
+
+
+async def ingest_mosaic_raster(
+    dataset_id: str,
+    hrefs: list[str],
+    bboxes: list[list[float]],
+    geometries: list[dict],
+    filename: str,
+    datetimes: list[str] | None = None,
+) -> str:
+    """Ingest a mosaic: one collection + N items with distinct spatial extents.
+
+    Returns the tile URL template for the ingested collection.
+    """
+    settings = get_settings()
+    collection_id = f"sandbox-{dataset_id}"
+
+    items: list[pystac.Item] = []
+    for i, (href, bbox, geometry) in enumerate(
+        zip(hrefs, bboxes, geometries, strict=False)
+    ):
+        dt = datetime.fromisoformat(datetimes[i]) if datetimes else None
+        item = build_stac_item_from_href(
+            href=href,
+            dataset_id=dataset_id,
+            collection_id=collection_id,
+            item_id=f"{dataset_id}-{i}",
+            bbox=bbox,
+            geometry=geometry,
+            input_datetime=dt,
+        )
+        items.append(item)
+
+    overall_bbox = [
+        min(b[0] for b in bboxes),
+        min(b[1] for b in bboxes),
+        max(b[2] for b in bboxes),
+        max(b[3] for b in bboxes),
+    ]
+    collection = build_stac_collection(
+        collection_id=collection_id,
+        description=f"Mosaic upload: {filename}",
+        bbox=overall_bbox,
+        temporal_start=datetimes[0] if datetimes else None,
+        temporal_end=datetimes[-1] if datetimes else None,
+    )
+
+    async with httpx.AsyncClient(
+        base_url=settings.stac_api_url, timeout=60.0
+    ) as client:
+        resp = await client.post("/collections", json=collection.to_dict())
+        if resp.status_code not in (200, 201, 409):
+            raise RuntimeError(
+                f"Failed to create STAC collection: {resp.status_code} {resp.text}"
+            )
+
+        for i, item in enumerate(items):
+            resp = await client.post(
+                f"/collections/{collection_id}/items", json=item.to_dict()
+            )
+            if resp.status_code not in (200, 201):
+                raise RuntimeError(
+                    f"Failed to create STAC item {i}: {resp.status_code} {resp.text}"
+                )
+
+    tile_url = (
+        f"{settings.public_raster_tiler_url}/collections/{collection_id}"
+        f"/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}?assets=data"
+    )
+    return tile_url
+
+
 async def ingest_temporal_raster(
     dataset_id: str,
     cog_paths: list[str],

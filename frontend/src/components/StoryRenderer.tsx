@@ -90,6 +90,7 @@ function ScrollytellingBlock({
       isTransitioningRef.current = true;
       setTransitionDuration(2000);
     } else {
+      isTransitioningRef.current = false;
       setTransitionDuration(undefined);
     }
 

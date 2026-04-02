@@ -162,33 +162,30 @@ function ScrollytellingBlock({
         )}
       </Box>
 
-      {/* Floating overlay panel */}
+      {/* Floating overlay — full-width scroll container, cards float per-chapter */}
       <Box
         ref={stepsRef}
         position="absolute"
-        top={0}
-        bottom={0}
-        w="35%"
-        minW="320px"
-        maxW="480px"
+        inset={0}
         overflowY="auto"
         zIndex={5}
         pointerEvents="none"
-        transition="left 0.5s ease, right 0.5s ease"
-        {...(chapters[activeIndex]?.overlay_position === "right"
-          ? { right: 0, left: "auto" }
-          : { left: 0, right: "auto" })}
       >
         {chapters.map((chapter, i) => (
           <Box
             key={chapter.id}
             data-step
+            w="35%"
+            minW="320px"
+            maxW="480px"
             px={6}
             pt={i === 0 ? 12 : 4}
             pb="80vh"
             opacity={activeIndex === i ? 1 : 0.3}
             transition="opacity 400ms cubic-bezier(0.32, 0.72, 0, 1)"
             pointerEvents="auto"
+            ml={chapter.overlay_position === "right" ? "auto" : 0}
+            mr={chapter.overlay_position === "right" ? 0 : "auto"}
             onClick={
               onChapterClick ? () => onChapterClick(chapter.id) : undefined
             }

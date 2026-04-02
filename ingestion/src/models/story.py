@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime
+from typing import Literal
 
 from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, String, Text
@@ -36,7 +37,7 @@ class ChapterPayload(BaseModel):
     narrative: str
     map_state: dict
     transition: str = "fly-to"
-    overlay_position: str = "left"
+    overlay_position: Literal["left", "right"] = "left"
     layer_config: dict | None = None
 
 

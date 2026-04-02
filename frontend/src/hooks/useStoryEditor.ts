@@ -375,9 +375,7 @@ export function useStoryEditor() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId
-          ? { ...ch, overlay_position: position }
-          : ch
+        ch.id === activeChapterId ? { ...ch, overlay_position: position } : ch
       ),
     }));
   }

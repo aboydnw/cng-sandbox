@@ -66,7 +66,11 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         bearing: viewState.bearing ?? 0,
         pitch: viewState.pitch ?? 0,
       });
-      if (onTransitionEnd && interactionState && !interactionState.inTransition) {
+      if (
+        onTransitionEnd &&
+        interactionState &&
+        !interactionState.inTransition
+      ) {
         onTransitionEnd();
       }
     },

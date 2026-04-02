@@ -6,6 +6,7 @@ interface RasterTileLayerOptions {
   tileUrl: string;
   opacity: number;
   isTemporalActive: boolean;
+  isAnimateMode?: boolean;
   timesteps?: Timestep[];
   activeTimestepIndex?: number;
   renderIndices?: Set<number>;
@@ -17,6 +18,7 @@ export function buildRasterTileLayers({
   tileUrl,
   opacity,
   isTemporalActive,
+  isAnimateMode,
   timesteps = [],
   activeTimestepIndex = 0,
   renderIndices,
@@ -27,6 +29,18 @@ export function buildRasterTileLayers({
       createCOGLayer({
         id,
         tileUrl,
+        opacity,
+      }),
+    ];
+  }
+
+  if (!isAnimateMode && timesteps.length > 0) {
+    const ts = timesteps[activeTimestepIndex];
+    const separator = tileUrl.includes("?") ? "&" : "?";
+    return [
+      createCOGLayer({
+        id,
+        tileUrl: `${tileUrl}${separator}datetime=${ts.datetime}`,
         opacity,
       }),
     ];

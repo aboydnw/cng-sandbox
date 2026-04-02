@@ -40,7 +40,6 @@ function ScrollytellingBlock({
     number | undefined
   >(undefined);
   const flyToRef = useRef(new FlyToInterpolator());
-  const isTransitioningRef = useRef(false);
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
 
@@ -101,13 +100,7 @@ function ScrollytellingBlock({
 
     setBasemap(chapter.map_state.basemap);
 
-    if (chapter.transition === "fly-to") {
-      isTransitioningRef.current = true;
-      setTransitionDuration(2000);
-    } else {
-      isTransitioningRef.current = false;
-      setTransitionDuration(undefined);
-    }
+    setTransitionDuration(chapter.transition === "fly-to" ? 2000 : undefined);
 
     setCamera({
       longitude: chapter.map_state.center[0],
@@ -125,13 +118,7 @@ function ScrollytellingBlock({
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
-    if (isTransitioningRef.current) return;
     setCamera(c);
-    setTransitionDuration(undefined);
-  }, []);
-
-  const handleTransitionEnd = useCallback(() => {
-    isTransitioningRef.current = false;
     setTransitionDuration(undefined);
   }, []);
 
@@ -159,7 +146,6 @@ function ScrollytellingBlock({
               transitionDuration ? flyToRef.current : undefined
             }
             interactive={false}
-            onTransitionEnd={handleTransitionEnd}
           />
         )}
         {activeDataset === null && !hasConnection && (

@@ -23,6 +23,7 @@ interface UnifiedMapProps {
   transitionDuration?: number;
   transitionInterpolator?: FlyToInterpolator;
   interactive?: boolean;
+  onTransitionEnd?: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,12 +41,14 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     transitionDuration,
     transitionInterpolator,
     interactive = true,
+    onTransitionEnd,
   },
   ref
 ) {
   const handleViewStateChange = useCallback(
     ({
       viewState,
+      interactionState,
     }: {
       viewState: {
         longitude: number;
@@ -54,6 +57,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         bearing?: number;
         pitch?: number;
       };
+      interactionState?: { inTransition?: boolean };
     }) => {
       onCameraChange({
         longitude: viewState.longitude,
@@ -62,8 +66,11 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         bearing: viewState.bearing ?? 0,
         pitch: viewState.pitch ?? 0,
       });
+      if (onTransitionEnd && interactionState && !interactionState.inTransition) {
+        onTransitionEnd();
+      }
     },
-    [onCameraChange]
+    [onCameraChange, onTransitionEnd]
   );
 
   const views = useMemo(() => new MapView({ repeat: true }), []);

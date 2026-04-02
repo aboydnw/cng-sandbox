@@ -5,11 +5,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import type { Timestep } from "../types";
 import type { Cadence } from "../utils/temporal";
-import {
-  formatTimestepLabel,
-  isSubDaily,
-  groupTimestepsByDate,
-} from "../utils/temporal";
+import { formatTimestepLabel, isSubDaily } from "../utils/temporal";
 
 function localDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

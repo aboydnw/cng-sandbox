@@ -83,8 +83,8 @@ function ScrollytellingBlock({
           "[data-step]"
         ) as unknown as HTMLElement[],
         offset: 0.8,
-        container: scrollParent,
-      })
+        ...(scrollParent ? { container: scrollParent } : {}),
+      } as Parameters<typeof scroller.setup>[0])
       .onStepEnter(({ index }) => {
         setActiveIndex(index);
       });

@@ -66,10 +66,11 @@ export function MapChapter({
         tileUrl += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
       }
       if (dataset.is_temporal && dataset.timesteps.length > 0) {
-        const ts =
-          dataset.timesteps[
-            Math.min(activeTimestepIndex, dataset.timesteps.length - 1)
-          ];
+        const clampedIndex = Math.max(
+          0,
+          Math.min(activeTimestepIndex, dataset.timesteps.length - 1)
+        );
+        const ts = dataset.timesteps[clampedIndex];
         const separator = tileUrl.includes("?") ? "&" : "?";
         tileUrl = `${tileUrl}${separator}datetime=${ts.datetime}`;
       }

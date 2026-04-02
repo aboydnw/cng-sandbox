@@ -35,7 +35,11 @@ export function buildRasterTileLayers({
   }
 
   if (!isAnimateMode && timesteps.length > 0) {
-    const ts = timesteps[activeTimestepIndex];
+    const clampedIndex = Math.max(
+      0,
+      Math.min(activeTimestepIndex, timesteps.length - 1)
+    );
+    const ts = timesteps[clampedIndex];
     const separator = tileUrl.includes("?") ? "&" : "?";
     return [
       createCOGLayer({
@@ -46,12 +50,13 @@ export function buildRasterTileLayers({
     ];
   }
 
+  const separator = tileUrl.includes("?") ? "&" : "?";
   return timesteps
     .map((ts, i) => {
       if (renderIndices && !renderIndices.has(i)) return null;
       return createCOGLayer({
         id: `raster-ts-${i}`,
-        tileUrl: `${tileUrl}&datetime=${ts.datetime}`,
+        tileUrl: `${tileUrl}${separator}datetime=${ts.datetime}`,
         opacity: i === activeTimestepIndex ? opacity : 0,
         onViewportLoad: getLoadCallback?.(i),
       });

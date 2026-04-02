@@ -60,7 +60,9 @@ export function useRemoteConnect() {
       });
 
       if (!resp.ok) {
-        const body = await resp.json().catch(() => ({ detail: "Discovery failed" }));
+        const body = await resp
+          .json()
+          .catch(() => ({ detail: "Discovery failed" }));
         const msg =
           typeof body.detail === "string" ? body.detail : "Discovery failed";
         setState((prev) => ({ ...prev, phase: "error", error: msg }));
@@ -97,7 +99,9 @@ export function useRemoteConnect() {
         });
 
         if (!resp.ok) {
-          const body = await resp.json().catch(() => ({ detail: "Ingestion failed" }));
+          const body = await resp
+            .json()
+            .catch(() => ({ detail: "Ingestion failed" }));
           const msg =
             typeof body.detail === "string" ? body.detail : "Ingestion failed";
           setState((prev) => ({ ...prev, phase: "error", error: msg }));
@@ -107,7 +111,9 @@ export function useRemoteConnect() {
         const { job_id } = await resp.json();
         setState((prev) => ({ ...prev, jobId: job_id }));
 
-        const es = new EventSource(`${config.apiBase}/api/jobs/${job_id}/stream`);
+        const es = new EventSource(
+          `${config.apiBase}/api/jobs/${job_id}/stream`
+        );
         esRef.current = es;
 
         es.addEventListener("status", (event) => {

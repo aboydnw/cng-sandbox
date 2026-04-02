@@ -64,7 +64,7 @@ def _migrate_schema(engine):
     from sqlalchemy.exc import DBAPIError
 
     with engine.connect() as conn:
-        for col, typ in [("band_count", "INTEGER"), ("rescale", "TEXT"), ("expires_at", "TIMESTAMP")]:
+        for col, typ in [("band_count", "INTEGER"), ("rescale", "TEXT")]:
             try:
                 conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
                 conn.commit()
@@ -72,6 +72,13 @@ def _migrate_schema(engine):
                 conn.rollback()
                 if getattr(getattr(exc, "orig", None), "pgcode", None) == "42701":
                     continue
+                raise
+        try:
+            conn.execute(text("ALTER TABLE datasets ADD COLUMN expires_at TIMESTAMP"))
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
                 raise
 
 

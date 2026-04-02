@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { CaretDown, Lightning, Plus, SquaresFour, Upload } from "@phosphor-icons/react";
+import {
+  CaretDown,
+  Lightning,
+  Plus,
+  SquaresFour,
+  Upload,
+} from "@phosphor-icons/react";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import { transition } from "../lib/interactionStyles";
@@ -224,15 +230,33 @@ export function DataSwitcher({
                 </Text>
               )}
               {item.isZeroCopy && (
-                <Flex align="center" gap={1} px={2} py={0.5} borderRadius="full"
-                      bg="green.50" color="green.600" fontSize="11px" fontWeight={500}>
+                <Flex
+                  align="center"
+                  gap={1}
+                  px={2}
+                  py={0.5}
+                  borderRadius="full"
+                  bg="green.50"
+                  color="green.600"
+                  fontSize="11px"
+                  fontWeight={500}
+                >
                   <Lightning size={12} />
                   <Text>Zero-copy</Text>
                 </Flex>
               )}
               {item.isMosaic && (
-                <Flex align="center" gap={1} px={2} py={0.5} borderRadius="full"
-                      bg="purple.50" color="purple.600" fontSize="11px" fontWeight={500}>
+                <Flex
+                  align="center"
+                  gap={1}
+                  px={2}
+                  py={0.5}
+                  borderRadius="full"
+                  bg="purple.50"
+                  color="purple.600"
+                  fontSize="11px"
+                  fontWeight={500}
+                >
                   <SquaresFour size={12} />
                   <Text>Mosaic</Text>
                 </Flex>

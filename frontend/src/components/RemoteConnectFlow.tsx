@@ -72,7 +72,10 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           fontSize="13px"
         >
           <Flex align="center" gap={2} mb={1}>
-            <CloudArrowDown size={14} color="var(--chakra-colors-brand-orange)" />
+            <CloudArrowDown
+              size={14}
+              color="var(--chakra-colors-brand-orange)"
+            />
             <Text fontWeight={600} color="brand.brown">
               Found {count} {dominant_extension} file{count !== 1 ? "s" : ""}
             </Text>

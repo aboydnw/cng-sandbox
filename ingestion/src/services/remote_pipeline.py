@@ -18,7 +18,6 @@ from src.models import (
     Job,
     JobStatus,
     Timestep,
-    ValidationCheck,
 )
 from src.models.dataset import persist_dataset
 from src.services import stac_ingest

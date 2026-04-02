@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,6 +21,7 @@ class TestReadRemoteBounds:
     @pytest.mark.asyncio
     async def test_returns_bbox_and_geojson(self, monkeypatch):
         import rasterio
+
         from src.services import remote_pipeline
 
         class FakeSrc:
@@ -48,7 +48,9 @@ class TestEstimateTotalSize:
         from src.services import remote_pipeline
 
         class FakeResponse:
-            headers = {"content-length": "1000"}
+            @property
+            def headers(self):
+                return {"content-length": "1000"}
 
         class FakeClient:
             async def __aenter__(self):
@@ -72,7 +74,9 @@ class TestEstimateTotalSize:
         from src.services import remote_pipeline
 
         class FakeResponse:
-            headers = {}
+            @property
+            def headers(self):
+                return {}
 
         class FakeClient:
             async def __aenter__(self):
@@ -131,9 +135,9 @@ class TestRunRemotePipeline:
 
         class FakeRemoteSrc:
             count = 1
-            descriptions = ["Band 1"]
-            colorinterp = [rasterio.enums.ColorInterp.gray]
-            dtypes = ["float32"]
+            descriptions = ("Band 1",)
+            colorinterp = (rasterio.enums.ColorInterp.gray,)
+            dtypes = ("float32",)
 
             def __enter__(self):
                 return self
@@ -205,9 +209,9 @@ class TestRunRemotePipeline:
 
         class FakeRemoteSrc:
             count = 1
-            descriptions = ["B1"]
-            colorinterp = [rasterio.enums.ColorInterp.gray]
-            dtypes = ["uint8"]
+            descriptions = ("B1",)
+            colorinterp = (rasterio.enums.ColorInterp.gray,)
+            dtypes = ("uint8",)
 
             def __enter__(self):
                 return self

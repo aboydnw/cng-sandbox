@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.discovery import DiscoveredFile, _parse_s3_listing, extract_file_links, fetch_and_discover
+from src.services.discovery import (
+    _parse_s3_listing,
+    extract_file_links,
+    fetch_and_discover,
+)
 
 
 class TestExtractFileLinks:
@@ -100,8 +104,11 @@ class TestFetchAndDiscover:
         """
 
         class FakeResponse:
-            headers = {"content-type": "text/html"}
             text = html
+
+            @property
+            def headers(self):
+                return {"content-type": "text/html"}
 
             def raise_for_status(self):
                 pass

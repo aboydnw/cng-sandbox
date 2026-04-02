@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 import rasterio
 import rasterio.enums
 import rasterio.transform

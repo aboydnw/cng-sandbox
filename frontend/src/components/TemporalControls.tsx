@@ -1,21 +1,24 @@
 import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
-import { Stop } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import type { Timestep } from "../types";
+import type { Cadence } from "../utils/temporal";
+import { CalendarPopover } from "./CalendarPopover";
 
 interface TemporalControlsProps {
   timesteps: Timestep[];
   activeIndex: number;
   onIndexChange: (index: number) => void;
+  cadence: Cadence;
+  onPrev: () => void;
+  onNext: () => void;
   isPlaying: boolean;
   onTogglePlay: () => void;
   speed: number;
   onSpeedChange: (speed: number) => void;
   preloadProgress: { current: number; total: number } | null;
-  label: string;
   onExportGif: () => void;
   onExportMp4: () => void;
   isExporting: boolean;
-  onExitAnimateMode?: () => void;
 }
 
 const SPEEDS = [0.5, 1, 2];
@@ -24,16 +27,17 @@ export function TemporalControls({
   timesteps,
   activeIndex,
   onIndexChange,
+  cadence,
+  onPrev,
+  onNext,
   isPlaying,
   onTogglePlay,
   speed,
   onSpeedChange,
   preloadProgress,
-  label,
   onExportGif,
   onExportMp4,
   isExporting,
-  onExitAnimateMode,
 }: TemporalControlsProps) {
   const isLoading =
     preloadProgress !== null && preloadProgress.current < preloadProgress.total;
@@ -47,29 +51,13 @@ export function TemporalControls({
       transform="translateX(-50%)"
       zIndex={10}
     >
-      {/* Timestamp pill */}
-      <Flex justify="center" mb={2}>
-        <Box
-          bg="#2d1b10"
-          color="white"
-          px={3}
-          py={1}
-          borderRadius="12px"
-          fontSize="13px"
-          fontWeight={600}
-        >
-          {label}
-        </Box>
-      </Flex>
-
-      {/* Controls bar */}
       <Box
         bg="white"
         borderRadius="10px"
         boxShadow="0 2px 12px rgba(0,0,0,0.12)"
         px={4}
         py={2.5}
-        w="420px"
+        w="480px"
         maxW="calc(100vw - 32px)"
       >
         {/* Pre-load progress */}
@@ -96,117 +84,141 @@ export function TemporalControls({
           </Flex>
         )}
 
-        {/* Main controls */}
-        <Flex align="center" gap={2.5} opacity={disabled ? 0.4 : 1}>
-          {/* Play/pause button */}
-          <Box
-            as="button"
-            onClick={onTogglePlay}
-            {...({ disabled } as object)}
-            bg={disabled ? "#ccc" : "brand.orange"}
-            color="white"
-            borderRadius="50%"
-            w="28px"
-            h="28px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            cursor={disabled ? "not-allowed" : "pointer"}
-            flexShrink={0}
-            fontSize="12px"
-            border="none"
-          >
-            {isPlaying ? "⏸" : "▶"}
-          </Box>
-
-          {/* Exit animate mode button */}
-          {onExitAnimateMode && (
-            <IconButton
-              aria-label="Exit animation"
-              size="sm"
-              variant="ghost"
-              onClick={onExitAnimateMode}
-            >
-              <Stop />
-            </IconButton>
-          )}
-
-          {/* Slider */}
-          <Box flex={1}>
-            <input
-              type="range"
-              min={0}
-              max={timesteps.length - 1}
-              value={activeIndex}
-              onChange={(e) => onIndexChange(Number(e.target.value))}
-              disabled={disabled}
-              style={{ width: "100%", accentColor: "#CF3F02" }}
+        {/* Top row: three groups */}
+        <Flex align="center" justify="space-between" gap={2}>
+          {/* Left: Calendar date picker (dark pill wrapper so white text is visible) */}
+          <Box bg="#2d1b10" borderRadius="8px" px={1} py={0.5} flexShrink={0}>
+            <CalendarPopover
+              timesteps={timesteps}
+              activeIndex={activeIndex}
+              onIndexChange={onIndexChange}
+              cadence={cadence}
             />
           </Box>
 
-          {/* Speed buttons */}
-          <Flex gap="1px" flexShrink={0}>
-            {SPEEDS.map((s) => (
-              <Box
-                key={s}
-                as="button"
-                onClick={() => onSpeedChange(s)}
-                {...({ disabled } as object)}
-                border="1px solid"
-                borderColor={s === speed ? "brand.orange" : "#e8e3dd"}
-                bg={s === speed ? "#fef6f1" : "white"}
-                borderRadius="3px"
-                px="5px"
-                py="2px"
-                fontSize="9px"
-                color={s === speed ? "brand.orange" : "#888"}
-                fontWeight={s === speed ? 600 : 400}
-                cursor={disabled ? "not-allowed" : "pointer"}
-              >
-                {s}×
-              </Box>
-            ))}
+          {/* Center: Transport controls */}
+          <Flex align="center" gap={1}>
+            <IconButton
+              aria-label="Previous"
+              size="xs"
+              variant="ghost"
+              onClick={onPrev}
+              disabled={disabled || activeIndex === 0}
+            >
+              <CaretLeft />
+            </IconButton>
+
+            {/* Play/pause button */}
+            <Box
+              as="button"
+              onClick={onTogglePlay}
+              {...({ disabled } as object)}
+              bg={disabled ? "#ccc" : "brand.orange"}
+              color="white"
+              borderRadius="50%"
+              w="28px"
+              h="28px"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              cursor={disabled ? "not-allowed" : "pointer"}
+              flexShrink={0}
+              fontSize="12px"
+              border="none"
+            >
+              {isPlaying ? "⏸" : "▶"}
+            </Box>
+
+            <IconButton
+              aria-label="Next"
+              size="xs"
+              variant="ghost"
+              onClick={onNext}
+              disabled={disabled || activeIndex === timesteps.length - 1}
+            >
+              <CaretRight />
+            </IconButton>
           </Flex>
 
-          {/* Divider */}
-          <Box w="1px" h="20px" bg="#e8e3dd" flexShrink={0} />
+          {/* Right: Speed + Export */}
+          <Flex align="center" gap={1.5} flexShrink={0}>
+            {/* Speed buttons */}
+            <Flex gap="1px">
+              {SPEEDS.map((s) => (
+                <Box
+                  key={s}
+                  as="button"
+                  onClick={() => onSpeedChange(s)}
+                  {...({ disabled } as object)}
+                  border="1px solid"
+                  borderColor={s === speed ? "brand.orange" : "#e8e3dd"}
+                  bg={s === speed ? "#fef6f1" : "white"}
+                  borderRadius="3px"
+                  px="5px"
+                  py="2px"
+                  fontSize="9px"
+                  color={s === speed ? "brand.orange" : "#888"}
+                  fontWeight={s === speed ? 600 : 400}
+                  cursor={disabled ? "not-allowed" : "pointer"}
+                >
+                  {s}×
+                </Box>
+              ))}
+            </Flex>
 
-          {/* Export buttons */}
-          <Box
-            as="button"
-            onClick={onExportGif}
-            {...({ disabled } as object)}
-            border="1px solid #e8e3dd"
-            bg="white"
-            borderRadius="4px"
-            px={2}
-            py={1}
-            fontSize="10px"
-            color="#2d1b10"
-            fontWeight={500}
-            cursor={disabled ? "not-allowed" : "pointer"}
-            flexShrink={0}
-          >
-            GIF
-          </Box>
-          <Box
-            as="button"
-            onClick={onExportMp4}
-            {...({ disabled } as object)}
-            border="1px solid #e8e3dd"
-            bg="white"
-            borderRadius="4px"
-            px={2}
-            py={1}
-            fontSize="10px"
-            color="#2d1b10"
-            fontWeight={500}
-            cursor={disabled ? "not-allowed" : "pointer"}
-            flexShrink={0}
-          >
-            MP4
-          </Box>
+            {/* Divider */}
+            <Box w="1px" h="20px" bg="#e8e3dd" flexShrink={0} />
+
+            {/* Export buttons */}
+            <Box
+              as="button"
+              onClick={onExportGif}
+              {...({ disabled } as object)}
+              border="1px solid #e8e3dd"
+              bg="white"
+              borderRadius="4px"
+              px={2}
+              py={1}
+              fontSize="10px"
+              color="#2d1b10"
+              fontWeight={500}
+              cursor={disabled ? "not-allowed" : "pointer"}
+              flexShrink={0}
+            >
+              GIF
+            </Box>
+            <Box
+              as="button"
+              onClick={onExportMp4}
+              {...({ disabled } as object)}
+              border="1px solid #e8e3dd"
+              bg="white"
+              borderRadius="4px"
+              px={2}
+              py={1}
+              fontSize="10px"
+              color="#2d1b10"
+              fontWeight={500}
+              cursor={disabled ? "not-allowed" : "pointer"}
+              flexShrink={0}
+            >
+              MP4
+            </Box>
+          </Flex>
         </Flex>
+
+        {/* Bottom row: Slider */}
+        <Box mt={2}>
+          <input
+            type="range"
+            min={0}
+            max={timesteps.length - 1}
+            value={activeIndex}
+            onChange={(e) => onIndexChange(Number(e.target.value))}
+            disabled={disabled}
+            style={{ width: "100%", accentColor: "#CF3F02" }}
+          />
+        </Box>
       </Box>
     </Box>
   );

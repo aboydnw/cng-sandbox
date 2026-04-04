@@ -122,10 +122,13 @@ export function CalendarPopover({
         borderRadius="6px"
         px={2}
         py={1}
-        _hover={{ bg: "#f5f3f0" }}
+        _hover={{ bg: "brand.bgSubtle" }}
       >
-        <CalendarBlank size={16} color="#888" />
-        <Text fontSize="13px" fontWeight={600} color="#2d1b10">
+        <CalendarBlank
+          size={16}
+          color="var(--chakra-colors-brand-text-secondary)"
+        />
+        <Text fontSize="13px" fontWeight={600} color="brand.brown">
           {label}
         </Text>
       </Flex>
@@ -141,19 +144,19 @@ export function CalendarPopover({
           borderRadius="lg"
           boxShadow="0 4px 20px rgba(0,0,0,0.15)"
           border="1px solid"
-          borderColor="#e8e3dd"
+          borderColor="brand.border"
           zIndex={1000}
           p={2}
           css={{
             ".rdp-day_selected": {
-              backgroundColor: "#CF3F02",
+              backgroundColor: "var(--chakra-colors-brand-orange)",
               color: "white",
             },
             ".rdp-day_disabled": {
               color: "#ccc",
             },
             ".rdp-day:not(.rdp-day_disabled):hover": {
-              backgroundColor: "#f5f3f0",
+              backgroundColor: "brand.bgSubtle",
             },
           }}
         >
@@ -168,8 +171,13 @@ export function CalendarPopover({
           />
 
           {selectedDateKey && timesForSelectedDate.length > 0 && (
-            <Box borderTop="1px solid" borderColor="#e8e3dd" mt={2} pt={2}>
-              <Text fontSize="xs" fontWeight="semibold" color="#888" mb={1}>
+            <Box borderTop="1px solid" borderColor="brand.border" mt={2} pt={2}>
+              <Text
+                fontSize="xs"
+                fontWeight="semibold"
+                color="brand.textSecondary"
+                mb={1}
+              >
                 Select time
               </Text>
               <Flex direction="column" gap={1} maxH="150px" overflowY="auto">
@@ -190,10 +198,12 @@ export function CalendarPopover({
                           ? "brand.orange"
                           : "transparent"
                       }
-                      color={ts.index === activeIndex ? "white" : "#2d1b10"}
+                      color={ts.index === activeIndex ? "white" : "brand.brown"}
                       _hover={{
                         bg:
-                          ts.index === activeIndex ? "brand.orange" : "#f5f3f0",
+                          ts.index === activeIndex
+                            ? "brand.orange"
+                            : "brand.bgSubtle",
                       }}
                       onClick={() => handleTimeSelect(ts.index)}
                     >

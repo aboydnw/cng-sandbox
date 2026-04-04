@@ -121,10 +121,6 @@ export default function MapPage() {
   }, [item?.id]);
 
   const isPreloaded = !ds?.is_temporal || loadedCount >= frameCount;
-  const preloadProgress =
-    ds?.is_temporal && !isPreloaded
-      ? { current: loadedCount, total: frameCount }
-      : null;
 
   const cadence = useMemo(
     () =>
@@ -140,6 +136,11 @@ export default function MapPage() {
     isPreloaded,
     initialTimestep
   );
+
+  const preloadProgress =
+    ds?.is_temporal && animation.isAnimateMode && !isPreloaded
+      ? { current: loadedCount, total: frameCount }
+      : null;
 
   // Progressive preloading: only render the active layer + already-loaded
   // layers + one more unloaded layer at a time. This lets the first timestep

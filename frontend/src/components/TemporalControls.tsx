@@ -86,8 +86,8 @@ export function TemporalControls({
 
         {/* Top row: three groups */}
         <Flex align="center" justify="space-between" gap={2}>
-          {/* Left: Calendar date picker (dark pill wrapper so white text is visible) */}
-          <Box bg="#2d1b10" borderRadius="8px" px={1} py={0.5} flexShrink={0}>
+          {/* Left: Calendar date picker */}
+          <Box bg="#2d1b10" borderRadius="12px" px={2} py={1} flexShrink={0}>
             <CalendarPopover
               timesteps={timesteps}
               activeIndex={activeIndex}

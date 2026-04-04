@@ -40,20 +40,6 @@ describe("CalendarPopover", () => {
     expect(screen.getByText("Mar 2024")).toBeTruthy();
   });
 
-  it("calls onIndexChange when next button is clicked", () => {
-    const onIndexChange = vi.fn();
-    renderWithChakra(
-      <CalendarPopover
-        timesteps={TIMESTEPS}
-        activeIndex={0}
-        onIndexChange={onIndexChange}
-        cadence="monthly"
-      />
-    );
-    fireEvent.click(screen.getByRole("button", { name: /next timestep/i }));
-    expect(onIndexChange).toHaveBeenCalledWith(1);
-  });
-
   it("opens the calendar popover when the calendar button is clicked", () => {
     renderWithChakra(
       <CalendarPopover

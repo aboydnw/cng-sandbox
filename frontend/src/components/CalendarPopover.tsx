@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
-import { CaretLeft, CaretRight, CalendarBlank } from "@phosphor-icons/react";
+import { CalendarBlank } from "@phosphor-icons/react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import type { Timestep } from "../types";
@@ -85,14 +85,6 @@ export function CalendarPopover({
     setSelectedDateKey(null);
   }
 
-  function handlePrev() {
-    if (activeIndex > 0) onIndexChange(activeIndex - 1);
-  }
-
-  function handleNext() {
-    if (activeIndex < timesteps.length - 1) onIndexChange(activeIndex + 1);
-  }
-
   const timesForSelectedDate =
     selectedDateKey && dateGroups
       ? (dateGroups.get(selectedDateKey) ?? [])
@@ -119,19 +111,10 @@ export function CalendarPopover({
     <Box position="relative" ref={popoverRef}>
       <Flex align="center" gap={1}>
         <IconButton
-          aria-label="Previous timestep"
-          size="xs"
-          variant="ghost"
-          onClick={handlePrev}
-          disabled={activeIndex === 0}
-        >
-          <CaretLeft />
-        </IconButton>
-
-        <IconButton
           aria-label="Open calendar"
           size="sm"
           variant="ghost"
+          color="white"
           onClick={() => {
             setIsOpen(!isOpen);
             setSelectedDateKey(null);
@@ -140,42 +123,50 @@ export function CalendarPopover({
           <CalendarBlank />
         </IconButton>
 
-        <Text fontSize="sm" fontWeight="medium" minW="120px" textAlign="center">
+        <Text
+          fontSize="sm"
+          fontWeight="medium"
+          minW="120px"
+          textAlign="center"
+          color="white"
+        >
           {label}
         </Text>
-
-        <IconButton
-          aria-label="Next timestep"
-          size="xs"
-          variant="ghost"
-          onClick={handleNext}
-          disabled={activeIndex === timesteps.length - 1}
-        >
-          <CaretRight />
-        </IconButton>
       </Flex>
 
       {isOpen && (
         <Box
           position="absolute"
-          top="100%"
+          bottom="100%"
           left="50%"
           transform="translateX(-50%)"
-          mt={2}
-          bg="white"
+          mb={2}
+          bg="#2d1b10"
           borderRadius="lg"
           boxShadow="lg"
           border="1px solid"
-          borderColor="brand.border"
+          borderColor="rgba(255,255,255,0.15)"
           zIndex={1000}
           p={2}
           css={{
+            ".rdp": {
+              color: "white",
+            },
+            ".rdp-day": {
+              color: "white",
+            },
+            ".rdp-nav button": {
+              color: "white",
+            },
+            ".rdp-day_disabled": {
+              color: "rgba(255,255,255,0.25)",
+            },
             ".rdp-day_selected": {
               bg: "brand.orange",
               color: "white",
             },
             ".rdp-day:not(.rdp-day_disabled):hover": {
-              bg: "brand.bgSubtle",
+              bg: "rgba(255,255,255,0.1)",
             },
           }}
         >
@@ -190,11 +181,16 @@ export function CalendarPopover({
           />
 
           {selectedDateKey && timesForSelectedDate.length > 0 && (
-            <Box borderTop="1px solid" borderColor="brand.border" mt={2} pt={2}>
+            <Box
+              borderTop="1px solid"
+              borderColor="rgba(255,255,255,0.15)"
+              mt={2}
+              pt={2}
+            >
               <Text
                 fontSize="xs"
                 fontWeight="semibold"
-                color="fg.subtle"
+                color="rgba(255,255,255,0.6)"
                 mb={1}
               >
                 Select time
@@ -217,12 +213,12 @@ export function CalendarPopover({
                           ? "brand.orange"
                           : "transparent"
                       }
-                      color={ts.index === activeIndex ? "white" : "inherit"}
+                      color={ts.index === activeIndex ? "white" : "white"}
                       _hover={{
                         bg:
                           ts.index === activeIndex
                             ? "brand.orange"
-                            : "brand.bgSubtle",
+                            : "rgba(255,255,255,0.1)",
                       }}
                       onClick={() => handleTimeSelect(ts.index)}
                     >

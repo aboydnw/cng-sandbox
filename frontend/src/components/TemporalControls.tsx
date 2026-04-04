@@ -1,5 +1,5 @@
 import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, Play, Pause } from "@phosphor-icons/react";
 import type { Timestep } from "../types";
 import type { Cadence } from "../utils/temporal";
 import { CalendarPopover } from "./CalendarPopover";
@@ -126,7 +126,11 @@ export function TemporalControls({
               fontSize="12px"
               border="none"
             >
-              {isPlaying ? "⏸" : "▶"}
+              {isPlaying ? (
+                <Pause weight="fill" size={14} />
+              ) : (
+                <Play weight="fill" size={14} />
+              )}
             </Box>
 
             <IconButton
@@ -211,6 +215,8 @@ export function TemporalControls({
         <Box mt={2}>
           <input
             type="range"
+            aria-label="Select timestep"
+            aria-valuetext={`Timestep ${activeIndex + 1} of ${timesteps.length}`}
             min={0}
             max={timesteps.length - 1}
             value={activeIndex}

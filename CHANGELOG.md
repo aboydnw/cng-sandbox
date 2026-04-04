@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.0](https://github.com/aboydnw/cng-sandbox/compare/v1.10.0...v1.11.0) (2026-04-04)
+
+
+### Features
+
+* temporal browsing and story integration ([#129](https://github.com/aboydnw/cng-sandbox/issues/129)) ([4d48388](https://github.com/aboydnw/cng-sandbox/commit/4d483886b0eac92fedfa0e76f0f7a2e2fd606c67))
+
+
+### Bug Fixes
+
+* calendar popover styling and clickability ([#133](https://github.com/aboydnw/cng-sandbox/issues/133)) ([f638b39](https://github.com/aboydnw/cng-sandbox/commit/f638b39929f7f54935cb635664806daf4a593ae1))
+* hide preload progress in browse mode, improve calendar pill padding ([#132](https://github.com/aboydnw/cng-sandbox/issues/132)) ([8ca796a](https://github.com/aboydnw/cng-sandbox/commit/8ca796af91612c03633fd00877ad3acb3b32b1cc))
+
 ## [1.10.0](https://github.com/aboydnw/cng-sandbox/compare/v1.9.3...v1.10.0) (2026-04-02)
 
 

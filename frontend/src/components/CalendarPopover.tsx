@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { CalendarBlank } from "@phosphor-icons/react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
@@ -109,27 +109,23 @@ export function CalendarPopover({
 
   return (
     <Box position="relative" ref={popoverRef}>
-      <Flex align="center" gap={1}>
-        <IconButton
-          aria-label="Open calendar"
-          size="sm"
-          variant="ghost"
-          color="white"
-          onClick={() => {
-            setIsOpen(!isOpen);
-            setSelectedDateKey(null);
-          }}
-        >
-          <CalendarBlank />
-        </IconButton>
-
-        <Text
-          fontSize="sm"
-          fontWeight="medium"
-          minW="120px"
-          textAlign="center"
-          color="white"
-        >
+      <Flex
+        as="button"
+        aria-label="Open calendar"
+        align="center"
+        gap={1.5}
+        cursor="pointer"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSelectedDateKey(null);
+        }}
+        borderRadius="6px"
+        px={2}
+        py={1}
+        _hover={{ bg: "#f5f3f0" }}
+      >
+        <CalendarBlank size={16} color="#888" />
+        <Text fontSize="13px" fontWeight={600} color="#2d1b10">
           {label}
         </Text>
       </Flex>
@@ -141,32 +137,23 @@ export function CalendarPopover({
           left="50%"
           transform="translateX(-50%)"
           mb={2}
-          bg="#2d1b10"
+          bg="white"
           borderRadius="lg"
-          boxShadow="lg"
+          boxShadow="0 4px 20px rgba(0,0,0,0.15)"
           border="1px solid"
-          borderColor="rgba(255,255,255,0.15)"
+          borderColor="#e8e3dd"
           zIndex={1000}
           p={2}
           css={{
-            ".rdp": {
-              color: "white",
-            },
-            ".rdp-day": {
-              color: "white",
-            },
-            ".rdp-nav button": {
+            ".rdp-day_selected": {
+              backgroundColor: "#CF3F02",
               color: "white",
             },
             ".rdp-day_disabled": {
-              color: "rgba(255,255,255,0.25)",
-            },
-            ".rdp-day_selected": {
-              bg: "brand.orange",
-              color: "white",
+              color: "#ccc",
             },
             ".rdp-day:not(.rdp-day_disabled):hover": {
-              bg: "rgba(255,255,255,0.1)",
+              backgroundColor: "#f5f3f0",
             },
           }}
         >
@@ -181,18 +168,8 @@ export function CalendarPopover({
           />
 
           {selectedDateKey && timesForSelectedDate.length > 0 && (
-            <Box
-              borderTop="1px solid"
-              borderColor="rgba(255,255,255,0.15)"
-              mt={2}
-              pt={2}
-            >
-              <Text
-                fontSize="xs"
-                fontWeight="semibold"
-                color="rgba(255,255,255,0.6)"
-                mb={1}
-              >
+            <Box borderTop="1px solid" borderColor="#e8e3dd" mt={2} pt={2}>
+              <Text fontSize="xs" fontWeight="semibold" color="#888" mb={1}>
                 Select time
               </Text>
               <Flex direction="column" gap={1} maxH="150px" overflowY="auto">
@@ -213,12 +190,10 @@ export function CalendarPopover({
                           ? "brand.orange"
                           : "transparent"
                       }
-                      color={ts.index === activeIndex ? "white" : "white"}
+                      color={ts.index === activeIndex ? "white" : "#2d1b10"}
                       _hover={{
                         bg:
-                          ts.index === activeIndex
-                            ? "brand.orange"
-                            : "rgba(255,255,255,0.1)",
+                          ts.index === activeIndex ? "brand.orange" : "#f5f3f0",
                       }}
                       onClick={() => handleTimeSelect(ts.index)}
                     >

@@ -87,14 +87,12 @@ export function TemporalControls({
         {/* Top row: three groups */}
         <Flex align="center" justify="space-between" gap={2}>
           {/* Left: Calendar date picker */}
-          <Box bg="#2d1b10" borderRadius="12px" px={2} py={1} flexShrink={0}>
-            <CalendarPopover
-              timesteps={timesteps}
-              activeIndex={activeIndex}
-              onIndexChange={onIndexChange}
-              cadence={cadence}
-            />
-          </Box>
+          <CalendarPopover
+            timesteps={timesteps}
+            activeIndex={activeIndex}
+            onIndexChange={onIndexChange}
+            cadence={cadence}
+          />
 
           {/* Center: Transport controls */}
           <Flex align="center" gap={1}>

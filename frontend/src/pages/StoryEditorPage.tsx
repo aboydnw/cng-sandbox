@@ -396,7 +396,8 @@ export default function StoryEditorPage() {
               datasetType={activeDataset?.dataset_type ?? "raster"}
               datasets={allDatasets}
               connections={allConnections}
-              onAddDataset={() => setUploadModalOpen(true)}
+              onUploadClick={() => setUploadModalOpen(true)}
+              onAddConnectionClick={() => setUploadModalOpen(true)}
               overlayPosition={activeChapter?.overlay_position ?? "left"}
               onOverlayPositionChange={updateChapterOverlayPosition}
               temporalTimesteps={activeDatasetTimesteps}

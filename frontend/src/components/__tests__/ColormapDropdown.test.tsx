@@ -10,16 +10,12 @@ function renderWithChakra(ui: React.ReactElement) {
 
 describe("ColormapDropdown", () => {
   it("shows the current colormap name in the trigger", () => {
-    renderWithChakra(
-      <ColormapDropdown value="viridis" onChange={vi.fn()} />
-    );
+    renderWithChakra(<ColormapDropdown value="viridis" onChange={vi.fn()} />);
     expect(screen.getByText("viridis")).toBeTruthy();
   });
 
   it("opens dropdown on click and shows all colormaps", () => {
-    renderWithChakra(
-      <ColormapDropdown value="viridis" onChange={vi.fn()} />
-    );
+    renderWithChakra(<ColormapDropdown value="viridis" onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getByText("magma")).toBeTruthy();
     expect(screen.getByText("plasma")).toBeTruthy();
@@ -28,18 +24,14 @@ describe("ColormapDropdown", () => {
 
   it("calls onChange when a colormap is selected", () => {
     const onChange = vi.fn();
-    renderWithChakra(
-      <ColormapDropdown value="viridis" onChange={onChange} />
-    );
+    renderWithChakra(<ColormapDropdown value="viridis" onChange={onChange} />);
     fireEvent.click(screen.getByRole("button"));
     fireEvent.click(screen.getByText("magma"));
     expect(onChange).toHaveBeenCalledWith("magma");
   });
 
   it("closes dropdown after selection", () => {
-    renderWithChakra(
-      <ColormapDropdown value="viridis" onChange={vi.fn()} />
-    );
+    renderWithChakra(<ColormapDropdown value="viridis" onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("button"));
     fireEvent.click(screen.getByText("magma"));
     expect(screen.queryByText("plasma")).toBeNull();

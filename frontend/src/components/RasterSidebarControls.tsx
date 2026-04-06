@@ -91,10 +91,7 @@ export function RasterSidebarControls({
           <Text fontSize="11px" color="brand.textSecondary" mb={1}>
             Colormap
           </Text>
-          <ColormapDropdown
-            value={colormapName}
-            onChange={onColormapChange}
-          />
+          <ColormapDropdown value={colormapName} onChange={onColormapChange} />
         </Box>
       )}
 

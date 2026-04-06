@@ -86,6 +86,8 @@ export function ChapterList({
         </Text>
         <Box
           as="button"
+          type="button"
+          aria-label="Add chapter"
           w="28px"
           h="28px"
           display="flex"
@@ -96,6 +98,11 @@ export function ChapterList({
           cursor="pointer"
           onClick={onAdd}
           _hover={{ color: "brand.orange", bg: "gray.50" }}
+          _focusVisible={{
+            outline: "2px solid",
+            outlineColor: "brand.orange",
+            outlineOffset: "2px",
+          }}
         >
           <Plus size={16} weight="bold" />
         </Box>

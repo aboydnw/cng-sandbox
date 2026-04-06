@@ -94,8 +94,8 @@ export function ColormapDropdown({ value, onChange }: ColormapDropdownProps) {
               w="100%"
               px={3}
               py={1.5}
-              bg={normalizedValue === name ? "whiteAlpha.100" : "transparent"}
-              _hover={{ bg: "whiteAlpha.50" }}
+              bg={normalizedValue === name ? "brand.bgSubtle" : "transparent"}
+              _hover={{ bg: "brand.bgSubtle" }}
               cursor="pointer"
             >
               <Box

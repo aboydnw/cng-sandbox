@@ -173,32 +173,28 @@ export function NarrativeEditor({
       )}
 
       {/* 4. Timestep (temporal datasets only) */}
-      {showMapControls &&
-        temporalTimesteps &&
-        temporalTimesteps.length > 0 && (
-          <Box>
-            <Text
-              fontSize="12px"
-              color="gray.500"
-              fontWeight={600}
-              letterSpacing="1px"
-              textTransform="uppercase"
-              mb={1}
-            >
-              Timestep
-            </Text>
-            <CalendarPopover
-              timesteps={temporalTimesteps}
-              activeIndex={layerConfig.timestep ?? 0}
-              onIndexChange={(index) =>
-                onLayerConfigChange({ ...layerConfig, timestep: index })
-              }
-              cadence={detectCadence(
-                temporalTimesteps.map((t) => t.datetime)
-              )}
-            />
-          </Box>
-        )}
+      {showMapControls && temporalTimesteps && temporalTimesteps.length > 0 && (
+        <Box>
+          <Text
+            fontSize="12px"
+            color="gray.500"
+            fontWeight={600}
+            letterSpacing="1px"
+            textTransform="uppercase"
+            mb={1}
+          >
+            Timestep
+          </Text>
+          <CalendarPopover
+            timesteps={temporalTimesteps}
+            activeIndex={layerConfig.timestep ?? 0}
+            onIndexChange={(index) =>
+              onLayerConfigChange({ ...layerConfig, timestep: index })
+            }
+            cadence={detectCadence(temporalTimesteps.map((t) => t.datetime))}
+          />
+        </Box>
+      )}
 
       {/* 5. Chapter title */}
       <input

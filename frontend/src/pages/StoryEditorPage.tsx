@@ -1,5 +1,5 @@
 import { Box, Button, Flex, Input, Text, Link } from "@chakra-ui/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   PencilSimple,
   X as XIcon,
@@ -13,6 +13,7 @@ import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
 import { UploadModal } from "../components/UploadModal";
+import { ConnectionModal } from "../components/ConnectionModal";
 import { PublishDialog } from "../components/PublishDialog";
 import { Header } from "../components/Header";
 import { BugReportLink } from "../components/BugReportLink";
@@ -97,7 +98,10 @@ export default function StoryEditorPage() {
     setPublishDialogOpen,
     setUploadModalOpen,
     activeChapterId,
+    handleConnectionCreated,
   } = useStoryEditor();
+
+  const [connectionModalOpen, setConnectionModalOpen] = useState(false);
 
   const activeDatasetTimesteps = useMemo(() => {
     const config = activeChapter?.layer_config;
@@ -397,7 +401,7 @@ export default function StoryEditorPage() {
               datasets={allDatasets}
               connections={allConnections}
               onUploadClick={() => setUploadModalOpen(true)}
-              onAddConnectionClick={() => setUploadModalOpen(true)}
+              onAddConnectionClick={() => setConnectionModalOpen(true)}
               overlayPosition={activeChapter?.overlay_position ?? "left"}
               onOverlayPositionChange={updateChapterOverlayPosition}
               temporalTimesteps={activeDatasetTimesteps}
@@ -413,6 +417,11 @@ export default function StoryEditorPage() {
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onDatasetReady={handleDatasetReady}
+      />
+      <ConnectionModal
+        isOpen={connectionModalOpen}
+        onClose={() => setConnectionModalOpen(false)}
+        onCreated={handleConnectionCreated}
       />
       <PublishDialog
         open={publishDialogOpen}

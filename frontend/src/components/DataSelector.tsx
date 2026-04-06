@@ -140,10 +140,10 @@ export function DataSelector({
               py={1.5}
               bg={
                 item.id === activeId && item.source === activeSource
-                  ? "whiteAlpha.100"
+                  ? "brand.bgSubtle"
                   : "transparent"
               }
-              _hover={{ bg: "whiteAlpha.50" }}
+              _hover={{ bg: "brand.bgSubtle" }}
               cursor="pointer"
             >
               <Box
@@ -178,7 +178,7 @@ export function DataSelector({
             px={3}
             py={1.5}
             color="brand.orange"
-            _hover={{ bg: "whiteAlpha.50" }}
+            _hover={{ bg: "brand.bgSubtle" }}
             cursor="pointer"
           >
             <Upload size={12} />
@@ -213,10 +213,10 @@ export function DataSelector({
               py={1.5}
               bg={
                 item.id === activeId && item.source === activeSource
-                  ? "whiteAlpha.100"
+                  ? "brand.bgSubtle"
                   : "transparent"
               }
-              _hover={{ bg: "whiteAlpha.50" }}
+              _hover={{ bg: "brand.bgSubtle" }}
               cursor="pointer"
             >
               <Box
@@ -248,7 +248,7 @@ export function DataSelector({
             px={3}
             py={1.5}
             color="brand.orange"
-            _hover={{ bg: "whiteAlpha.50" }}
+            _hover={{ bg: "brand.bgSubtle" }}
             cursor="pointer"
           >
             <Plus size={12} />

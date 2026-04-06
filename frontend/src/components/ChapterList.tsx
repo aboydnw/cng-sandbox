@@ -84,27 +84,31 @@ export function ChapterList({
         >
           Chapters
         </Text>
-        <Box
+        <Flex
           as="button"
           aria-label="Add chapter"
-          w="28px"
-          h="28px"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
+          align="center"
+          gap={1}
+          px={2}
+          py={1}
           borderRadius="6px"
-          color="gray.400"
+          border="1px solid"
+          borderColor="brand.border"
+          color="brand.orange"
+          fontSize="11px"
+          fontWeight={600}
           cursor="pointer"
           onClick={onAdd}
-          _hover={{ color: "brand.orange", bg: "gray.50" }}
+          _hover={{ bg: "brand.bgSubtle", borderColor: "brand.orange" }}
           _focusVisible={{
             outline: "2px solid",
             outlineColor: "brand.orange",
             outlineOffset: "2px",
           }}
         >
-          <Plus size={16} weight="bold" />
-        </Box>
+          <Plus size={12} weight="bold" />
+          New
+        </Flex>
       </Flex>
 
       <Box flex={1} overflowY="auto" p={2}>

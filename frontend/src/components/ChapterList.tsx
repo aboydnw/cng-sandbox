@@ -67,7 +67,14 @@ export function ChapterList({
 
   return (
     <Flex direction="column" h="100%">
-      <Box px={3} py={3} borderBottom="1px solid" borderColor="gray.200">
+      <Flex
+        px={3}
+        py={3}
+        borderBottom="1px solid"
+        borderColor="gray.200"
+        align="center"
+        justify="space-between"
+      >
         <Text
           fontSize="12px"
           textTransform="uppercase"
@@ -77,7 +84,28 @@ export function ChapterList({
         >
           Chapters
         </Text>
-      </Box>
+        <Box
+          as="button"
+          aria-label="Add chapter"
+          w="28px"
+          h="28px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          borderRadius="6px"
+          color="gray.400"
+          cursor="pointer"
+          onClick={onAdd}
+          _hover={{ color: "brand.orange", bg: "gray.50" }}
+          _focusVisible={{
+            outline: "2px solid",
+            outlineColor: "brand.orange",
+            outlineOffset: "2px",
+          }}
+        >
+          <Plus size={16} weight="bold" />
+        </Box>
+      </Flex>
 
       <Box flex={1} overflowY="auto" p={2}>
         {sorted.map((chapter, i) => {

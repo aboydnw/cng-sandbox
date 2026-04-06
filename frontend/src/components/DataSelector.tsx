@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CaretDown, Upload, Plus } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
@@ -38,13 +39,42 @@ export function DataSelector({
 }: DataSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dropdownHeight = 400;
+    const wouldGoOffScreenBelow =
+      rect.bottom + 4 + dropdownHeight > window.innerHeight;
+    if (wouldGoOffScreenBelow) {
+      setDropdownStyle({
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+      });
+    } else {
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+      });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
     function handleClick(e: MouseEvent) {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -62,7 +92,7 @@ export function DataSelector({
   const activeName = activeItem?.name ?? "Loading...";
 
   return (
-    <Box ref={containerRef} position="relative">
+    <Box ref={containerRef}>
       <Flex
         as="button"
         role="button"
@@ -72,7 +102,7 @@ export function DataSelector({
         w="100%"
         px={3}
         py={2}
-        bg="brand.bgSubtle"
+        bg="white"
         border="1px solid"
         borderColor={isOpen ? "brand.orange" : "brand.border"}
         borderRadius="md"
@@ -98,164 +128,163 @@ export function DataSelector({
         />
       </Flex>
 
-      {isOpen && (
-        <Box
-          position="absolute"
-          top="calc(100% + 4px)"
-          left={0}
-          right={0}
-          bg="brand.bgSubtle"
-          border="1px solid"
-          borderColor="brand.border"
-          borderRadius="md"
-          zIndex={20}
-          maxH="400px"
-          overflowY="auto"
-          py={1}
-          boxShadow="lg"
-        >
-          <Text
-            px={3}
+      {isOpen &&
+        createPortal(
+          <Box
+            ref={dropdownRef}
+            style={dropdownStyle}
+            bg="white"
+            border="1px solid"
+            borderColor="brand.border"
+            borderRadius="md"
+            maxH="400px"
+            overflowY="auto"
             py={1}
-            fontSize="xs"
-            fontWeight={600}
-            color="brand.orange"
-            textTransform="uppercase"
-            letterSpacing="wide"
+            boxShadow="lg"
           >
-            Datasets
-          </Text>
-          {datasets.map((item) => (
+            <Text
+              px={3}
+              py={1}
+              fontSize="xs"
+              fontWeight={600}
+              color="brand.orange"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              Datasets
+            </Text>
+            {datasets.map((item) => (
+              <Flex
+                key={item.id}
+                as="button"
+                onClick={() => {
+                  onSelect(item.id, item.source);
+                  setIsOpen(false);
+                }}
+                align="center"
+                gap={2}
+                w="100%"
+                px={3}
+                py={1.5}
+                bg={
+                  item.id === activeId && item.source === activeSource
+                    ? "brand.bgSubtle"
+                    : "transparent"
+                }
+                _hover={{ bg: "brand.bgSubtle" }}
+                cursor="pointer"
+              >
+                <Box
+                  w="6px"
+                  h="6px"
+                  borderRadius="sm"
+                  bg={dotColor(item)}
+                  flexShrink={0}
+                />
+                <Text fontSize="sm" flex={1} textAlign="left" truncate>
+                  {item.name}
+                </Text>
+                <Text fontSize="2xs" color="whiteAlpha.500">
+                  {item.dataType === "raster" ? "Raster" : "Vector"}
+                </Text>
+              </Flex>
+            ))}
+            {datasets.length === 0 && (
+              <Text px={3} py={1} fontSize="xs" color="whiteAlpha.400">
+                No datasets yet
+              </Text>
+            )}
             <Flex
-              key={item.id}
               as="button"
               onClick={() => {
-                onSelect(item.id, item.source);
                 setIsOpen(false);
+                onUploadClick();
               }}
               align="center"
               gap={2}
               w="100%"
               px={3}
               py={1.5}
-              bg={
-                item.id === activeId && item.source === activeSource
-                  ? "brand.bgSubtle"
-                  : "transparent"
-              }
+              color="brand.orange"
               _hover={{ bg: "brand.bgSubtle" }}
               cursor="pointer"
             >
-              <Box
-                w="6px"
-                h="6px"
-                borderRadius="sm"
-                bg={dotColor(item)}
-                flexShrink={0}
-              />
-              <Text fontSize="sm" flex={1} textAlign="left" truncate>
-                {item.name}
-              </Text>
-              <Text fontSize="2xs" color="whiteAlpha.500">
-                {item.dataType === "raster" ? "Raster" : "Vector"}
-              </Text>
+              <Upload size={12} />
+              <Text fontSize="sm">Upload new file</Text>
             </Flex>
-          ))}
-          {datasets.length === 0 && (
-            <Text px={3} py={1} fontSize="xs" color="whiteAlpha.400">
-              No datasets yet
+
+            <Box borderTop="1px solid" borderColor="brand.border" my={1} />
+
+            <Text
+              px={3}
+              py={1}
+              fontSize="xs"
+              fontWeight={600}
+              color="brand.orange"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              Connections
             </Text>
-          )}
-          <Flex
-            as="button"
-            onClick={() => {
-              setIsOpen(false);
-              onUploadClick();
-            }}
-            align="center"
-            gap={2}
-            w="100%"
-            px={3}
-            py={1.5}
-            color="brand.orange"
-            _hover={{ bg: "brand.bgSubtle" }}
-            cursor="pointer"
-          >
-            <Upload size={12} />
-            <Text fontSize="sm">Upload new file</Text>
-          </Flex>
-
-          <Box borderTop="1px solid" borderColor="brand.border" my={1} />
-
-          <Text
-            px={3}
-            py={1}
-            fontSize="xs"
-            fontWeight={600}
-            color="brand.orange"
-            textTransform="uppercase"
-            letterSpacing="wide"
-          >
-            Connections
-          </Text>
-          {connections.map((item) => (
+            {connections.map((item) => (
+              <Flex
+                key={item.id}
+                as="button"
+                onClick={() => {
+                  onSelect(item.id, item.source);
+                  setIsOpen(false);
+                }}
+                align="center"
+                gap={2}
+                w="100%"
+                px={3}
+                py={1.5}
+                bg={
+                  item.id === activeId && item.source === activeSource
+                    ? "brand.bgSubtle"
+                    : "transparent"
+                }
+                _hover={{ bg: "brand.bgSubtle" }}
+                cursor="pointer"
+              >
+                <Box
+                  w="6px"
+                  h="6px"
+                  borderRadius="sm"
+                  bg={dotColor(item)}
+                  flexShrink={0}
+                />
+                <Text fontSize="sm" flex={1} textAlign="left" truncate>
+                  {item.name}
+                </Text>
+              </Flex>
+            ))}
+            {connections.length === 0 && (
+              <Text px={3} py={1} fontSize="xs" color="whiteAlpha.400">
+                No connections yet
+              </Text>
+            )}
             <Flex
-              key={item.id}
               as="button"
               onClick={() => {
-                onSelect(item.id, item.source);
                 setIsOpen(false);
+                onAddConnectionClick();
               }}
               align="center"
               gap={2}
               w="100%"
               px={3}
               py={1.5}
-              bg={
-                item.id === activeId && item.source === activeSource
-                  ? "brand.bgSubtle"
-                  : "transparent"
-              }
+              color="brand.orange"
               _hover={{ bg: "brand.bgSubtle" }}
               cursor="pointer"
             >
-              <Box
-                w="6px"
-                h="6px"
-                borderRadius="sm"
-                bg={dotColor(item)}
-                flexShrink={0}
-              />
-              <Text fontSize="sm" flex={1} textAlign="left" truncate>
-                {item.name}
-              </Text>
+              <Plus size={12} />
+              <Text fontSize="sm">Add connection</Text>
             </Flex>
-          ))}
-          {connections.length === 0 && (
-            <Text px={3} py={1} fontSize="xs" color="whiteAlpha.400">
-              No connections yet
-            </Text>
-          )}
-          <Flex
-            as="button"
-            onClick={() => {
-              setIsOpen(false);
-              onAddConnectionClick();
-            }}
-            align="center"
-            gap={2}
-            w="100%"
-            px={3}
-            py={1.5}
-            color="brand.orange"
-            _hover={{ bg: "brand.bgSubtle" }}
-            cursor="pointer"
-          >
-            <Plus size={12} />
-            <Text fontSize="sm">Add connection</Text>
-          </Flex>
-        </Box>
-      )}
+          </Box>,
+          document.body
+        )}
     </Box>
   );
 }

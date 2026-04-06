@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.12.0](https://github.com/aboydnw/cng-sandbox/compare/v1.11.0...v1.12.0) (2026-04-06)
+
+
+### Features
+
+* story editor panel redesign ([#134](https://github.com/aboydnw/cng-sandbox/issues/134)) ([cb2e7df](https://github.com/aboydnw/cng-sandbox/commit/cb2e7dfc087f69d3c9a56fae9fe24be4252f7b3c))
+
+
+### Bug Fixes
+
+* story editor dropdown polish and portal pattern ([#137](https://github.com/aboydnw/cng-sandbox/issues/137)) ([82a45bf](https://github.com/aboydnw/cng-sandbox/commit/82a45bfcb26b6102e401f2561bfc81ab93b45239))
+* story editor timestep selection not applied to map ([#138](https://github.com/aboydnw/cng-sandbox/issues/138)) ([9021c5b](https://github.com/aboydnw/cng-sandbox/commit/9021c5b1ef0299757e7c297d500579b1cf9430c7))
+
 ## [1.11.0](https://github.com/aboydnw/cng-sandbox/compare/v1.10.0...v1.11.0) (2026-04-04)
 
 

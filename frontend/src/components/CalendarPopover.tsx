@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CalendarBlank } from "@phosphor-icons/react";
@@ -27,15 +27,20 @@ export function CalendarPopover({
 }: CalendarPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+
+  const safeActiveIndex = Math.min(
+    Math.max(activeIndex, 0),
+    timesteps.length - 1
+  );
+  const currentTimestep = timesteps[safeActiveIndex];
+
   const [displayMonth, setDisplayMonth] = useState<Date>(
-    () => new Date(timesteps[activeIndex].datetime)
+    () => new Date(currentTimestep.datetime)
   );
 
   useEffect(() => {
-    setDisplayMonth(new Date(timesteps[activeIndex].datetime));
-  }, [timesteps, activeIndex]);
-
-  const currentTimestep = timesteps[activeIndex];
+    setDisplayMonth(new Date(currentTimestep.datetime));
+  }, [currentTimestep.datetime]);
   const currentDate = new Date(currentTimestep.datetime);
   const label = formatTimestepLabel(currentTimestep.datetime, cadence);
 
@@ -102,11 +107,11 @@ export function CalendarPopover({
   const popupRef = useRef<HTMLDivElement>(null);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const upwardBottom = window.innerHeight - rect.top + 4;
-    const wouldGoOffScreenAbove = rect.top - 400 < 0;
+    const popupHeight = popupRef.current?.getBoundingClientRect().height ?? 350;
+    const wouldGoOffScreenAbove = rect.top - popupHeight - 4 < 0;
     if (wouldGoOffScreenAbove) {
       setPopupStyle({
         position: "fixed",
@@ -117,12 +122,12 @@ export function CalendarPopover({
     } else {
       setPopupStyle({
         position: "fixed",
-        bottom: upwardBottom,
+        bottom: window.innerHeight - rect.top + 4,
         left: rect.left,
         zIndex: 1000,
       });
     }
-  }, [isOpen]);
+  }, [isOpen, selectedDateKey]);
 
   useEffect(() => {
     if (!isOpen) return;

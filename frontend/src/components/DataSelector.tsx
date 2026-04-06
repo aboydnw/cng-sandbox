@@ -72,7 +72,7 @@ export function DataSelector({
         w="100%"
         px={3}
         py={2}
-        bg="brand.bgSubtle"
+        bg="white"
         border="1px solid"
         borderColor={isOpen ? "brand.orange" : "brand.border"}
         borderRadius="md"
@@ -104,7 +104,7 @@ export function DataSelector({
           top="calc(100% + 4px)"
           left={0}
           right={0}
-          bg="brand.bgSubtle"
+          bg="white"
           border="1px solid"
           borderColor="brand.border"
           borderRadius="md"

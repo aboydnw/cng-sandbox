@@ -487,6 +487,12 @@ export function useStoryEditor() {
       if (ds.raster_min != null && ds.raster_max != null) {
         tileUrl += `&rescale=${ds.raster_min},${ds.raster_max}`;
       }
+      if (ds.is_temporal && ds.timesteps.length > 0) {
+        const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;
+        const tsIndex = Math.max(0, Math.min(raw, ds.timesteps.length - 1));
+        const ts = ds.timesteps[tsIndex];
+        tileUrl += `&datetime=${ts.datetime}`;
+      }
       return buildRasterTileLayers({
         tileUrl,
         opacity: lc.opacity,

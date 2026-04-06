@@ -489,8 +489,7 @@ export function useStoryEditor() {
       }
       if (ds.is_temporal && ds.timesteps.length > 0) {
         const tsIndex = lc.timestep ?? 0;
-        const ts =
-          ds.timesteps[Math.min(tsIndex, ds.timesteps.length - 1)];
+        const ts = ds.timesteps[Math.min(tsIndex, ds.timesteps.length - 1)];
         tileUrl += `&datetime=${ts.datetime}`;
       }
       return buildRasterTileLayers({

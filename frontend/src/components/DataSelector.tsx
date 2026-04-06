@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CaretDown, Upload, Plus } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
@@ -38,13 +39,42 @@ export function DataSelector({
 }: DataSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dropdownHeight = 400;
+    const wouldGoOffScreenBelow =
+      rect.bottom + 4 + dropdownHeight > window.innerHeight;
+    if (wouldGoOffScreenBelow) {
+      setDropdownStyle({
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+      });
+    } else {
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+      });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
     function handleClick(e: MouseEvent) {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -62,7 +92,7 @@ export function DataSelector({
   const activeName = activeItem?.name ?? "Loading...";
 
   return (
-    <Box ref={containerRef} position="relative">
+    <Box ref={containerRef}>
       <Flex
         as="button"
         role="button"
@@ -98,22 +128,20 @@ export function DataSelector({
         />
       </Flex>
 
-      {isOpen && (
-        <Box
-          position="absolute"
-          top="calc(100% + 4px)"
-          left={0}
-          right={0}
-          bg="white"
-          border="1px solid"
-          borderColor="brand.border"
-          borderRadius="md"
-          zIndex={20}
-          maxH="400px"
-          overflowY="auto"
-          py={1}
-          boxShadow="lg"
-        >
+      {isOpen &&
+        createPortal(
+          <Box
+            ref={dropdownRef}
+            style={dropdownStyle}
+            bg="white"
+            border="1px solid"
+            borderColor="brand.border"
+            borderRadius="md"
+            maxH="400px"
+            overflowY="auto"
+            py={1}
+            boxShadow="lg"
+          >
           <Text
             px={3}
             py={1}
@@ -254,7 +282,8 @@ export function DataSelector({
             <Plus size={12} />
             <Text fontSize="sm">Add connection</Text>
           </Flex>
-        </Box>
+        </Box>,
+        document.body
       )}
     </Box>
   );

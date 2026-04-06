@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CaretDown } from "@phosphor-icons/react";
 import { COLORMAPS, colormapGradient } from "../lib/maptool/colormaps";
@@ -12,14 +13,43 @@ interface ColormapDropdownProps {
 export function ColormapDropdown({ value, onChange }: ColormapDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const normalizedValue = value.toLowerCase();
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dropdownHeight = 280;
+    const wouldGoOffScreenBelow =
+      rect.bottom + 4 + dropdownHeight > window.innerHeight;
+    if (wouldGoOffScreenBelow) {
+      setDropdownStyle({
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+      });
+    } else {
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+      });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
     function handleClick(e: MouseEvent) {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -29,7 +59,7 @@ export function ColormapDropdown({ value, onChange }: ColormapDropdownProps) {
   }, [isOpen]);
 
   return (
-    <Box ref={containerRef} position="relative">
+    <Box ref={containerRef}>
       <Flex
         as="button"
         role="button"
@@ -65,51 +95,50 @@ export function ColormapDropdown({ value, onChange }: ColormapDropdownProps) {
         />
       </Flex>
 
-      {isOpen && (
-        <Box
-          position="absolute"
-          top="calc(100% + 4px)"
-          left={0}
-          right={0}
-          bg="white"
-          border="1px solid"
-          borderColor="brand.border"
-          borderRadius="md"
-          zIndex={20}
-          maxH="280px"
-          overflowY="auto"
-          py={1}
-          boxShadow="lg"
-        >
-          {Object.keys(COLORMAPS).map((name) => (
-            <Flex
-              key={name}
-              as="button"
-              onClick={() => {
-                onChange(name);
-                setIsOpen(false);
-              }}
-              align="center"
-              gap={2}
-              w="100%"
-              px={3}
-              py={1.5}
-              bg={normalizedValue === name ? "brand.bgSubtle" : "transparent"}
-              _hover={{ bg: "brand.bgSubtle" }}
-              cursor="pointer"
-            >
-              <Box
-                w="48px"
-                h="10px"
-                borderRadius="2px"
-                bg={colormapGradient(name)}
-                flexShrink={0}
-              />
-              <Text fontSize="sm">{name}</Text>
-            </Flex>
-          ))}
-        </Box>
-      )}
+      {isOpen &&
+        createPortal(
+          <Box
+            ref={dropdownRef}
+            style={dropdownStyle}
+            bg="white"
+            border="1px solid"
+            borderColor="brand.border"
+            borderRadius="md"
+            maxH="280px"
+            overflowY="auto"
+            py={1}
+            boxShadow="lg"
+          >
+            {Object.keys(COLORMAPS).map((name) => (
+              <Flex
+                key={name}
+                as="button"
+                onClick={() => {
+                  onChange(name);
+                  setIsOpen(false);
+                }}
+                align="center"
+                gap={2}
+                w="100%"
+                px={3}
+                py={1.5}
+                bg={normalizedValue === name ? "brand.bgSubtle" : "transparent"}
+                _hover={{ bg: "brand.bgSubtle" }}
+                cursor="pointer"
+              >
+                <Box
+                  w="48px"
+                  h="10px"
+                  borderRadius="2px"
+                  bg={colormapGradient(name)}
+                  flexShrink={0}
+                />
+                <Text fontSize="sm">{name}</Text>
+              </Flex>
+            ))}
+          </Box>,
+          document.body
+        )}
     </Box>
   );
 }

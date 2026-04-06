@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CalendarBlank } from "@phosphor-icons/react";
 import { DayPicker } from "react-day-picker";
@@ -90,14 +91,40 @@ export function CalendarPopover({
       ? (dateGroups.get(selectedDateKey) ?? [])
       : [];
 
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const upwardBottom = window.innerHeight - rect.top + 4;
+    const wouldGoOffScreenAbove = rect.top - 400 < 0;
+    if (wouldGoOffScreenAbove) {
+      setPopupStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        zIndex: 1000,
+      });
+    } else {
+      setPopupStyle({
+        position: "fixed",
+        bottom: upwardBottom,
+        left: rect.left,
+        zIndex: 1000,
+      });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
     function handleClickOutside(e: MouseEvent) {
       if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node)
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node) &&
+        popupRef.current &&
+        !popupRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
         setSelectedDateKey(null);
@@ -108,7 +135,7 @@ export function CalendarPopover({
   }, [isOpen]);
 
   return (
-    <Box position="relative" ref={popoverRef}>
+    <Box ref={triggerRef}>
       <Flex
         as="button"
         aria-label="Open calendar"
@@ -133,89 +160,94 @@ export function CalendarPopover({
         </Text>
       </Flex>
 
-      {isOpen && (
-        <Box
-          position="absolute"
-          bottom="100%"
-          left="50%"
-          transform="translateX(-50%)"
-          mb={2}
-          bg="white"
-          borderRadius="lg"
-          boxShadow="0 4px 20px rgba(0,0,0,0.15)"
-          border="1px solid"
-          borderColor="brand.border"
-          zIndex={1000}
-          p={2}
-          css={{
-            ".rdp-day_selected": {
-              backgroundColor: "var(--chakra-colors-brand-orange)",
-              color: "white",
-            },
-            ".rdp-day_disabled": {
-              color: "#ccc",
-            },
-            ".rdp-day:not(.rdp-day_disabled):hover": {
-              backgroundColor: "brand.bgSubtle",
-            },
-          }}
-        >
-          <DayPicker
-            mode="single"
-            selected={currentDate}
-            onDayClick={(day) => handleDayClick(day)}
-            disabled={(date) => !dateToIndex.has(localDateKey(date))}
-            startMonth={startMonth}
-            endMonth={endMonth}
-            defaultMonth={currentDate}
-          />
+      {isOpen &&
+        createPortal(
+          <Box
+            ref={popupRef}
+            style={popupStyle}
+            bg="white"
+            borderRadius="lg"
+            boxShadow="0 4px 20px rgba(0,0,0,0.15)"
+            border="1px solid"
+            borderColor="brand.border"
+            p={2}
+            css={{
+              ".rdp-day_selected": {
+                backgroundColor: "var(--chakra-colors-brand-orange)",
+                color: "white",
+              },
+              ".rdp-day_disabled": {
+                color: "#ccc",
+              },
+              ".rdp-day:not(.rdp-day_disabled):hover": {
+                backgroundColor: "brand.bgSubtle",
+              },
+            }}
+          >
+            <DayPicker
+              mode="single"
+              selected={currentDate}
+              onDayClick={(day) => handleDayClick(day)}
+              disabled={(date) => !dateToIndex.has(localDateKey(date))}
+              startMonth={startMonth}
+              endMonth={endMonth}
+              defaultMonth={currentDate}
+            />
 
-          {selectedDateKey && timesForSelectedDate.length > 0 && (
-            <Box borderTop="1px solid" borderColor="brand.border" mt={2} pt={2}>
-              <Text
-                fontSize="xs"
-                fontWeight="semibold"
-                color="brand.textSecondary"
-                mb={1}
+            {selectedDateKey && timesForSelectedDate.length > 0 && (
+              <Box
+                borderTop="1px solid"
+                borderColor="brand.border"
+                mt={2}
+                pt={2}
               >
-                Select time
-              </Text>
-              <Flex direction="column" gap={1} maxH="150px" overflowY="auto">
-                {timesForSelectedDate.map((ts) => {
-                  const d = new Date(ts.datetime);
-                  const timeLabel = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} UTC`;
-                  return (
-                    <Box
-                      key={ts.index}
-                      as="button"
-                      px={3}
-                      py={1}
-                      borderRadius="md"
-                      fontSize="sm"
-                      textAlign="left"
-                      bg={
-                        ts.index === activeIndex
-                          ? "brand.orange"
-                          : "transparent"
-                      }
-                      color={ts.index === activeIndex ? "white" : "brand.brown"}
-                      _hover={{
-                        bg:
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  color="brand.textSecondary"
+                  mb={1}
+                >
+                  Select time
+                </Text>
+                <Flex direction="column" gap={1} maxH="150px" overflowY="auto">
+                  {timesForSelectedDate.map((ts) => {
+                    const d = new Date(ts.datetime);
+                    const timeLabel = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} UTC`;
+                    return (
+                      <Box
+                        key={ts.index}
+                        as="button"
+                        px={3}
+                        py={1}
+                        borderRadius="md"
+                        fontSize="sm"
+                        textAlign="left"
+                        bg={
                           ts.index === activeIndex
                             ? "brand.orange"
-                            : "brand.bgSubtle",
-                      }}
-                      onClick={() => handleTimeSelect(ts.index)}
-                    >
-                      {timeLabel}
-                    </Box>
-                  );
-                })}
-              </Flex>
-            </Box>
-          )}
-        </Box>
-      )}
+                            : "transparent"
+                        }
+                        color={
+                          ts.index === activeIndex ? "white" : "brand.brown"
+                        }
+                        _hover={{
+                          bg:
+                            ts.index === activeIndex
+                              ? "brand.orange"
+                              : "brand.bgSubtle",
+                        }}
+                        onClick={() => handleTimeSelect(ts.index)}
+                      >
+                        {timeLabel}
+                      </Box>
+                    );
+                  })}
+                </Flex>
+              </Box>
+            )}
+          </Box>,
+          document.body
+        )}
     </Box>
   );
 }

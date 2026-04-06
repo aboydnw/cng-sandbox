@@ -27,6 +27,13 @@ export function CalendarPopover({
 }: CalendarPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [displayMonth, setDisplayMonth] = useState<Date>(
+    () => new Date(timesteps[activeIndex].datetime)
+  );
+
+  useEffect(() => {
+    setDisplayMonth(new Date(timesteps[activeIndex].datetime));
+  }, [timesteps, activeIndex]);
 
   const currentTimestep = timesteps[activeIndex];
   const currentDate = new Date(currentTimestep.datetime);
@@ -191,7 +198,8 @@ export function CalendarPopover({
               disabled={(date) => !dateToIndex.has(localDateKey(date))}
               startMonth={startMonth}
               endMonth={endMonth}
-              defaultMonth={currentDate}
+              month={displayMonth}
+              onMonthChange={setDisplayMonth}
             />
 
             {selectedDateKey && timesForSelectedDate.length > 0 && (

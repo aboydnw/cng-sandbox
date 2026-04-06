@@ -1,7 +1,5 @@
 import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
-import { listColormaps } from "../lib/maptool";
-
-const COLORMAP_NAMES = listColormaps();
+import { ColormapDropdown } from "./ColormapDropdown";
 
 interface BandInfo {
   name: string;
@@ -93,26 +91,7 @@ export function RasterSidebarControls({
           <Text fontSize="11px" color="brand.textSecondary" mb={1}>
             Colormap
           </Text>
-          <NativeSelect.Root size="sm">
-            <NativeSelect.Field
-              value={colormapName}
-              onChange={(e) => onColormapChange(e.target.value)}
-              bg="white"
-              border="1px solid"
-              borderColor="brand.border"
-              borderRadius="6px"
-              px={3}
-              py={1}
-              fontSize="13px"
-              _hover={{ borderColor: "brand.orange" }}
-            >
-              {COLORMAP_NAMES.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </NativeSelect.Field>
-          </NativeSelect.Root>
+          <ColormapDropdown value={colormapName} onChange={onColormapChange} />
         </Box>
       )}
 

@@ -542,5 +542,7 @@ export function useStoryEditor() {
     setBasemap,
     setPublishDialogOpen,
     setUploadModalOpen,
+    handleConnectionCreated: (conn: Connection) =>
+      setAllConnections((prev) => [conn, ...prev]),
   };
 }

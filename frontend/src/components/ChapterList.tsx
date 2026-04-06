@@ -86,7 +86,6 @@ export function ChapterList({
         </Text>
         <Box
           as="button"
-          type="button"
           aria-label="Add chapter"
           w="28px"
           h="28px"

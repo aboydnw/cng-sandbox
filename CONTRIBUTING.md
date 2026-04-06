@@ -46,8 +46,11 @@
 3. Run tests:
 
    ```bash
-   cd frontend && npx vitest run
-   cd ingestion && uv run pytest -v
+   # Frontend tests
+   (cd frontend && npx vitest run)
+
+   # Backend tests
+   (cd ingestion && uv run pytest -v)
    ```
 
 4. Commit using [conventional commit](https://www.conventionalcommits.org/) prefixes — CI enforces this:

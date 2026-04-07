@@ -266,24 +266,28 @@ export function useConversionJob() {
       }));
 
       // Preflight duplicate check — fast query before uploading bytes
-      const checkResp = await workspaceFetch(
-        `${config.apiBase}/api/check-duplicate?filename=${encodeURIComponent(file.name)}`
-      );
-      if (checkResp.status === 409) {
-        const body = await checkResp.json().catch(() => ({}));
-        if (body.dataset_id && body.filename) {
-          setState((prev) => ({
-            ...prev,
-            isUploading: false,
-            status: "pending",
-            stages: buildInitialStages(),
-            duplicate: {
-              datasetId: body.dataset_id,
-              filename: body.filename,
-            },
-          }));
-          return;
+      try {
+        const checkResp = await workspaceFetch(
+          `${config.apiBase}/api/check-duplicate?filename=${encodeURIComponent(file.name)}`
+        );
+        if (checkResp.status === 409) {
+          const body = await checkResp.json().catch(() => ({}));
+          if (body.dataset_id && body.filename) {
+            setState((prev) => ({
+              ...prev,
+              isUploading: false,
+              status: "pending",
+              stages: buildInitialStages(),
+              duplicate: {
+                datasetId: body.dataset_id,
+                filename: body.filename,
+              },
+            }));
+            return;
+          }
         }
+      } catch {
+        // Preflight failed — proceed with upload; server-side 409 is the backstop
       }
 
       const formData = new FormData();
@@ -360,25 +364,30 @@ export function useConversionJob() {
       }));
 
       // Preflight duplicate check
-      const preflightFilename = url.split("/").pop() || "download";
-      const checkResp = await workspaceFetch(
-        `${config.apiBase}/api/check-duplicate?filename=${encodeURIComponent(preflightFilename)}`
-      );
-      if (checkResp.status === 409) {
-        const body = await checkResp.json().catch(() => ({}));
-        if (body.dataset_id && body.filename) {
-          setState((prev) => ({
-            ...prev,
-            isUploading: false,
-            status: "pending",
-            stages: buildInitialStages(),
-            duplicate: {
-              datasetId: body.dataset_id,
-              filename: body.filename,
-            },
-          }));
-          return;
+      try {
+        const preflightFilename =
+          new URL(url).pathname.split("/").pop() || "download";
+        const checkResp = await workspaceFetch(
+          `${config.apiBase}/api/check-duplicate?filename=${encodeURIComponent(preflightFilename)}`
+        );
+        if (checkResp.status === 409) {
+          const body = await checkResp.json().catch(() => ({}));
+          if (body.dataset_id && body.filename) {
+            setState((prev) => ({
+              ...prev,
+              isUploading: false,
+              status: "pending",
+              stages: buildInitialStages(),
+              duplicate: {
+                datasetId: body.dataset_id,
+                filename: body.filename,
+              },
+            }));
+            return;
+          }
         }
+      } catch {
+        // Preflight failed — proceed with upload; server-side 409 is the backstop
       }
 
       const resp = await fetchWithRetry(`${config.apiBase}/api/convert-url`, {

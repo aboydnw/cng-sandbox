@@ -274,8 +274,8 @@ export function useConversionJob() {
       });
 
       if (resp.status === 409) {
-        const body = await resp.json().catch(() => null);
-        if (body) {
+        const body = await resp.json().catch(() => ({}));
+        if (body.dataset_id && body.filename) {
           setState((prev) => ({
             ...prev,
             isUploading: false,
@@ -288,6 +288,15 @@ export function useConversionJob() {
           }));
           return;
         }
+        // Malformed 409 — treat as generic failure
+        setState((prev) => ({
+          ...prev,
+          isUploading: false,
+          status: "failed",
+          error: "Duplicate check failed",
+          stages: buildUploadFailedStages("Duplicate check failed"),
+        }));
+        return;
       }
 
       if (!resp.ok) {
@@ -336,8 +345,8 @@ export function useConversionJob() {
       });
 
       if (resp.status === 409) {
-        const body = await resp.json().catch(() => null);
-        if (body) {
+        const body = await resp.json().catch(() => ({}));
+        if (body.dataset_id && body.filename) {
           setState((prev) => ({
             ...prev,
             isUploading: false,
@@ -350,6 +359,15 @@ export function useConversionJob() {
           }));
           return;
         }
+        // Malformed 409 — treat as generic failure
+        setState((prev) => ({
+          ...prev,
+          isUploading: false,
+          status: "failed",
+          error: "Duplicate check failed",
+          stages: buildUploadFailedStages("Duplicate check failed"),
+        }));
+        return;
       }
 
       if (!resp.ok) {

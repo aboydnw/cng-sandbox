@@ -18,7 +18,6 @@ from fastapi import (
 )
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import field_validator
-
 from starlette.responses import JSONResponse
 
 from src.config import get_settings

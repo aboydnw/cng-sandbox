@@ -32,11 +32,15 @@ vi.mock("../../hooks/useConversionJob", () => ({
       scanResult: null,
       datasetId: null,
       error: null,
+      duplicate: null,
+      progressCurrent: null,
+      progressTotal: null,
     },
     startUpload: vi.fn(),
     startUrlFetch: vi.fn(),
     startTemporalUpload: vi.fn(),
     confirmVariable: vi.fn(),
+    resetDuplicate: vi.fn(),
   }),
 }));
 
@@ -102,5 +106,40 @@ describe("UploadPage — three card layout", () => {
     expect(
       screen.queryByText("Point to data already hosted in the cloud")
     ).toBeNull();
+  });
+});
+
+describe("UploadPage — duplicate warning", () => {
+  it("shows duplicate warning when state has duplicate info", async () => {
+    const { useConversionJob } = await import(
+      "../../hooks/useConversionJob"
+    );
+    vi.mocked(useConversionJob).mockReturnValue({
+      state: {
+        isUploading: false,
+        jobId: null,
+        status: "pending",
+        stages: [],
+        scanResult: null,
+        datasetId: null,
+        error: null,
+        progressCurrent: null,
+        progressTotal: null,
+        duplicate: { datasetId: "abc-123", filename: "elevation.tif" },
+      },
+      startUpload: vi.fn(),
+      startUrlFetch: vi.fn(),
+      startTemporalUpload: vi.fn(),
+      confirmVariable: vi.fn(),
+      resetDuplicate: vi.fn(),
+    });
+
+    renderPage();
+
+    expect(
+      screen.getByText(/already exists in your library/)
+    ).toBeTruthy();
+    expect(screen.getByText("Go to Library")).toBeTruthy();
+    expect(screen.getByText("Upload another file")).toBeTruthy();
   });
 });

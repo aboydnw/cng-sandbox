@@ -111,9 +111,7 @@ describe("UploadPage — three card layout", () => {
 
 describe("UploadPage — duplicate warning", () => {
   it("shows duplicate warning when state has duplicate info", async () => {
-    const { useConversionJob } = await import(
-      "../../hooks/useConversionJob"
-    );
+    const { useConversionJob } = await import("../../hooks/useConversionJob");
     vi.mocked(useConversionJob).mockReturnValue({
       state: {
         isUploading: false,
@@ -136,9 +134,7 @@ describe("UploadPage — duplicate warning", () => {
 
     renderPage();
 
-    expect(
-      screen.getByText(/already exists in your library/)
-    ).toBeTruthy();
+    expect(screen.getByText(/already exists in your library/)).toBeTruthy();
     expect(screen.getByText("Go to Library")).toBeTruthy();
     expect(screen.getByText("Upload another file")).toBeTruthy();
   });

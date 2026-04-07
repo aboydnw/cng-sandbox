@@ -18,7 +18,11 @@ export function DuplicateWarning({
   return (
     <Box>
       <Flex align="center" gap={2} mb={3}>
-        <Warning size={20} weight="fill" color="var(--chakra-colors-orange-500)" />
+        <Warning
+          size={20}
+          weight="fill"
+          color="var(--chakra-colors-orange-500)"
+        />
         <Text fontSize="14px" fontWeight={600} color="brand.text">
           A file named &ldquo;{filename}&rdquo; already exists in your library.
         </Text>

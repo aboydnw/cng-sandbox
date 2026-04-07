@@ -59,26 +59,29 @@ async def proxy_resource(url: str, request: Request):
 
     safe_url = _sanitize_url_for_log(decoded)
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-        try:
-            resp = await client.send(
-                client.build_request("GET", decoded, headers=headers),
-                stream=True,
-            )
-        except httpx.RequestError as e:
-            logger.error("Proxy request failed for %s: %s", safe_url, e)
-            raise HTTPException(
-                status_code=502, detail="Upstream request failed"
-            ) from e
+    client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
+    try:
+        resp = await client.send(
+            client.build_request("GET", decoded, headers=headers),
+            stream=True,
+        )
+    except httpx.RequestError as e:
+        await client.aclose()
+        logger.error("Proxy request failed for %s: %s", safe_url, e)
+        raise HTTPException(
+            status_code=502, detail="Upstream request failed"
+        ) from e
 
     if resp.status_code >= 400:
         await resp.aclose()
+        await client.aclose()
         logger.error("Upstream returned %d for %s", resp.status_code, safe_url)
         raise HTTPException(status_code=resp.status_code, detail="Upstream error")
 
     content_length = resp.headers.get("content-length")
     if content_length and int(content_length) > MAX_RESPONSE_BYTES:
         await resp.aclose()
+        await client.aclose()
         raise HTTPException(status_code=413, detail="Response too large")
 
     response_headers: dict[str, str] = {"accept-ranges": "bytes"}
@@ -89,9 +92,17 @@ async def proxy_resource(url: str, request: Request):
     if content_length:
         response_headers["content-length"] = content_length
 
+    async def stream_and_close():
+        try:
+            async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):
+                yield chunk
+        finally:
+            await resp.aclose()
+            await client.aclose()
+
     status = 206 if "content-range" in response_headers else 200
     return StreamingResponse(
-        content=resp.aiter_bytes(chunk_size=64 * 1024),
+        content=stream_and_close(),
         status_code=status,
         headers=response_headers,
     )

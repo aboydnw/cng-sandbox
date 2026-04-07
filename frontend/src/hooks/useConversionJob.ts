@@ -107,6 +107,7 @@ export function useConversionJob() {
     progressTotal: null,
     isUploading: false,
     scanResult: null,
+    duplicate: null,
   });
 
   const esRef = useRef<EventSource | null>(null);
@@ -261,6 +262,7 @@ export function useConversionJob() {
         status: "pending",
         error: null,
         stages: buildUploadingStages(),
+        duplicate: null,
       }));
 
       const formData = new FormData();
@@ -270,6 +272,32 @@ export function useConversionJob() {
         method: "POST",
         body: formData,
       });
+
+      if (resp.status === 409) {
+        const body = await resp.json().catch(() => ({}));
+        if (body.dataset_id && body.filename) {
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "pending",
+            stages: buildInitialStages(),
+            duplicate: {
+              datasetId: body.dataset_id,
+              filename: body.filename,
+            },
+          }));
+          return;
+        }
+        // Malformed 409 — treat as generic failure
+        setState((prev) => ({
+          ...prev,
+          isUploading: false,
+          status: "failed",
+          error: "Duplicate check failed",
+          stages: buildUploadFailedStages("Duplicate check failed"),
+        }));
+        return;
+      }
 
       if (!resp.ok) {
         const detail = await resp
@@ -307,6 +335,7 @@ export function useConversionJob() {
         status: "pending",
         error: null,
         stages: buildUploadingStages(),
+        duplicate: null,
       }));
 
       const resp = await fetchWithRetry(`${config.apiBase}/api/convert-url`, {
@@ -314,6 +343,32 @@ export function useConversionJob() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
+
+      if (resp.status === 409) {
+        const body = await resp.json().catch(() => ({}));
+        if (body.dataset_id && body.filename) {
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "pending",
+            stages: buildInitialStages(),
+            duplicate: {
+              datasetId: body.dataset_id,
+              filename: body.filename,
+            },
+          }));
+          return;
+        }
+        // Malformed 409 — treat as generic failure
+        setState((prev) => ({
+          ...prev,
+          isUploading: false,
+          status: "failed",
+          error: "Duplicate check failed",
+          stages: buildUploadFailedStages("Duplicate check failed"),
+        }));
+        return;
+      }
 
       if (!resp.ok) {
         const body = await resp
@@ -363,6 +418,7 @@ export function useConversionJob() {
         status: "pending",
         error: null,
         stages: buildUploadingStages(),
+        duplicate: null,
       }));
 
       const formData = new FormData();
@@ -406,11 +462,19 @@ export function useConversionJob() {
     [connectSSE]
   );
 
+  const resetDuplicate = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      duplicate: null,
+    }));
+  }, []);
+
   return {
     state,
     startUpload,
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
+    resetDuplicate,
   };
 }

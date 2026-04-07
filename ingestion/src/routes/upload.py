@@ -18,9 +18,11 @@ from fastapi import (
 )
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import field_validator
+from starlette.responses import JSONResponse
 
 from src.config import get_settings
 from src.models import Job
+from src.services.duplicate_check import check_duplicate_filename
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
 from src.state import jobs, scan_store, scan_store_lock
@@ -104,6 +106,21 @@ async def upload_file(
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required.")
 
+    session = request.app.state.db_session_factory()
+    try:
+        existing_id = check_duplicate_filename(session, file.filename, workspace_id)
+    finally:
+        session.close()
+    if existing_id:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": "duplicate_dataset",
+                "dataset_id": existing_id,
+                "filename": file.filename,
+            },
+        )
+
     ext = os.path.splitext(file.filename)[1]
     async with _save_chunks(suffix=ext) as (tmp_path, write):
         while chunk := await file.read(1024 * 1024):
@@ -129,6 +146,22 @@ async def convert_url(
     """Fetch a file from a URL and start the conversion pipeline."""
     parsed = urlparse(body.url)
     filename = os.path.basename(parsed.path) or "download"
+
+    session = request.app.state.db_session_factory()
+    try:
+        existing_id = check_duplicate_filename(session, filename, workspace_id)
+    finally:
+        session.close()
+    if existing_id:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": "duplicate_dataset",
+                "dataset_id": existing_id,
+                "filename": filename,
+            },
+        )
+
     ext = os.path.splitext(filename)[1]
 
     try:

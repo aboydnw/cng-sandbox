@@ -118,6 +118,11 @@ export interface ScanResult {
   variables: ScannedVariable[];
 }
 
+export interface DuplicateInfo {
+  datasetId: string;
+  filename: string;
+}
+
 export interface ConversionJobState {
   jobId: string | null;
   status: JobStatus;
@@ -128,6 +133,7 @@ export interface ConversionJobState {
   progressTotal: number | null;
   isUploading: boolean;
   scanResult: ScanResult | null;
+  duplicate: DuplicateInfo | null;
 }
 
 export type MapItemSource = "dataset" | "connection";

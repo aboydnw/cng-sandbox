@@ -8,6 +8,7 @@ import { PathCard } from "../components/PathCard";
 import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
+import { DuplicateWarning } from "../components/DuplicateWarning";
 import { BugReportModal } from "../components/BugReportModal";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
 import { RemoteConnectFlow } from "../components/RemoteConnectFlow";
@@ -26,7 +27,8 @@ type PageMode =
   | "uploading"
   | "error"
   | "variable-picker"
-  | "connect-idle";
+  | "connect-idle"
+  | "duplicate";
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -37,6 +39,7 @@ export default function UploadPage() {
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
+    resetDuplicate,
   } = useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({
     name: "",
@@ -53,14 +56,16 @@ export default function UploadPage() {
 
   // Derive mode from conversion job state
   useEffect(() => {
-    if (state.scanResult) {
+    if (state.duplicate) {
+      setMode("duplicate");
+    } else if (state.scanResult) {
       setMode("variable-picker");
     } else if (state.status === "failed") {
       setMode("error");
     } else if (isProcessing) {
       setMode("uploading");
     }
-  }, [state.scanResult, state.status, isProcessing]);
+  }, [state.duplicate, state.scanResult, state.status, isProcessing]);
 
   // Navigate on success
   useEffect(() => {
@@ -103,6 +108,11 @@ export default function UploadPage() {
   const handleRetry = useCallback(() => {
     setMode("upload-idle");
   }, []);
+
+  const handleUploadAnother = useCallback(() => {
+    resetDuplicate();
+    setMode("upload-idle");
+  }, [resetDuplicate]);
 
   const handleReport = useCallback(() => {
     setReportOpen(true);
@@ -212,6 +222,12 @@ export default function UploadPage() {
                   temporal
                 )
               }
+            />
+          )}
+          {mode === "duplicate" && state.duplicate && (
+            <DuplicateWarning
+              filename={state.duplicate.filename}
+              onUploadAnother={handleUploadAnother}
             />
           )}
         </PathCard>

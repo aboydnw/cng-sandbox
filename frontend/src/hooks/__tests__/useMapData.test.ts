@@ -138,6 +138,17 @@ describe("useMapData", () => {
     expect(result.current.data!.dataType).toBe("vector");
   });
 
+  it("defaults pmtiles with null tile_type to vector", async () => {
+    mockConnectionsGet.mockResolvedValue({
+      ...MOCK_CONNECTION,
+      connection_type: "pmtiles",
+      tile_type: null,
+    });
+    const { result } = renderHook(() => useMapData("conn-4", true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data!.dataType).toBe("vector");
+  });
+
   it("returns error on fetch failure", async () => {
     mockWorkspaceFetch.mockResolvedValue({ ok: false, status: 500 });
 

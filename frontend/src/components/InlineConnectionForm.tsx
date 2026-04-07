@@ -93,7 +93,15 @@ export function InlineConnectionForm({
         bounds: probeMetadata?.bounds ?? null,
         min_zoom: probeMetadata?.minZoom ?? null,
         max_zoom: probeMetadata?.maxZoom ?? null,
-        tile_type: probeMetadata?.tileType ?? null,
+        tile_type:
+          probeMetadata?.tileType ??
+          (connectionType === "pmtiles"
+            ? "vector"
+            : connectionType === "cog" || connectionType === "xyz_raster"
+              ? "raster"
+              : connectionType === "xyz_vector"
+                ? "vector"
+                : null),
         band_count: probeMetadata?.bandCount ?? null,
         rescale: probeMetadata?.rescale
           ? probeMetadata.rescale.join(",")

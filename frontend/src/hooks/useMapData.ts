@@ -30,7 +30,7 @@ function datasetToMapItem(ds: Dataset): MapItem {
 
 function getConnectionDataType(conn: Connection): "raster" | "vector" {
   if (conn.connection_type === "xyz_vector") return "vector";
-  if (conn.connection_type === "pmtiles" && conn.tile_type === "vector")
+  if (conn.connection_type === "pmtiles" && conn.tile_type !== "raster")
     return "vector";
   return "raster";
 }

@@ -6,6 +6,7 @@ import type { TileCacheEntry } from "../lib/layers";
 import type { Table } from "apache-arrow";
 import {
   buildRasterTileLayers,
+  buildRasterPMTilesLayer,
   buildCogLayer,
   buildVectorLayer,
   buildGeoJsonLayer,
@@ -121,11 +122,14 @@ export function useLayerBuilder({
             }),
           ];
         }
-        return buildRasterTileLayers({
-          tileUrl,
-          opacity,
-          isTemporalActive: false,
-        });
+        return [
+          buildRasterPMTilesLayer({
+            tileUrl,
+            opacity,
+            minZoom: item.minZoom ?? undefined,
+            maxZoom: item.maxZoom ?? undefined,
+          }),
+        ];
       }
 
       if (connType === "xyz_raster") {

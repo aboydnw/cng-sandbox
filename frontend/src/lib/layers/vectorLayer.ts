@@ -75,13 +75,17 @@ export function buildVectorLayer({
         const match = url.match(/\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
         if (!match) return null;
         const [, z, x, y] = match.map(Number);
-        const tile = await pmtilesSource.getZxy(z, x, y);
-        if (!tile?.data) return null;
-        // Parse through loaders.gl so MVTLayer gets properly structured data
-        return load(tile.data, MVTLoader, {
-          ...context.loadOptions,
-          mimeType: "application/x-protobuf",
-        });
+        try {
+          const tile = await pmtilesSource.getZxy(z, x, y);
+          if (!tile?.data) return null;
+          // Parse through loaders.gl so MVTLayer gets properly structured data
+          return load(tile.data, MVTLoader, {
+            ...context.loadOptions,
+            mimeType: "application/x-protobuf",
+          });
+        } catch {
+          return null;
+        }
       },
     });
   }

@@ -213,6 +213,7 @@ cd ingestion && uv run pytest -v
 
 - `POST /api/upload` — Upload a file (multipart form); returns 409 with `{"detail": "duplicate_dataset", "dataset_id": ..., "filename": ...}` if a file with the same name already exists in the workspace
 - `POST /api/convert-url` — Fetch and convert a file from a URL; same 409 duplicate response as above
+- `GET /api/check-duplicate?filename=<name>` — Preflight duplicate check; returns 409 if a dataset with that filename exists, or `{"duplicate": false}` if not
 - `POST /api/upload-temporal` — Upload multiple raster files as a time series (2–50 files, same format)
 - `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
 - `GET /api/datasets` — List all converted datasets

@@ -1,4 +1,8 @@
-import { buildRasterTileLayers, buildVectorLayer } from "../layers";
+import {
+  buildRasterTileLayers,
+  buildRasterPMTilesLayer,
+  buildVectorLayer,
+} from "../layers";
 import { buildConnectionTileUrl } from "../connections";
 import { DEFAULT_LAYER_CONFIG } from "./types";
 import type { Chapter } from "./types";
@@ -77,6 +81,18 @@ export function buildLayersForChapter(
         buildVectorLayer({
           tileUrl,
           isPMTiles: true,
+          opacity: lc.opacity,
+          minZoom: conn.min_zoom ?? undefined,
+          maxZoom: conn.max_zoom ?? undefined,
+        }),
+      ];
+    }
+
+    // PMTiles raster
+    if (conn.connection_type === "pmtiles" && conn.tile_type === "raster") {
+      return [
+        buildRasterPMTilesLayer({
+          tileUrl,
           opacity: lc.opacity,
           minZoom: conn.min_zoom ?? undefined,
           maxZoom: conn.max_zoom ?? undefined,

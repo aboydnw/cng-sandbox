@@ -95,6 +95,30 @@ async def _save_chunks(suffix: str):
 router = APIRouter(prefix="/api")
 
 
+@router.get("/check-duplicate")
+async def check_duplicate(
+    filename: str,
+    request: Request,
+    workspace_id: str = Depends(get_workspace_id),
+):
+    """Check if a filename already exists in the workspace."""
+    session = request.app.state.db_session_factory()
+    try:
+        existing_id = check_duplicate_filename(session, filename, workspace_id)
+    finally:
+        session.close()
+    if existing_id:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": "duplicate_dataset",
+                "dataset_id": existing_id,
+                "filename": filename,
+            },
+        )
+    return {"duplicate": False}
+
+
 @router.post("/upload")
 async def upload_file(
     request: Request,

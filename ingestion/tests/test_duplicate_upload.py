@@ -105,5 +105,19 @@ def test_convert_url_duplicate_returns_409(client, seed_dataset):
     assert data["filename"] == "elevation.tif"
 
 
+def test_check_duplicate_returns_409(client, seed_dataset):
+    resp = client.get("/api/check-duplicate", params={"filename": "elevation.tif"})
+    assert resp.status_code == 409
+    data = resp.json()
+    assert data["detail"] == "duplicate_dataset"
+    assert data["dataset_id"] == "existing-123"
+
+
+def test_check_duplicate_returns_ok(client, seed_dataset):
+    resp = client.get("/api/check-duplicate", params={"filename": "other.tif"})
+    assert resp.status_code == 200
+    assert resp.json()["duplicate"] is False
+
+
 async def _fake_pipeline(job, input_path, db_session_factory):
     pass

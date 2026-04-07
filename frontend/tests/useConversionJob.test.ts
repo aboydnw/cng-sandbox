@@ -40,11 +40,16 @@ describe("useConversionJob", () => {
     expect(result.current.state.status).toBe("pending");
     expect(result.current.state.stages).toHaveLength(5);
     expect(
-      result.current.state.stages.every((s) => s.status === "pending"),
+      result.current.state.stages.every((s) => s.status === "pending")
     ).toBe(true);
   });
 
   it("uploads file and transitions to scanning", async () => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: async () => ({ duplicate: false }),
+    });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ job_id: "j1", dataset_id: "d1" }),
@@ -54,13 +59,13 @@ describe("useConversionJob", () => {
 
     await act(async () => {
       await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
+        new File(["data"], "test.tif", { type: "image/tiff" })
       );
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/upload"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.current.state.jobId).toBe("j1");
     expect(MockEventSource.instances).toHaveLength(1);
@@ -69,6 +74,11 @@ describe("useConversionJob", () => {
 
   it("updates stages from SSE events", async () => {
     mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: async () => ({ duplicate: false }),
+    });
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ job_id: "j1", dataset_id: "d1" }),
     });
@@ -77,7 +87,7 @@ describe("useConversionJob", () => {
 
     await act(async () => {
       await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
+        new File(["data"], "test.tif", { type: "image/tiff" })
       );
     });
 
@@ -88,7 +98,7 @@ describe("useConversionJob", () => {
         "status",
         new MessageEvent("status", {
           data: JSON.stringify({ status: "scanning" }),
-        }),
+        })
       );
     });
     expect(result.current.state.status).toBe("scanning");
@@ -106,7 +116,7 @@ describe("useConversionJob", () => {
         "status",
         new MessageEvent("status", {
           data: JSON.stringify({ status: "converting" }),
-        }),
+        })
       );
     });
     expect(result.current.state.status).toBe("converting");
@@ -122,32 +132,10 @@ describe("useConversionJob", () => {
 
   it("sets datasetId on ready", async () => {
     mockFetch.mockResolvedValueOnce({
+      status: 200,
       ok: true,
-      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
+      json: async () => ({ duplicate: false }),
     });
-
-    const { result } = renderHook(() => useConversionJob());
-
-    await act(async () => {
-      await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
-      );
-    });
-
-    act(() => {
-      MockEventSource.instances[0].emit(
-        "status",
-        new MessageEvent("status", {
-          data: JSON.stringify({ status: "ready" }),
-        }),
-      );
-    });
-
-    expect(result.current.state.status).toBe("ready");
-    expect(result.current.state.datasetId).toBe("d1");
-  });
-
-  it("sets error on failed status", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ job_id: "j1", dataset_id: "d1" }),
@@ -157,7 +145,39 @@ describe("useConversionJob", () => {
 
     await act(async () => {
       await result.current.startUpload(
-        new File(["data"], "test.tif", { type: "image/tiff" }),
+        new File(["data"], "test.tif", { type: "image/tiff" })
+      );
+    });
+
+    act(() => {
+      MockEventSource.instances[0].emit(
+        "status",
+        new MessageEvent("status", {
+          data: JSON.stringify({ status: "ready" }),
+        })
+      );
+    });
+
+    expect(result.current.state.status).toBe("ready");
+    expect(result.current.state.datasetId).toBe("d1");
+  });
+
+  it("sets error on failed status", async () => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: async () => ({ duplicate: false }),
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ job_id: "j1", dataset_id: "d1" }),
+    });
+
+    const { result } = renderHook(() => useConversionJob());
+
+    await act(async () => {
+      await result.current.startUpload(
+        new File(["data"], "test.tif", { type: "image/tiff" })
       );
     });
 
@@ -166,7 +186,7 @@ describe("useConversionJob", () => {
         "status",
         new MessageEvent("status", {
           data: JSON.stringify({ status: "failed", error: "Bad CRS" }),
-        }),
+        })
       );
     });
 
@@ -175,6 +195,11 @@ describe("useConversionJob", () => {
   });
 
   it("starts URL fetch with JSON body to /api/convert-url", async () => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: async () => ({ duplicate: false }),
+    });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ job_id: "j2", dataset_id: "d2" }),
@@ -190,7 +215,7 @@ describe("useConversionJob", () => {
       expect.stringContaining("/api/convert-url"),
       expect.objectContaining({
         method: "POST",
-      }),
+      })
     );
     expect(result.current.state.jobId).toBe("j2");
   });

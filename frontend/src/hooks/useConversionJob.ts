@@ -274,18 +274,20 @@ export function useConversionJob() {
       });
 
       if (resp.status === 409) {
-        const body = await resp.json();
-        setState((prev) => ({
-          ...prev,
-          isUploading: false,
-          status: "pending",
-          stages: buildInitialStages(),
-          duplicate: {
-            datasetId: body.dataset_id,
-            filename: body.filename,
-          },
-        }));
-        return;
+        const body = await resp.json().catch(() => null);
+        if (body) {
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "pending",
+            stages: buildInitialStages(),
+            duplicate: {
+              datasetId: body.dataset_id,
+              filename: body.filename,
+            },
+          }));
+          return;
+        }
       }
 
       if (!resp.ok) {
@@ -334,18 +336,20 @@ export function useConversionJob() {
       });
 
       if (resp.status === 409) {
-        const body = await resp.json();
-        setState((prev) => ({
-          ...prev,
-          isUploading: false,
-          status: "pending",
-          stages: buildInitialStages(),
-          duplicate: {
-            datasetId: body.dataset_id,
-            filename: body.filename,
-          },
-        }));
-        return;
+        const body = await resp.json().catch(() => null);
+        if (body) {
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "pending",
+            stages: buildInitialStages(),
+            duplicate: {
+              datasetId: body.dataset_id,
+              filename: body.filename,
+            },
+          }));
+          return;
+        }
       }
 
       if (!resp.ok) {

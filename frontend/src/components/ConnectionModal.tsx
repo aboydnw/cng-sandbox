@@ -52,10 +52,12 @@ export function ConnectionModal({
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [probeWarning, setProbeWarning] = useState<string | null>(null);
 
   // Auto-detect type and name when URL changes
   const handleUrlBlur = useCallback(async () => {
     if (!url) return;
+    setProbeWarning(null);
     const detected = detectConnectionType(url);
     if (detected) {
       setConnectionType(detected);
@@ -73,8 +75,14 @@ export function ConnectionModal({
             ? await probePMTiles(url)
             : await probeCOG(url);
         setProbeMetadata(metadata);
-      } catch {
+      } catch (e) {
         setProbeMetadata(null);
+        const msg = e instanceof Error ? e.message : String(e);
+        setProbeWarning(
+          detected === "pmtiles"
+            ? `Could not read PMTiles header — file may not be valid PMTiles v3. ${msg}`
+            : `Could not read COG metadata. ${msg}`
+        );
       } finally {
         setProbing(false);
       }
@@ -93,6 +101,7 @@ export function ConnectionModal({
       setSaving(false);
       setProbing(false);
       setProbeMetadata(null);
+      setProbeWarning(null);
       setError(null);
     }
   }, [isOpen]);
@@ -254,6 +263,12 @@ export function ConnectionModal({
               {probeMetadata.bounds && " with bounds"}
               {probeMetadata.minZoom != null &&
                 `, zoom ${probeMetadata.minZoom}–${probeMetadata.maxZoom}`}
+            </Text>
+          )}
+
+          {probeWarning && !probing && (
+            <Text fontSize="13px" color="orange.500">
+              {probeWarning}
             </Text>
           )}
 

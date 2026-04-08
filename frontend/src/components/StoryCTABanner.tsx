@@ -15,19 +15,21 @@ import {
   DEFAULT_LAYER_CONFIG,
 } from "../lib/story/types";
 import { createStoryOnServer } from "../lib/story/api";
-import type { Dataset } from "../types";
+import type { Dataset, Connection } from "../types";
 import { cameraFromBounds } from "../lib/layers";
 
 interface StoryCTABannerProps {
-  dataset: Dataset;
+  dataset?: Dataset | null;
+  connection?: Connection | null;
 }
 
-export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
+export function StoryCTABanner({ dataset, connection }: StoryCTABannerProps) {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
 
   const handleCreate = useCallback(async () => {
-    const cam = dataset.bounds ? cameraFromBounds(dataset.bounds) : null;
+    const bounds = dataset?.bounds ?? connection?.bounds ?? null;
+    const cam = bounds ? cameraFromBounds(bounds) : null;
     const mapState = cam
       ? {
           center: [cam.longitude, cam.latitude] as [number, number],
@@ -45,21 +47,28 @@ export function StoryCTABanner({ dataset }: StoryCTABannerProps) {
       narrative: "",
     });
 
+    const layerConfig = connection
+      ? { ...DEFAULT_LAYER_CONFIG, connection_id: connection.id }
+      : dataset
+        ? { ...DEFAULT_LAYER_CONFIG, dataset_id: dataset.id }
+        : DEFAULT_LAYER_CONFIG;
+
     const mapChapter = createChapter({
       order: 1,
       title: "Chapter 2",
       type: "map",
-      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: dataset.id },
+      layer_config: layerConfig,
       ...(mapState && { map_state: mapState }),
     });
 
-    const story = createStory(dataset.id, {
+    const seedId = dataset?.id ?? connection?.id ?? "";
+    const story = createStory(seedId, {
       chapters: [proseChapter, mapChapter],
     });
 
     const created = await createStoryOnServer(story);
     navigate(workspacePath(`/story/${created.id}/edit`));
-  }, [dataset, navigate, workspacePath]);
+  }, [dataset, connection, navigate, workspacePath]);
 
   return (
     <Box

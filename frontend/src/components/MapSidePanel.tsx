@@ -11,6 +11,7 @@ import { ExploreTab } from "./ExploreTab";
 import { InlineUpload } from "./InlineUpload";
 import { InlineConnectionForm } from "./InlineConnectionForm";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
+import { ConnectionInfoCard } from "./ConnectionInfoCard";
 import { StoryCTABanner } from "./StoryCTABanner";
 import type { Table } from "apache-arrow";
 
@@ -151,6 +152,8 @@ export function MapSidePanel({
             }
             onRenderModeChange={(m) => onRenderModeChange(m)}
             hasParquet={!!item.parquetUrl}
+            opacity={opacity}
+            onOpacityChange={onOpacityChange}
           />
           {renderMode === "geojson" && item.parquetUrl && (
             <Box mt={4}>
@@ -163,7 +166,7 @@ export function MapSidePanel({
         </>
       )}
 
-      {/* Dataset-specific metadata */}
+      {/* Dataset conversion metadata */}
       {ds && (
         <Box mt={4}>
           <ConversionSummaryCard
@@ -171,9 +174,20 @@ export function MapSidePanel({
             bytesTransferred={bytesTransferred}
             onDetailsClick={onDetailsClick}
           />
-          <StoryCTABanner dataset={ds} />
         </Box>
       )}
+
+      {/* Connection metadata */}
+      {item.connection && (
+        <Box mt={4}>
+          <ConnectionInfoCard connection={item.connection} />
+        </Box>
+      )}
+
+      {/* Story CTA — available for both datasets and connections */}
+      <Box mt={4}>
+        <StoryCTABanner dataset={ds} connection={item.connection} />
+      </Box>
     </Box>
   );
 }

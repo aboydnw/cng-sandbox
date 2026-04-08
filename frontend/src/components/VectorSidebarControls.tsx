@@ -7,15 +7,19 @@ interface VectorSidebarControlsProps {
   renderMode: VectorRenderMode;
   onRenderModeChange: (mode: VectorRenderMode) => void;
   hasParquet: boolean;
+  opacity: number;
+  onOpacityChange: (opacity: number) => void;
 }
 
 export function VectorSidebarControls({
   renderMode,
   onRenderModeChange,
   hasParquet,
+  opacity,
+  onOpacityChange,
 }: VectorSidebarControlsProps) {
   return (
-    <Box mb={3}>
+    <Box>
       <Text
         fontSize="11px"
         color="brand.textSecondary"
@@ -24,22 +28,50 @@ export function VectorSidebarControls({
         letterSpacing="1px"
         mb={3}
       >
-        View Mode
+        Visualization Controls
       </Text>
-      <Flex gap={2}>
-        <ModeButton
-          label="Vector Tiles"
-          active={renderMode === "vector-tiles"}
-          onClick={() => onRenderModeChange("vector-tiles")}
-        />
-        {hasParquet && (
+
+      {/* View mode */}
+      <Box mb={3}>
+        <Text fontSize="11px" color="brand.textSecondary" mb={1}>
+          View Mode
+        </Text>
+        <Flex gap={2}>
           <ModeButton
-            label="GeoParquet"
-            active={renderMode === "geojson"}
-            onClick={() => onRenderModeChange("geojson")}
+            label="Vector Tiles"
+            active={renderMode === "vector-tiles"}
+            onClick={() => onRenderModeChange("vector-tiles")}
           />
-        )}
-      </Flex>
+          {hasParquet && (
+            <ModeButton
+              label="GeoParquet"
+              active={renderMode === "geojson"}
+              onClick={() => onRenderModeChange("geojson")}
+            />
+          )}
+        </Flex>
+      </Box>
+
+      {/* Opacity slider */}
+      <Box mb={3}>
+        <Flex justify="space-between" mb={1}>
+          <Text fontSize="11px" color="brand.textSecondary">
+            Opacity
+          </Text>
+          <Text fontSize="11px" color="brand.textSecondary">
+            {Math.round(opacity * 100)}%
+          </Text>
+        </Flex>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={opacity}
+          onChange={(e) => onOpacityChange(Number(e.target.value))}
+          style={{ width: "100%" }}
+        />
+      </Box>
     </Box>
   );
 }

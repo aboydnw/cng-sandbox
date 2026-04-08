@@ -11,6 +11,7 @@ import { ExploreTab } from "./ExploreTab";
 import { InlineUpload } from "./InlineUpload";
 import { InlineConnectionForm } from "./InlineConnectionForm";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
+import { ConnectionInfoCard } from "./ConnectionInfoCard";
 import { StoryCTABanner } from "./StoryCTABanner";
 import type { Table } from "apache-arrow";
 
@@ -173,6 +174,13 @@ export function MapSidePanel({
             bytesTransferred={bytesTransferred}
             onDetailsClick={onDetailsClick}
           />
+        </Box>
+      )}
+
+      {/* Connection metadata */}
+      {item.connection && (
+        <Box mt={4}>
+          <ConnectionInfoCard connection={item.connection} />
         </Box>
       )}
 

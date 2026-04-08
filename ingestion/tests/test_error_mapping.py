@@ -1,6 +1,12 @@
+import importlib
+import json
+
+import pytest
 import rasterio.errors
 
 from src.services.error_mapping import map_pipeline_error
+
+_has_fiona = importlib.util.find_spec("fiona") is not None
 
 
 def test_rasterio_io_error():
@@ -16,8 +22,6 @@ def test_crs_error():
 
 
 def test_json_decode_error():
-    import json
-
     exc = json.JSONDecodeError("Expecting value", "", 0)
     msg = map_pipeline_error(exc)
     assert "not valid JSON" in msg
@@ -29,6 +33,7 @@ def test_unknown_error_passes_through():
     assert msg == "something completely unexpected"
 
 
+@pytest.mark.skipif(not _has_fiona, reason="fiona not installed")
 def test_fiona_driver_error():
     import fiona.errors
 

@@ -81,8 +81,8 @@ def _check_raster(file_path: str, format_pair: FormatPair) -> dict:
 
 
 def _check_vector(file_path: str, format_pair: FormatPair) -> dict:
-    """Validate vector file with fiona."""
-    import fiona
+    """Validate vector file with geopandas."""
+    import geopandas
 
     format_label = {
         FormatPair.GEOJSON_TO_GEOPARQUET: "GeoJSON",
@@ -90,22 +90,17 @@ def _check_vector(file_path: str, format_pair: FormatPair) -> dict:
     }.get(format_pair, "vector")
 
     try:
-        with fiona.open(file_path) as src:
-            if len(src) == 0:
-                return {
-                    "valid": False,
-                    "error": f"This {format_label} contains no features.",
-                }
-    except fiona.errors.DriverError:
-        return {
-            "valid": False,
-            "error": f"Could not read this file as a {format_label}. It may be corrupted or in an unsupported variant.",
-        }
+        gdf = geopandas.read_file(file_path)
+        if len(gdf) == 0:
+            return {
+                "valid": False,
+                "error": f"This {format_label} contains no features.",
+            }
     except Exception:
         logger.exception("Unexpected error checking vector")
         return {
             "valid": False,
-            "error": f"Could not validate this {format_label}.",
+            "error": f"Could not read this file as a {format_label}. It may be corrupted or in an unsupported variant.",
         }
 
     return {"valid": True}

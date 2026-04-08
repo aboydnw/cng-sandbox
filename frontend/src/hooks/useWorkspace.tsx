@@ -39,11 +39,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const activeId = workspaceId!;
 
+  // Set workspace ID synchronously so child useEffect hooks (e.g. LibraryPage
+  // data fetches) can read it on the first render cycle. A useEffect here would
+  // race with child effects and lose on a fresh page load.
+  setWorkspaceId(activeId);
+
   useEffect(() => {
     if (!localStorage.getItem(STORAGE_KEY)) {
       localStorage.setItem(STORAGE_KEY, activeId);
     }
-    setWorkspaceId(activeId);
   }, [activeId]);
 
   const value = useMemo(

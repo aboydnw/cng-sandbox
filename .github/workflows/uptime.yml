@@ -1,3 +1,5 @@
+name: Uptime Monitor
+
 on:
   schedule:
     - cron: "*/5 * * * *"

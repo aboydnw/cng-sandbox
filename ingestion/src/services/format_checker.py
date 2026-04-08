@@ -1,4 +1,4 @@
-"""Pre-upload format validation using rasterio and fiona."""
+"""Pre-upload format validation using rasterio and geopandas."""
 
 import logging
 

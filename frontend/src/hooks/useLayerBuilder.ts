@@ -190,7 +190,7 @@ export function useLayerBuilder({
       buildVectorLayer({
         tileUrl: ds.tile_url,
         isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
-        opacity: 1,
+        opacity,
         minZoom: ds.min_zoom ?? undefined,
         maxZoom: ds.max_zoom ?? undefined,
         onClick: onVectorClick,

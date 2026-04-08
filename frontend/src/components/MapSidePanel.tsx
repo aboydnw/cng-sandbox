@@ -151,6 +151,8 @@ export function MapSidePanel({
             }
             onRenderModeChange={(m) => onRenderModeChange(m)}
             hasParquet={!!item.parquetUrl}
+            opacity={opacity}
+            onOpacityChange={onOpacityChange}
           />
           {renderMode === "geojson" && item.parquetUrl && (
             <Box mt={4}>
@@ -163,7 +165,7 @@ export function MapSidePanel({
         </>
       )}
 
-      {/* Dataset-specific metadata */}
+      {/* Dataset conversion metadata */}
       {ds && (
         <Box mt={4}>
           <ConversionSummaryCard
@@ -171,9 +173,13 @@ export function MapSidePanel({
             bytesTransferred={bytesTransferred}
             onDetailsClick={onDetailsClick}
           />
-          <StoryCTABanner dataset={ds} />
         </Box>
       )}
+
+      {/* Story CTA — available for both datasets and connections */}
+      <Box mt={4}>
+        <StoryCTABanner dataset={ds} connection={item.connection} />
+      </Box>
     </Box>
   );
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/aboydnw/cng-sandbox/compare/v1.13.0...v1.13.1) (2026-04-08)
+
+
+### Bug Fixes
+
+* add name to uptime workflow to prevent spurious push failures ([#150](https://github.com/aboydnw/cng-sandbox/issues/150)) ([4120f52](https://github.com/aboydnw/cng-sandbox/commit/4120f528fe8cf0c83397313bb17e9c065b5c8e09))
+
 ## [1.13.0](https://github.com/aboydnw/cng-sandbox/compare/v1.12.0...v1.13.0) (2026-04-08)
 
 

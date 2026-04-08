@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.2](https://github.com/aboydnw/cng-sandbox/compare/v1.14.1...v1.14.2) (2026-04-08)
+
+
+### Bug Fixes
+
+* exempt /api/health from basic auth so uptime monitor works ([#164](https://github.com/aboydnw/cng-sandbox/issues/164)) ([2d00c50](https://github.com/aboydnw/cng-sandbox/commit/2d00c504a1657b1d838d929fdba35d91242e888b)), closes [#155](https://github.com/aboydnw/cng-sandbox/issues/155)
+* library page empty on refresh due to workspace ID race condition ([#163](https://github.com/aboydnw/cng-sandbox/issues/163)) ([0bb2b61](https://github.com/aboydnw/cng-sandbox/commit/0bb2b61f23b21240d017dca339133aea2e858237)), closes [#160](https://github.com/aboydnw/cng-sandbox/issues/160)
+
 ## [1.14.1](https://github.com/aboydnw/cng-sandbox/compare/v1.14.0...v1.14.1) (2026-04-08)
 
 

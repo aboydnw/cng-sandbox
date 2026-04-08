@@ -9,10 +9,12 @@ const TYPE_LABELS: Record<string, string> = {
   xyz_vector: "XYZ Vector Tiles",
 };
 
-function formatBounds(bounds: [number, number, number, number]): string {
-  const fmt = (n: number) => n.toFixed(2);
-  return `${fmt(bounds[0])}, ${fmt(bounds[1])} — ${fmt(bounds[2])}, ${fmt(bounds[3])}`;
-}
+const TYPE_DESCRIPTIONS: Record<string, string> = {
+  cog: "A GeoTIFF restructured for the cloud. The browser requests just the pixels it needs via HTTP range requests — no server-side processing required.",
+  pmtiles: "A single-file tile archive. The browser reads individual tiles using HTTP range requests, so there's no need for a tile server.",
+  xyz_raster: "A traditional tile service that returns pre-rendered image tiles at each zoom level. The URL template specifies how to fetch tiles by zoom/column/row.",
+  xyz_vector: "A tile service that returns vector data (points, lines, polygons) as Mapbox Vector Tiles. Styled and rendered in the browser.",
+};
 
 interface ConnectionInfoCardProps {
   connection: Connection;
@@ -21,7 +23,8 @@ interface ConnectionInfoCardProps {
 export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
   const typeLabel =
     TYPE_LABELS[connection.connection_type] ?? connection.connection_type;
-  const tileLabel = connection.tile_type ?? "unknown";
+  const description =
+    TYPE_DESCRIPTIONS[connection.connection_type] ?? null;
 
   return (
     <Box
@@ -44,52 +47,41 @@ export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
         Connection Details
       </Text>
 
-      {/* Type badges */}
-      <Flex align="center" gap={2} mb={3}>
-        <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
-          <Text fontSize="12px" color="brand.brown" fontWeight={600}>
-            {typeLabel}
-          </Text>
-        </Box>
-        <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
-          <Text fontSize="12px" color="brand.textSecondary">
-            {tileLabel}
-          </Text>
-        </Box>
-      </Flex>
+      {/* Format label */}
+      <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5} mb={2} display="inline-block">
+        <Text fontSize="12px" color="brand.brown" fontWeight={600}>
+          {typeLabel}
+        </Text>
+      </Box>
+
+      {/* Description */}
+      {description && (
+        <Text fontSize="12px" color="brand.textSecondary" lineHeight="1.6" mb={3}>
+          {description}
+        </Text>
+      )}
 
       {/* Metadata rows */}
       <Flex direction="column" gap={1.5}>
-        {connection.bounds && (
-          <Flex align="flex-start" gap={2}>
-            <Globe
-              size={13}
-              style={{ flexShrink: 0, marginTop: 2, opacity: 0.5 }}
-            />
-            <Text fontSize="12px" color="brand.textSecondary" lineHeight="1.4">
-              {formatBounds(connection.bounds)}
+        {connection.min_zoom != null && (
+          <Flex align="center" gap={2}>
+            <Globe size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
+            <Text fontSize="12px" color="brand.textSecondary">
+              Zoom levels {connection.min_zoom}–{connection.max_zoom}
+              {connection.tile_type && ` (${connection.tile_type})`}
             </Text>
           </Flex>
         )}
 
-        {connection.min_zoom != null && (
-          <Text fontSize="12px" color="brand.textSecondary">
-            Zoom {connection.min_zoom}–{connection.max_zoom}
-          </Text>
-        )}
-
         {connection.band_count != null && (
-          <Text fontSize="12px" color="brand.textSecondary">
+          <Text fontSize="12px" color="brand.textSecondary" pl="21px">
             {connection.band_count} band
             {connection.band_count === 1 ? "" : "s"}
           </Text>
         )}
 
         <Flex align="center" gap={2} mt={1}>
-          <LinkSimple
-            size={13}
-            style={{ flexShrink: 0, opacity: 0.5 }}
-          />
+          <LinkSimple size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
           <Text
             fontSize="11px"
             color="brand.textSecondary"

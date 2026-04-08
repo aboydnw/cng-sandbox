@@ -16,8 +16,7 @@ function getSourceStep(connection: Connection): StepContent {
       { label: "Format", value: "Cloud-Optimized GeoTIFF" },
       {
         label: "Bands",
-        value:
-          connection.band_count != null ? `${connection.band_count}` : "—",
+        value: connection.band_count != null ? `${connection.band_count}` : "—",
       },
       {
         label: "Bounding Box",

@@ -17,7 +17,6 @@ jobs:
         id: health
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -u "${{ secrets.SITE_AUTH_USER }}:${{ secrets.SITE_AUTH_PASSWORD }}" \ # zizmor: ignore[secrets-outside-env]
             --max-time 30 \
             "https://cngsandbox.org/api/health" || echo "000")
           echo "status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"

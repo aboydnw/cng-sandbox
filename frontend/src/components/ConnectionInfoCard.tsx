@@ -11,9 +11,12 @@ const TYPE_LABELS: Record<string, string> = {
 
 const TYPE_DESCRIPTIONS: Record<string, string> = {
   cog: "A GeoTIFF restructured for the cloud. The browser requests just the pixels it needs via HTTP range requests — no server-side processing required.",
-  pmtiles: "A single-file tile archive. The browser reads individual tiles using HTTP range requests, so there's no need for a tile server.",
-  xyz_raster: "A traditional tile service that returns pre-rendered image tiles at each zoom level. The URL template specifies how to fetch tiles by zoom/column/row.",
-  xyz_vector: "A tile service that returns vector data (points, lines, polygons) as Mapbox Vector Tiles. Styled and rendered in the browser.",
+  pmtiles:
+    "A single-file tile archive. The browser reads individual tiles using HTTP range requests, so there's no need for a tile server.",
+  xyz_raster:
+    "A traditional tile service that returns pre-rendered image tiles at each zoom level. The URL template specifies how to fetch tiles by zoom/column/row.",
+  xyz_vector:
+    "A tile service that returns vector data (points, lines, polygons) as Mapbox Vector Tiles. Styled and rendered in the browser.",
 };
 
 interface ConnectionInfoCardProps {
@@ -23,8 +26,7 @@ interface ConnectionInfoCardProps {
 export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
   const typeLabel =
     TYPE_LABELS[connection.connection_type] ?? connection.connection_type;
-  const description =
-    TYPE_DESCRIPTIONS[connection.connection_type] ?? null;
+  const description = TYPE_DESCRIPTIONS[connection.connection_type] ?? null;
 
   return (
     <Box
@@ -48,7 +50,14 @@ export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
       </Text>
 
       {/* Format label */}
-      <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5} mb={2} display="inline-block">
+      <Box
+        bg="brand.bgSubtle"
+        borderRadius="4px"
+        px={2}
+        py={0.5}
+        mb={2}
+        display="inline-block"
+      >
         <Text fontSize="12px" color="brand.brown" fontWeight={600}>
           {typeLabel}
         </Text>
@@ -56,7 +65,12 @@ export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
 
       {/* Description */}
       {description && (
-        <Text fontSize="12px" color="brand.textSecondary" lineHeight="1.6" mb={3}>
+        <Text
+          fontSize="12px"
+          color="brand.textSecondary"
+          lineHeight="1.6"
+          mb={3}
+        >
           {description}
         </Text>
       )}

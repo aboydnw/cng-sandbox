@@ -26,6 +26,7 @@ from src.models import (
     ValidationCheck,
 )
 from src.services import pmtiles_ingest, stac_ingest, vector_ingest
+from src.services.error_mapping import map_pipeline_error
 from src.services.detector import detect_format, validate_magic_bytes
 from src.services.storage import StorageService
 
@@ -613,7 +614,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
     except Exception as e:
         logger.exception("Pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
-        job.error = str(e)
+        job.error = map_pipeline_error(e)
 
 
 async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> None:

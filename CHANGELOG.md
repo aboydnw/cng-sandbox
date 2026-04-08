@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/aboydnw/cng-sandbox/compare/v1.14.0...v1.14.1) (2026-04-08)
+
+
+### Bug Fixes
+
+* stop stripping /cog prefix from COG tiler proxy ([#159](https://github.com/aboydnw/cng-sandbox/issues/159)) ([60d26be](https://github.com/aboydnw/cng-sandbox/commit/60d26be4fc55abc45b4aed8023e1315a4c8d42ae))
+
 ## [1.14.0](https://github.com/aboydnw/cng-sandbox/compare/v1.13.2...v1.14.0) (2026-04-08)
 
 

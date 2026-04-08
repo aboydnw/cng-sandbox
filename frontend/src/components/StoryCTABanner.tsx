@@ -49,7 +49,9 @@ export function StoryCTABanner({ dataset, connection }: StoryCTABannerProps) {
 
     const layerConfig = connection
       ? { ...DEFAULT_LAYER_CONFIG, connection_id: connection.id }
-      : { ...DEFAULT_LAYER_CONFIG, dataset_id: dataset?.id ?? "" };
+      : dataset
+        ? { ...DEFAULT_LAYER_CONFIG, dataset_id: dataset.id }
+        : DEFAULT_LAYER_CONFIG;
 
     const mapChapter = createChapter({
       order: 1,

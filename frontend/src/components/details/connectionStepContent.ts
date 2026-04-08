@@ -5,7 +5,19 @@ function formatBounds(bounds: readonly number[] | null | undefined): string {
   if (!bounds || bounds.length < 4) return "—";
   const [w, s, e, n] = bounds;
   if (w <= -179 && e >= 179 && s <= -89 && n >= 89) return "Global coverage";
-  return `${w.toFixed(1)}° to ${e.toFixed(1)}° E, ${s.toFixed(1)}° to ${n.toFixed(1)}° N`;
+  const lon = (v: number) => `${Math.abs(v).toFixed(1)}° ${v < 0 ? "W" : "E"}`;
+  const lat = (v: number) => `${Math.abs(v).toFixed(1)}° ${v < 0 ? "S" : "N"}`;
+  return `${lon(w)} to ${lon(e)}, ${lat(s)} to ${lat(n)}`;
+}
+
+function formatZoomRange(
+  minZoom: number | null | undefined,
+  maxZoom: number | null | undefined,
+  fallback: string
+): string {
+  return minZoom != null && maxZoom != null
+    ? `${minZoom} – ${maxZoom}`
+    : fallback;
 }
 
 function getSourceStep(connection: Connection): StepContent {
@@ -62,10 +74,7 @@ function getSourceStep(connection: Connection): StepContent {
       },
       {
         label: "Zoom Range",
-        value:
-          connection.min_zoom != null
-            ? `${connection.min_zoom} – ${connection.max_zoom}`
-            : "—",
+        value: formatZoomRange(connection.min_zoom, connection.max_zoom, "—"),
       },
       {
         label: "Bounding Box",
@@ -179,10 +188,11 @@ function getDisplayStep(connection: Connection): StepContent {
       { label: "Tile Format", value: "MVT (Mapbox Vector Tiles)" },
       {
         label: "Zoom Range",
-        value:
-          connection.min_zoom != null
-            ? `${connection.min_zoom} – ${connection.max_zoom}`
-            : "all levels",
+        value: formatZoomRange(
+          connection.min_zoom,
+          connection.max_zoom,
+          "all levels"
+        ),
       },
       {
         label: "Basemap",

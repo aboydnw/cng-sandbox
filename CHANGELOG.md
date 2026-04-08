@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.2](https://github.com/aboydnw/cng-sandbox/compare/v1.13.1...v1.13.2) (2026-04-08)
+
+
+### Bug Fixes
+
+* rewrite uptime workflow to avoid heredoc YAML parsing issue ([#152](https://github.com/aboydnw/cng-sandbox/issues/152)) ([120a8d6](https://github.com/aboydnw/cng-sandbox/commit/120a8d6aedefabd4fbcd9c0b1022c66d4bd92e72))
+
 ## [1.13.1](https://github.com/aboydnw/cng-sandbox/compare/v1.13.0...v1.13.1) (2026-04-08)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.13.0](https://github.com/aboydnw/cng-sandbox/compare/v1.12.0...v1.13.0) (2026-04-08)
+
+
+### Features
+
+* add connection report card drawer with stepped content ([#149](https://github.com/aboydnw/cng-sandbox/issues/149)) ([42be995](https://github.com/aboydnw/cng-sandbox/commit/42be995998aa17657d59f3261361c4bef6b1184a))
+* catch duplicate dataset uploads ([#140](https://github.com/aboydnw/cng-sandbox/issues/140)) ([3c4cd19](https://github.com/aboydnw/cng-sandbox/commit/3c4cd199a096c53701ef55820ad41c20f0a0f50d))
+* preflight duplicate check before upload ([#142](https://github.com/aboydnw/cng-sandbox/issues/142)) ([2b0a6b1](https://github.com/aboydnw/cng-sandbox/commit/2b0a6b1c10fb8c744d30b1b3e1865c23919b4227))
+* show warning when connection probe fails ([#146](https://github.com/aboydnw/cng-sandbox/issues/146)) ([8d66a7f](https://github.com/aboydnw/cng-sandbox/commit/8d66a7f81f075ff7fec0e688d4a9a4f56eb9dcb5))
+* unify map sidebar between datasets and connections ([#148](https://github.com/aboydnw/cng-sandbox/issues/148)) ([e5775eb](https://github.com/aboydnw/cng-sandbox/commit/e5775eb6f9bc2609c24765c284e0f8cab1954a11))
+
+
+### Bug Fixes
+
+* PMTiles connections not rendering when tile_type is null ([#143](https://github.com/aboydnw/cng-sandbox/issues/143)) ([7d5ccf3](https://github.com/aboydnw/cng-sandbox/commit/7d5ccf3037692aae9ccfbf1c621518bf7e5b9086)), closes [#139](https://github.com/aboydnw/cng-sandbox/issues/139)
+* proxy streaming response closes httpx client prematurely ([#144](https://github.com/aboydnw/cng-sandbox/issues/144)) ([3a13fa9](https://github.com/aboydnw/cng-sandbox/commit/3a13fa998f6e23868021d2f76537d1101bdd42fb))
+
 ## [1.12.0](https://github.com/aboydnw/cng-sandbox/compare/v1.11.0...v1.12.0) (2026-04-06)
 
 

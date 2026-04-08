@@ -12,6 +12,7 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
+    Form,
     HTTPException,
     Request,
     UploadFile,
@@ -23,6 +24,7 @@ from starlette.responses import JSONResponse
 from src.config import get_settings
 from src.models import Job
 from src.services.duplicate_check import check_duplicate_filename
+from src.services.format_checker import check_format
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
 from src.state import jobs, scan_store, scan_store_lock
@@ -93,6 +95,29 @@ async def _save_chunks(suffix: str):
 
 
 router = APIRouter(prefix="/api")
+
+
+@router.post("/check-format")
+async def check_format_endpoint(
+    chunk: UploadFile,
+    filename: str = Form(default=""),
+):
+    """Validate a file chunk's format before uploading the full file."""
+    if not filename:
+        raise HTTPException(status_code=400, detail="Filename is required.")
+
+    ext = os.path.splitext(filename)[1]
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+    try:
+        content = await chunk.read()
+        tmp.write(content)
+        tmp.close()
+        result = check_format(tmp.name, filename)
+    finally:
+        if os.path.exists(tmp.name):
+            os.unlink(tmp.name)
+
+    return result
 
 
 @router.post("/upload")

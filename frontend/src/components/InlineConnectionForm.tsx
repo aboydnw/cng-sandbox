@@ -47,11 +47,13 @@ export function InlineConnectionForm({
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [probeWarning, setProbeWarning] = useState<string | null>(null);
 
   const handleUrlBlur = useCallback(async () => {
     if (!url.trim()) return;
     setError(null);
     setProbeMetadata(null);
+    setProbeWarning(null);
 
     const detected = detectConnectionType(url);
     if (detected) {
@@ -72,8 +74,13 @@ export function InlineConnectionForm({
             ? await probePMTiles(url)
             : await probeCOG(url);
         setProbeMetadata(metadata);
-      } catch {
-        // Probe failure is non-fatal — user can still save
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setProbeWarning(
+          detected === "pmtiles"
+            ? `Could not read PMTiles header — file may not be valid PMTiles v3. ${msg}`
+            : `Could not read COG metadata. ${msg}`
+        );
       } finally {
         setProbing(false);
       }
@@ -214,6 +221,13 @@ export function InlineConnectionForm({
             </Text>
           )}
         </Box>
+      )}
+
+      {/* Probe warning */}
+      {probeWarning && !probing && (
+        <Text fontSize="xs" color="yellow.400" mb={3}>
+          {probeWarning}
+        </Text>
       )}
 
       {/* Error */}

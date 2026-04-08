@@ -17,7 +17,7 @@ jobs:
         id: health
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -u "${{ secrets.SITE_AUTH_USER }}:${{ secrets.SITE_AUTH_PASSWORD }}" \
+            -u "${{ secrets.SITE_AUTH_USER }}:${{ secrets.SITE_AUTH_PASSWORD }}" \ # zizmor: ignore[secrets-outside-env]
             --max-time 30 \
             "https://cngsandbox.org/api/health" || echo "000")
           echo "status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
@@ -31,6 +31,7 @@ jobs:
         if: steps.health.outputs.status != '200'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HTTP_STATUS: ${{ steps.health.outputs.status }}
         run: |
           EXISTING=$(gh issue list \
             --repo "${{ github.repository }}" \
@@ -40,36 +41,31 @@ jobs:
             --json number \
             --jq '.[0].number // empty')
 
+          BODY="The uptime monitor detected that cngsandbox.org is not responding."
+          BODY="${BODY}\n\n- **HTTP status**: ${HTTP_STATUS}"
+          BODY="${BODY}\n- **Endpoint**: https://cngsandbox.org/api/health"
+          BODY="${BODY}\n- **Time**: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          BODY="${BODY}\n\n## Troubleshooting"
+          BODY="${BODY}\n\nSSH into the VM and check:"
+          BODY="${BODY}\n\n\`\`\`bash"
+          BODY="${BODY}\ndocker compose --profile prod ps"
+          BODY="${BODY}\ndocker compose --profile prod logs --tail 50"
+          BODY="${BODY}\n\`\`\`"
+          BODY="${BODY}\n\nIf services are down, restart:"
+          BODY="${BODY}\n\n\`\`\`bash"
+          BODY="${BODY}\ndocker compose --profile prod up -d --build"
+          BODY="${BODY}\n\`\`\`"
+
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" \
               --repo "${{ github.repository }}" \
-              --body "Still down as of $(date -u '+%Y-%m-%d %H:%M UTC'). HTTP status: ${{ steps.health.outputs.status }}"
+              --body "Still down as of $(date -u '+%Y-%m-%d %H:%M UTC'). HTTP status: ${HTTP_STATUS}"
           else
-            gh issue create \
+            printf '%b' "$BODY" | gh issue create \
               --repo "${{ github.repository }}" \
-              --title "Site health check failing (HTTP ${{ steps.health.outputs.status }})" \
+              --title "Site health check failing (HTTP ${HTTP_STATUS})" \
               --label "incident" \
-              --body "$(cat <<'BODY'
-The uptime monitor detected that cngsandbox.org is not responding.
-
-- **HTTP status**: ${{ steps.health.outputs.status }}
-- **Endpoint**: `https://cngsandbox.org/api/health`
-- **Time**: $(date -u '+%Y-%m-%d %H:%M UTC')
-
-## Troubleshooting
-
-SSH into the VM and check:
-\`\`\`bash
-docker compose --profile prod ps
-docker compose --profile prod logs --tail 50
-\`\`\`
-
-If services are down, restart:
-\`\`\`bash
-docker compose --profile prod up -d --build
-\`\`\`
-BODY
-)"
+              --body-file -
           fi
 
       - name: Close issue if recovered

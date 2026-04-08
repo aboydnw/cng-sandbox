@@ -15,8 +15,14 @@ def valid_geotiff():
     with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as f:
         path = f.name
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64, count=1,
-        dtype="float32", crs="EPSG:4326",
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
         transform=from_bounds(-10, -10, 10, 10, 64, 64),
     ) as dst:
         dst.write(np.zeros((64, 64), dtype=np.float32), 1)
@@ -30,7 +36,12 @@ def geotiff_no_crs():
     with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as f:
         path = f.name
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64, count=1,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
         dtype="float32",
         transform=from_bounds(-10, -10, 10, 10, 64, 64),
     ) as dst:
@@ -52,9 +63,7 @@ def valid_geojson():
             }
         ],
     }
-    with tempfile.NamedTemporaryFile(
-        suffix=".geojson", mode="w", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(suffix=".geojson", mode="w", delete=False) as f:
         json.dump(geojson, f)
         path = f.name
     yield path

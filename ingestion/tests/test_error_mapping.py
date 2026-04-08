@@ -17,6 +17,7 @@ def test_crs_error():
 
 def test_json_decode_error():
     import json
+
     exc = json.JSONDecodeError("Expecting value", "", 0)
     msg = map_pipeline_error(exc)
     assert "not valid JSON" in msg
@@ -30,6 +31,7 @@ def test_unknown_error_passes_through():
 
 def test_fiona_driver_error():
     import fiona.errors
+
     exc = fiona.errors.DriverError("unsupported driver")
     msg = map_pipeline_error(exc)
     assert "Could not read this file as a vector" in msg

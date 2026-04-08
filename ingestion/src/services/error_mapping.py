@@ -12,7 +12,9 @@ def map_pipeline_error(exc: Exception) -> str:
         return "Could not read this file as a raster. It may be corrupted or in an unsupported format."
 
     if isinstance(exc, rasterio.errors.CRSError):
-        return "This file has a coordinate reference system that could not be interpreted."
+        return (
+            "This file has a coordinate reference system that could not be interpreted."
+        )
 
     if isinstance(exc, fiona.errors.DriverError):
         return "Could not read this file as a vector dataset. It may be corrupted or in an unsupported format."

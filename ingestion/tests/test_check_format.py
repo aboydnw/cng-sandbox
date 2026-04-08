@@ -34,8 +34,14 @@ def valid_geotiff_bytes():
     with tempfile.NamedTemporaryFile(suffix=".tif", delete=False) as f:
         path = f.name
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64, count=1,
-        dtype="float32", crs="EPSG:4326",
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
         transform=from_bounds(-10, -10, 10, 10, 64, 64),
     ) as dst:
         dst.write(np.zeros((64, 64), dtype=np.float32), 1)
@@ -80,16 +86,18 @@ def test_check_format_unsupported_extension(client):
 
 
 def test_check_format_valid_geojson(client):
-    geojson = json.dumps({
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "geometry": {"type": "Point", "coordinates": [0.0, 0.0]},
-                "properties": {"name": "test"},
-            }
-        ],
-    }).encode()
+    geojson = json.dumps(
+        {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [0.0, 0.0]},
+                    "properties": {"name": "test"},
+                }
+            ],
+        }
+    ).encode()
     resp = client.post(
         "/api/check-format",
         files={"chunk": ("chunk", geojson)},

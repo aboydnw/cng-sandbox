@@ -1,6 +1,12 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { Globe, LinkSimple } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react";
 import type { Connection } from "../types";
+import {
+  transition,
+  cardHover,
+  cardActive,
+  focusRing,
+} from "../lib/interactionStyles";
 
 const TYPE_LABELS: Record<string, string> = {
   cog: "Cloud-Optimized GeoTIFF",
@@ -9,24 +15,26 @@ const TYPE_LABELS: Record<string, string> = {
   xyz_vector: "XYZ Vector Tiles",
 };
 
-const TYPE_DESCRIPTIONS: Record<string, string> = {
-  cog: "A GeoTIFF restructured for the cloud. The browser requests just the pixels it needs via HTTP range requests — no server-side processing required.",
-  pmtiles:
-    "A single-file tile archive. The browser reads individual tiles using HTTP range requests, so there's no need for a tile server.",
-  xyz_raster:
-    "A traditional tile service that returns pre-rendered image tiles at each zoom level. The URL template specifies how to fetch tiles by zoom/column/row.",
-  xyz_vector:
-    "A tile service that returns vector data (points, lines, polygons) as Mapbox Vector Tiles. Styled and rendered in the browser.",
+const TYPE_SHORT: Record<string, string> = {
+  cog: "COG",
+  pmtiles: "PMTiles",
+  xyz_raster: "XYZ raster",
+  xyz_vector: "XYZ vector",
 };
 
 interface ConnectionInfoCardProps {
   connection: Connection;
+  onDetailsClick: () => void;
 }
 
-export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
+export function ConnectionInfoCard({
+  connection,
+  onDetailsClick,
+}: ConnectionInfoCardProps) {
   const typeLabel =
     TYPE_LABELS[connection.connection_type] ?? connection.connection_type;
-  const description = TYPE_DESCRIPTIONS[connection.connection_type] ?? null;
+  const shortLabel =
+    TYPE_SHORT[connection.connection_type] ?? connection.connection_type;
 
   return (
     <Box
@@ -37,6 +45,12 @@ export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
       borderLeftWidth="3px"
       borderLeftColor="brand.orange"
       p={4}
+      cursor="pointer"
+      onClick={onDetailsClick}
+      transition={transition(200)}
+      _hover={{ ...cardHover, borderColor: "brand.orange" }}
+      _active={cardActive}
+      _focusVisible={focusRing}
     >
       <Text
         fontSize="11px"
@@ -46,65 +60,48 @@ export function ConnectionInfoCard({ connection }: ConnectionInfoCardProps) {
         fontWeight={600}
         mb={2}
       >
-        Connection Details
+        Connection details
       </Text>
 
-      {/* Format label */}
-      <Box
-        bg="brand.bgSubtle"
-        borderRadius="4px"
-        px={2}
-        py={0.5}
-        mb={2}
-        display="inline-block"
-      >
-        <Text fontSize="12px" color="brand.brown" fontWeight={600}>
-          {typeLabel}
-        </Text>
-      </Box>
+      {/* Format badge */}
+      <Flex align="center" gap={2} mb={3}>
+        <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
+          <Text fontSize="12px" color="brand.brown" fontWeight={600}>
+            {typeLabel}
+          </Text>
+        </Box>
+        {connection.tile_type && (
+          <Box bg="brand.bgSubtle" borderRadius="4px" px={2} py={0.5}>
+            <Text fontSize="12px" color="brand.textSecondary">
+              {connection.tile_type}
+            </Text>
+          </Box>
+        )}
+      </Flex>
 
-      {/* Description */}
-      {description && (
-        <Text
-          fontSize="12px"
-          color="brand.textSecondary"
-          lineHeight="1.6"
-          mb={3}
-        >
-          {description}
+      {/* Summary line */}
+      <Text fontSize="13px" color="brand.brown" fontWeight={700} mb={1}>
+        {shortLabel} connection
+        {connection.min_zoom != null &&
+          `, zoom ${connection.min_zoom}–${connection.max_zoom}`}
+      </Text>
+      {connection.band_count != null && (
+        <Text fontSize="11px" color="brand.textSecondary">
+          {connection.band_count} band
+          {connection.band_count === 1 ? "" : "s"}
         </Text>
       )}
 
-      {/* Metadata rows */}
-      <Flex direction="column" gap={1.5}>
-        {connection.min_zoom != null && (
-          <Flex align="center" gap={2}>
-            <Globe size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
-            <Text fontSize="12px" color="brand.textSecondary">
-              Zoom levels {connection.min_zoom}–{connection.max_zoom}
-              {connection.tile_type && ` (${connection.tile_type})`}
-            </Text>
-          </Flex>
-        )}
-
-        {connection.band_count != null && (
-          <Text fontSize="12px" color="brand.textSecondary" pl="21px">
-            {connection.band_count} band
-            {connection.band_count === 1 ? "" : "s"}
-          </Text>
-        )}
-
-        <Flex align="center" gap={2} mt={1}>
-          <LinkSimple size={13} style={{ flexShrink: 0, opacity: 0.5 }} />
-          <Text
-            fontSize="11px"
-            color="brand.textSecondary"
-            wordBreak="break-all"
-            lineHeight="1.4"
-          >
-            {connection.url}
-          </Text>
-        </Flex>
+      {/* CTA */}
+      <Flex align="center" gap={1.5} mt={3}>
+        <Text fontSize="12px" color="brand.orange" fontWeight={600}>
+          Details
+        </Text>
+        <ArrowRight
+          size={12}
+          weight="bold"
+          color="var(--chakra-colors-brand-orange)"
+        />
       </Flex>
     </Box>
   );

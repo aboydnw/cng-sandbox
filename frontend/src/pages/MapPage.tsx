@@ -14,6 +14,7 @@ import { Header } from "../components/Header";
 import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
 import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
+import { ConnectionReportCard } from "../components/ConnectionReportCard";
 import { UnifiedMap } from "../components/UnifiedMap";
 import {
   PixelInspectorTooltip,
@@ -423,6 +424,13 @@ export default function MapPage() {
       {item?.dataset && (
         <ReportCard
           dataset={item.dataset}
+          isOpen={reportCardOpen}
+          onClose={() => setReportCardOpen(false)}
+        />
+      )}
+      {item?.connection && (
+        <ConnectionReportCard
+          connection={item.connection}
           isOpen={reportCardOpen}
           onClose={() => setReportCardOpen(false)}
         />

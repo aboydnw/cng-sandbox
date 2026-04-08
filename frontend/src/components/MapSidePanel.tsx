@@ -180,7 +180,10 @@ export function MapSidePanel({
       {/* Connection metadata */}
       {item.connection && (
         <Box mt={4}>
-          <ConnectionInfoCard connection={item.connection} />
+          <ConnectionInfoCard
+            connection={item.connection}
+            onDetailsClick={onDetailsClick}
+          />
         </Box>
       )}
 

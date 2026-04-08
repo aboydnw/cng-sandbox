@@ -6,6 +6,7 @@ Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefi
 
 ```
 Browser → Frontend (Vite :5185) → /api proxy → Ingestion API (:8086)
+                                → /cog proxy → COG tiler (:8084)
                                 → /raster proxy → titiler-pgstac (:80)
                                 → /vector proxy → tipg (:80)
 
@@ -62,7 +63,7 @@ docker compose -f docker-compose.yml build <service>
 docker compose -f docker-compose.yml up -d <service>
 ```
 
-Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `ingestion`, `frontend`
+Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tiler`, `ingestion`, `frontend`
 
 ## Production Deployment (Hetzner)
 
@@ -170,8 +171,9 @@ This is the trickiest part of the stack. There are two URL contexts:
    - `PUBLIC_RASTER_TILER_URL=/raster`
    - `PUBLIC_VECTOR_TILER_URL=/vector`
 
-The frontend's Vite dev server proxies `/api` → ingestion, `/raster` → titiler, `/vector` → tipg. This is configured via server-side env vars (NOT `VITE_` prefixed):
+The frontend's Vite dev server proxies `/api` → ingestion, `/cog` → COG tiler, `/raster` → titiler-pgstac, `/vector` → tipg. This is configured via server-side env vars (NOT `VITE_` prefixed):
 - `API_PROXY_TARGET=http://ingestion:8000` (internal container port; host-mapped to 8086)
+- `COG_TILER_PROXY_TARGET=http://cog-tiler:80`
 - `RASTER_TILER_PROXY_TARGET=http://raster-tiler:80`
 - `VECTOR_TILER_PROXY_TARGET=http://vector-tiler:80`
 
@@ -197,6 +199,7 @@ cd frontend && npx vitest run
 - **MapLibre requires absolute tile URLs**: Vector tile sources must use `window.location.origin + path`, not relative paths. See `VectorMap.tsx`.
 - **deck.gl handles relative URLs fine**: Raster tiles via `createCOGLayer`/`useTitiler` work with relative paths since deck.gl uses `fetch()` internally.
 - **SSE named events**: The ingestion API sends `event: status` SSE events. The frontend must use `addEventListener("status", ...)`, not `onmessage` (which only handles unnamed events).
+- **COG tiler proxy preserves `/cog` prefix**: Unlike `/raster` and `/vector` (which strip their prefix before forwarding), the `/cog` proxy passes the path through unchanged because titiler's COG routes are already mounted under `/cog/`.
 - **Vendored maptool utilities**: `src/lib/maptool/` contains `createCOGLayer`, `createPMTilesProtocol`, `useColorScale`, `MapLegend`, and `listColormaps` — vendored from `@maptool/core` so the sandbox has no external dependency on the library.
 
 ## Ingestion Service

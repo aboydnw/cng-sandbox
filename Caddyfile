@@ -47,11 +47,11 @@
 	}
 
 	# COG tiler proxy (standalone titiler for external COGs)
+	# Note: titiler routes are already under /cog/ — do NOT strip the prefix
 	handle /cog/* {
 		basic_auth {
 			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
 		}
-		uri strip_prefix /cog
 		reverse_proxy cog-tiler:80 {
 			header_down Cache-Control "no-store"
 		}

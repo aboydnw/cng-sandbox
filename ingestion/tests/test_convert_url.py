@@ -59,3 +59,38 @@ def test_convert_url_allows_public():
 
     req = ConvertUrlRequest(url="https://example.com/file.tif")
     assert req.url == "https://example.com/file.tif"
+
+
+def test_url_http_403_error_message():
+    from src.routes.upload import _format_http_error
+    msg = _format_http_error(403, "Forbidden")
+    assert "403" in msg
+    assert "Forbidden" in msg
+    assert "authentication" in msg.lower()
+
+
+def test_url_http_404_error_message():
+    from src.routes.upload import _format_http_error
+    msg = _format_http_error(404, "Not Found")
+    assert "404" in msg
+    assert "not found" in msg.lower()
+
+
+def test_url_http_generic_error_message():
+    from src.routes.upload import _format_http_error
+    msg = _format_http_error(502, "Bad Gateway")
+    assert "502" in msg
+    assert "Bad Gateway" in msg
+
+
+def test_url_connection_error_message():
+    from src.routes.upload import _format_connection_error
+    msg = _format_connection_error("example.com")
+    assert "example.com" in msg
+
+
+def test_url_timeout_error_message():
+    from src.routes.upload import _format_timeout_error
+    msg = _format_timeout_error("example.com")
+    assert "timed out" in msg.lower()
+    assert "example.com" in msg

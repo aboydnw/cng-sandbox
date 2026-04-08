@@ -35,6 +35,22 @@ TEMPORAL_EXCLUDED = {".h5", ".hdf5"}
 MAX_TEMPORAL_FILES = 50
 
 
+def _format_http_error(status_code: int, reason: str) -> str:
+    if status_code == 403:
+        return "The server returned 403 Forbidden. The file may require authentication."
+    if status_code == 404:
+        return "File not found at this URL (404)."
+    return f"The server returned {status_code} {reason}."
+
+
+def _format_connection_error(hostname: str) -> str:
+    return f"Could not connect to {hostname}. The server may be down or the URL may be incorrect."
+
+
+def _format_timeout_error(hostname: str) -> str:
+    return f"The request to {hostname} timed out. The server may be slow or the file may be too large to fetch."
+
+
 class ConvertUrlRequest(PydanticBaseModel):
     url: str
 
@@ -223,11 +239,20 @@ async def convert_url(
                     async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                         await write(chunk)
     except httpx.HTTPStatusError as e:
+        msg = _format_http_error(
+            e.response.status_code, e.response.reason_phrase or "Unknown"
+        )
+        raise HTTPException(status_code=400, detail=msg) from e
+    except httpx.TimeoutException as e:
+        hostname = urlparse(body.url).hostname or "the server"
         raise HTTPException(
-            status_code=400, detail=f"Failed to fetch URL: {e.response.status_code}"
+            status_code=400, detail=_format_timeout_error(hostname)
         ) from e
     except httpx.RequestError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
+        hostname = urlparse(body.url).hostname or "the server"
+        raise HTTPException(
+            status_code=400, detail=_format_connection_error(hostname)
+        ) from e
 
     job = Job(filename=filename)
     job.workspace_id = workspace_id

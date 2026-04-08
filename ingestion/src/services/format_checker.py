@@ -6,7 +6,11 @@ import fiona
 import rasterio
 
 from src.models import FormatPair
-from src.services.detector import UnsupportedFormatError, detect_format, validate_magic_bytes
+from src.services.detector import (
+    UnsupportedFormatError,
+    detect_format,
+    validate_magic_bytes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +29,12 @@ def check_format(file_path: str, filename: str) -> dict:
         validate_magic_bytes(file_path, format_pair)
     except UnsupportedFormatError as e:
         return {"valid": False, "error": str(e)}
+    except Exception:
+        logger.exception("Unexpected error checking file signature")
+        return {
+            "valid": False,
+            "error": "Could not inspect this file's content signature.",
+        }
 
     if format_pair.dataset_type.value == "raster":
         return _check_raster(file_path, format_pair)
@@ -61,11 +71,11 @@ def _check_raster(file_path: str, format_pair: FormatPair) -> dict:
             "valid": False,
             "error": f"Could not read this file as a {format_label}. It may be corrupted or in an unsupported variant.",
         }
-    except Exception as e:
-        logger.warning("Unexpected error checking raster: %s", e)
+    except Exception:
+        logger.exception("Unexpected error checking raster")
         return {
             "valid": False,
-            "error": f"Could not validate this {format_label}: {e}",
+            "error": f"Could not validate this {format_label}.",
         }
 
     return {"valid": True}
@@ -90,11 +100,11 @@ def _check_vector(file_path: str, format_pair: FormatPair) -> dict:
             "valid": False,
             "error": f"Could not read this file as a {format_label}. It may be corrupted or in an unsupported variant.",
         }
-    except Exception as e:
-        logger.warning("Unexpected error checking vector: %s", e)
+    except Exception:
+        logger.exception("Unexpected error checking vector")
         return {
             "valid": False,
-            "error": f"Could not validate this {format_label}: {e}",
+            "error": f"Could not validate this {format_label}.",
         }
 
     return {"valid": True}

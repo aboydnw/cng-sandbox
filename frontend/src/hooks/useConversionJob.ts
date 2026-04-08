@@ -350,17 +350,25 @@ export function useConversionJob() {
             }));
             return;
           }
+          // Format check passed — show it as done
+          setState((prev) => ({
+            ...prev,
+            stages: buildUploadingStagesAfterCheck(),
+          }));
+        } else {
+          // Endpoint failed — skip format check stage, proceed with upload
+          setState((prev) => ({
+            ...prev,
+            stages: buildUploadingStages(),
+          }));
         }
-        // If check-format endpoint itself fails (500, network error), proceed with upload
       } catch {
-        // Network error on check — proceed with upload, server-side validation is the backstop
+        // Network error — skip format check stage, proceed with upload
+        setState((prev) => ({
+          ...prev,
+          stages: buildUploadingStages(),
+        }));
       }
-
-      // Update stages to show format check done, uploading active
-      setState((prev) => ({
-        ...prev,
-        stages: buildUploadingStagesAfterCheck(),
-      }));
 
       // Preflight duplicate check — fast query before uploading bytes
       try {

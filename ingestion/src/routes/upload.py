@@ -119,19 +119,27 @@ async def check_format_endpoint(
     filename: str = Form(default=""),
 ):
     """Validate a file chunk's format before uploading the full file."""
+    max_bytes = 1_048_576
     if not filename:
         raise HTTPException(status_code=400, detail="Filename is required.")
 
     ext = os.path.splitext(filename)[1]
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-    try:
-        content = await chunk.read()
+    content = await chunk.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail="Format checks are limited to the first 1 MB of the file.",
+        )
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
         tmp.write(content)
-        tmp.close()
-        result = check_format(tmp.name, filename)
+        path = tmp.name
+
+    try:
+        result = check_format(path, filename)
     finally:
-        if os.path.exists(tmp.name):
-            os.unlink(tmp.name)
+        if os.path.exists(path):
+            os.unlink(path)
 
     return result
 

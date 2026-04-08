@@ -26,8 +26,8 @@ from src.models import (
     ValidationCheck,
 )
 from src.services import pmtiles_ingest, stac_ingest, vector_ingest
-from src.services.error_mapping import map_pipeline_error
 from src.services.detector import detect_format, validate_magic_bytes
+from src.services.error_mapping import map_pipeline_error
 from src.services.storage import StorageService
 
 logger = logging.getLogger(__name__)
@@ -461,7 +461,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                     validate_geojson_structure(Path(input_path).read_bytes())
                 except ValueError as e:
                     job.status = JobStatus.FAILED
-                    job.error = str(e)
+                    job.error = map_pipeline_error(e)
                     return
 
             # Extract bounds for auto-zoom

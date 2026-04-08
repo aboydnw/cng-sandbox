@@ -2,9 +2,6 @@
 
 import logging
 
-import fiona
-import rasterio
-
 from src.models import FormatPair
 from src.services.detector import (
     UnsupportedFormatError,
@@ -43,6 +40,8 @@ def check_format(file_path: str, filename: str) -> dict:
 
 def _check_raster(file_path: str, format_pair: FormatPair) -> dict:
     """Validate raster file with rasterio."""
+    import rasterio
+
     format_label = {
         FormatPair.GEOTIFF_TO_COG: "GeoTIFF",
         FormatPair.NETCDF_TO_COG: "NetCDF",
@@ -83,6 +82,8 @@ def _check_raster(file_path: str, format_pair: FormatPair) -> dict:
 
 def _check_vector(file_path: str, format_pair: FormatPair) -> dict:
     """Validate vector file with fiona."""
+    import fiona
+
     format_label = {
         FormatPair.GEOJSON_TO_GEOPARQUET: "GeoJSON",
         FormatPair.SHAPEFILE_TO_GEOPARQUET: "Shapefile",

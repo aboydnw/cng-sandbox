@@ -186,4 +186,29 @@ describe("ProgressTracker", () => {
     expect(screen.getByText(/2\.1 MB/)).toBeTruthy();
     expect(screen.getAllByText(/4\.2 MB/).length).toBeGreaterThan(0);
   });
+
+  it("renders 'Checking format' stage with error detail", () => {
+    const stages: StageInfo[] = [
+      {
+        name: "Checking format",
+        status: "error",
+        detail: "This GeoTIFF does not have a CRS defined.",
+      },
+      { name: "Uploading", status: "pending" },
+      { name: "Scanning", status: "pending" },
+    ];
+    renderWithChakra(
+      <ProgressTracker
+        stages={stages}
+        filename="test.tif"
+        fileSize="24.5 MB"
+        onRetry={() => {}}
+      />
+    );
+    expect(screen.getByText("Checking format")).toBeTruthy();
+    expect(
+      screen.getByText("This GeoTIFF does not have a CRS defined.")
+    ).toBeTruthy();
+    expect(screen.getByText("Try again")).toBeTruthy();
+  });
 });

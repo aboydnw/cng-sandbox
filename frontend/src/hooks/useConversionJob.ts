@@ -9,6 +9,35 @@ import type {
 import { config } from "../config";
 import { workspaceFetch } from "../lib/api";
 
+export function stripPydanticPrefix(msg: string): string {
+  return msg.replace(/^Value error, /i, "");
+}
+
+export function extractErrorMessage(
+  body: Record<string, unknown>,
+  fallback: string
+): string {
+  const raw =
+    typeof body.detail === "string"
+      ? body.detail
+      : typeof body.message === "string"
+        ? body.message
+        : typeof body.error === "string"
+          ? body.error
+          : null;
+  if (raw) return stripPydanticPrefix(raw);
+  if (Array.isArray(body.detail)) {
+    return body.detail
+      .map((e: unknown) =>
+        e instanceof Object && "msg" in e
+          ? stripPydanticPrefix(String((e as Record<string, unknown>).msg))
+          : JSON.stringify(e)
+      )
+      .join("; ");
+  }
+  return fallback;
+}
+
 export async function fetchWithRetry(
   input: RequestInfo,
   init?: RequestInit,
@@ -63,6 +92,36 @@ function buildUploadFailedStages(error: string): StageInfo[] {
   ];
 }
 
+function buildCheckingFormatStages(): StageInfo[] {
+  return [
+    { name: "Checking format", status: "active" as const },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
+}
+
+function buildCheckFormatFailedStages(error: string): StageInfo[] {
+  return [
+    { name: "Checking format", status: "error" as const, detail: error },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
+}
+
+function buildUploadingStagesAfterCheck(): StageInfo[] {
+  return [
+    { name: "Checking format", status: "done" as const },
+    { name: "Uploading", status: "active" as const },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
+}
+
+function buildUploadFailedStagesAfterCheck(error: string): StageInfo[] {
+  return [
+    { name: "Checking format", status: "done" as const },
+    { name: "Uploading", status: "error" as const, detail: error },
+    ...STAGE_NAMES.map((name) => ({ name, status: "pending" as const })),
+  ];
+}
+
 function updateStages(
   status: JobStatus,
   error?: string,
@@ -93,7 +152,11 @@ function updateStages(
     }
     return { name, status: "pending" as const };
   });
-  return [{ name: "Uploading", status: "done" as const }, ...pipelineStages];
+  return [
+    { name: "Checking format", status: "done" as const },
+    { name: "Uploading", status: "done" as const },
+    ...pipelineStages,
+  ];
 }
 
 export function useConversionJob() {
@@ -261,9 +324,51 @@ export function useConversionJob() {
         isUploading: true,
         status: "pending",
         error: null,
-        stages: buildUploadingStages(),
+        stages: buildCheckingFormatStages(),
         duplicate: null,
       }));
+
+      // Pre-upload format check — send first 1MB to server for validation
+      try {
+        const chunk = file.slice(0, 1_048_576);
+        const checkData = new FormData();
+        checkData.append("chunk", chunk, "chunk");
+        checkData.append("filename", file.name);
+        const checkResp = await workspaceFetch(
+          `${config.apiBase}/api/check-format`,
+          { method: "POST", body: checkData }
+        );
+        if (checkResp.ok) {
+          const checkResult = await checkResp.json();
+          if (!checkResult.valid) {
+            setState((prev) => ({
+              ...prev,
+              isUploading: false,
+              status: "failed",
+              error: checkResult.error,
+              stages: buildCheckFormatFailedStages(checkResult.error),
+            }));
+            return;
+          }
+          // Format check passed — show it as done
+          setState((prev) => ({
+            ...prev,
+            stages: buildUploadingStagesAfterCheck(),
+          }));
+        } else {
+          // Endpoint failed — skip format check stage, proceed with upload
+          setState((prev) => ({
+            ...prev,
+            stages: buildUploadingStages(),
+          }));
+        }
+      } catch {
+        // Network error — skip format check stage, proceed with upload
+        setState((prev) => ({
+          ...prev,
+          stages: buildUploadingStages(),
+        }));
+      }
 
       // Preflight duplicate check — fast query before uploading bytes
       try {
@@ -319,7 +424,7 @@ export function useConversionJob() {
           isUploading: false,
           status: "failed",
           error: "Duplicate check failed",
-          stages: buildUploadFailedStages("Duplicate check failed"),
+          stages: buildUploadFailedStagesAfterCheck("Duplicate check failed"),
         }));
         return;
       }
@@ -328,12 +433,13 @@ export function useConversionJob() {
         const detail = await resp
           .json()
           .catch(() => ({ detail: "Upload failed" }));
+        const msg = extractErrorMessage(detail, "Upload failed");
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: detail.detail || "Upload failed",
-          stages: buildUploadFailedStages(detail.detail),
+          error: msg,
+          stages: buildUploadFailedStagesAfterCheck(msg),
         }));
         return;
       }
@@ -426,18 +532,7 @@ export function useConversionJob() {
         const body = await resp
           .json()
           .catch(() => ({ detail: "Fetch failed" }));
-        const msg =
-          typeof body.detail === "string"
-            ? body.detail
-            : Array.isArray(body.detail)
-              ? body.detail
-                  .map((e: unknown) =>
-                    e instanceof Object && "msg" in e
-                      ? String((e as Record<string, unknown>).msg)
-                      : JSON.stringify(e)
-                  )
-                  .join("; ")
-              : "Fetch failed";
+        const msg = extractErrorMessage(body, "Fetch failed");
         setState((prev) => ({
           ...prev,
           isUploading: false,
@@ -490,12 +585,13 @@ export function useConversionJob() {
         const detail = await resp
           .json()
           .catch(() => ({ detail: "Upload failed" }));
+        const msg = extractErrorMessage(detail, "Upload failed");
         setState((prev) => ({
           ...prev,
           isUploading: false,
           status: "failed",
-          error: detail.detail || "Upload failed",
-          stages: buildUploadFailedStages(detail.detail),
+          error: msg,
+          stages: buildUploadFailedStages(msg),
         }));
         return;
       }

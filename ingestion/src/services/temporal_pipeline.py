@@ -20,6 +20,7 @@ from src.models import (
 )
 from src.services import stac_ingest
 from src.services.detector import detect_format, validate_magic_bytes
+from src.services.error_mapping import map_pipeline_error
 from src.services.pipeline import (
     _extract_band_metadata,
     _extract_bounds,
@@ -308,7 +309,7 @@ async def run_infile_temporal_pipeline(
     except Exception as e:
         logger.exception("In-file temporal pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
-        job.error = str(e)
+        job.error = map_pipeline_error(e)
         _cleanup_uploaded(storage, uploaded_keys)
 
 
@@ -492,7 +493,7 @@ async def run_temporal_pipeline(
     except Exception as e:
         logger.exception("Temporal pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
-        job.error = str(e)
+        job.error = map_pipeline_error(e)
         _cleanup_uploaded(storage, uploaded_keys)
 
 

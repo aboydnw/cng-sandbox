@@ -23,6 +23,7 @@ from src.models.dataset import persist_dataset
 from src.services import stac_ingest
 from src.services.cog_checker import check_remote_is_cog
 from src.services.detector import detect_format
+from src.services.error_mapping import map_pipeline_error
 from src.services.pipeline import (
     _extract_band_metadata,
     _extract_bounds,
@@ -141,7 +142,7 @@ async def run_remote_pipeline(
     except Exception as e:
         logger.exception("Remote pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
-        job.error = str(e)
+        job.error = map_pipeline_error(e)
 
 
 async def _run_zero_copy(

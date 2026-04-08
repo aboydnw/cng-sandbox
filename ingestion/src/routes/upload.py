@@ -12,6 +12,7 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
+    Form,
     HTTPException,
     Request,
     UploadFile,
@@ -23,6 +24,7 @@ from starlette.responses import JSONResponse
 from src.config import get_settings
 from src.models import Job
 from src.services.duplicate_check import check_duplicate_filename
+from src.services.format_checker import check_format
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
 from src.state import jobs, scan_store, scan_store_lock
@@ -31,6 +33,22 @@ from src.workspace import get_workspace_id
 RASTER_EXTENSIONS = {".tif", ".tiff", ".nc", ".nc4", ".h5", ".hdf5"}
 TEMPORAL_EXCLUDED = {".h5", ".hdf5"}
 MAX_TEMPORAL_FILES = 50
+
+
+def _format_http_error(status_code: int, reason: str) -> str:
+    if status_code == 403:
+        return "The server returned 403 Forbidden. The file may require authentication."
+    if status_code == 404:
+        return "File not found at this URL (404)."
+    return f"The server returned {status_code} {reason}."
+
+
+def _format_connection_error(hostname: str) -> str:
+    return f"Could not connect to {hostname}. The server may be down or the URL may be incorrect."
+
+
+def _format_timeout_error(hostname: str) -> str:
+    return f"The request to {hostname} timed out. The server may be slow or the file may be too large to fetch."
 
 
 class ConvertUrlRequest(PydanticBaseModel):
@@ -93,6 +111,37 @@ async def _save_chunks(suffix: str):
 
 
 router = APIRouter(prefix="/api")
+
+
+@router.post("/check-format")
+async def check_format_endpoint(
+    chunk: UploadFile,
+    filename: str = Form(default=""),
+):
+    """Validate a file chunk's format before uploading the full file."""
+    max_bytes = 1_048_576
+    if not filename:
+        raise HTTPException(status_code=400, detail="Filename is required.")
+
+    ext = os.path.splitext(filename)[1]
+    content = await chunk.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail="Format checks are limited to the first 1 MB of the file.",
+        )
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+        tmp.write(content)
+        path = tmp.name
+
+    try:
+        result = check_format(path, filename)
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)
+
+    return result
 
 
 @router.post("/upload")
@@ -198,11 +247,20 @@ async def convert_url(
                     async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                         await write(chunk)
     except httpx.HTTPStatusError as e:
+        msg = _format_http_error(
+            e.response.status_code, e.response.reason_phrase or "Unknown"
+        )
+        raise HTTPException(status_code=400, detail=msg) from e
+    except httpx.TimeoutException as e:
+        hostname = urlparse(body.url).hostname or "the server"
         raise HTTPException(
-            status_code=400, detail=f"Failed to fetch URL: {e.response.status_code}"
+            status_code=400, detail=_format_timeout_error(hostname)
         ) from e
     except httpx.RequestError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
+        hostname = urlparse(body.url).hostname or "the server"
+        raise HTTPException(
+            status_code=400, detail=_format_connection_error(hostname)
+        ) from e
 
     job = Job(filename=filename)
     job.workspace_id = workspace_id

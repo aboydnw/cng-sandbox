@@ -46,6 +46,10 @@ describe("useConversionJob", () => {
 
   it("uploads file and transitions to scanning", async () => {
     mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ valid: true }),
+    });
+    mockFetch.mockResolvedValueOnce({
       status: 200,
       ok: true,
       json: async () => ({ duplicate: false }),
@@ -73,6 +77,10 @@ describe("useConversionJob", () => {
   });
 
   it("updates stages from SSE events", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ valid: true }),
+    });
     mockFetch.mockResolvedValueOnce({
       status: 200,
       ok: true,
@@ -103,10 +111,14 @@ describe("useConversionJob", () => {
     });
     expect(result.current.state.status).toBe("scanning");
     expect(result.current.state.stages[0]).toMatchObject({
-      name: "Uploading",
+      name: "Checking format",
       status: "done",
     });
     expect(result.current.state.stages[1]).toMatchObject({
+      name: "Uploading",
+      status: "done",
+    });
+    expect(result.current.state.stages[2]).toMatchObject({
       name: "Scanning",
       status: "active",
     });
@@ -120,17 +132,21 @@ describe("useConversionJob", () => {
       );
     });
     expect(result.current.state.status).toBe("converting");
-    expect(result.current.state.stages[1]).toMatchObject({
+    expect(result.current.state.stages[2]).toMatchObject({
       name: "Scanning",
       status: "done",
     });
-    expect(result.current.state.stages[2]).toMatchObject({
+    expect(result.current.state.stages[3]).toMatchObject({
       name: "Converting",
       status: "active",
     });
   });
 
   it("sets datasetId on ready", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ valid: true }),
+    });
     mockFetch.mockResolvedValueOnce({
       status: 200,
       ok: true,
@@ -163,6 +179,10 @@ describe("useConversionJob", () => {
   });
 
   it("sets error on failed status", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ valid: true }),
+    });
     mockFetch.mockResolvedValueOnce({
       status: 200,
       ok: true,

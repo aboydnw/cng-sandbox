@@ -63,8 +63,8 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
     if format_pair == FormatPair.GEOTIFF_TO_COG:
         credits.append(
             {
-                "tool": "rio-cogeo",
-                "url": "https://github.com/cogeotiff/rio-cogeo",
+                "tool": "GDAL",
+                "url": "https://gdal.org",
                 "role": "Converted by",
             }
         )
@@ -664,17 +664,18 @@ def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
                     if not dest.startswith(os.path.realpath(tmpdir) + os.sep):
                         raise ValueError(f"Zip contains path traversal: {member}")
                 zf.extractall(tmpdir)
-            shp_path = None
+            shp_paths = []
             for root, _dirs, files in os.walk(tmpdir):
                 for f in files:
                     if f.lower().endswith(".shp"):
-                        shp_path = os.path.join(root, f)
-                        break
-                if shp_path:
-                    break
-            if not shp_path:
+                        shp_paths.append(os.path.join(root, f))
+            if not shp_paths:
                 raise FileNotFoundError(f"No .shp file found inside {input_path}")
-            gdf = gpd.read_file(shp_path)
+            if len(shp_paths) > 1:
+                raise ValueError(
+                    f"Expected one .shp file inside {input_path}, found {len(shp_paths)}"
+                )
+            gdf = gpd.read_file(shp_paths[0])
     else:
         gdf = gpd.read_file(input_path)
     gdf.columns = [c.lower() for c in gdf.columns]

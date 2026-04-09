@@ -659,6 +659,10 @@ def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
     if ext == ".zip":
         with tempfile.TemporaryDirectory() as tmpdir:
             with zipfile.ZipFile(input_path, "r") as zf:
+                for member in zf.namelist():
+                    dest = os.path.realpath(os.path.join(tmpdir, member))
+                    if not dest.startswith(os.path.realpath(tmpdir) + os.sep):
+                        raise ValueError(f"Zip contains path traversal: {member}")
                 zf.extractall(tmpdir)
             shp_path = None
             for root, _dirs, files in os.walk(tmpdir):

@@ -6,27 +6,9 @@ import os
 import sys
 import tempfile
 
-_REQUIRED = {"rasterio": "rasterio", "numpy": "numpy"}
-_missing = []
-for _mod, _pkg in _REQUIRED.items():
-    try:
-        __import__(_mod)
-    except ImportError:
-        _missing.append(_pkg)
-if _missing:
-    print(f"Missing dependencies: {', '.join(_missing)}")
-    print(f"Install with: pip install {' '.join(_missing)} rio-cogeo")
-    sys.exit(1)
-
-try:
-    from rio_cogeo import cog_validate
-except ImportError:
-    print("Missing dependency: rio-cogeo")
-    print("Install with: pip install rio-cogeo")
-    sys.exit(1)
-
 import numpy as np
 import rasterio
+from rio_cogeo import cog_validate
 
 @dataclasses.dataclass
 class CheckResult:

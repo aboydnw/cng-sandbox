@@ -5,31 +5,13 @@ import os
 import sys
 import tempfile
 
-_REQUIRED = {"xarray": "xarray", "rasterio": "rasterio", "numpy": "numpy"}
-_missing = []
-for _mod, _pkg in _REQUIRED.items():
-    try:
-        __import__(_mod)
-    except ImportError:
-        _missing.append(_pkg)
-if _missing:
-    print(f"Missing dependencies: {', '.join(_missing)}")
-    print(f"Install with: pip install {' '.join(_missing)} netcdf4 rio-cogeo")
-    sys.exit(1)
-
-try:
-    from rio_cogeo import cog_translate
-    from rio_cogeo.profiles import cog_profiles
-except ImportError:
-    print("Missing dependency: rio-cogeo")
-    print("Install with: pip install rio-cogeo")
-    sys.exit(1)
-
 import numpy as np
 import rasterio
-from rasterio.crs import CRS
-from rasterio.transform import from_bounds, Affine
 import xarray as xr
+from rasterio.crs import CRS
+from rasterio.transform import Affine, from_bounds
+from rio_cogeo import cog_translate
+from rio_cogeo.profiles import cog_profiles
 
 
 def _write_cog(src_path: str, dst_path: str, compression: str, verbose: bool):

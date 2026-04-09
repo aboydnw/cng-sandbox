@@ -6,19 +6,6 @@ import json
 import os
 import sys
 import tempfile
-
-_REQUIRED = {"geopandas": "geopandas", "pyarrow": "pyarrow", "numpy": "numpy"}
-_missing = []
-for _mod, _pkg in _REQUIRED.items():
-    try:
-        __import__(_mod)
-    except ImportError:
-        _missing.append(_pkg)
-if _missing:
-    print(f"Missing dependencies: {', '.join(_missing)}")
-    print(f"Install with: pip install {' '.join(_missing)}")
-    sys.exit(1)
-
 import zipfile
 
 import geopandas as gpd

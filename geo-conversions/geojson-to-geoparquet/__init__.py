@@ -16,11 +16,6 @@ def _load(name):
     return _cache[name]
 
 
-def convert(input_path: str, output_path: str, **kwargs):
-    """Convert a GeoJSON file to GeoParquet."""
-    return _load("convert").convert(input_path, output_path, **kwargs)
-
-
 def run_checks(input_path: str, output_path: str, **kwargs):
     """Run all validation checks and return list[CheckResult]."""
     return _load("validate").run_checks(input_path, output_path, **kwargs)

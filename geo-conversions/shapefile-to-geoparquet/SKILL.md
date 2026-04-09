@@ -6,32 +6,30 @@ When you have a Shapefile and need to convert it to GeoParquet for efficient col
 
 ## Prerequisites
 
-- Python 3.10+
+- GDAL CLI tools (`ogr2ogr`)
+- Python 3.10+ (for validation script)
 - `pip install geopandas pyarrow shapely numpy`
 
 ## Scripts
 
 | File | Purpose |
 |------|---------|
-| [`scripts/convert.py`](scripts/convert.py) | Convert a Shapefile to GeoParquet |
 | [`scripts/validate.py`](scripts/validate.py) | Validate that GeoParquet preserves all data from the source Shapefile |
 
 ## Quickstart
 
+    ogr2ogr -f Parquet output.parquet input.shp
+
+    # For zipped shapefiles:
+    ogr2ogr -f Parquet output.parquet /vsizip/path/to/archive.zip
+
+    # Validate the result:
     pip install geopandas pyarrow shapely numpy
-    python scripts/convert.py --input data.shp --output data.parquet
-    python scripts/validate.py --input data.shp --output data.parquet
+    python scripts/validate.py --input input.shp --output output.parquet
+
+**Note:** `ogr2ogr` does not lowercase column names. For PostgreSQL/tipg compatibility, column names must be lowercased. The CNG Sandbox ingestion pipeline handles this automatically.
 
 ## CLI flags
-
-### convert.py
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--input` | Yes | — | Path to input .shp file (companion .dbf, .shx, .prj resolved automatically) |
-| `--output` | Yes | — | Path for output .parquet file |
-| `--overwrite` | No | False | Overwrite output if it exists |
-| `--verbose` | No | False | Print detailed progress |
 
 ### validate.py
 

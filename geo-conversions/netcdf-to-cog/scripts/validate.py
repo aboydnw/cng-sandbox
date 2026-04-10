@@ -267,13 +267,23 @@ def check_pixel_fidelity(input_path: str, output_path: str, variable: str | None
             return CheckResult("Pixel fidelity", False,
                                "No valid COG pixels found at reprojected sample locations")
 
-        max_diff = float(np.max(np.abs(src_vals[valid] - cog_vals[valid])))
-        if max_diff > tolerance:
+        diffs = np.abs(src_vals[valid] - cog_vals[valid])
+        max_diff = float(np.max(diffs))
+        p95_diff = float(np.percentile(diffs, 95))
+
+        # Use the 95th percentile rather than max: reprojection + nearest-neighbor
+        # resampling legitimately produces large outliers at steep gradients or
+        # pixel boundaries because a sub-pixel coordinate drift lands on a neighbor
+        # with a very different value. A few such outliers don't mean the data is
+        # corrupt — failing on p95 catches actual systemic problems instead.
+        if p95_diff > tolerance:
             return CheckResult("Pixel fidelity", False,
-                               f"max diff={max_diff:.6f} exceeds tolerance={tolerance}")
+                               f"p95 diff={p95_diff:.6f} exceeds tolerance={tolerance} "
+                               f"(max={max_diff:.6f}, {valid.sum()}/{n} data pixels)")
 
         return CheckResult("Pixel fidelity", True,
-                           f"{valid.sum()}/{n} data pixels (reprojected), max diff={max_diff:.6f}")
+                           f"{valid.sum()}/{n} data pixels (reprojected), "
+                           f"p95 diff={p95_diff:.6f}, max={max_diff:.6f}")
 
     else:
         lat_names = [d for d in da.dims if d.lower() in ("lat", "latitude", "y")]

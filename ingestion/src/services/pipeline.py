@@ -641,10 +641,23 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
 def _convert_geotiff_to_cog(input_path: str, output_path: str) -> None:
     """Convert GeoTIFF to COG using gdalwarp."""
     result = subprocess.run(
-        ["gdalwarp", "-t_srs", "EPSG:4326", "-of", "COG",
-         "-co", "COMPRESS=DEFLATE", "-co", "BLOCKSIZE=512",
-         "-co", "NUM_THREADS=ALL_CPUS", input_path, output_path],
-        capture_output=True, text=True,
+        [
+            "gdalwarp",
+            "-t_srs",
+            "EPSG:4326",
+            "-of",
+            "COG",
+            "-co",
+            "COMPRESS=DEFLATE",
+            "-co",
+            "BLOCKSIZE=512",
+            "-co",
+            "NUM_THREADS=ALL_CPUS",
+            input_path,
+            output_path,
+        ],
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0:
         raise RuntimeError(f"gdalwarp failed: {result.stderr}")

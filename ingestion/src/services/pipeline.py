@@ -8,6 +8,7 @@ freeze SSE streams and health checks during processing).
 import asyncio
 import logging
 import os
+import subprocess
 import tempfile
 import uuid
 from dataclasses import dataclass
@@ -62,8 +63,8 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
     if format_pair == FormatPair.GEOTIFF_TO_COG:
         credits.append(
             {
-                "tool": "rio-cogeo",
-                "url": "https://github.com/cogeotiff/rio-cogeo",
+                "tool": "GDAL",
+                "url": "https://gdal.org",
                 "role": "Converted by",
             }
         )
@@ -637,6 +638,78 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
             await asyncio.sleep(1.0)
 
 
+def _convert_geotiff_to_cog(input_path: str, output_path: str) -> None:
+    """Convert GeoTIFF to COG using gdalwarp."""
+    result = subprocess.run(
+        [
+            "gdalwarp",
+            "-t_srs",
+            "EPSG:4326",
+            "-r",
+            "bilinear",
+            "-of",
+            "COG",
+            "-multi",
+            "-wo",
+            "NUM_THREADS=ALL_CPUS",
+            "-co",
+            "COMPRESS=DEFLATE",
+            "-co",
+            "BLOCKSIZE=512",
+            "-co",
+            "NUM_THREADS=ALL_CPUS",
+            input_path,
+            output_path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"gdalwarp failed: {result.stderr}")
+
+
+def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
+    """Convert vector file to GeoParquet using geopandas with column lowercasing."""
+    import zipfile
+
+    import geopandas as gpd
+
+    ext = os.path.splitext(input_path)[1].lower()
+    if ext == ".zip":
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with zipfile.ZipFile(input_path, "r") as zf:
+                for member in zf.namelist():
+                    dest = os.path.realpath(os.path.join(tmpdir, member))
+                    if not dest.startswith(os.path.realpath(tmpdir) + os.sep):
+                        raise ValueError(f"Zip contains path traversal: {member}")
+                zf.extractall(tmpdir)
+            shp_paths = []
+            for root, _dirs, files in os.walk(tmpdir):
+                for f in files:
+                    if f.lower().endswith(".shp"):
+                        shp_paths.append(os.path.join(root, f))
+            if not shp_paths:
+                raise FileNotFoundError(f"No .shp file found inside {input_path}")
+            if len(shp_paths) > 1:
+                raise ValueError(
+                    f"Expected one .shp file inside {input_path}, found {len(shp_paths)}"
+                )
+            gdf = gpd.read_file(shp_paths[0])
+    else:
+        gdf = gpd.read_file(input_path)
+    lowered = [c.lower() for c in gdf.columns]
+    duplicates = sorted({c for c in lowered if lowered.count(c) > 1})
+    if duplicates:
+        raise ValueError(
+            f"Column lowercasing would create duplicate names: {', '.join(duplicates)}"
+        )
+    geometry_name = gdf.geometry.name
+    gdf.columns = lowered
+    if geometry_name.lower() != geometry_name:
+        gdf = gdf.set_geometry(geometry_name.lower())
+    gdf.to_parquet(output_path)
+
+
 def _import_and_convert(
     format_pair: FormatPair,
     input_path: str,
@@ -646,17 +719,12 @@ def _import_and_convert(
 ) -> None:
     """Import the appropriate cng-toolkit converter and run it."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
-        from geotiff_to_cog import convert
-
-        convert(input_path, output_path, verbose=True)
-    elif format_pair == FormatPair.SHAPEFILE_TO_GEOPARQUET:
-        from shapefile_to_geoparquet import convert
-
-        convert(input_path, output_path, verbose=True)
-    elif format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
-        from geojson_to_geoparquet import convert
-
-        convert(input_path, output_path, verbose=True)
+        _convert_geotiff_to_cog(input_path, output_path)
+    elif format_pair in (
+        FormatPair.SHAPEFILE_TO_GEOPARQUET,
+        FormatPair.GEOJSON_TO_GEOPARQUET,
+    ):
+        _convert_vector_to_geoparquet(input_path, output_path)
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import convert
 

@@ -6,35 +6,31 @@ When you have a GeoTIFF file and need to convert it to a Cloud-Optimized GeoTIFF
 
 ## Prerequisites
 
-- Python 3.10+
+- GDAL CLI tools (`gdal_translate`, `gdalwarp`)
+- Python 3.10+ (for validation script)
 - `pip install rasterio rio-cogeo numpy`
 
 ## Scripts
 
 | File | Purpose |
 |------|---------|
-| [`scripts/convert.py`](scripts/convert.py) | Convert a GeoTIFF to COG with configurable compression |
 | [`scripts/validate.py`](scripts/validate.py) | Validate that a COG preserves all data from the source GeoTIFF |
 
 ## Quickstart
 
-Install dependencies, convert a file, and validate the result:
+Convert a file using GDAL CLI tools and validate the result:
 
+    # If already EPSG:4326:
+    gdal_translate -of COG -co COMPRESS=DEFLATE input.tif output_cog.tif
+
+    # If in a different CRS (reproject to EPSG:4326):
+    gdalwarp -t_srs EPSG:4326 -of COG -co COMPRESS=DEFLATE input.tif output_cog.tif
+
+    # Validate the result:
     pip install rasterio rio-cogeo numpy
-    python scripts/convert.py --input data.tif --output data_cog.tif
-    python scripts/validate.py --input data.tif --output data_cog.tif
+    python scripts/validate.py --input input.tif --output output_cog.tif
 
 ## CLI flags
-
-### convert.py
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--input` | Yes | — | Path to input GeoTIFF |
-| `--output` | Yes | — | Path for output COG |
-| `--compression` | No | `DEFLATE` | Compression method: DEFLATE, ZSTD, or LZW |
-| `--overwrite` | No | False | Overwrite output if it exists |
-| `--verbose` | No | False | Print detailed progress |
 
 ### validate.py
 
@@ -47,7 +43,7 @@ When both `--input` and `--output` are omitted, runs a self-test that generates 
 
 ## Known complexity
 
-- **CRS:** If the input GeoTIFF is not in EPSG:4326, it is automatically reprojected using the shared `reproject_to_cog` module. The output is always EPSG:4326.
+- **CRS:** If the input GeoTIFF is not in EPSG:4326, use `gdalwarp` instead of `gdal_translate` to reproject. The output should always be EPSG:4326.
 
 ## Known failure modes
 

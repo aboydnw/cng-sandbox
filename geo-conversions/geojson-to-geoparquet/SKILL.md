@@ -6,32 +6,27 @@ When you have a GeoJSON file and need to convert it to GeoParquet for efficient 
 
 ## Prerequisites
 
-- Python 3.10+
+- GDAL CLI tools (`ogr2ogr`)
+- Python 3.10+ (for validation script)
 - `pip install geopandas pyarrow shapely numpy`
 
 ## Scripts
 
 | File | Purpose |
 |------|---------|
-| [`scripts/convert.py`](scripts/convert.py) | Convert a GeoJSON file to GeoParquet |
 | [`scripts/validate.py`](scripts/validate.py) | Validate that GeoParquet preserves all data from the source GeoJSON |
 
 ## Quickstart
 
+    ogr2ogr -f Parquet output.parquet input.geojson
+
+    # Validate the result:
     pip install geopandas pyarrow shapely numpy
-    python scripts/convert.py --input data.geojson --output data.parquet
-    python scripts/validate.py --input data.geojson --output data.parquet
+    python scripts/validate.py --input input.geojson --output output.parquet
+
+**Note:** `ogr2ogr` does not lowercase column names. For PostgreSQL/tipg compatibility, column names must be lowercased. The CNG Sandbox ingestion pipeline handles this automatically.
 
 ## CLI flags
-
-### convert.py
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--input` | Yes | — | Path to input .geojson or .json file |
-| `--output` | Yes | — | Path for output .parquet file |
-| `--overwrite` | No | False | Overwrite output if it exists |
-| `--verbose` | No | False | Print detailed progress |
 
 ### validate.py
 

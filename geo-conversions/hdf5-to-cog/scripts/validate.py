@@ -5,30 +5,12 @@ import dataclasses
 import os
 import sys
 
-_REQUIRED = {"rasterio": "rasterio", "numpy": "numpy", "h5py": "h5py"}
-_missing = []
-for _mod, _pkg in _REQUIRED.items():
-    try:
-        __import__(_mod)
-    except ImportError:
-        _missing.append(_pkg)
-if _missing:
-    print(f"Missing dependencies: {', '.join(_missing)}")
-    print(f"Install with: pip install {' '.join(_missing)} rio-cogeo")
-    sys.exit(1)
-
-try:
-    from rio_cogeo import cog_validate
-except ImportError:
-    print("Missing dependency: rio-cogeo")
-    print("Install with: pip install rio-cogeo")
-    sys.exit(1)
-
 import h5py
 import numpy as np
 import rasterio
-from rasterio.crs import CRS
 from rasterio import warp
+from rasterio.crs import CRS
+from rio_cogeo import cog_validate
 
 
 @dataclasses.dataclass

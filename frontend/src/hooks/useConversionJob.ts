@@ -319,6 +319,10 @@ export function useConversionJob() {
 
   const startUpload = useCallback(
     async (file: File) => {
+      esRef.current?.close();
+      esRef.current = null;
+      datasetIdRef.current = null;
+      sseRetryCountRef.current = 0;
       setState((prev) => ({
         ...prev,
         isUploading: true,
@@ -326,6 +330,9 @@ export function useConversionJob() {
         error: null,
         stages: buildCheckingFormatStages(),
         duplicate: null,
+        jobId: null,
+        scanResult: null,
+        datasetId: null,
       }));
 
       // Pre-upload format check — send first 1MB to server for validation
@@ -460,6 +467,10 @@ export function useConversionJob() {
 
   const startUrlFetch = useCallback(
     async (url: string) => {
+      esRef.current?.close();
+      esRef.current = null;
+      datasetIdRef.current = null;
+      sseRetryCountRef.current = 0;
       setState((prev) => ({
         ...prev,
         isUploading: true,
@@ -467,6 +478,9 @@ export function useConversionJob() {
         error: null,
         stages: buildUploadingStages(),
         duplicate: null,
+        jobId: null,
+        scanResult: null,
+        datasetId: null,
       }));
 
       // Preflight duplicate check
@@ -559,6 +573,10 @@ export function useConversionJob() {
 
   const startTemporalUpload = useCallback(
     async (files: File[]) => {
+      esRef.current?.close();
+      esRef.current = null;
+      datasetIdRef.current = null;
+      sseRetryCountRef.current = 0;
       setState((prev) => ({
         ...prev,
         isUploading: true,
@@ -566,6 +584,9 @@ export function useConversionJob() {
         error: null,
         stages: buildUploadingStages(),
         duplicate: null,
+        jobId: null,
+        scanResult: null,
+        datasetId: null,
       }));
 
       const formData = new FormData();
@@ -610,11 +631,23 @@ export function useConversionJob() {
     [connectSSE]
   );
 
-  const resetDuplicate = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
+  const resetJob = useCallback(() => {
+    esRef.current?.close();
+    esRef.current = null;
+    datasetIdRef.current = null;
+    sseRetryCountRef.current = 0;
+    setState({
+      jobId: null,
+      status: "pending",
+      datasetId: null,
+      error: null,
+      stages: buildInitialStages(),
+      progressCurrent: null,
+      progressTotal: null,
+      isUploading: false,
+      scanResult: null,
       duplicate: null,
-    }));
+    });
   }, []);
 
   return {
@@ -623,6 +656,6 @@ export function useConversionJob() {
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
-    resetDuplicate,
+    resetJob,
   };
 }

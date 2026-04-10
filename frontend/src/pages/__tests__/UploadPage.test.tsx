@@ -40,7 +40,7 @@ vi.mock("../../hooks/useConversionJob", () => ({
     startUrlFetch: vi.fn(),
     startTemporalUpload: vi.fn(),
     confirmVariable: vi.fn(),
-    resetDuplicate: vi.fn(),
+    resetJob: vi.fn(),
   }),
 }));
 
@@ -129,7 +129,7 @@ describe("UploadPage — duplicate warning", () => {
       startUrlFetch: vi.fn(),
       startTemporalUpload: vi.fn(),
       confirmVariable: vi.fn(),
-      resetDuplicate: vi.fn(),
+      resetJob: vi.fn(),
     });
 
     renderPage();

@@ -39,7 +39,7 @@ export default function UploadPage() {
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
-    resetDuplicate,
+    resetJob,
   } = useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({
     name: "",
@@ -110,9 +110,9 @@ export default function UploadPage() {
   }, []);
 
   const handleUploadAnother = useCallback(() => {
-    resetDuplicate();
+    resetJob();
     setMode("upload-idle");
-  }, [resetDuplicate]);
+  }, [resetJob]);
 
   const handleReport = useCallback(() => {
     setReportOpen(true);

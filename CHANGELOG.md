@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/aboydnw/cng-sandbox/compare/v1.15.0...v1.15.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* accept zipped shapefiles with multiple .shp layers ([#181](https://github.com/aboydnw/cng-sandbox/issues/181)) ([d632d60](https://github.com/aboydnw/cng-sandbox/commit/d632d6089e4eda21b9d36d03ae5b7ac9112640e3)), closes [#180](https://github.com/aboydnw/cng-sandbox/issues/180)
+
 ## [1.15.0](https://github.com/aboydnw/cng-sandbox/compare/v1.14.2...v1.15.0) (2026-04-10)
 
 

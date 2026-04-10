@@ -690,9 +690,15 @@ def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
                         shp_paths.append(os.path.join(root, f))
             if not shp_paths:
                 raise FileNotFoundError(f"No .shp file found inside {input_path}")
+            shp_paths.sort()
             if len(shp_paths) > 1:
-                raise ValueError(
-                    f"Expected one .shp file inside {input_path}, found {len(shp_paths)}"
+                others = [os.path.basename(p) for p in shp_paths[1:]]
+                logger.warning(
+                    "Zip %s contains %d shapefiles; ingesting %s (ignored: %s)",
+                    input_path,
+                    len(shp_paths),
+                    os.path.basename(shp_paths[0]),
+                    ", ".join(others),
                 )
             gdf = gpd.read_file(shp_paths[0])
     else:

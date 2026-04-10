@@ -652,8 +652,9 @@ def _convert_geotiff_to_cog(input_path: str, output_path: str) -> None:
 
 def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
     """Convert vector file to GeoParquet using geopandas with column lowercasing."""
-    import geopandas as gpd
     import zipfile
+
+    import geopandas as gpd
 
     ext = os.path.splitext(input_path)[1].lower()
     if ext == ".zip":
@@ -692,9 +693,10 @@ def _import_and_convert(
     """Import the appropriate cng-toolkit converter and run it."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
         _convert_geotiff_to_cog(input_path, output_path)
-    elif format_pair == FormatPair.SHAPEFILE_TO_GEOPARQUET:
-        _convert_vector_to_geoparquet(input_path, output_path)
-    elif format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
+    elif format_pair in (
+        FormatPair.SHAPEFILE_TO_GEOPARQUET,
+        FormatPair.GEOJSON_TO_GEOPARQUET,
+    ):
         _convert_vector_to_geoparquet(input_path, output_path)
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import convert

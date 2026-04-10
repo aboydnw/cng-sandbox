@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.15.0](https://github.com/aboydnw/cng-sandbox/compare/v1.14.2...v1.15.0) (2026-04-10)
+
+
+### Features
+
+* add descriptive error messages for uploads and connections ([#169](https://github.com/aboydnw/cng-sandbox/issues/169)) ([7935802](https://github.com/aboydnw/cng-sandbox/commit/793580282c14a1fc89284e9890c2779cde3c31de))
+
+
+### Bug Fixes
+
+* fully reset job state when starting or retrying an upload ([#179](https://github.com/aboydnw/cng-sandbox/issues/179)) ([978d3ee](https://github.com/aboydnw/cng-sandbox/commit/978d3eea03dab79675553f95c8627763a575bc0e)), closes [#175](https://github.com/aboydnw/cng-sandbox/issues/175)
+* make overview level check adaptive to raster dimensions ([#176](https://github.com/aboydnw/cng-sandbox/issues/176)) ([9dd5592](https://github.com/aboydnw/cng-sandbox/commit/9dd559225976c44e815830b0e08e417c433ef2f4)), closes [#174](https://github.com/aboydnw/cng-sandbox/issues/174)
+* stop parsing truncated vector files in pre-upload format check ([#173](https://github.com/aboydnw/cng-sandbox/issues/173)) ([bdd6623](https://github.com/aboydnw/cng-sandbox/commit/bdd66233019919183e803682836693ad7db15c6f))
+* use 95th percentile instead of max for reprojected pixel fidelity ([#178](https://github.com/aboydnw/cng-sandbox/issues/178)) ([f8be1f9](https://github.com/aboydnw/cng-sandbox/commit/f8be1f96c3d15968278dcce15b670cfba2ceae19)), closes [#177](https://github.com/aboydnw/cng-sandbox/issues/177)
+
 ## [1.14.2](https://github.com/aboydnw/cng-sandbox/compare/v1.14.1...v1.14.2) (2026-04-08)
 
 

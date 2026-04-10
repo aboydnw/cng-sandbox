@@ -81,26 +81,12 @@ def _check_raster(file_path: str, format_pair: FormatPair) -> dict:
 
 
 def _check_vector(file_path: str, format_pair: FormatPair) -> dict:
-    """Validate vector file with geopandas."""
-    import geopandas
+    """Validate vector file format.
 
-    format_label = {
-        FormatPair.GEOJSON_TO_GEOPARQUET: "GeoJSON",
-        FormatPair.SHAPEFILE_TO_GEOPARQUET: "Shapefile",
-    }.get(format_pair, "vector")
-
-    try:
-        gdf = geopandas.read_file(file_path)
-        if len(gdf) == 0:
-            return {
-                "valid": False,
-                "error": f"This {format_label} contains no features.",
-            }
-    except Exception:
-        logger.exception("Unexpected error checking vector")
-        return {
-            "valid": False,
-            "error": f"Could not read this file as a {format_label}. It may be corrupted or in an unsupported variant.",
-        }
-
+    Only relies on extension and magic-byte checks (done in check_format
+    before this is called). Parsing the file is unsafe here because the
+    pre-upload endpoint receives only the first 1 MB — any file larger
+    than that is truncated, and partial JSON / zip / dbf will always fail
+    to parse. Full structural validation happens in the pipeline.
+    """
     return {"valid": True}

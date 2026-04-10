@@ -19,7 +19,7 @@ from src.services.pipeline import (
 def test_get_credits_raster():
     credits = get_credits(FormatPair.GEOTIFF_TO_COG)
     names = [c["tool"] for c in credits]
-    assert "rio-cogeo" in names
+    assert "GDAL" in names
     assert "TiTiler" in names
     assert "MapLibre" in names
 

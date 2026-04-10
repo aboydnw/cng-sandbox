@@ -645,8 +645,13 @@ def _convert_geotiff_to_cog(input_path: str, output_path: str) -> None:
             "gdalwarp",
             "-t_srs",
             "EPSG:4326",
+            "-r",
+            "bilinear",
             "-of",
             "COG",
+            "-multi",
+            "-wo",
+            "NUM_THREADS=ALL_CPUS",
             "-co",
             "COMPRESS=DEFLATE",
             "-co",
@@ -692,7 +697,16 @@ def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
             gdf = gpd.read_file(shp_paths[0])
     else:
         gdf = gpd.read_file(input_path)
-    gdf.columns = [c.lower() for c in gdf.columns]
+    lowered = [c.lower() for c in gdf.columns]
+    duplicates = sorted({c for c in lowered if lowered.count(c) > 1})
+    if duplicates:
+        raise ValueError(
+            f"Column lowercasing would create duplicate names: {', '.join(duplicates)}"
+        )
+    geometry_name = gdf.geometry.name
+    gdf.columns = lowered
+    if geometry_name.lower() != geometry_name:
+        gdf = gdf.set_geometry(geometry_name.lower())
     gdf.to_parquet(output_path)
 
 

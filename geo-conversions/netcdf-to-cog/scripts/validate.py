@@ -393,14 +393,30 @@ def check_rendering_metadata(output_path: str) -> CheckResult:
         )
 
 
-def check_overviews(output_path: str, min_levels: int = 3) -> CheckResult:
-    """Check that internal overviews are present."""
+def check_overviews(output_path: str) -> CheckResult:
+    """Check that internal overviews cover the raster pyramid.
+
+    The expected count depends on the raster dimensions and the COG block
+    size: GDAL's COG driver and rio-cogeo stop adding levels once the
+    overview dimension drops below the block size, so a small raster that
+    only needs 1 or 2 levels should not be penalized. For a raster whose
+    largest dimension fits inside a single block, zero overviews is fine.
+    """
+    import math
+
     with rasterio.open(output_path) as dst:
         overviews = dst.overviews(1)
-        if len(overviews) >= min_levels:
+        blocksize = dst.block_shapes[0][0] if dst.block_shapes else 512
+        max_dim = max(dst.width, dst.height)
+        if max_dim <= blocksize:
+            expected = 0
+        else:
+            expected = max(1, math.floor(math.log2(max_dim / blocksize)))
+        if len(overviews) >= expected:
             return CheckResult("Overviews", True, f"{len(overviews)} levels: {overviews}")
         return CheckResult("Overviews", False,
-                           f"Found {len(overviews)} levels (need >= {min_levels}): {overviews}")
+                           f"Found {len(overviews)} levels (expected >= {expected} "
+                           f"for {dst.width}x{dst.height} at blocksize {blocksize}): {overviews}")
 
 
 def print_report(results: list[CheckResult]):

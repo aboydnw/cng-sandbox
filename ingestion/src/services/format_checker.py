@@ -39,42 +39,48 @@ def check_format(file_path: str, filename: str) -> dict:
 
 
 def _check_raster(file_path: str, format_pair: FormatPair) -> dict:
-    """Validate raster file with rasterio."""
-    import rasterio
+    """Validate raster file format.
 
-    format_label = {
-        FormatPair.GEOTIFF_TO_COG: "GeoTIFF",
-        FormatPair.NETCDF_TO_COG: "NetCDF",
-        FormatPair.HDF5_TO_COG: "HDF5",
-    }.get(format_pair, "raster")
+    Only GeoTIFF is parsed here — its header sits at offset 0 and fits in
+    the 1 MB pre-upload chunk, so rasterio can read metadata (CRS, bands,
+    dimensions) reliably. NetCDF and HDF5 store metadata at offsets that
+    can fall past the 1 MB boundary, so parsing a truncated chunk yields
+    false negatives ("not recognized as being in a supported file format").
+    Those formats rely on extension + magic-byte checks; full structural
+    validation happens downstream in the pipeline.
+    """
+    if format_pair != FormatPair.GEOTIFF_TO_COG:
+        return {"valid": True}
+
+    import rasterio
 
     try:
         with rasterio.open(file_path) as ds:
             if ds.crs is None:
                 return {
                     "valid": False,
-                    "error": f"This {format_label} does not have a coordinate reference system (CRS) defined.",
+                    "error": "This GeoTIFF does not have a coordinate reference system (CRS) defined.",
                 }
             if ds.count == 0:
                 return {
                     "valid": False,
-                    "error": f"This {format_label} has no data bands.",
+                    "error": "This GeoTIFF has no data bands.",
                 }
             if ds.width == 0 or ds.height == 0:
                 return {
                     "valid": False,
-                    "error": f"This {format_label} has zero-sized dimensions ({ds.width}x{ds.height}).",
+                    "error": f"This GeoTIFF has zero-sized dimensions ({ds.width}x{ds.height}).",
                 }
     except rasterio.errors.RasterioIOError:
         return {
             "valid": False,
-            "error": f"Could not read this file as a {format_label}. It may be corrupted or in an unsupported variant.",
+            "error": "Could not read this file as a GeoTIFF. It may be corrupted or in an unsupported variant.",
         }
     except Exception:
         logger.exception("Unexpected error checking raster")
         return {
             "valid": False,
-            "error": f"Could not validate this {format_label}.",
+            "error": "Could not validate this GeoTIFF.",
         }
 
     return {"valid": True}

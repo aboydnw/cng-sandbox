@@ -30,8 +30,6 @@ async def enumerate_path_listing(listing_url: str) -> list[RemoteItem]:
     for key in keys:
         if key.lower().endswith(_RASTER_EXTENSIONS):
             items.append(
-                RemoteItem(
-                    href=urljoin(listing_url, key), datetime=None, bbox=None
-                )
+                RemoteItem(href=urljoin(listing_url, key), datetime=None, bbox=None)
             )
     return items

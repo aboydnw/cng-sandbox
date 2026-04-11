@@ -29,7 +29,7 @@ describe("connectSourceCoop", () => {
     expect(init.headers["Content-Type"]).toBe("application/json");
     expect(init.headers["X-Workspace-Id"]).toBe("deadbeef");
     expect(init.body).toBe(
-      JSON.stringify({ product_slug: "alexgleith/gebco-2024" }),
+      JSON.stringify({ product_slug: "alexgleith/gebco-2024" })
     );
 
     expect(result).toEqual({ dataset_id: "abc", job_id: "xyz" });
@@ -44,7 +44,7 @@ describe("connectSourceCoop", () => {
     });
 
     await expect(
-      connectSourceCoop("alexgleith/gebco-2024", "deadbeef"),
+      connectSourceCoop("alexgleith/gebco-2024", "deadbeef")
     ).rejects.toThrow(/source.coop unreachable/);
   });
 
@@ -59,7 +59,7 @@ describe("connectSourceCoop", () => {
     });
 
     await expect(
-      connectSourceCoop("alexgleith/gebco-2024", "deadbeef"),
+      connectSourceCoop("alexgleith/gebco-2024", "deadbeef")
     ).rejects.toThrow();
   });
 });

@@ -129,7 +129,9 @@ async def test_list_one_level_follows_continuation_token():
         call_count["n"] += 1
         if "continuation-token" in url:
             assert "tok-page-2" in url
-            return httpx.Response(200, text=page2_xml, request=httpx.Request("GET", url))
+            return httpx.Response(
+                200, text=page2_xml, request=httpx.Request("GET", url)
+            )
         return httpx.Response(200, text=page1_xml, request=httpx.Request("GET", url))
 
     with patch.object(httpx.AsyncClient, "get", new=fake_get):

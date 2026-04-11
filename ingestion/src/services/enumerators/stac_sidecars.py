@@ -113,9 +113,7 @@ async def enumerate_stac_sidecars(
     return items
 
 
-async def _list_one_level(
-    bucket_url: str, prefix: str
-) -> tuple[list[str], list[str]]:
+async def _list_one_level(bucket_url: str, prefix: str) -> tuple[list[str], list[str]]:
     """Call S3 ListObjectsV2 for a single level of a bucket.
 
     Paginates via NextContinuationToken until IsTruncated is false. Returns

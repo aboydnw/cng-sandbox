@@ -66,7 +66,9 @@ async def test_register_non_temporal_product_probes_missing_bounds(fake_product)
         ),
         patch(
             "src.services.remote_register.stac_ingest.ingest_mosaic_raster",
-            new=AsyncMock(return_value="http://tiler/collections/sandbox-xyz/{z}/{x}/{y}"),
+            new=AsyncMock(
+                return_value="http://tiler/collections/sandbox-xyz/{z}/{x}/{y}"
+            ),
         ),
         patch(
             "src.services.remote_register._read_band_meta",

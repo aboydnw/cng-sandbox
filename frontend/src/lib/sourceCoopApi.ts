@@ -9,7 +9,7 @@ export interface ConnectSourceCoopResponse {
 
 export async function connectSourceCoop(
   productSlug: string,
-  workspaceId: string,
+  workspaceId: string
 ): Promise<ConnectSourceCoopResponse> {
   const resp = await fetch("/api/connect-source-coop", {
     method: "POST",

@@ -11,7 +11,7 @@ const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual =
     await vi.importActual<typeof import("react-router-dom")>(
-      "react-router-dom",
+      "react-router-dom"
     );
   return { ...actual, useNavigate: () => mockNavigate };
 });
@@ -32,7 +32,7 @@ function renderWithProviders(ui: React.ReactElement) {
           />
         </Routes>
       </MemoryRouter>
-    </ChakraProvider>,
+    </ChakraProvider>
   );
 }
 
@@ -44,11 +44,7 @@ describe("SourceCoopConnectModal", () => {
 
   it("does not render when slug is null", () => {
     renderWithProviders(
-      <SourceCoopConnectModal
-        slug={null}
-        onClose={vi.fn()}
-        workspaceId="abc"
-      />,
+      <SourceCoopConnectModal slug={null} onClose={vi.fn()} workspaceId="abc" />
     );
     expect(screen.queryByText(/Connect this dataset/i)).toBeNull();
   });
@@ -59,7 +55,7 @@ describe("SourceCoopConnectModal", () => {
         slug="alexgleith/gebco-2024"
         onClose={vi.fn()}
         workspaceId="abc"
-      />,
+      />
     );
     expect(screen.getByText(/GEBCO/i)).toBeTruthy();
   });
@@ -75,7 +71,7 @@ describe("SourceCoopConnectModal", () => {
         slug="alexgleith/gebco-2024"
         onClose={vi.fn()}
         workspaceId="abc"
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: /^Connect$/i }));
@@ -95,7 +91,7 @@ describe("SourceCoopConnectModal", () => {
         slug="alexgleith/gebco-2024"
         onClose={vi.fn()}
         workspaceId="abc"
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: /^Connect$/i }));

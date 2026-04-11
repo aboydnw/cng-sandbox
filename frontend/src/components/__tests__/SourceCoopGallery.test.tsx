@@ -28,9 +28,7 @@ describe("SourceCoopGallery", () => {
 
   it("renders a section heading", () => {
     renderWithChakra(<SourceCoopGallery onSelect={vi.fn()} />);
-    expect(
-      screen.getByRole("heading", { name: /source\.coop/i }),
-    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /source\.coop/i })).toBeTruthy();
   });
 
   it("falls back when a thumbnail fails to load", () => {

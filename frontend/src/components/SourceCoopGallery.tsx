@@ -20,7 +20,11 @@ export function SourceCoopGallery({ onSelect }: SourceCoopGalleryProps) {
   return (
     <Box as="section" py={8}>
       <Flex align="center" gap={2} mb={2}>
-        <Globe size={24} weight="duotone" color="var(--chakra-colors-brand-orange)" />
+        <Globe
+          size={24}
+          weight="duotone"
+          color="var(--chakra-colors-brand-orange)"
+        />
         <Heading
           as="h2"
           fontSize="20px"

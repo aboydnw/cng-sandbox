@@ -10,7 +10,7 @@ describe("sourceCoopCatalog", () => {
         "ausantarctic/ghrsst-mur-v2",
         "alexgleith/gebco-2024",
         "vizzuality/lg-land-carbon-data",
-      ]),
+      ])
     );
   });
 

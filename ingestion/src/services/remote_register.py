@@ -35,8 +35,7 @@ class RemoteRegistrationError(Exception):
 def _read_band_meta_sync(vsi_path: str) -> tuple[int, list[str], list[str], str]:
     with rasterio.open(vsi_path) as src:
         band_names = [
-            desc if desc else f"Band {i + 1}"
-            for i, desc in enumerate(src.descriptions)
+            desc if desc else f"Band {i + 1}" for i, desc in enumerate(src.descriptions)
         ]
         color_interp = [ci.name for ci in src.colorinterp]
         return src.count, band_names, color_interp, str(src.dtypes[0])

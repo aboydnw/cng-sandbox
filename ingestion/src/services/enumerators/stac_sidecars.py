@@ -20,7 +20,6 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
-from src.services.discovery import fetch_and_discover
 from src.services.enumerators import RemoteItem
 
 logger = logging.getLogger(__name__)
@@ -29,9 +28,13 @@ SIDECAR_SUFFIX = ".stac-item.json"
 
 
 async def list_sidecars(listing_url: str) -> list[str]:
-    """List sidecar JSON URLs in a single directory using fetch_and_discover."""
-    discovered = await fetch_and_discover(listing_url)
-    return [f.url for f in discovered if f.url.endswith(SIDECAR_SUFFIX)]
+    """List sidecar JSON URLs in a single S3 prefix level.
+
+    Uses ListObjectsV2 with ``delimiter=/`` so this is the "flat" (non-recursive)
+    equivalent of ``_list_sidecars_recursive``.
+    """
+    _common, keys = await _list_one_level(listing_url, prefix="")
+    return [urljoin(listing_url, key) for key in keys if key.endswith(SIDECAR_SUFFIX)]
 
 
 def _resolve_asset_href(sidecar_url: str, relative_href: str) -> str:
@@ -119,10 +122,17 @@ async def _list_one_level(
 
     parsed = urlparse(bucket_url)
     base_path = parsed.path.strip("/")
-    full_prefix = f"{base_path}/{prefix}" if prefix else f"{base_path}/"
+
+    segments = base_path.split("/", 1) if base_path else [""]
+    bucket = segments[0]
+    bucket_prefix = segments[1] if len(segments) > 1 else ""
+    if bucket_prefix and not bucket_prefix.endswith("/"):
+        bucket_prefix = f"{bucket_prefix}/"
+
+    full_prefix = f"{bucket_prefix}{prefix}"
 
     base_list_url = (
-        f"{parsed.scheme}://{parsed.netloc}"
+        f"{parsed.scheme}://{parsed.netloc}/{bucket}/"
         f"?list-type=2&prefix={full_prefix}&delimiter=/"
     )
 
@@ -150,16 +160,16 @@ async def _list_one_level(
                 prefix_tag = cp.find("prefix")
                 if prefix_tag:
                     sub = prefix_tag.get_text()
-                    if sub.startswith(f"{base_path}/"):
-                        sub = sub[len(base_path) + 1 :]
+                    if bucket_prefix and sub.startswith(bucket_prefix):
+                        sub = sub[len(bucket_prefix) :]
                     common.append(sub)
 
             for contents in soup.find_all("contents"):
                 key_tag = contents.find("key")
                 if key_tag:
                     key = key_tag.get_text()
-                    if key.startswith(f"{base_path}/"):
-                        key = key[len(base_path) + 1 :]
+                    if bucket_prefix and key.startswith(bucket_prefix):
+                        key = key[len(bucket_prefix) :]
                     keys.append(key)
 
             is_truncated_tag = soup.find("istruncated")

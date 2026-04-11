@@ -70,23 +70,23 @@ async def test_list_one_level_follows_continuation_token():
 
     page1_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-  <Name>data.source.coop</Name>
-  <Prefix>testing/example/</Prefix>
+  <Name>testing</Name>
+  <Prefix>example/</Prefix>
   <Delimiter>/</Delimiter>
   <IsTruncated>true</IsTruncated>
   <NextContinuationToken>tok-page-2</NextContinuationToken>
-  <Contents><Key>testing/example/a.stac-item.json</Key></Contents>
-  <CommonPrefixes><Prefix>testing/example/sub1/</Prefix></CommonPrefixes>
+  <Contents><Key>example/a.stac-item.json</Key></Contents>
+  <CommonPrefixes><Prefix>example/sub1/</Prefix></CommonPrefixes>
 </ListBucketResult>"""
 
     page2_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-  <Name>data.source.coop</Name>
-  <Prefix>testing/example/</Prefix>
+  <Name>testing</Name>
+  <Prefix>example/</Prefix>
   <Delimiter>/</Delimiter>
   <IsTruncated>false</IsTruncated>
-  <Contents><Key>testing/example/b.stac-item.json</Key></Contents>
-  <CommonPrefixes><Prefix>testing/example/sub2/</Prefix></CommonPrefixes>
+  <Contents><Key>example/b.stac-item.json</Key></Contents>
+  <CommonPrefixes><Prefix>example/sub2/</Prefix></CommonPrefixes>
 </ListBucketResult>"""
 
     call_count = {"n": 0}

@@ -44,8 +44,8 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
             "of the Oceans, 2024 release."
         ),
         listing_url="https://data.source.coop/alexgleith/gebco-2024/",
-        enumerator="stac_sidecars",
-        enumerator_args={"recursive": False},
+        enumerator="path_listing",
+        enumerator_args={},
         is_temporal=False,
     ),
     "vizzuality/lg-land-carbon-data": SourceCoopProduct(

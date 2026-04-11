@@ -37,10 +37,9 @@ def test_ghrsst_uses_recursive_sidecars():
     assert p.enumerator_args.get("recursive") is True
 
 
-def test_gebco_uses_flat_sidecars():
+def test_gebco_uses_path_listing():
     p = get_product("alexgleith/gebco-2024")
-    assert p.enumerator == "stac_sidecars"
-    assert p.enumerator_args.get("recursive") in (False, None)
+    assert p.enumerator == "path_listing"
 
 
 def test_lg_land_uses_path_listing():

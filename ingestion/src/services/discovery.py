@@ -51,20 +51,43 @@ def extract_file_links(html: str, base_url: str) -> list[DiscoveredFile]:
 
 
 def _parse_s3_listing(xml_text: str, base_url: str) -> list[DiscoveredFile]:
-    """Parse an S3 ListBucket XML response and return geospatial file links."""
+    """Parse an S3 ListBucket XML response and return geospatial file links.
+
+    S3 ListBucket responses return object keys relative to the bucket. When the
+    listing is served under a URL like ``https://host/bucket/prefix/`` (e.g.
+    source.coop) the bucket name is part of the URL path, and the ``Name``
+    element in the XML holds the bucket. Absolute URLs for each object are
+    therefore ``origin + / + bucket + / + key``.
+
+    For listings served directly at the bucket root (e.g. ``https://bucket.s3
+    .amazonaws.com/``) the bucket is the host and keys stand alone, so we fall
+    back to ``origin + / + key``.
+    """
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
         soup = BeautifulSoup(xml_text, "html.parser")
     origin = _origin(base_url)
     seen: dict[str, DiscoveredFile] = {}
 
+    parsed_base = urlparse(base_url)
+    base_path_segments = [seg for seg in parsed_base.path.split("/") if seg]
+
+    name_tag = soup.find("name")
+    bucket = name_tag.get_text().strip() if name_tag else ""
+    bucket_in_path = bool(
+        bucket and base_path_segments and base_path_segments[0] == bucket
+    )
+
     for key_tag in soup.find_all("key"):
         key = key_tag.get_text()
         ext = _get_extension(key)
         if ext not in _SUPPORTED_EXTENSIONS:
             continue
-        path = key if key.startswith("/") else f"/{key}"
-        absolute = origin + path
+        if bucket_in_path:
+            absolute = f"{origin}/{bucket}/{key}"
+        else:
+            path = key if key.startswith("/") else f"/{key}"
+            absolute = origin + path
         if absolute not in seen:
             seen[absolute] = DiscoveredFile(
                 url=absolute, filename=_filename_from_url(absolute)

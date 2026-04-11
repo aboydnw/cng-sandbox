@@ -133,8 +133,9 @@ export function buildLayersForChapter(
       tileUrl += `&rescale=${ds.raster_min},${ds.raster_max}`;
     }
     if (ds.is_temporal && ds.timesteps.length > 0) {
-      const tsIndex = lc.timestep ?? 0;
-      const ts = ds.timesteps[Math.min(tsIndex, ds.timesteps.length - 1)];
+      const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;
+      const tsIndex = Math.max(0, Math.min(raw, ds.timesteps.length - 1));
+      const ts = ds.timesteps[tsIndex];
       tileUrl = `${tileUrl}&datetime=${encodeURIComponent(ts.datetime)}`;
     }
     return buildRasterTileLayers({

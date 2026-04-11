@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import httpx
 import pytest
 
 from src.services.enumerators.stac_sidecars import _list_sidecars_recursive
@@ -60,3 +61,48 @@ async def test_recursive_depth_limit():
         )
 
     assert sidecars == []
+
+
+@pytest.mark.asyncio
+async def test_list_one_level_follows_continuation_token():
+    """S3 listings with IsTruncated=true should be paginated."""
+    from src.services.enumerators.stac_sidecars import _list_one_level
+
+    page1_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Name>data.source.coop</Name>
+  <Prefix>testing/example/</Prefix>
+  <Delimiter>/</Delimiter>
+  <IsTruncated>true</IsTruncated>
+  <NextContinuationToken>tok-page-2</NextContinuationToken>
+  <Contents><Key>testing/example/a.stac-item.json</Key></Contents>
+  <CommonPrefixes><Prefix>testing/example/sub1/</Prefix></CommonPrefixes>
+</ListBucketResult>"""
+
+    page2_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Name>data.source.coop</Name>
+  <Prefix>testing/example/</Prefix>
+  <Delimiter>/</Delimiter>
+  <IsTruncated>false</IsTruncated>
+  <Contents><Key>testing/example/b.stac-item.json</Key></Contents>
+  <CommonPrefixes><Prefix>testing/example/sub2/</Prefix></CommonPrefixes>
+</ListBucketResult>"""
+
+    call_count = {"n": 0}
+
+    async def fake_get(self, url, **kwargs):
+        call_count["n"] += 1
+        if "continuation-token" in url:
+            assert "tok-page-2" in url
+            return httpx.Response(200, text=page2_xml, request=httpx.Request("GET", url))
+        return httpx.Response(200, text=page1_xml, request=httpx.Request("GET", url))
+
+    with patch.object(httpx.AsyncClient, "get", new=fake_get):
+        common, keys = await _list_one_level(
+            "https://data.source.coop/testing/example/", ""
+        )
+
+    assert call_count["n"] == 2
+    assert sorted(keys) == ["a.stac-item.json", "b.stac-item.json"]
+    assert sorted(common) == ["sub1/", "sub2/"]

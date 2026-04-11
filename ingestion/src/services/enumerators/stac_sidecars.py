@@ -109,46 +109,70 @@ async def _list_one_level(
 ) -> tuple[list[str], list[str]]:
     """Call S3 ListObjectsV2 for a single level of a bucket.
 
-    Returns (common_prefixes, keys). common_prefixes are direct subdirectories
-    under `prefix`, terminated by `/`. keys are full object keys at this level,
-    both expressed relative to the product root (not full paths including the
-    bucket prefix).
+    Paginates via NextContinuationToken until IsTruncated is false. Returns
+    (common_prefixes, keys). common_prefixes are direct subdirectories under
+    `prefix`, terminated by `/`. keys are full object keys at this level, both
+    expressed relative to the product root (not full paths including the bucket
+    prefix).
     """
+    from urllib.parse import quote
+
     parsed = urlparse(bucket_url)
     base_path = parsed.path.strip("/")
     full_prefix = f"{base_path}/{prefix}" if prefix else f"{base_path}/"
 
-    list_url = (
+    base_list_url = (
         f"{parsed.scheme}://{parsed.netloc}"
         f"?list-type=2&prefix={full_prefix}&delimiter=/"
     )
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(list_url, timeout=30.0)
-        resp.raise_for_status()
-        xml_text = resp.text
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
-        soup = BeautifulSoup(xml_text, "html.parser")
-
     common: list[str] = []
-    for cp in soup.find_all("commonprefixes"):
-        prefix_tag = cp.find("prefix")
-        if prefix_tag:
-            sub = prefix_tag.get_text()
-            if sub.startswith(f"{base_path}/"):
-                sub = sub[len(base_path) + 1 :]
-            common.append(sub)
-
     keys: list[str] = []
-    for contents in soup.find_all("contents"):
-        key_tag = contents.find("key")
-        if key_tag:
-            key = key_tag.get_text()
-            if key.startswith(f"{base_path}/"):
-                key = key[len(base_path) + 1 :]
-            keys.append(key)
+    continuation_token: str | None = None
+
+    async with httpx.AsyncClient() as client:
+        while True:
+            list_url = base_list_url
+            if continuation_token:
+                list_url = (
+                    f"{base_list_url}&continuation-token={quote(continuation_token)}"
+                )
+
+            resp = await client.get(list_url, timeout=30.0)
+            resp.raise_for_status()
+            xml_text = resp.text
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+                soup = BeautifulSoup(xml_text, "html.parser")
+
+            for cp in soup.find_all("commonprefixes"):
+                prefix_tag = cp.find("prefix")
+                if prefix_tag:
+                    sub = prefix_tag.get_text()
+                    if sub.startswith(f"{base_path}/"):
+                        sub = sub[len(base_path) + 1 :]
+                    common.append(sub)
+
+            for contents in soup.find_all("contents"):
+                key_tag = contents.find("key")
+                if key_tag:
+                    key = key_tag.get_text()
+                    if key.startswith(f"{base_path}/"):
+                        key = key[len(base_path) + 1 :]
+                    keys.append(key)
+
+            is_truncated_tag = soup.find("istruncated")
+            if (
+                not is_truncated_tag
+                or is_truncated_tag.get_text().strip().lower() != "true"
+            ):
+                break
+
+            next_token_tag = soup.find("nextcontinuationtoken")
+            if not next_token_tag:
+                break
+            continuation_token = next_token_tag.get_text()
 
     return common, keys
 

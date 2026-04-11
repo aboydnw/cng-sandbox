@@ -222,6 +222,7 @@ cd ingestion && uv run pytest -v
 - `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
 - `GET /api/datasets` — List all converted datasets
 - `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`)
+- `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ghrsst-mur-v2-2024`, `gebco-2024`, `lg-land-carbon`)
 - `GET /api/health` — Health check
 
 ### Conversion pipeline

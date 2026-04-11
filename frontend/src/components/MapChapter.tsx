@@ -72,7 +72,7 @@ export function MapChapter({
         );
         const ts = dataset.timesteps[clampedIndex];
         const separator = tileUrl.includes("?") ? "&" : "?";
-        tileUrl = `${tileUrl}${separator}datetime=${ts.datetime}`;
+        tileUrl = `${tileUrl}${separator}datetime=${encodeURIComponent(ts.datetime)}`;
       }
       return buildRasterTileLayers({
         tileUrl,

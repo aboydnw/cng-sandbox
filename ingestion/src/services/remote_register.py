@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime
 
 import rasterio
 
@@ -43,6 +44,18 @@ def _read_band_meta_sync(vsi_path: str) -> tuple[int, list[str], list[str], str]
 
 async def _read_band_meta(href: str) -> tuple[int, list[str], list[str], str]:
     return await asyncio.to_thread(_read_band_meta_sync, f"/vsicurl/{href}")
+
+
+def _format_datetime_z(dt: datetime) -> str:
+    """Format a datetime as ISO 8601 with a `Z` suffix for UTC.
+
+    Avoids `+00:00` because `+` in a query string URL-decodes to a space,
+    which breaks titiler-pgstac's datetime filter when the frontend passes
+    the value through the tile URL without percent-encoding.
+    """
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(UTC).replace(tzinfo=None)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _bbox_to_polygon(bbox: list[float]) -> dict:
@@ -99,7 +112,7 @@ async def register_remote_collection(
     bboxes = [it.bbox for it in enriched]
     geometries = [_bbox_to_polygon(it.bbox) for it in enriched]  # type: ignore[arg-type]
     datetimes = (
-        [it.datetime.isoformat() for it in enriched]  # type: ignore[union-attr]
+        [_format_datetime_z(it.datetime) for it in enriched]  # type: ignore[arg-type]
         if product.is_temporal
         else None
     )

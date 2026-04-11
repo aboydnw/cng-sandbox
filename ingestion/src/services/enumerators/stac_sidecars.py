@@ -47,11 +47,11 @@ def _resolve_asset_href(sidecar_url: str, relative_href: str) -> str:
 def _pick_data_asset(sidecar: dict) -> dict | None:
     """Return the asset dict for the primary data asset, or None."""
     assets = sidecar.get("assets", {})
-    for name, asset in assets.items():
+    for asset in assets.values():
         roles = asset.get("roles", [])
         if "data" in roles:
             return asset
-    for name, asset in assets.items():
+    for asset in assets.values():
         href = asset.get("href", "")
         if href.lower().endswith((".tif", ".tiff")):
             return asset

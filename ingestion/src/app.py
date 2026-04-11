@@ -124,6 +124,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
 
     from src.routes.bug_report import router as bug_report_router
     from src.routes.connect_remote import router as connect_remote_router
+    from src.routes.connect_source_coop import router as connect_source_coop_router
     from src.routes.connections import router as connections_router
     from src.routes.datasets import router as datasets_router
     from src.routes.jobs import router as jobs_router
@@ -139,6 +140,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(connections_router)
     app.include_router(proxy_router)
     app.include_router(connect_remote_router)
+    app.include_router(connect_source_coop_router)
 
     return app
 

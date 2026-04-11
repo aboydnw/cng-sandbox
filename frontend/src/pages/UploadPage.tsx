@@ -12,6 +12,8 @@ import { DuplicateWarning } from "../components/DuplicateWarning";
 import { BugReportModal } from "../components/BugReportModal";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
 import { RemoteConnectFlow } from "../components/RemoteConnectFlow";
+import { SourceCoopGallery } from "../components/SourceCoopGallery";
+import { SourceCoopConnectModal } from "../components/SourceCoopConnectModal";
 import {
   FolderOpen,
   GlobeHemisphereWest,
@@ -32,7 +34,8 @@ type PageMode =
 
 export default function UploadPage() {
   const navigate = useNavigate();
-  const { workspacePath } = useWorkspace();
+  const { workspacePath, workspaceId } = useWorkspace();
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const {
     state,
     startUpload,
@@ -334,6 +337,14 @@ export default function UploadPage() {
           </Box>
         </PathCard>
       </Flex>
+
+      <SourceCoopGallery onSelect={setSelectedSlug} />
+
+      <SourceCoopConnectModal
+        slug={selectedSlug}
+        workspaceId={workspaceId}
+        onClose={() => setSelectedSlug(null)}
+      />
 
       <BugReportModal
         open={reportOpen}

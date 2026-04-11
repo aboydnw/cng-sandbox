@@ -29,7 +29,7 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
         name="GHRSST MUR v2 — Daily SST (2024)",
         description=(
             "Multi-scale Ultra-high Resolution sea surface temperature analysis, "
-            "daily global coverage. v1 shows the 2024 subset (~365 days)."
+            "daily global coverage. v1 shows the 2024 subset (366 days)."
         ),
         listing_url="https://data.source.coop/ausantarctic/ghrsst-mur-v2/",
         enumerator="stac_sidecars",

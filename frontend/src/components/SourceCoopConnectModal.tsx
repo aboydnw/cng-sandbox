@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 import { X as XIcon, SpinnerGap } from "@phosphor-icons/react";
-import { getProduct } from "../lib/sourceCoopCatalog";
+import { getProduct, type SourceCoopProduct } from "../lib/sourceCoopCatalog";
 import { connectSourceCoop } from "../lib/sourceCoopApi";
 import { useWorkspace } from "../hooks/useWorkspace";
 
@@ -24,7 +24,12 @@ export function SourceCoopConnectModal({
 
   if (!slug) return null;
 
-  const product = getProduct(slug);
+  let product: SourceCoopProduct;
+  try {
+    product = getProduct(slug);
+  } catch {
+    return null;
+  }
 
   async function handleConfirm() {
     if (!slug) return;
@@ -67,15 +72,20 @@ export function SourceCoopConnectModal({
       >
         <Flex justify="space-between" align="center" mb={4}>
           <Heading size="md">Connect this dataset to your workspace?</Heading>
-          <Box
-            as="button"
+          <button
+            type="button"
             onClick={onClose}
-            p={1}
-            cursor="pointer"
             disabled={connecting}
+            aria-label="Close"
+            style={{
+              padding: "4px",
+              cursor: connecting ? "not-allowed" : "pointer",
+              background: "transparent",
+              border: "none",
+            }}
           >
             <XIcon size={18} />
-          </Box>
+          </button>
         </Flex>
 
         <Flex direction="column" gap={3}>
@@ -98,6 +108,7 @@ export function SourceCoopConnectModal({
 
           <Flex justify="flex-end" gap={2} mt={2}>
             <Button
+              type="button"
               size="sm"
               variant="ghost"
               onClick={onClose}
@@ -106,6 +117,7 @@ export function SourceCoopConnectModal({
               Cancel
             </Button>
             <Button
+              type="button"
               size="sm"
               bg="brand.orange"
               color="white"

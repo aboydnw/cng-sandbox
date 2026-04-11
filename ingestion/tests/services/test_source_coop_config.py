@@ -23,7 +23,7 @@ def test_get_product_returns_metadata():
     assert p.name
     assert p.description
     assert p.listing_url.startswith("https://data.source.coop/")
-    assert p.enumerator in ("stac_sidecars", "path_listing", "stac_catalog")
+    assert p.enumerator in ("stac_sidecars", "path_listing")
 
 
 def test_get_product_unknown_raises():

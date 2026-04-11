@@ -45,15 +45,25 @@ def _resolve_asset_href(sidecar_url: str, relative_href: str) -> str:
 
 
 def _pick_data_asset(sidecar: dict) -> dict | None:
-    """Return the asset dict for the primary data asset, or None."""
-    assets = sidecar.get("assets", {})
+    """Return the asset dict for the primary data asset, or None.
+
+    Tolerates malformed sidecars where `assets` is missing, non-dict, or where
+    individual assets are not dicts or lack an `href`.
+    """
+    assets = sidecar.get("assets")
+    if not isinstance(assets, dict):
+        return None
     for asset in assets.values():
-        roles = asset.get("roles", [])
-        if "data" in roles:
+        if not isinstance(asset, dict):
+            continue
+        roles = asset.get("roles") or []
+        if isinstance(roles, list) and "data" in roles and asset.get("href"):
             return asset
     for asset in assets.values():
-        href = asset.get("href", "")
-        if href.lower().endswith((".tif", ".tiff")):
+        if not isinstance(asset, dict):
+            continue
+        href = asset.get("href")
+        if isinstance(href, str) and href.lower().endswith((".tif", ".tiff")):
             return asset
     return None
 

@@ -17,7 +17,7 @@ export const sourceCoopCatalog: SourceCoopProduct[] = [
     slug: "ausantarctic/ghrsst-mur-v2",
     name: "GHRSST MUR v2 — Daily SST (2024)",
     description:
-      "Multi-scale Ultra-high Resolution sea surface temperature analysis, daily global coverage. v1 shows the 2024 subset (~365 days).",
+      "Multi-scale Ultra-high Resolution sea surface temperature analysis, daily global coverage. v1 shows the 2024 subset (366 days).",
     thumbnail: "/thumbnails/ghrsst.jpg",
     tags: ["ocean", "temperature", "temporal"],
     isTemporal: true,

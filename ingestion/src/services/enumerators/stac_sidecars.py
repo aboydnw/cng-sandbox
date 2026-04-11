@@ -90,11 +90,17 @@ async def _read_sidecar(client: httpx.AsyncClient, url: str) -> RemoteItem | Non
 
 
 async def enumerate_stac_sidecars(
-    listing_url: str, recursive: bool = False
+    listing_url: str, recursive: bool = False, start_prefix: str = ""
 ) -> list[RemoteItem]:
-    """Enumerate sidecar-backed items under a listing URL."""
+    """Enumerate sidecar-backed items under a listing URL.
+
+    When ``recursive`` is true, ``start_prefix`` limits the walk to a subtree
+    (e.g. ``"2024/"`` to only ingest 2024 data). Ignored in flat mode.
+    """
     if recursive:
-        sidecar_urls = await _list_sidecars_recursive(listing_url)
+        sidecar_urls = await _list_sidecars_recursive(
+            listing_url, start_prefix=start_prefix
+        )
     else:
         sidecar_urls = await list_sidecars(listing_url)
 
@@ -188,11 +194,15 @@ async def _list_one_level(
 
 
 async def _list_sidecars_recursive(
-    listing_url: str, max_depth: int = 10
+    listing_url: str, max_depth: int = 10, start_prefix: str = ""
 ) -> list[str]:
-    """Walk nested bucket prefixes and return all sidecar URLs found."""
+    """Walk nested bucket prefixes and return all sidecar URLs found.
+
+    ``start_prefix`` sets the starting point for the walk. Defaults to ``""``
+    (the product root). Pass e.g. ``"2024/"`` to only walk under that prefix.
+    """
     sidecar_urls: list[str] = []
-    stack: list[tuple[str, int]] = [("", 0)]
+    stack: list[tuple[str, int]] = [(start_prefix, 0)]
 
     while stack:
         prefix, depth = stack.pop()

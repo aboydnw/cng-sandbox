@@ -40,6 +40,7 @@ async def run_enumerator(product: SourceCoopProduct) -> list[RemoteItem]:
         return await enumerate_stac_sidecars(
             listing_url=product.listing_url,
             recursive=product.enumerator_args.get("recursive", False),
+            start_prefix=product.enumerator_args.get("start_prefix", ""),
         )
     raise ValueError(f"Unknown enumerator: {product.enumerator}")
 

@@ -44,6 +44,40 @@ async def test_recursive_walks_nested_prefixes():
 
 
 @pytest.mark.asyncio
+async def test_recursive_respects_start_prefix():
+    """start_prefix should limit the walk to a subtree."""
+    from src.services.enumerators.stac_sidecars import _list_sidecars_recursive
+
+    calls = []
+
+    async def fake_list_one_level(bucket_url: str, prefix: str):
+        calls.append(prefix)
+        tree = {
+            "": (["2023/", "2024/", "2025/"], []),
+            "2024/": (["2024/01/"], []),
+            "2024/01/": ([], ["2024/01/a.stac-item.json"]),
+        }
+        return tree.get(prefix, ([], []))
+
+    with patch(
+        "src.services.enumerators.stac_sidecars._list_one_level",
+        new=fake_list_one_level,
+    ):
+        sidecars = await _list_sidecars_recursive(
+            "https://data.source.coop/testing/example/",
+            start_prefix="2024/",
+        )
+
+    assert sidecars == [
+        "https://data.source.coop/testing/example/2024/01/a.stac-item.json"
+    ]
+    assert "2023/" not in calls
+    assert "2025/" not in calls
+    assert "2024/" in calls
+    assert "2024/01/" in calls
+
+
+@pytest.mark.asyncio
 async def test_recursive_depth_limit():
     """Extremely deep trees should not recurse indefinitely."""
 

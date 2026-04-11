@@ -26,14 +26,14 @@ class SourceCoopProduct:
 _PRODUCTS: dict[str, SourceCoopProduct] = {
     "ausantarctic/ghrsst-mur-v2": SourceCoopProduct(
         slug="ausantarctic/ghrsst-mur-v2",
-        name="GHRSST MUR v2 — Daily Global SST",
+        name="GHRSST MUR v2 — Daily SST (2024)",
         description=(
-            "Multi-scale Ultra-high Resolution (MUR) sea surface temperature analysis, "
-            "daily global coverage at 0.01° resolution."
+            "Multi-scale Ultra-high Resolution sea surface temperature analysis, "
+            "daily global coverage. v1 shows the 2024 subset (~365 days)."
         ),
         listing_url="https://data.source.coop/ausantarctic/ghrsst-mur-v2/",
         enumerator="stac_sidecars",
-        enumerator_args={"recursive": True},
+        enumerator_args={"recursive": True, "start_prefix": "2024/"},
         is_temporal=True,
     ),
     "alexgleith/gebco-2024": SourceCoopProduct(

@@ -35,6 +35,7 @@ def test_ghrsst_uses_recursive_sidecars():
     p = get_product("ausantarctic/ghrsst-mur-v2")
     assert p.enumerator == "stac_sidecars"
     assert p.enumerator_args.get("recursive") is True
+    assert p.enumerator_args.get("start_prefix") == "2024/"
 
 
 def test_gebco_uses_path_listing():

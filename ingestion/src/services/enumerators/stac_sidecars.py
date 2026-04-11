@@ -13,10 +13,12 @@ and bbox are extracted and returned as a RemoteItem.
 from __future__ import annotations
 
 import logging
+import warnings
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 from src.services.discovery import fetch_and_discover
 from src.services.enumerators import RemoteItem
@@ -102,6 +104,72 @@ async def enumerate_stac_sidecars(
     return items
 
 
-async def _list_sidecars_recursive(listing_url: str) -> list[str]:
-    """Placeholder — implemented in Task 5."""
-    raise NotImplementedError("Recursive listing is added in Task 5")
+async def _list_one_level(
+    bucket_url: str, prefix: str
+) -> tuple[list[str], list[str]]:
+    """Call S3 ListObjectsV2 for a single level of a bucket.
+
+    Returns (common_prefixes, keys). common_prefixes are direct subdirectories
+    under `prefix`, terminated by `/`. keys are full object keys at this level,
+    both expressed relative to the product root (not full paths including the
+    bucket prefix).
+    """
+    parsed = urlparse(bucket_url)
+    base_path = parsed.path.strip("/")
+    full_prefix = f"{base_path}/{prefix}" if prefix else f"{base_path}/"
+
+    list_url = (
+        f"{parsed.scheme}://{parsed.netloc}"
+        f"?list-type=2&prefix={full_prefix}&delimiter=/"
+    )
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(list_url, timeout=30.0)
+        resp.raise_for_status()
+        xml_text = resp.text
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+        soup = BeautifulSoup(xml_text, "html.parser")
+
+    common: list[str] = []
+    for cp in soup.find_all("commonprefixes"):
+        prefix_tag = cp.find("prefix")
+        if prefix_tag:
+            sub = prefix_tag.get_text()
+            if sub.startswith(f"{base_path}/"):
+                sub = sub[len(base_path) + 1 :]
+            common.append(sub)
+
+    keys: list[str] = []
+    for contents in soup.find_all("contents"):
+        key_tag = contents.find("key")
+        if key_tag:
+            key = key_tag.get_text()
+            if key.startswith(f"{base_path}/"):
+                key = key[len(base_path) + 1 :]
+            keys.append(key)
+
+    return common, keys
+
+
+async def _list_sidecars_recursive(
+    listing_url: str, max_depth: int = 10
+) -> list[str]:
+    """Walk nested bucket prefixes and return all sidecar URLs found."""
+    sidecar_urls: list[str] = []
+    stack: list[tuple[str, int]] = [("", 0)]
+
+    while stack:
+        prefix, depth = stack.pop()
+        common, keys = await _list_one_level(listing_url, prefix)
+
+        for key in keys:
+            if key.endswith(SIDECAR_SUFFIX):
+                sidecar_urls.append(urljoin(listing_url, key))
+
+        if depth < max_depth:
+            for sub in common:
+                stack.append((sub, depth + 1))
+
+    return sidecar_urls

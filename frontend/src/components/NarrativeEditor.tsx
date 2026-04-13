@@ -54,7 +54,9 @@ export function NarrativeEditor({
   const selectedConnection = connections?.find(
     (c) => c.id === layerConfig.connection_id
   );
-  const selectedDataset = datasets.find((ds) => ds.id === layerConfig.dataset_id);
+  const selectedDataset = datasets.find(
+    (ds) => ds.id === layerConfig.dataset_id
+  );
   const showColormap =
     datasetType === "raster" &&
     !(selectedConnection?.connection_type === "xyz_raster");

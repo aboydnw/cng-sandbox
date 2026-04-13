@@ -4,7 +4,9 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
 import { RasterSidebarControls } from "../RasterSidebarControls";
 
-function renderCtrl(props: Partial<React.ComponentProps<typeof RasterSidebarControls>> = {}) {
+function renderCtrl(
+  props: Partial<React.ComponentProps<typeof RasterSidebarControls>> = {}
+) {
   const defaultProps: React.ComponentProps<typeof RasterSidebarControls> = {
     opacity: 0.8,
     onOpacityChange: () => {},
@@ -42,8 +44,12 @@ describe("RasterSidebarControls rescale + flip", () => {
 
   it("shows override values when set", () => {
     renderCtrl({ rescaleMin: 10, rescaleMax: 50 });
-    expect((screen.getByLabelText(/rescale min/i) as HTMLInputElement).value).toBe("10");
-    expect((screen.getByLabelText(/rescale max/i) as HTMLInputElement).value).toBe("50");
+    expect(
+      (screen.getByLabelText(/rescale min/i) as HTMLInputElement).value
+    ).toBe("10");
+    expect(
+      (screen.getByLabelText(/rescale max/i) as HTMLInputElement).value
+    ).toBe("50");
   });
 
   it("calls onRescaleChange when a field is blurred with a new number", () => {

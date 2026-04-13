@@ -8,9 +8,7 @@ interface PersistedOverrides {
   colormapName: string;
 }
 
-type SetParams = (
-  updater: (prev: URLSearchParams) => URLSearchParams
-) => void;
+type SetParams = (updater: (prev: URLSearchParams) => URLSearchParams) => void;
 
 function lsKey(itemId: string): string {
   return `cng:raster-override:${itemId}`;

@@ -7,7 +7,8 @@ vi.mock("../../layers/cogLayer", () => ({
 
 // Mock buildConnectionTileUrl for connection tests
 vi.mock("../../connections", () => ({
-  buildConnectionTileUrl: (conn: import("../../../types").Connection) => conn.url,
+  buildConnectionTileUrl: (conn: import("../../../types").Connection) =>
+    conn.url,
 }));
 
 import { buildLayersForChapter } from "../rendering";
@@ -153,7 +154,9 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     const layers = buildLayersForChapter(chapter, datasetMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("colormap_name=viridis");
     expect(tileUrl).toContain("rescale=0,100");
   });
@@ -175,7 +178,9 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     const layers = buildLayersForChapter(chapter, datasetMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("rescale=10,50");
     expect(tileUrl).not.toContain("rescale=0,100");
   });
@@ -196,7 +201,9 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     const layers = buildLayersForChapter(chapter, datasetMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("colormap_name=viridis_r");
     expect(tileUrl).not.toContain("colormap_name=viridis&");
   });
@@ -234,7 +241,9 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const layers = buildLayersForChapter(chapter, datasetMap, connectionMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("colormap_name=plasma");
     expect(tileUrl).toContain("rescale=0,200");
   });
@@ -257,7 +266,9 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const layers = buildLayersForChapter(chapter, datasetMap, connectionMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("rescale=5,80");
     expect(tileUrl).not.toContain("rescale=0,200");
   });
@@ -279,7 +290,9 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const layers = buildLayersForChapter(chapter, datasetMap, connectionMap);
 
     expect(layers.length).toBeGreaterThan(0);
-    const tileUrl: string = (layers[0] as unknown as { props: { data: string } }).props.data;
+    const tileUrl: string = (
+      layers[0] as unknown as { props: { data: string } }
+    ).props.data;
     expect(tileUrl).toContain("colormap_name=plasma_r");
   });
 });

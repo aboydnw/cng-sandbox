@@ -62,7 +62,9 @@ export function buildLayersForChapter(
     if (conn.connection_type === "cog") {
       let finalTileUrl = tileUrl;
       if (conn.band_count === 1) {
-        const effColormap = lc.colormap_reversed ? `${lc.colormap}_r` : lc.colormap;
+        const effColormap = lc.colormap_reversed
+          ? `${lc.colormap}_r`
+          : lc.colormap;
         const sep = finalTileUrl.includes("?") ? "&" : "?";
         finalTileUrl += `${sep}colormap_name=${effColormap}`;
         const effMin = lc.rescale_min;

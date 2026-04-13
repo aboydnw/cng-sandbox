@@ -39,7 +39,9 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
   };
 }
 
-function renderBuilder(opts: Partial<Parameters<typeof useLayerBuilder>[0]> = {}) {
+function renderBuilder(
+  opts: Partial<Parameters<typeof useLayerBuilder>[0]> = {}
+) {
   return renderHook(() => {
     const cacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
     return useLayerBuilder({

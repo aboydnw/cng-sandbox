@@ -302,12 +302,20 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const shareUrl = useMemo(() => {
     const base = `${window.location.origin}/map/${isConnectionRoute ? "connection/" : ""}${id}`;
     const params = new URLSearchParams();
-    if (controls.rescaleMin != null) params.set("rmin", String(controls.rescaleMin));
-    if (controls.rescaleMax != null) params.set("rmax", String(controls.rescaleMax));
+    if (controls.rescaleMin != null)
+      params.set("rmin", String(controls.rescaleMin));
+    if (controls.rescaleMax != null)
+      params.set("rmax", String(controls.rescaleMax));
     if (controls.colormapReversed) params.set("flip", "1");
     const qs = params.toString();
     return qs ? `${base}?${qs}` : base;
-  }, [id, isConnectionRoute, controls.rescaleMin, controls.rescaleMax, controls.colormapReversed]);
+  }, [
+    id,
+    isConnectionRoute,
+    controls.rescaleMin,
+    controls.rescaleMax,
+    controls.colormapReversed,
+  ]);
 
   // --- Render ---
   if (isLoading) {

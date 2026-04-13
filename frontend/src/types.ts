@@ -83,6 +83,8 @@ export interface Connection {
   band_count: number | null;
   rescale: string | null;
   workspace_id: string | null;
+  is_categorical: boolean;
+  categories: { value: number; color: string; label: string }[] | null;
   created_at: string;
 }
 

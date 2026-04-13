@@ -18,6 +18,7 @@ import httpx
 
 from src.config import get_settings
 from src.models import (
+    CategoryInfo,
     Dataset,
     DatasetType,
     FormatPair,
@@ -26,6 +27,7 @@ from src.models import (
     StageProgress,
     ValidationCheck,
 )
+from src.services.categorical import detect_categories
 from src.services import pmtiles_ingest, stac_ingest, vector_ingest
 from src.services.detector import detect_format, validate_magic_bytes
 from src.services.error_mapping import map_pipeline_error
@@ -473,10 +475,14 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             # Extract band metadata for rasters (used by the frontend to determine colormap eligibility)
             band_meta = None
             raster_geo_meta = None
+            categorical_result = None
             if format_pair.dataset_type == DatasetType.RASTER:
                 band_meta = await asyncio.to_thread(_extract_band_metadata, output_path)
                 raster_geo_meta = await asyncio.to_thread(
                     _extract_raster_geo_metadata, output_path
+                )
+                categorical_result = await asyncio.to_thread(
+                    detect_categories, output_path
                 )
 
             # Raster converted_file_size: output_path IS the COG at this point
@@ -597,6 +603,11 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             created_at=job.created_at,
             raster_min=raster_min,
             raster_max=raster_max,
+            is_categorical=categorical_result.is_categorical if categorical_result else False,
+            categories=[
+                CategoryInfo(value=c.value, color=c.color, label=c.label)
+                for c in categorical_result.categories
+            ] if categorical_result and categorical_result.is_categorical else None,
             crs=raster_geo_meta.crs
             if raster_geo_meta
             else (vector_geo_meta.crs if vector_geo_meta else None),

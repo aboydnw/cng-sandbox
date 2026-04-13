@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 MAX_UNIQUE_VALUES = 30
 HEURISTIC_INT_DTYPES = frozenset({"uint8", "int8", "uint16", "int16"})
 
-# Tableau 20 qualitative palette
 QUALITATIVE_PALETTE = [
     "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F",
     "#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC",
@@ -58,14 +57,15 @@ def detect_categories(raster_path: str) -> CategoricalResult:
         # Tier 1: GDAL color table
         try:
             colormap = src.colormap(1)
-            if colormap:
+            non_default = {k: v for k, v in colormap.items() if v != (0, 0, 0, 255)}
+            if non_default:
                 import numpy as np
                 data = src.read(1)
                 present_values = set(int(v) for v in np.unique(data))
                 if nodata is not None:
                     present_values.discard(int(nodata))
                 categories = []
-                for value, rgba in sorted(colormap.items()):
+                for value, rgba in sorted(non_default.items()):
                     if value not in present_values:
                         continue
                     if len(rgba) >= 4 and rgba[3] == 0:
@@ -78,8 +78,8 @@ def detect_categories(raster_path: str) -> CategoricalResult:
                 if categories:
                     logger.info("Detected categorical raster via color table: %d classes", len(categories))
                     return CategoricalResult(is_categorical=True, categories=categories)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Color table read failed: %s", exc)
 
         # Tier 2: GDAL Raster Attribute Table
         try:
@@ -110,8 +110,8 @@ def detect_categories(raster_path: str) -> CategoricalResult:
                 ds = None
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Color table read failed: %s", exc)
 
         # Tier 3: Heuristic — integer dtype with few unique values
         if dtype not in HEURISTIC_INT_DTYPES:

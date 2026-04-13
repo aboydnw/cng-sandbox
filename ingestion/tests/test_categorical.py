@@ -77,7 +77,6 @@ def categorical_tif_with_nodata(tmp_path):
 
 def test_detects_colormap(categorical_tif_with_colormap):
     result = detect_categories(categorical_tif_with_colormap)
-    assert result is not None
     assert result.is_categorical is True
     assert len(result.categories) == 5
     colors = {c.value: c.color for c in result.categories}
@@ -94,27 +93,49 @@ def test_colormap_labels_default_to_class_value(categorical_tif_with_colormap):
 
 def test_heuristic_detects_few_unique_integers(categorical_tif_no_colormap):
     result = detect_categories(categorical_tif_no_colormap)
-    assert result is not None
     assert result.is_categorical is True
     assert len(result.categories) == 5
 
 
 def test_heuristic_skips_float(continuous_float_tif):
     result = detect_categories(continuous_float_tif)
-    assert result is not None
     assert result.is_categorical is False
 
 
 def test_heuristic_skips_many_unique_integers(continuous_int_many_values):
     result = detect_categories(continuous_int_many_values)
-    assert result is not None
     assert result.is_categorical is False
 
 
 def test_nodata_excluded_from_categories(categorical_tif_with_nodata):
     result = detect_categories(categorical_tif_with_nodata)
-    assert result is not None
     assert result.is_categorical is True
     values = {c.value for c in result.categories}
     assert 255 not in values
     assert values == {1, 2, 3}
+
+
+def test_multiband_raster_rejected(tmp_path):
+    path = str(tmp_path / "rgb.tif")
+    data = np.zeros((3, 4, 4), dtype="uint8")
+    transform = from_bounds(0, 0, 1, 1, 4, 4)
+    with rasterio.open(
+        path, "w", driver="GTiff", width=4, height=4, count=3,
+        dtype="uint8", crs="EPSG:4326", transform=transform,
+    ) as dst:
+        dst.write(data)
+    result = detect_categories(path)
+    assert result.is_categorical is False
+
+
+def test_uint8_without_colormap_many_values_not_categorical(tmp_path):
+    path = str(tmp_path / "continuous_uint8.tif")
+    data = np.arange(0, 64, dtype="uint8").repeat(64).reshape(64, 64)
+    transform = from_bounds(0, 0, 1, 1, 64, 64)
+    with rasterio.open(
+        path, "w", driver="GTiff", width=64, height=64, count=1,
+        dtype="uint8", crs="EPSG:4326", transform=transform,
+    ) as dst:
+        dst.write(data, 1)
+    result = detect_categories(path)
+    assert result.is_categorical is False

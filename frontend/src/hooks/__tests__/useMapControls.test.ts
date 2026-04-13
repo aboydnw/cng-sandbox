@@ -104,4 +104,48 @@ describe("useMapControls", () => {
     expect(result.current.hasRgb).toBe(true);
     expect(result.current.selectableBands).toHaveLength(3);
   });
+
+  it("detects categorical datasets", () => {
+    const item = makeItem({
+      isCategorical: true,
+      categories: [
+        { value: 1, color: "#FF0000", label: "Class 1" },
+        { value: 2, color: "#00FF00", label: "Class 2" },
+      ],
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.isCategorical).toBe(true);
+    expect(result.current.showingColormap).toBe(false);
+  });
+
+  it("allows overriding categorical to continuous", () => {
+    const item = makeItem({
+      isCategorical: true,
+      categories: [
+        { value: 1, color: "#FF0000", label: "Class 1" },
+      ],
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.isCategorical).toBe(true);
+    act(() => result.current.setCategoricalOverride(false));
+    expect(result.current.isCategorical).toBe(false);
+    expect(result.current.showingColormap).toBe(true);
+  });
+
+  it("resets categorical override on item change", () => {
+    const item1 = makeItem({
+      id: "cat-a",
+      isCategorical: true,
+      categories: [{ value: 1, color: "#FF0000", label: "Class 1" }],
+    });
+    const item2 = makeItem({ id: "cont-b", isCategorical: false });
+    const { result, rerender } = renderHook(
+      ({ item }) => useMapControls(item),
+      { initialProps: { item: item1 } }
+    );
+    act(() => result.current.setCategoricalOverride(false));
+    expect(result.current.isCategorical).toBe(false);
+    rerender({ item: item2 });
+    expect(result.current.isCategorical).toBe(false);
+  });
 });

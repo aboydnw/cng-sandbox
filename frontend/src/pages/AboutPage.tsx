@@ -12,8 +12,7 @@ const PIPELINE_STEPS = [
   {
     icon: UploadSimple,
     label: "Upload",
-    description:
-      "Bring your GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5 file",
+    description: "Bring your GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5 file",
   },
   {
     icon: ArrowsClockwise,
@@ -106,14 +105,14 @@ export default function AboutPage() {
           </Heading>
           <Text color="gray.700" fontSize="md" lineHeight="tall" mb={3}>
             CNG Sandbox is a hands-on demonstration of the cloud-native
-            geospatial ecosystem. Upload your data and see what open source tools
-            from the CNG community can do — converting, tiling, and visualizing
-            geospatial formats in the browser.
+            geospatial ecosystem. Upload your data and see what open source
+            tools from the CNG community can do — converting, tiling, and
+            visualizing geospatial formats in the browser.
           </Text>
           <Text color="gray.700" fontSize="md" lineHeight="tall" mb={4}>
             It's not a SaaS platform, a conversion engine, or a data warehouse.
-            It's a sandbox — a place to explore the capabilities that these tools
-            make possible when assembled together.
+            It's a sandbox — a place to explore the capabilities that these
+            tools make possible when assembled together.
           </Text>
           <Text fontSize="sm" color="gray.600">
             Learn more about the cloud-native geospatial movement at{" "}
@@ -121,7 +120,10 @@ export default function AboutPage() {
               href="https://cloudnativegeo.org/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "var(--chakra-colors-brand-orange)", fontWeight: 600 }}
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
             >
               cloudnativegeo.org
             </a>
@@ -250,7 +252,10 @@ export default function AboutPage() {
               href="https://developmentseed.org/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "var(--chakra-colors-brand-orange)", fontWeight: 600 }}
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
             >
               Development Seed
             </a>

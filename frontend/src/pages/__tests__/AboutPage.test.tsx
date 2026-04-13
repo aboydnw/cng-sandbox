@@ -53,7 +53,8 @@ describe("AboutPage", () => {
     renderAbout();
     const links = screen.getAllByText("Development Seed");
     const footerLink = links.find(
-      (el) => el.closest("a")?.getAttribute("href") === "https://developmentseed.org/"
+      (el) =>
+        el.closest("a")?.getAttribute("href") === "https://developmentseed.org/"
     );
     expect(footerLink).toBeTruthy();
   });

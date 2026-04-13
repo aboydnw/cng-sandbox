@@ -104,15 +104,32 @@ export default function AboutPage() {
             About CNG Sandbox
           </Heading>
           <Text color="gray.700" fontSize="md" lineHeight="tall" mb={3}>
-            CNG Sandbox is a hands-on demonstration of the cloud-native
-            geospatial ecosystem. Upload your data and see what open source
-            tools from the CNG community can do — converting, tiling, and
-            visualizing geospatial formats in the browser.
+            The cloud-native geospatial ecosystem has produced an incredible set
+            of open source tools for working with spatial data. CNG Sandbox lets
+            you see them in action. Upload a GeoTIFF, GeoJSON, Shapefile, or
+            NetCDF file and watch it get converted, tiled, and rendered as an
+            interactive map in your browser.
+          </Text>
+          <Text color="gray.700" fontSize="md" lineHeight="tall" mb={3}>
+            Think of it as a playground for the CNG stack. We built it to show
+            what these tools can do when wired together, and to make it easy for
+            anyone to try them without setting up infrastructure.
           </Text>
           <Text color="gray.700" fontSize="md" lineHeight="tall" mb={4}>
-            It's not a SaaS platform, a conversion engine, or a data warehouse.
-            It's a sandbox — a place to explore the capabilities that these
-            tools make possible when assembled together.
+            CNG Sandbox is a{" "}
+            <a
+              href="https://developmentseed.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              Development Seed
+            </a>{" "}
+            project, built on top of tools maintained by the broader geospatial
+            community.
           </Text>
           <Text fontSize="sm" color="gray.600">
             Learn more about the cloud-native geospatial movement at{" "}
@@ -241,19 +258,7 @@ export default function AboutPage() {
 
         <Box mb={8}>
           <Text color="gray.500" fontSize="sm">
-            Built by{" "}
-            <a
-              href="https://developmentseed.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "var(--chakra-colors-brand-orange)",
-                fontWeight: 600,
-              }}
-            >
-              Development Seed
-            </a>
-            {" · "}v1.15.1
+            v1.15.1
           </Text>
         </Box>
       </Box>

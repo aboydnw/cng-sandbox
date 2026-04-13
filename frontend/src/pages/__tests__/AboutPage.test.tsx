@@ -29,9 +29,7 @@ describe("AboutPage", () => {
   it("renders the mission section", () => {
     renderAbout();
     expect(screen.getByText("About CNG Sandbox")).toBeTruthy();
-    expect(
-      screen.getByText(/hands-on demonstration of the cloud-native/)
-    ).toBeTruthy();
+    expect(screen.getByText(/cloud-native geospatial ecosystem/)).toBeTruthy();
   });
 
   it("renders all pipeline steps", () => {

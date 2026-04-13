@@ -61,4 +61,18 @@ export const connectionsApi = {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
     });
   },
+
+  updateCategories(
+    id: string,
+    updates: { value: number; label: string }[]
+  ): Promise<{ value: number; color: string; label: string }[]> {
+    return workspaceFetch(`/api/connections/${id}/categories`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    });
+  },
 };

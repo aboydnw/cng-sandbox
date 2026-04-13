@@ -25,6 +25,7 @@ interface RasterSidebarControlsProps {
   isCategorical?: boolean;
   categories?: { value: number; color: string; label: string }[] | null;
   datasetId?: string;
+  source?: "dataset" | "connection";
   onCategoriesChange?: (
     categories: { value: number; color: string; label: string }[]
   ) => void;
@@ -49,6 +50,7 @@ export function RasterSidebarControls({
   isCategorical,
   categories,
   datasetId,
+  source,
   onCategoriesChange,
   onCategoricalOverride,
 }: RasterSidebarControlsProps) {
@@ -70,6 +72,7 @@ export function RasterSidebarControls({
         <>
           <EditableCategoryLegend
             datasetId={datasetId}
+            source={source}
             categories={categories}
             onCategoriesChange={onCategoriesChange ?? (() => {})}
           />

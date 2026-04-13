@@ -166,6 +166,7 @@ def test_storage_delete_object():
 
 def test_patch_categories_updates_labels(client, db_session):
     import json
+
     from src.models.dataset import DatasetRow
 
     row = DatasetRow(
@@ -200,6 +201,7 @@ def test_patch_categories_updates_labels(client, db_session):
 
 def test_patch_categories_rejects_non_categorical(client, db_session):
     import json
+
     from src.models.dataset import DatasetRow
 
     row = DatasetRow(
@@ -224,6 +226,7 @@ def test_patch_categories_rejects_non_categorical(client, db_session):
 
 def test_patch_categories_rejects_invalid_value(client, db_session):
     import json
+
     from src.models.dataset import DatasetRow
 
     row = DatasetRow(

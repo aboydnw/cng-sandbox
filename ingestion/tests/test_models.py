@@ -2,7 +2,15 @@ from datetime import UTC, datetime
 
 import pytest
 
-from src.models import CategoryInfo, Dataset, DatasetType, FormatPair, Job, JobStatus, Timestep
+from src.models import (
+    CategoryInfo,
+    Dataset,
+    DatasetType,
+    FormatPair,
+    Job,
+    JobStatus,
+    Timestep,
+)
 
 
 def test_job_initial_status():

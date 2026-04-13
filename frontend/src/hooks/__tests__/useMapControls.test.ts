@@ -121,9 +121,7 @@ describe("useMapControls", () => {
   it("allows overriding categorical to continuous", () => {
     const item = makeItem({
       isCategorical: true,
-      categories: [
-        { value: 1, color: "#FF0000", label: "Class 1" },
-      ],
+      categories: [{ value: 1, color: "#FF0000", label: "Class 1" }],
     });
     const { result } = renderHook(() => useMapControls(item));
     expect(result.current.isCategorical).toBe(true);

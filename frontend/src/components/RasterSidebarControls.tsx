@@ -25,7 +25,9 @@ interface RasterSidebarControlsProps {
   isCategorical?: boolean;
   categories?: { value: number; color: string; label: string }[] | null;
   datasetId?: string;
-  onCategoriesChange?: (categories: { value: number; color: string; label: string }[]) => void;
+  onCategoriesChange?: (
+    categories: { value: number; color: string; label: string }[]
+  ) => void;
   onCategoricalOverride?: (isCategorical: boolean | null) => void;
 }
 
@@ -128,7 +130,10 @@ export function RasterSidebarControls({
               <Text fontSize="11px" color="brand.textSecondary" mb={1}>
                 Colormap
               </Text>
-              <ColormapDropdown value={colormapName} onChange={onColormapChange} />
+              <ColormapDropdown
+                value={colormapName}
+                onChange={onColormapChange}
+              />
             </Box>
           )}
         </>

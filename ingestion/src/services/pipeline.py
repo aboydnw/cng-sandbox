@@ -27,8 +27,8 @@ from src.models import (
     StageProgress,
     ValidationCheck,
 )
-from src.services.categorical import detect_categories
 from src.services import pmtiles_ingest, stac_ingest, vector_ingest
+from src.services.categorical import detect_categories
 from src.services.detector import detect_format, validate_magic_bytes
 from src.services.error_mapping import map_pipeline_error
 from src.services.storage import StorageService

@@ -38,7 +38,9 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
   const [colormapName, setColormapName] = useState("viridis");
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
   const [renderMode, setRenderMode] = useState<RenderMode>("server");
-  const [categoricalOverride, setCategoricalOverride] = useState<boolean | null>(null);
+  const [categoricalOverride, setCategoricalOverride] = useState<
+    boolean | null
+  >(null);
 
   useEffect(() => {
     setOpacity(0.8);
@@ -67,9 +69,7 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     isMultiBand && !hasRgb && selectedBand === "rgb" ? 0 : selectedBand;
 
   const isCategorical =
-    categoricalOverride !== null
-      ? categoricalOverride
-      : !!(item?.isCategorical);
+    categoricalOverride !== null ? categoricalOverride : !!item?.isCategorical;
 
   const showingColormap =
     !isCategorical &&

@@ -116,7 +116,14 @@ export function useLayerBuilder({
     }
 
     return base;
-  }, [item, colormapName, isSingleBand, isMultiBand, effectiveBand, isCategorical]);
+  }, [
+    item,
+    colormapName,
+    isSingleBand,
+    isMultiBand,
+    effectiveBand,
+    isCategorical,
+  ]);
 
   const geojson = useMemo(
     () => (arrowTable ? arrowTableToGeoJSON(arrowTable) : null),

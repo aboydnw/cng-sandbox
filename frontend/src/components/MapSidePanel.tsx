@@ -48,7 +48,9 @@ interface MapSidePanelProps {
   // Categorical
   isCategorical: boolean;
   categories: { value: number; color: string; label: string }[] | null;
-  onCategoriesChange: (categories: { value: number; color: string; label: string }[]) => void;
+  onCategoriesChange: (
+    categories: { value: number; color: string; label: string }[]
+  ) => void;
   onCategoricalOverride: (v: boolean | null) => void;
   showCategoricalToggle: boolean;
 }
@@ -153,7 +155,9 @@ export function MapSidePanel({
           categories={categories}
           datasetId={item.dataset?.id}
           onCategoriesChange={onCategoriesChange}
-          onCategoricalOverride={showCategoricalToggle ? onCategoricalOverride : undefined}
+          onCategoricalOverride={
+            showCategoricalToggle ? onCategoricalOverride : undefined
+          }
         />
       )}
 

@@ -9,6 +9,7 @@ from pydantic import field_validator
 from src.models import Job
 from src.services.discovery import DiscoveryError, fetch_and_discover
 from src.services.remote_pipeline import run_remote_pipeline
+from src.services.url_validation import SSRFError, validate_url_safe
 from src.state import jobs
 from src.workspace import get_workspace_id
 
@@ -20,12 +21,11 @@ class DiscoverRequest(PydanticBaseModel):
 
     @field_validator("url")
     @classmethod
-    def validate_url_scheme(cls, v: str) -> str:
-        if not (
-            v.startswith("http://") or v.startswith("https://") or v.startswith("s3://")
-        ):
-            raise ValueError("URL must start with http://, https://, or s3://")
-        return v
+    def validate_url_safe(cls, v: str) -> str:
+        try:
+            return validate_url_safe(v, allow_s3=True)
+        except SSRFError as exc:
+            raise ValueError(str(exc)) from exc
 
 
 class DiscoverResponse(PydanticBaseModel):
@@ -38,6 +38,26 @@ class ConnectRequest(PydanticBaseModel):
     url: str
     mode: str
     files: list[dict]
+
+    @field_validator("url")
+    @classmethod
+    def validate_url_safe(cls, v: str) -> str:
+        try:
+            return validate_url_safe(v, allow_s3=True)
+        except SSRFError as exc:
+            raise ValueError(str(exc)) from exc
+
+    @field_validator("files")
+    @classmethod
+    def validate_file_urls(cls, v: list[dict]) -> list[dict]:
+        for f in v:
+            file_url = f.get("url", "")
+            if file_url:
+                try:
+                    validate_url_safe(file_url, allow_s3=True)
+                except SSRFError as exc:
+                    raise ValueError(str(exc)) from exc
+        return v
 
     @field_validator("mode")
     @classmethod

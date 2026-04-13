@@ -90,10 +90,15 @@ async def list_stories(request: Request):
 
 @router.get("/stories/{story_id}")
 async def get_story(story_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
     session = get_session(request)
     try:
         row = session.get(StoryRow, story_id)
         if not row:
+            raise HTTPException(status_code=404, detail="Story not found")
+        # If the requester owns the story, return it regardless of published state.
+        # Otherwise, only return published stories.
+        if row.workspace_id != workspace_id and not row.published:
             raise HTTPException(status_code=404, detail="Story not found")
         return _row_to_response(row)
     finally:

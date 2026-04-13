@@ -16,18 +16,8 @@ export function SharedHeader() {
     >
       <Link to="/" style={{ textDecoration: "none" }}>
         <Flex align="center" gap={3}>
-          <img
-            src="/logo.svg"
-            alt="Development Seed"
-            width={32}
-            height={32}
-          />
-          <Text
-            as="span"
-            color="brand.brown"
-            fontWeight={700}
-            fontSize="15px"
-          >
+          <img src="/logo.svg" alt="Development Seed" width={32} height={32} />
+          <Text as="span" color="brand.brown" fontWeight={700} fontSize="15px">
             CNG Sandbox
           </Text>
         </Flex>

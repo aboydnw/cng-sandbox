@@ -175,7 +175,10 @@ export default function StoryReaderPage({
             </Link>
           ) : (
             <>
-              <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
+              <BugReportLink
+                storyId={story.id}
+                datasetIds={story.dataset_ids}
+              />
               <Text ml="auto" fontSize="xs" color="gray.500">
                 Made with CNG Sandbox
               </Text>

@@ -332,3 +332,33 @@ def test_list_datasets_includes_examples(client, app):
     assert "example-gebco" in ids
     assert "mine" in ids
     assert "other" not in ids
+
+
+def test_delete_example_dataset_returns_403(client, app):
+    """Example datasets cannot be deleted from any workspace."""
+    from datetime import UTC, datetime
+
+    from src.models.dataset import DatasetRow
+
+    session = app.state.db_session_factory()
+    try:
+        session.add(
+            DatasetRow(
+                id="example-lock",
+                filename="GEBCO",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json="{}",
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    resp = client.delete("/api/datasets/example-lock")
+    assert resp.status_code == 403
+    assert "example" in resp.json()["detail"].lower()

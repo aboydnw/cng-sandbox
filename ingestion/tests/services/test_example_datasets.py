@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 from src.models.base import Base
 from src.models.dataset import DatasetRow
 from src.services.example_datasets import (
+    missing_example_products,
     ordered_products,
     register_example_datasets,
 )
@@ -141,3 +142,32 @@ def test_register_example_datasets_continues_after_product_failure():
 
     assert enum_mock.await_count == 2
     register_mock.assert_not_awaited()
+
+
+def test_missing_example_products_returns_unregistered():
+    """missing_example_products reflects which listings are not yet persisted."""
+    _, factory = _make_db()
+
+    assert len(missing_example_products(factory)) == len(ordered_products())
+
+    session = factory()
+    try:
+        session.add(
+            DatasetRow(
+                id="already",
+                filename="GEBCO 2024",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json='{"source_url": "https://data.source.coop/alexgleith/gebco-2024/"}',
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    missing_slugs = {p.slug for p in missing_example_products(factory)}
+    assert "alexgleith/gebco-2024" not in missing_slugs

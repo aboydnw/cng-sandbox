@@ -146,4 +146,55 @@ describe("useMapControls", () => {
     rerender({ item: item2 });
     expect(result.current.isCategorical).toBe(false);
   });
+
+  it("defaults rescale overrides to null and colormapReversed to false", () => {
+    const { result } = renderHook(() => useMapControls(makeItem()));
+    expect(result.current.rescaleMin).toBeNull();
+    expect(result.current.rescaleMax).toBeNull();
+    expect(result.current.colormapReversed).toBe(false);
+  });
+
+  it("updates rescale overrides via setter", () => {
+    const { result } = renderHook(() => useMapControls(makeItem()));
+    act(() => result.current.setRescale(10, 200));
+    expect(result.current.rescaleMin).toBe(10);
+    expect(result.current.rescaleMax).toBe(200);
+    act(() => result.current.setRescale(null, null));
+    expect(result.current.rescaleMin).toBeNull();
+    expect(result.current.rescaleMax).toBeNull();
+  });
+
+  it("toggles colormapReversed", () => {
+    const { result } = renderHook(() => useMapControls(makeItem()));
+    act(() => result.current.setColormapReversed(true));
+    expect(result.current.colormapReversed).toBe(true);
+  });
+
+  it("resets overrides when item id changes", () => {
+    const { result, rerender } = renderHook(
+      ({ item }) => useMapControls(item),
+      { initialProps: { item: makeItem({ id: "a" }) } }
+    );
+    act(() => result.current.setRescale(1, 2));
+    act(() => result.current.setColormapReversed(true));
+    rerender({ item: makeItem({ id: "b" }) });
+    expect(result.current.rescaleMin).toBeNull();
+    expect(result.current.rescaleMax).toBeNull();
+    expect(result.current.colormapReversed).toBe(false);
+  });
+
+  it("seeds overrides from initialOverrides when item id matches", () => {
+    const item = makeItem({ id: "a" });
+    const { result } = renderHook(() =>
+      useMapControls(item, {
+        itemId: "a",
+        rescaleMin: 5,
+        rescaleMax: 50,
+        colormapReversed: true,
+      })
+    );
+    expect(result.current.rescaleMin).toBe(5);
+    expect(result.current.rescaleMax).toBe(50);
+    expect(result.current.colormapReversed).toBe(true);
+  });
 });

@@ -16,6 +16,8 @@ function makeConnection(overrides: Partial<Connection>): Connection {
     rescale: null,
     workspace_id: null,
     created_at: "2026-01-01T00:00:00Z",
+    is_categorical: false,
+    categories: null,
     ...overrides,
   };
 }

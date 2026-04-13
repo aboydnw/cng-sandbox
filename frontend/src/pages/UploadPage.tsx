@@ -13,15 +13,16 @@ import { BugReportModal } from "../components/BugReportModal";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
 import { RemoteConnectFlow } from "../components/RemoteConnectFlow";
 import { SourceCoopGallery } from "../components/SourceCoopGallery";
-import { SourceCoopConnectModal } from "../components/SourceCoopConnectModal";
 import {
   FolderOpen,
   GlobeHemisphereWest,
   LinkSimple,
 } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
+import { workspaceFetch } from "../lib/api";
+import { config } from "../config";
 import { formatBytes } from "../utils/format";
-import type { Connection } from "../types";
+import type { Connection, Dataset } from "../types";
 
 type PageMode =
   | "initial"
@@ -34,8 +35,8 @@ type PageMode =
 
 export default function UploadPage() {
   const navigate = useNavigate();
-  const { workspacePath, workspaceId } = useWorkspace();
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const { workspacePath } = useWorkspace();
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
   const {
     state,
     startUpload,
@@ -76,6 +77,13 @@ export default function UploadPage() {
       navigate(workspacePath(`/map/${state.datasetId}`));
     }
   }, [state.status, state.datasetId, navigate, workspacePath]);
+
+  useEffect(() => {
+    workspaceFetch(`${config.apiBase}/api/datasets`)
+      .then((r) => r.json())
+      .then((data) => setDatasets(Array.isArray(data) ? data : []))
+      .catch(() => setDatasets([]));
+  }, []);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -338,13 +346,7 @@ export default function UploadPage() {
         </PathCard>
       </Flex>
 
-      <SourceCoopGallery onSelect={setSelectedSlug} />
-
-      <SourceCoopConnectModal
-        slug={selectedSlug}
-        workspaceId={workspaceId}
-        onClose={() => setSelectedSlug(null)}
-      />
+      <SourceCoopGallery datasets={datasets} />
 
       <BugReportModal
         open={reportOpen}

@@ -65,6 +65,7 @@ export interface Dataset {
   compression: string | null;
   is_mosaic: boolean;
   is_zero_copy: boolean;
+  is_example?: boolean;
   source_url: string | null;
   expires_at: string | null;
 }

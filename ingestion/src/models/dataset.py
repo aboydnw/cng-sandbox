@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, String, Text
+from sqlalchemy import Boolean, Column, DateTime, String, Text
 
 from src.models.base import Base
 
@@ -22,6 +22,7 @@ class DatasetRow(Base):
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     workspace_id = Column(String, nullable=True)
     expires_at = Column(DateTime, nullable=True)
+    is_example = Column(Boolean, nullable=False, default=False)
 
     def to_dict(self) -> dict:
         """Convert to the Dataset API response format."""
@@ -38,6 +39,7 @@ class DatasetRow(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "workspace_id": self.workspace_id,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "is_example": bool(self.is_example),
         }
 
 
@@ -52,6 +54,7 @@ _TOP_LEVEL_COLUMNS = frozenset(
         "created_at",
         "workspace_id",
         "expires_at",
+        "is_example",
     )
 )
 
@@ -78,6 +81,7 @@ def persist_dataset(db_session_factory, dataset) -> None:
             created_at=dataset.created_at,
             workspace_id=getattr(dataset, "workspace_id", None),
             expires_at=getattr(dataset, "expires_at", None),
+            is_example=getattr(dataset, "is_example", False),
         )
         session.add(row)
         session.commit()

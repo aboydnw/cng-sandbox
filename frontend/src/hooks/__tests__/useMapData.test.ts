@@ -64,6 +64,8 @@ const MOCK_CONNECTION = {
   rescale: "0,10000",
   workspace_id: "w1",
   created_at: "2026-03-28T00:00:00Z",
+  is_categorical: false,
+  categories: null,
 };
 
 beforeEach(() => {

@@ -29,6 +29,9 @@ interface UseLayerBuilderOptions {
   getLoadCallback: (index: number) => () => void;
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   arrowTable: Table | null;
+  rescaleMin: number | null;
+  rescaleMax: number | null;
+  colormapReversed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onVectorClick?: (info: any) => void;
 }
@@ -68,10 +71,17 @@ export function useLayerBuilder({
   getLoadCallback,
   tileCacheRef,
   arrowTable,
+  rescaleMin,
+  rescaleMax,
+  colormapReversed,
   onVectorClick,
 }: UseLayerBuilderOptions) {
   const tileUrl = useMemo(() => {
     if (!item) return "";
+
+    const effMin = rescaleMin ?? item.rasterMin;
+    const effMax = rescaleMax ?? item.rasterMax;
+    const effColormap = colormapReversed ? `${colormapName}_r` : colormapName;
 
     if (item.source === "connection") {
       const base = item.tileUrl;
@@ -86,8 +96,12 @@ export function useLayerBuilder({
         }
         const isSingleBandCOG = item.bandCount === 1;
         if (isSingleBandCOG) {
-          let url = `${base}&colormap_name=${colormapName}`;
-          if (item.rescale) url += `&rescale=${item.rescale}`;
+          let url = `${base}&colormap_name=${effColormap}`;
+          if (effMin != null && effMax != null) {
+            url += `&rescale=${effMin},${effMax}`;
+          } else if (item.rescale) {
+            url += `&rescale=${item.rescale}`;
+          }
           return url;
         }
       }
@@ -105,17 +119,17 @@ export function useLayerBuilder({
     }
 
     if (isSingleBand) {
-      let url = `${base}${separator}colormap_name=${colormapName}`;
-      if (item.rasterMin != null && item.rasterMax != null) {
-        url += `&rescale=${item.rasterMin},${item.rasterMax}`;
+      let url = `${base}${separator}colormap_name=${effColormap}`;
+      if (effMin != null && effMax != null) {
+        url += `&rescale=${effMin},${effMax}`;
       }
       return url;
     }
 
     if (isMultiBand && typeof effectiveBand === "number") {
-      let url = `${base}${separator}bidx=${effectiveBand + 1}&colormap_name=${colormapName}`;
-      if (item.rasterMin != null && item.rasterMax != null) {
-        url += `&rescale=${item.rasterMin},${item.rasterMax}`;
+      let url = `${base}${separator}bidx=${effectiveBand + 1}&colormap_name=${effColormap}`;
+      if (effMin != null && effMax != null) {
+        url += `&rescale=${effMin},${effMax}`;
       }
       return url;
     }
@@ -124,6 +138,9 @@ export function useLayerBuilder({
   }, [
     item,
     colormapName,
+    colormapReversed,
+    rescaleMin,
+    rescaleMax,
     isSingleBand,
     isMultiBand,
     effectiveBand,
@@ -209,7 +226,7 @@ export function useLayerBuilder({
         });
       }
       return buildRasterTileLayers({
-        id: `raster-layer-${colormapName}-${effectiveBand}`,
+        id: `raster-layer-${colormapName}${colormapReversed ? "-r" : ""}-${effectiveBand}-${rescaleMin ?? "d"}-${rescaleMax ?? "d"}`,
         tileUrl,
         opacity,
         isTemporalActive: ds.is_temporal,
@@ -242,6 +259,9 @@ export function useLayerBuilder({
     tileUrl,
     opacity,
     colormapName,
+    colormapReversed,
+    rescaleMin,
+    rescaleMax,
     effectiveBand,
     activeTimestepIndex,
     isAnimateMode,

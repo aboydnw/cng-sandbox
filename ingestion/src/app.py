@@ -36,6 +36,15 @@ async def _cleanup_scans():
                 del scan_store[sid]
 
 
+async def _register_examples(app):
+    try:
+        from src.services.example_datasets import register_example_datasets
+
+        await register_example_datasets(db_session_factory=app.state.db_session_factory)
+    except Exception:
+        logger.exception("Example dataset registration failed")
+
+
 async def _cleanup_expired(app):
     while True:
         await asyncio.sleep(6 * 3600)
@@ -85,6 +94,18 @@ def _migrate_schema(engine):
             conn.rollback()
             if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
                 raise
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE datasets ADD COLUMN is_example BOOLEAN "
+                    "NOT NULL DEFAULT FALSE"
+                )
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
+                raise
 
 
 @asynccontextmanager
@@ -93,9 +114,11 @@ async def _default_lifespan(app: FastAPI):
     _migrate_schema(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
     expired_task = asyncio.create_task(_cleanup_expired(app))
+    examples_task = asyncio.create_task(_register_examples(app))
     yield
     cleanup_task.cancel()
     expired_task.cancel()
+    examples_task.cancel()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

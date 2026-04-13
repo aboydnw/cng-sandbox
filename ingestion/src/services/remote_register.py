@@ -145,6 +145,7 @@ async def register_remote_collection(
     product: SourceCoopProduct,
     items: list[RemoteItem],
     db_session_factory,
+    is_example: bool = False,
 ) -> str:
     """Register a list of RemoteItems as a sandbox dataset.
 
@@ -222,8 +223,9 @@ async def register_remote_collection(
         raster_max=raster_max,
         validation_results=[],
         credits=get_credits(FormatPair.GEOTIFF_TO_COG),
-        workspace_id=job.workspace_id,
+        workspace_id=None if is_example else job.workspace_id,
         is_zero_copy=True,
+        is_example=is_example,
         is_mosaic=not product.is_temporal,
         is_temporal=product.is_temporal,
         timesteps=timesteps,

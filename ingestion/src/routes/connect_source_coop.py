@@ -8,14 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.models import Job
-from src.services.enumerators import RemoteItem
-from src.services.enumerators.path_listing import enumerate_path_listing
-from src.services.enumerators.stac_sidecars import enumerate_stac_sidecars
+from src.services.example_datasets import run_enumerator
 from src.services.remote_register import (
     RemoteRegistrationError,
     register_remote_collection,
 )
-from src.services.source_coop_config import SourceCoopProduct, get_product
+from src.services.source_coop_config import get_product
 from src.state import jobs
 from src.workspace import get_workspace_id
 
@@ -30,19 +28,6 @@ class ConnectSourceCoopRequest(BaseModel):
 class ConnectSourceCoopResponse(BaseModel):
     dataset_id: str
     job_id: str
-
-
-async def run_enumerator(product: SourceCoopProduct) -> list[RemoteItem]:
-    """Dispatch to the enumerator named in the product config."""
-    if product.enumerator == "path_listing":
-        return await enumerate_path_listing(listing_url=product.listing_url)
-    if product.enumerator == "stac_sidecars":
-        return await enumerate_stac_sidecars(
-            listing_url=product.listing_url,
-            recursive=product.enumerator_args.get("recursive", False),
-            start_prefix=product.enumerator_args.get("start_prefix", ""),
-        )
-    raise ValueError(f"Unknown enumerator: {product.enumerator}")
 
 
 @router.post("/connect-source-coop", response_model=ConnectSourceCoopResponse)

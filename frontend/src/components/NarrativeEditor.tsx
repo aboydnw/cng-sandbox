@@ -54,6 +54,7 @@ export function NarrativeEditor({
   const selectedConnection = connections?.find(
     (c) => c.id === layerConfig.connection_id
   );
+  const selectedDataset = datasets.find((ds) => ds.id === layerConfig.dataset_id);
   const showColormap =
     datasetType === "raster" &&
     !(selectedConnection?.connection_type === "xyz_raster");
@@ -272,6 +273,91 @@ export function NarrativeEditor({
                     onLayerConfigChange({ ...layerConfig, colormap: cm })
                   }
                 />
+              </Box>
+            )}
+            {showColormap && (
+              <Box>
+                <Text fontSize="11px" color="gray.500" mb={1}>
+                  Rescale
+                </Text>
+                <Flex gap={2} align="center">
+                  <input
+                    aria-label="Chapter rescale min"
+                    type="number"
+                    step="any"
+                    placeholder={
+                      selectedDataset?.raster_min != null
+                        ? String(selectedDataset.raster_min)
+                        : ""
+                    }
+                    defaultValue={layerConfig.rescale_min ?? ""}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      onLayerConfigChange({
+                        ...layerConfig,
+                        rescale_min: v === "" ? null : Number(v),
+                      });
+                    }}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      height: "28px",
+                      padding: "0 8px",
+                      border: "1px solid #E2E8F0",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                    }}
+                  />
+                  <input
+                    aria-label="Chapter rescale max"
+                    type="number"
+                    step="any"
+                    placeholder={
+                      selectedDataset?.raster_max != null
+                        ? String(selectedDataset.raster_max)
+                        : ""
+                    }
+                    defaultValue={layerConfig.rescale_max ?? ""}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      onLayerConfigChange({
+                        ...layerConfig,
+                        rescale_max: v === "" ? null : Number(v),
+                      });
+                    }}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      height: "28px",
+                      padding: "0 8px",
+                      border: "1px solid #E2E8F0",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                    }}
+                  />
+                </Flex>
+                <Flex mt={2} gap={2} align="center">
+                  <label
+                    style={{
+                      fontSize: "11px",
+                      color: "#718096",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={layerConfig.colormap_reversed === true}
+                      onChange={(e) =>
+                        onLayerConfigChange({
+                          ...layerConfig,
+                          colormap_reversed: e.target.checked,
+                        })
+                      }
+                      style={{ marginRight: "6px" }}
+                    />
+                    Reverse colormap
+                  </label>
+                </Flex>
               </Box>
             )}
             <Box>

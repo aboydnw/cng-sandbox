@@ -44,7 +44,7 @@ export function buildRasterTileLayers({
     return [
       createCOGLayer({
         id,
-        tileUrl: `${tileUrl}${separator}datetime=${ts.datetime}`,
+        tileUrl: `${tileUrl}${separator}datetime=${encodeURIComponent(ts.datetime)}`,
         opacity,
       }),
     ];
@@ -56,7 +56,7 @@ export function buildRasterTileLayers({
       if (renderIndices && !renderIndices.has(i)) return null;
       return createCOGLayer({
         id: `raster-ts-${i}`,
-        tileUrl: `${tileUrl}${separator}datetime=${ts.datetime}`,
+        tileUrl: `${tileUrl}${separator}datetime=${encodeURIComponent(ts.datetime)}`,
         opacity: i === activeTimestepIndex ? opacity : 0,
         onViewportLoad: getLoadCallback?.(i),
       });

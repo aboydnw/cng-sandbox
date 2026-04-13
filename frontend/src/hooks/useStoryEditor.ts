@@ -491,7 +491,7 @@ export function useStoryEditor() {
         const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;
         const tsIndex = Math.max(0, Math.min(raw, ds.timesteps.length - 1));
         const ts = ds.timesteps[tsIndex];
-        tileUrl += `&datetime=${ts.datetime}`;
+        tileUrl += `&datetime=${encodeURIComponent(ts.datetime)}`;
       }
       return buildRasterTileLayers({
         tileUrl,

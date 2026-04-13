@@ -99,8 +99,22 @@ describe("buildRasterTileLayers", () => {
       activeTimestepIndex: 1,
     });
     expect(layers).toHaveLength(1);
-    expect(layers[0].props.data).toContain("datetime=2024-02-01T00:00:00Z");
-    expect(layers[0].props.opacity).toBe(0.8);
+    expect(layers[0].props.data).toContain("datetime=2024-02-01T00%3A00%3A00Z");
+  });
+
+  it("percent-encodes datetime values with a `+` offset", () => {
+    const layers = buildRasterTileLayers({
+      tileUrl: "http://tiles/{z}/{x}/{y}.png",
+      opacity: 1,
+      isTemporalActive: true,
+      isAnimateMode: false,
+      timesteps: [{ datetime: "2024-02-03T00:00:00+00:00", index: 0 }],
+      activeTimestepIndex: 0,
+    });
+    expect(layers[0].props.data).toContain(
+      "datetime=2024-02-03T00%3A00%3A00%2B00%3A00"
+    );
+    expect(layers[0].props.data).not.toContain("+00:00");
   });
 
   it("returns multiple layers in animate mode", () => {

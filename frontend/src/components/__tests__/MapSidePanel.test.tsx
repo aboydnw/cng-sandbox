@@ -46,6 +46,8 @@ const mockItem: MapItem = {
   rescale: null,
   parquetUrl: null,
   isTemporal: false,
+  isCategorical: false,
+  categories: null,
   timesteps: [],
   dataset: null,
   connection: null,
@@ -70,6 +72,11 @@ const defaultProps = {
   bytesTransferred: null,
   onDetailsClick: vi.fn(),
   onTableChange: vi.fn(),
+  isCategorical: false,
+  categories: null,
+  onCategoriesChange: vi.fn(),
+  onCategoricalOverride: vi.fn(),
+  showCategoricalToggle: false,
 };
 
 function renderWithProviders(ui: React.ReactElement) {

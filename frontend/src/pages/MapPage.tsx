@@ -186,6 +186,17 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     }
   }, [animation.activeIndex, ds?.is_temporal, setSearchParams]);
 
+  // --- Local categories (optimistic updates from editable legend) ---
+  const [localCategories, setLocalCategories] = useState<
+    { value: number; color: string; label: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    setLocalCategories(null);
+  }, [item?.id]);
+
+  const effectiveCategories = localCategories ?? item?.categories ?? null;
+
   // --- Arrow table for GeoParquet ---
   const [arrowTable, setArrowTable] = useState<Table | null>(null);
 
@@ -215,6 +226,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     effectiveBand: controls.effectiveBand,
     isSingleBand: controls.isSingleBand,
     isMultiBand: controls.isMultiBand,
+    isCategorical: controls.isCategorical,
     activeTimestepIndex: animation.activeIndex,
     renderIndices,
     isAnimateMode: animation.isAnimateMode,
@@ -321,21 +333,43 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               getTooltip={getTooltip}
               hideBasemapPicker={shared}
             >
-              {controls.showingColormap && controls.renderMode !== "client" && (
-                <Box position="absolute" bottom={3} left={3}>
-                  <MapLegend
-                    layers={[
-                      {
-                        type: "continuous" as const,
-                        id: "raster",
-                        title: item?.dataset?.filename ?? "",
-                        domain,
-                        colors,
-                      },
-                    ]}
-                  />
-                </Box>
-              )}
+              {controls.isCategorical &&
+                effectiveCategories &&
+                effectiveCategories.length > 0 && (
+                  <Box position="absolute" bottom={3} left={3}>
+                    <MapLegend
+                      layers={[
+                        {
+                          type: "categorical" as const,
+                          id: "raster-categorical",
+                          title: item?.dataset?.filename ?? "",
+                          categories: effectiveCategories.map((c) => ({
+                            value: String(c.value),
+                            color: c.color,
+                            label: c.label,
+                          })),
+                        },
+                      ]}
+                    />
+                  </Box>
+                )}
+              {!controls.isCategorical &&
+                controls.showingColormap &&
+                controls.renderMode !== "client" && (
+                  <Box position="absolute" bottom={3} left={3}>
+                    <MapLegend
+                      layers={[
+                        {
+                          type: "continuous" as const,
+                          id: "raster",
+                          title: item?.dataset?.filename ?? "",
+                          domain,
+                          colors,
+                        },
+                      ]}
+                    />
+                  </Box>
+                )}
 
               {ds?.is_temporal && controls.renderMode !== "client" && (
                 <TemporalControls
@@ -423,6 +457,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               bytesTransferred={bytesTransferred}
               onDetailsClick={() => setReportCardOpen(true)}
               onTableChange={handleTableChange}
+              isCategorical={controls.isCategorical}
+              categories={effectiveCategories}
+              onCategoriesChange={setLocalCategories}
+              onCategoricalOverride={controls.setCategoricalOverride}
+              showCategoricalToggle={!!item?.isCategorical}
               shared={shared}
             />
           </Box>

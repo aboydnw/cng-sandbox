@@ -136,8 +136,13 @@ async def test_register_temporal_product_orders_by_datetime(fake_temporal_produc
     call_kwargs = ingest_mock.call_args.kwargs
     assert call_kwargs["hrefs"][0].endswith("early.tif")
     assert call_kwargs["hrefs"][1].endswith("late.tif")
-    assert call_kwargs["datetimes"][0].startswith("2024-01-01")
-    assert call_kwargs["datetimes"][1].startswith("2024-02-01")
+    assert call_kwargs["datetimes"][0] == "2024-01-01T00:00:00Z"
+    assert call_kwargs["datetimes"][1] == "2024-02-01T00:00:00Z"
+    for dt in call_kwargs["datetimes"]:
+        assert "+" not in dt, (
+            "datetimes must use Z suffix, not +00:00, to avoid URL-encoding "
+            "the + as a space in the tile URL query string"
+        )
 
     dataset = persist_mock.call_args.args[1]
     assert dataset.is_temporal is True
@@ -153,3 +158,27 @@ async def test_register_raises_when_no_items(fake_product):
             items=[],
             db_session_factory=MagicMock(),
         )
+
+
+def test_format_datetime_z_converts_aware_utc():
+    from src.services.remote_register import _format_datetime_z
+
+    dt = datetime(2024, 2, 3, 12, 34, 56, tzinfo=UTC)
+    assert _format_datetime_z(dt) == "2024-02-03T12:34:56Z"
+
+
+def test_format_datetime_z_converts_non_utc_offset():
+    from datetime import timedelta, timezone
+
+    from src.services.remote_register import _format_datetime_z
+
+    est = timezone(timedelta(hours=-5))
+    dt = datetime(2024, 2, 3, 7, 34, 56, tzinfo=est)
+    assert _format_datetime_z(dt) == "2024-02-03T12:34:56Z"
+
+
+def test_format_datetime_z_naive_datetime_passthrough():
+    from src.services.remote_register import _format_datetime_z
+
+    dt = datetime(2024, 2, 3, 12, 34, 56)
+    assert _format_datetime_z(dt) == "2024-02-03T12:34:56Z"

@@ -38,6 +38,8 @@ const BASE_DATASET: Dataset = {
   timesteps: [],
   raster_min: null,
   raster_max: null,
+  is_categorical: false,
+  categories: null,
   crs: null,
   crs_name: null,
   pixel_width: null,
@@ -81,7 +83,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
     const tileUrl: string = (
       layers[0] as unknown as { props: { data: string } }
     ).props.data;
-    expect(tileUrl).toContain("datetime=2024-03-01T00:00:00Z");
+    expect(tileUrl).toContain("datetime=2024-03-01T00%3A00%3A00Z");
   });
 
   it("defaults to the first timestep when timestep is not set", () => {
@@ -103,7 +105,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
     const tileUrl: string = (
       layers[0] as unknown as { props: { data: string } }
     ).props.data;
-    expect(tileUrl).toContain("datetime=2024-01-01T00:00:00Z");
+    expect(tileUrl).toContain("datetime=2024-01-01T00%3A00%3A00Z");
   });
 
   it("does not append datetime for non-temporal datasets", () => {

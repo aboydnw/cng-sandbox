@@ -22,6 +22,7 @@ interface UseLayerBuilderOptions {
   effectiveBand: "rgb" | number;
   isSingleBand: boolean;
   isMultiBand: boolean;
+  isCategorical: boolean;
   activeTimestepIndex: number;
   renderIndices?: Set<number>;
   isAnimateMode?: boolean;
@@ -30,6 +31,25 @@ interface UseLayerBuilderOptions {
   arrowTable: Table | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onVectorClick?: (info: any) => void;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.substring(0, 2), 16),
+    parseInt(h.substring(2, 4), 16),
+    parseInt(h.substring(4, 6), 16),
+  ];
+}
+
+function buildCategoricalColormap(
+  categories: { value: number; color: string }[]
+): string {
+  const map: Record<string, number[]> = {};
+  for (const cat of categories) {
+    map[String(cat.value)] = hexToRgb(cat.color);
+  }
+  return JSON.stringify(map);
 }
 
 export function useLayerBuilder({
@@ -41,6 +61,7 @@ export function useLayerBuilder({
   effectiveBand,
   isSingleBand,
   isMultiBand,
+  isCategorical,
   activeTimestepIndex,
   renderIndices,
   isAnimateMode,
@@ -72,6 +93,12 @@ export function useLayerBuilder({
     if (!base) return "";
     const separator = base.includes("?") ? "&" : "?";
 
+    // Categorical rasters: discrete colormap + nearest resampling
+    if (isCategorical && item.categories && item.categories.length > 0) {
+      const colormapJson = buildCategoricalColormap(item.categories);
+      return `${base}${separator}colormap=${encodeURIComponent(colormapJson)}&resampling=nearest`;
+    }
+
     if (isSingleBand) {
       let url = `${base}${separator}colormap_name=${colormapName}`;
       if (item.rasterMin != null && item.rasterMax != null) {
@@ -89,7 +116,14 @@ export function useLayerBuilder({
     }
 
     return base;
-  }, [item, colormapName, isSingleBand, isMultiBand, effectiveBand]);
+  }, [
+    item,
+    colormapName,
+    isSingleBand,
+    isMultiBand,
+    effectiveBand,
+    isCategorical,
+  ]);
 
   const geojson = useMemo(
     () => (arrowTable ? arrowTableToGeoJSON(arrowTable) : null),

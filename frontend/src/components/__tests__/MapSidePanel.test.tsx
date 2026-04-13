@@ -77,6 +77,13 @@ const defaultProps = {
   onCategoriesChange: vi.fn(),
   onCategoricalOverride: vi.fn(),
   showCategoricalToggle: false,
+  rescaleMin: null,
+  rescaleMax: null,
+  onRescaleChange: vi.fn(),
+  colormapReversed: false,
+  onColormapReversedChange: vi.fn(),
+  datasetMin: null,
+  datasetMax: null,
 };
 
 function renderWithProviders(ui: React.ReactElement) {

@@ -1,4 +1,6 @@
-import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
+import { useState, useEffect } from "react";
+import { Box, Flex, NativeSelect, Text, IconButton } from "@chakra-ui/react";
+import { ArrowsLeftRight, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { ColormapDropdown } from "./ColormapDropdown";
 import { EditableCategoryLegend } from "./EditableCategoryLegend";
 
@@ -29,29 +31,74 @@ interface RasterSidebarControlsProps {
     categories: { value: number; color: string; label: string }[]
   ) => void;
   onCategoricalOverride?: (isCategorical: boolean | null) => void;
+  rescaleMin: number | null;
+  rescaleMax: number | null;
+  datasetMin: number | null;
+  datasetMax: number | null;
+  onRescaleChange: (min: number | null, max: number | null) => void;
+  colormapReversed: boolean;
+  onColormapReversedChange: (reversed: boolean) => void;
 }
 
-export function RasterSidebarControls({
-  opacity,
-  onOpacityChange,
-  colormapName,
-  onColormapChange,
-  showColormap,
-  bands,
-  hasRgb,
-  selectedBand,
-  onBandChange,
-  showBands,
-  canClientRender,
-  clientRenderDisabledReason,
-  renderMode,
-  onRenderModeChange,
-  isCategorical,
-  categories,
-  datasetId,
-  onCategoriesChange,
-  onCategoricalOverride,
-}: RasterSidebarControlsProps) {
+function parseOrNull(s: string): number | null {
+  if (s.trim() === "") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function RasterSidebarControls(props: RasterSidebarControlsProps) {
+  const {
+    opacity,
+    onOpacityChange,
+    colormapName,
+    onColormapChange,
+    showColormap,
+    bands,
+    hasRgb,
+    selectedBand,
+    onBandChange,
+    showBands,
+    canClientRender,
+    clientRenderDisabledReason,
+    renderMode,
+    onRenderModeChange,
+    isCategorical,
+    categories,
+    datasetId,
+    onCategoriesChange,
+    onCategoricalOverride,
+    rescaleMin,
+    rescaleMax,
+    datasetMin,
+    datasetMax,
+    onRescaleChange,
+    colormapReversed,
+    onColormapReversedChange,
+  } = props;
+
+  const [minDraft, setMinDraft] = useState<string>(
+    rescaleMin != null ? String(rescaleMin) : ""
+  );
+  const [maxDraft, setMaxDraft] = useState<string>(
+    rescaleMax != null ? String(rescaleMax) : ""
+  );
+
+  useEffect(() => {
+    setMinDraft(rescaleMin != null ? String(rescaleMin) : "");
+  }, [rescaleMin]);
+
+  useEffect(() => {
+    setMaxDraft(rescaleMax != null ? String(rescaleMax) : "");
+  }, [rescaleMax]);
+
+  const commit = (nextMin: string, nextMax: string) => {
+    const nm = parseOrNull(nextMin);
+    const xm = parseOrNull(nextMax);
+    if (nm !== rescaleMin || xm !== rescaleMax) {
+      onRescaleChange(nm, xm);
+    }
+  };
+
   return (
     <Box>
       <Text
@@ -65,7 +112,6 @@ export function RasterSidebarControls({
         Visualization Controls
       </Text>
 
-      {/* Categorical legend with editable labels */}
       {isCategorical && categories && categories.length > 0 && datasetId && (
         <>
           <EditableCategoryLegend
@@ -91,7 +137,6 @@ export function RasterSidebarControls({
 
       {!isCategorical && (
         <>
-          {/* Band selector */}
           {showBands && bands && bands.length > 0 && (
             <Box mb={3}>
               <Text fontSize="11px" color="brand.textSecondary" mb={1}>
@@ -124,16 +169,101 @@ export function RasterSidebarControls({
             </Box>
           )}
 
-          {/* Colormap selector */}
           {showColormap && (
             <Box mb={3}>
               <Text fontSize="11px" color="brand.textSecondary" mb={1}>
                 Colormap
               </Text>
-              <ColormapDropdown
-                value={colormapName}
-                onChange={onColormapChange}
-              />
+              <Flex gap={2} align="center">
+                <Box flex="1">
+                  <ColormapDropdown
+                    value={colormapName}
+                    onChange={onColormapChange}
+                  />
+                </Box>
+                <IconButton
+                  aria-label="Flip colormap"
+                  size="sm"
+                  variant="outline"
+                  bg={colormapReversed ? "brand.orange" : "white"}
+                  color={colormapReversed ? "white" : "brand.textSecondary"}
+                  borderColor="brand.border"
+                  _hover={{ borderColor: "brand.orange" }}
+                  onClick={() => onColormapReversedChange(!colormapReversed)}
+                >
+                  <ArrowsLeftRight size={14} weight="bold" />
+                </IconButton>
+              </Flex>
+            </Box>
+          )}
+
+          {showColormap && (
+            <Box mb={3}>
+              <Text fontSize="11px" color="brand.textSecondary" mb={1}>
+                Rescale
+              </Text>
+              <Flex gap={2} align="center">
+                <input
+                  aria-label="Rescale min"
+                  type="number"
+                  step="any"
+                  value={minDraft}
+                  placeholder={datasetMin != null ? String(datasetMin) : ""}
+                  onChange={(e) => setMinDraft(e.target.value)}
+                  onBlur={() => commit(minDraft, maxDraft)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commit(minDraft, maxDraft);
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: "28px",
+                    padding: "0 8px",
+                    border: "1px solid var(--chakra-colors-brand-border)",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    background: "white",
+                  }}
+                />
+                <input
+                  aria-label="Rescale max"
+                  type="number"
+                  step="any"
+                  value={maxDraft}
+                  placeholder={datasetMax != null ? String(datasetMax) : ""}
+                  onChange={(e) => setMaxDraft(e.target.value)}
+                  onBlur={() => commit(minDraft, maxDraft)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commit(minDraft, maxDraft);
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: "28px",
+                    padding: "0 8px",
+                    border: "1px solid var(--chakra-colors-brand-border)",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    background: "white",
+                  }}
+                />
+                <IconButton
+                  aria-label="Reset rescale"
+                  size="sm"
+                  variant="outline"
+                  bg="white"
+                  color="brand.textSecondary"
+                  borderColor="brand.border"
+                  _hover={{ borderColor: "brand.orange" }}
+                  onClick={() => {
+                    setMinDraft("");
+                    setMaxDraft("");
+                    onRescaleChange(null, null);
+                  }}
+                >
+                  <ArrowCounterClockwise size={14} weight="bold" />
+                </IconButton>
+              </Flex>
             </Box>
           )}
         </>
@@ -152,7 +282,6 @@ export function RasterSidebarControls({
         </Text>
       )}
 
-      {/* Opacity slider */}
       <Box mb={3}>
         <Flex justify="space-between" mb={1}>
           <Text fontSize="11px" color="brand.textSecondary">
@@ -173,7 +302,6 @@ export function RasterSidebarControls({
         />
       </Box>
 
-      {/* Client-side rendering toggle */}
       {canClientRender && onRenderModeChange && (
         <Box mb={3}>
           <Flex justify="space-between" align="center">

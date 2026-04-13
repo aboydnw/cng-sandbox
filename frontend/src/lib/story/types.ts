@@ -24,6 +24,9 @@ export interface LayerConfig {
   basemap: string;
   band?: number;
   timestep?: number;
+  rescale_min?: number | null;
+  rescale_max?: number | null;
+  colormap_reversed?: boolean;
 }
 
 export type ChapterType = "scrollytelling" | "prose" | "map";

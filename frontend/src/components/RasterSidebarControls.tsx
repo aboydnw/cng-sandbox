@@ -1,5 +1,6 @@
 import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
 import { ColormapDropdown } from "./ColormapDropdown";
+import { EditableCategoryLegend } from "./EditableCategoryLegend";
 
 interface BandInfo {
   name: string;
@@ -21,6 +22,11 @@ interface RasterSidebarControlsProps {
   clientRenderDisabledReason?: string | null;
   renderMode?: "server" | "client";
   onRenderModeChange?: (mode: "server" | "client") => void;
+  isCategorical?: boolean;
+  categories?: { value: number; color: string; label: string }[] | null;
+  datasetId?: string;
+  onCategoriesChange?: (categories: { value: number; color: string; label: string }[]) => void;
+  onCategoricalOverride?: (isCategorical: boolean | null) => void;
 }
 
 export function RasterSidebarControls({
@@ -38,6 +44,11 @@ export function RasterSidebarControls({
   clientRenderDisabledReason,
   renderMode,
   onRenderModeChange,
+  isCategorical,
+  categories,
+  datasetId,
+  onCategoriesChange,
+  onCategoricalOverride,
 }: RasterSidebarControlsProps) {
   return (
     <Box>
@@ -52,47 +63,88 @@ export function RasterSidebarControls({
         Visualization Controls
       </Text>
 
-      {/* Band selector */}
-      {showBands && bands && bands.length > 0 && (
-        <Box mb={3}>
-          <Text fontSize="11px" color="brand.textSecondary" mb={1}>
-            Band
-          </Text>
-          <NativeSelect.Root size="sm">
-            <NativeSelect.Field
-              value={String(selectedBand)}
-              onChange={(e) => {
-                const val = e.target.value;
-                onBandChange(val === "rgb" ? "rgb" : Number(val));
-              }}
-              bg="white"
-              border="1px solid"
-              borderColor="brand.border"
-              borderRadius="6px"
-              px={3}
-              py={1}
-              fontSize="13px"
-              _hover={{ borderColor: "brand.orange" }}
+      {/* Categorical legend with editable labels */}
+      {isCategorical && categories && categories.length > 0 && datasetId && (
+        <>
+          <EditableCategoryLegend
+            datasetId={datasetId}
+            categories={categories}
+            onCategoriesChange={onCategoriesChange ?? (() => {})}
+          />
+          {onCategoricalOverride && (
+            <Text
+              fontSize="10px"
+              color="brand.textSecondary"
+              mt={1}
+              mb={3}
+              cursor="pointer"
+              _hover={{ color: "brand.orange" }}
+              onClick={() => onCategoricalOverride(false)}
             >
-              {hasRgb && <option value="rgb">RGB</option>}
-              {bands.map((b) => (
-                <option key={b.index} value={b.index}>
-                  {b.name}
-                </option>
-              ))}
-            </NativeSelect.Field>
-          </NativeSelect.Root>
-        </Box>
+              Show as continuous →
+            </Text>
+          )}
+        </>
       )}
 
-      {/* Colormap selector */}
-      {showColormap && (
-        <Box mb={3}>
-          <Text fontSize="11px" color="brand.textSecondary" mb={1}>
-            Colormap
-          </Text>
-          <ColormapDropdown value={colormapName} onChange={onColormapChange} />
-        </Box>
+      {!isCategorical && (
+        <>
+          {/* Band selector */}
+          {showBands && bands && bands.length > 0 && (
+            <Box mb={3}>
+              <Text fontSize="11px" color="brand.textSecondary" mb={1}>
+                Band
+              </Text>
+              <NativeSelect.Root size="sm">
+                <NativeSelect.Field
+                  value={String(selectedBand)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    onBandChange(val === "rgb" ? "rgb" : Number(val));
+                  }}
+                  bg="white"
+                  border="1px solid"
+                  borderColor="brand.border"
+                  borderRadius="6px"
+                  px={3}
+                  py={1}
+                  fontSize="13px"
+                  _hover={{ borderColor: "brand.orange" }}
+                >
+                  {hasRgb && <option value="rgb">RGB</option>}
+                  {bands.map((b) => (
+                    <option key={b.index} value={b.index}>
+                      {b.name}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+              </NativeSelect.Root>
+            </Box>
+          )}
+
+          {/* Colormap selector */}
+          {showColormap && (
+            <Box mb={3}>
+              <Text fontSize="11px" color="brand.textSecondary" mb={1}>
+                Colormap
+              </Text>
+              <ColormapDropdown value={colormapName} onChange={onColormapChange} />
+            </Box>
+          )}
+        </>
+      )}
+
+      {!isCategorical && onCategoricalOverride && (
+        <Text
+          fontSize="10px"
+          color="brand.textSecondary"
+          cursor="pointer"
+          _hover={{ color: "brand.orange" }}
+          onClick={() => onCategoricalOverride(null)}
+          mb={3}
+        >
+          Show as categorical →
+        </Text>
       )}
 
       {/* Opacity slider */}

@@ -46,14 +46,19 @@ function fallbackCopy(text: string): void {
   document.body.removeChild(ta);
 }
 
-export function ShareButton() {
+interface ShareButtonProps {
+  shareUrl?: string;
+}
+
+export function ShareButton({ shareUrl }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    copyToClipboard(window.location.href);
+    const url = shareUrl ?? window.location.href;
+    copyToClipboard(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, []);
+  }, [shareUrl]);
 
   return (
     <>

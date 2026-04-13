@@ -40,9 +40,7 @@ async def _register_examples(app):
     try:
         from src.services.example_datasets import register_example_datasets
 
-        await register_example_datasets(
-            db_session_factory=app.state.db_session_factory
-        )
+        await register_example_datasets(db_session_factory=app.state.db_session_factory)
     except Exception:
         logger.exception("Example dataset registration failed")
 

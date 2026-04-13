@@ -63,11 +63,7 @@ def _existing_example_source_urls(db_session_factory: sessionmaker) -> set[str]:
     """Return the set of source.coop listing URLs already registered as examples."""
     session = db_session_factory()
     try:
-        rows = (
-            session.query(DatasetRow)
-            .filter(DatasetRow.is_example.is_(True))
-            .all()
-        )
+        rows = session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
         urls: set[str] = set()
         for row in rows:
             meta = json.loads(row.metadata_json) if row.metadata_json else {}

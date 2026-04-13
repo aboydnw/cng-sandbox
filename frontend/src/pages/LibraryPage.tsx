@@ -164,7 +164,9 @@ export default function LibraryPage() {
                       <Table.Row>
                         <Table.ColumnHeader>Filename</Table.ColumnHeader>
                         <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                        <Table.ColumnHeader w="100px">Uploaded</Table.ColumnHeader>
+                        <Table.ColumnHeader w="100px">
+                          Uploaded
+                        </Table.ColumnHeader>
                         <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
                       </Table.Row>
                     </Table.Header>
@@ -187,9 +189,12 @@ export default function LibraryPage() {
                               <Text fontSize="xs" color="fg.subtle" mt={0.5}>
                                 {formatDateRangeBadge(
                                   ds.timesteps[0].datetime,
-                                  ds.timesteps[ds.timesteps.length - 1].datetime,
+                                  ds.timesteps[ds.timesteps.length - 1]
+                                    .datetime,
                                   ds.timesteps.length,
-                                  detectCadence(ds.timesteps.map((t) => t.datetime))
+                                  detectCadence(
+                                    ds.timesteps.map((t) => t.datetime)
+                                  )
                                 )}
                               </Text>
                             )}
@@ -259,7 +264,9 @@ export default function LibraryPage() {
                     <Table.Row>
                       <Table.ColumnHeader>Filename</Table.ColumnHeader>
                       <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                      <Table.ColumnHeader w="100px">Uploaded</Table.ColumnHeader>
+                      <Table.ColumnHeader w="100px">
+                        Uploaded
+                      </Table.ColumnHeader>
                       <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
                       <Table.ColumnHeader w="80px" />
                     </Table.Row>
@@ -285,7 +292,9 @@ export default function LibraryPage() {
                                 ds.timesteps[0].datetime,
                                 ds.timesteps[ds.timesteps.length - 1].datetime,
                                 ds.timesteps.length,
-                                detectCadence(ds.timesteps.map((t) => t.datetime))
+                                detectCadence(
+                                  ds.timesteps.map((t) => t.datetime)
+                                )
                               )}
                             </Text>
                           )}

@@ -38,7 +38,7 @@ def test_ordered_products_puts_fast_products_first():
 
 def test_register_example_datasets_skips_already_registered():
     """A product whose source_url matches an existing example row is skipped."""
-    engine, factory = _make_db()
+    _, factory = _make_db()
     session = factory()
     try:
         session.add(

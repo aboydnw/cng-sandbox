@@ -23,15 +23,12 @@ function listingUrlForSlug(slug: string): string {
   return `https://data.source.coop/${slug}/`;
 }
 
-function matchDataset(
-  datasets: Dataset[],
-  slug: string,
-): Dataset | undefined {
+function matchDataset(datasets: Dataset[], slug: string): Dataset | undefined {
   const target = listingUrlForSlug(slug);
   return datasets.find(
     (d) =>
       d.is_example &&
-      (d as Dataset & { source_url?: string }).source_url === target,
+      (d as Dataset & { source_url?: string }).source_url === target
   );
 }
 

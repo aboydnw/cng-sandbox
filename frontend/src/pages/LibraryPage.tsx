@@ -176,7 +176,7 @@ export default function LibraryPage() {
                           <Table.Cell>
                             <Link to={workspacePath(`/map/${ds.id}`)}>
                               <Text
-                                color="blue.600"
+                                color="brand.orange"
                                 _hover={{ textDecoration: "underline" }}
                                 fontWeight={500}
                                 truncate
@@ -277,7 +277,7 @@ export default function LibraryPage() {
                         <Table.Cell>
                           <Link to={workspacePath(`/map/${ds.id}`)}>
                             <Text
-                              color="blue.600"
+                              color="brand.orange"
                               _hover={{ textDecoration: "underline" }}
                               fontWeight={500}
                               truncate
@@ -405,7 +405,7 @@ export default function LibraryPage() {
                   <Table.Cell>
                     <Link to={workspacePath(`/map/connection/${conn.id}`)}>
                       <Text
-                        color="blue.600"
+                        color="brand.orange"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
                         truncate
@@ -496,7 +496,7 @@ export default function LibraryPage() {
                   <Table.Cell>
                     <Link to={workspacePath(`/story/${story.id}/edit`)}>
                       <Text
-                        color="blue.600"
+                        color="brand.orange"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
                         truncate

@@ -248,7 +248,7 @@ export default function StoryEditorPage() {
           />
           <Text fontWeight={500}>Published —</Text>
           <Text color="green.600" fontFamily="mono" truncate maxW="400px">
-            {`${window.location.origin}${workspacePath(`/story/${story.id}`)}`}
+            {`${window.location.origin}/story/${story.id}`}
           </Text>
           <Button
             size="xs"
@@ -258,7 +258,7 @@ export default function StoryEditorPage() {
             px={2}
             h={5}
             onClick={() => {
-              const url = `${window.location.origin}${workspacePath(`/story/${story.id}`)}`;
+              const url = `${window.location.origin}/story/${story.id}`;
               navigator.clipboard?.writeText(url);
             }}
           >
@@ -426,7 +426,7 @@ export default function StoryEditorPage() {
       <PublishDialog
         open={publishDialogOpen}
         story={story}
-        shareUrl={`${window.location.origin}${workspacePath(`/story/${story.id}`)}`}
+        shareUrl={`${window.location.origin}/story/${story.id}`}
         onPublish={handlePublish}
         onClose={() => setPublishDialogOpen(false)}
       />

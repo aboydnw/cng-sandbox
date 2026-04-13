@@ -24,6 +24,7 @@ interface UnifiedMapProps {
   transitionInterpolator?: FlyToInterpolator;
   interactive?: boolean;
   onTransitionEnd?: () => void;
+  hideBasemapPicker?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,6 +43,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     transitionInterpolator,
     interactive = true,
     onTransitionEnd,
+    hideBasemapPicker = false,
   },
   ref
 ) {
@@ -119,7 +121,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         />
       </DeckGL>
 
-      {interactive && (
+      {interactive && !hideBasemapPicker && (
         <Box
           position="absolute"
           top={3}

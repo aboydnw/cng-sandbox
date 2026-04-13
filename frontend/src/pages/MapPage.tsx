@@ -7,10 +7,11 @@ import {
   useCallback,
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useWorkspace } from "../hooks/useWorkspace";
+import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
+import { SharedHeader } from "../components/SharedHeader";
 import { ShareButton } from "../components/ShareButton";
 import { BugReportLink } from "../components/BugReportLink";
 import { ReportCard, getTileUrlPrefix } from "../components/ReportCard";
@@ -40,10 +41,11 @@ import { useLayerBuilder } from "../hooks/useLayerBuilder";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Table } from "apache-arrow";
 
-export default function MapPage() {
+export default function MapPage({ shared = false }: { shared?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { workspacePath } = useWorkspace();
+  const workspace = useOptionalWorkspace();
+  const workspacePath = workspace?.workspacePath ?? ((p: string) => p);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTimestep = Number(searchParams.get("t") ?? 0);
 
@@ -60,10 +62,10 @@ export default function MapPage() {
 
   // Redirect on expiry
   useEffect(() => {
-    if (isExpired && id) {
+    if (isExpired && id && workspace) {
       navigate(workspacePath(`/expired/${id}`), { replace: true });
     }
-  }, [isExpired, id, navigate, workspacePath]);
+  }, [isExpired, id, navigate, workspacePath, workspace]);
 
   // --- Controls ---
   const controls = useMapControls(item);
@@ -273,7 +275,7 @@ export default function MapPage() {
   if (isLoading) {
     return (
       <Box minH="100vh" bg="white">
-        <Header />
+        {shared ? <SharedHeader /> : <Header />}
         <Flex align="center" justify="center" h="calc(100vh - 56px)">
           <SpinnerGap
             size={32}
@@ -288,7 +290,7 @@ export default function MapPage() {
   if (error) {
     return (
       <Box minH="100vh" bg="white">
-        <Header />
+        {shared ? <SharedHeader /> : <Header />}
         <Flex
           direction="column"
           align="center"
@@ -304,13 +306,19 @@ export default function MapPage() {
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">
-      <Header>
-        {item?.dataset && <BugReportLink datasetId={item.dataset.id} />}
-        {item?.connection && (
-          <BugReportLink connectionId={item.connection.id} />
-        )}
-        <ShareButton />
-      </Header>
+      {shared ? (
+        <SharedHeader />
+      ) : (
+        <Header>
+          {item?.dataset && <BugReportLink datasetId={item.dataset.id} />}
+          {item?.connection && (
+            <BugReportLink connectionId={item.connection.id} />
+          )}
+          <ShareButton
+            shareUrl={`${window.location.origin}/map/${isConnectionRoute ? "connection/" : ""}${id}`}
+          />
+        </Header>
+      )}
 
       <ErrorBoundary>
         <Flex flex={1} overflow="hidden">
@@ -325,6 +333,7 @@ export default function MapPage() {
               onHover={onHover}
               onClick={onMapClick}
               getTooltip={getTooltip}
+              hideBasemapPicker={shared}
             >
               {controls.isCategorical &&
                 effectiveCategories &&
@@ -455,6 +464,7 @@ export default function MapPage() {
               onCategoriesChange={setLocalCategories}
               onCategoricalOverride={controls.setCategoricalOverride}
               showCategoricalToggle={!!item?.isCategorical}
+              shared={shared}
             />
           </Box>
         </Flex>

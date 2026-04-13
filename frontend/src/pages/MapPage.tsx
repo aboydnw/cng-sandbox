@@ -224,6 +224,7 @@ export default function MapPage() {
     effectiveBand: controls.effectiveBand,
     isSingleBand: controls.isSingleBand,
     isMultiBand: controls.isMultiBand,
+    isCategorical: controls.isCategorical,
     activeTimestepIndex: animation.activeIndex,
     renderIndices,
     isAnimateMode: animation.isAnimateMode,

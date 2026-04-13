@@ -22,6 +22,7 @@ interface UseLayerBuilderOptions {
   effectiveBand: "rgb" | number;
   isSingleBand: boolean;
   isMultiBand: boolean;
+  isCategorical: boolean;
   activeTimestepIndex: number;
   renderIndices?: Set<number>;
   isAnimateMode?: boolean;
@@ -60,6 +61,7 @@ export function useLayerBuilder({
   effectiveBand,
   isSingleBand,
   isMultiBand,
+  isCategorical,
   activeTimestepIndex,
   renderIndices,
   isAnimateMode,
@@ -92,7 +94,7 @@ export function useLayerBuilder({
     const separator = base.includes("?") ? "&" : "?";
 
     // Categorical rasters: discrete colormap + nearest resampling
-    if (item.isCategorical && item.categories && item.categories.length > 0) {
+    if (isCategorical && item.categories && item.categories.length > 0) {
       const colormapJson = buildCategoricalColormap(item.categories);
       return `${base}${separator}colormap=${encodeURIComponent(colormapJson)}&resampling=nearest`;
     }
@@ -114,7 +116,7 @@ export function useLayerBuilder({
     }
 
     return base;
-  }, [item, colormapName, isSingleBand, isMultiBand, effectiveBand]);
+  }, [item, colormapName, isSingleBand, isMultiBand, effectiveBand, isCategorical]);
 
   const geojson = useMemo(
     () => (arrowTable ? arrowTableToGeoJSON(arrowTable) : null),

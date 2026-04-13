@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Box, Flex, Text, Input } from "@chakra-ui/react";
 import { workspaceFetch } from "../lib/api";
 
@@ -20,8 +20,14 @@ export function EditableCategoryLegend({
   onCategoriesChange,
 }: EditableCategoryLegendProps) {
   const [editingValue, setEditingValue] = useState<number | null>(null);
+  const cancelledRef = useRef(false);
 
   const handleBlur = (value: number, newLabel: string) => {
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      setEditingValue(null);
+      return;
+    }
     setEditingValue(null);
     const original = categories.find((c) => c.value === value);
     if (!original || original.label === newLabel) return;
@@ -90,6 +96,7 @@ export function EditableCategoryLegend({
                     (e.target as HTMLInputElement).blur();
                   }
                   if (e.key === "Escape") {
+                    cancelledRef.current = true;
                     setEditingValue(null);
                   }
                 }}

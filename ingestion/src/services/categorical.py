@@ -111,7 +111,7 @@ def detect_categories(raster_path: str) -> CategoricalResult:
         except ImportError:
             pass
         except Exception as exc:
-            logger.debug("Color table read failed: %s", exc)
+            logger.debug("RAT read failed: %s", exc)
 
         # Tier 3: Heuristic — integer dtype with few unique values
         if dtype not in HEURISTIC_INT_DTYPES:

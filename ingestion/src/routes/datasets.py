@@ -86,11 +86,15 @@ async def update_category_labels(
     updates: list[CategoryLabelUpdate],
     request: Request,
 ):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
     session = get_session(request)
     try:
         row = session.get(DatasetRow, dataset_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
 
         meta = json.loads(row.metadata_json) if row.metadata_json else {}
         if not meta.get("is_categorical"):

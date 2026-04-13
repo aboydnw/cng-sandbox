@@ -140,7 +140,7 @@ export function RasterSidebarControls({
           color="brand.textSecondary"
           cursor="pointer"
           _hover={{ color: "brand.orange" }}
-          onClick={() => onCategoricalOverride(null)}
+          onClick={() => onCategoricalOverride(true)}
           mb={3}
         >
           Show as categorical →

@@ -174,7 +174,7 @@ def test_patch_categories_updates_labels(client, db_session):
         dataset_type="raster",
         format_pair="geotiff-to-cog",
         tile_url="/tiles",
-        workspace_id="test-ws",
+        workspace_id="testABCD",
         metadata_json=json.dumps({
             "is_categorical": True,
             "categories": [
@@ -189,7 +189,7 @@ def test_patch_categories_updates_labels(client, db_session):
     resp = client.patch(
         "/api/datasets/cat-test-1/categories",
         json=[{"value": 1, "label": "Cropland"}],
-        headers={"X-Workspace-Id": "test-ws"},
+        headers={"X-Workspace-Id": "testABCD"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -208,7 +208,7 @@ def test_patch_categories_rejects_non_categorical(client, db_session):
         dataset_type="raster",
         format_pair="geotiff-to-cog",
         tile_url="/tiles",
-        workspace_id="test-ws",
+        workspace_id="testABCD",
         metadata_json=json.dumps({"is_categorical": False}),
     )
     db_session.add(row)
@@ -217,7 +217,7 @@ def test_patch_categories_rejects_non_categorical(client, db_session):
     resp = client.patch(
         "/api/datasets/cont-test-1/categories",
         json=[{"value": 1, "label": "Cropland"}],
-        headers={"X-Workspace-Id": "test-ws"},
+        headers={"X-Workspace-Id": "testABCD"},
     )
     assert resp.status_code == 400
 
@@ -232,7 +232,7 @@ def test_patch_categories_rejects_invalid_value(client, db_session):
         dataset_type="raster",
         format_pair="geotiff-to-cog",
         tile_url="/tiles",
-        workspace_id="test-ws",
+        workspace_id="testABCD",
         metadata_json=json.dumps({
             "is_categorical": True,
             "categories": [
@@ -246,7 +246,7 @@ def test_patch_categories_rejects_invalid_value(client, db_session):
     resp = client.patch(
         "/api/datasets/cat-test-2/categories",
         json=[{"value": 99, "label": "Invalid"}],
-        headers={"X-Workspace-Id": "test-ws"},
+        headers={"X-Workspace-Id": "testABCD"},
     )
     assert resp.status_code == 400
 

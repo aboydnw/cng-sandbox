@@ -14,7 +14,6 @@ import StoryEmbedPage from "./pages/StoryEmbedPage";
 import AboutPage from "./pages/AboutPage";
 import { WelcomeToast } from "./components/WelcomeToast";
 
-
 function StoryReaderRedirect() {
   const { id } = useParams<{ id: string }>();
   return <Navigate to={`/story/${id}`} replace />;

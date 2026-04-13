@@ -80,16 +80,23 @@ def _compute_remote_stats_sync(
                             max(1, src.width // level),
                         )
                     else:
-                        scale = max(1.0, max(src.height, src.width) / 1024)
+                        downsample = max(1.0, max(src.height, src.width) / 1024)
                         out_shape = (
-                            max(1, int(src.height / scale)),
-                            max(1, int(src.width / scale)),
+                            max(1, int(src.height / downsample)),
+                            max(1, int(src.width / downsample)),
                         )
-                    data = src.read(band_idx, out_shape=out_shape).astype(np.float64)
+                    raw = src.read(band_idx, out_shape=out_shape).astype(np.float64)
                     if src.nodata is not None:
-                        valid = data[data != src.nodata]
+                        mask = raw != src.nodata
                     else:
-                        valid = data.ravel()
+                        mask = ~np.isnan(raw)
+                    scale = src.scales[band_idx - 1] if src.scales else 1.0
+                    offset = src.offsets[band_idx - 1] if src.offsets else 0.0
+                    if scale != 1.0 or offset != 0.0:
+                        data = raw * scale + offset
+                    else:
+                        data = raw
+                    valid = data[mask]
                     valid = valid[~np.isnan(valid)]
                     if valid.size > 0:
                         all_valid.append(valid)

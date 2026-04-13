@@ -87,7 +87,6 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       colormapReversed: controls.colormapReversed,
       colormapName: controls.colormapName,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     item?.id,
     controls.rescaleMin,

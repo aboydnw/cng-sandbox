@@ -65,7 +65,6 @@ export function useRasterOverrides(
       colormapName:
         typeof ls.colormapName === "string" ? ls.colormapName : undefined,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);
 
   const persist = useCallback(

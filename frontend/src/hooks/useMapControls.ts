@@ -88,7 +88,6 @@ export function useMapControls(
       setRescaleMax(null);
       setColormapReversed(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id, item?.dataType]);
 
   const setRescale = (min: number | null, max: number | null) => {

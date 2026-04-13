@@ -2,7 +2,15 @@ from datetime import UTC, datetime
 
 import pytest
 
-from src.models import Dataset, DatasetType, FormatPair, Job, JobStatus, Timestep
+from src.models import (
+    CategoryInfo,
+    Dataset,
+    DatasetType,
+    FormatPair,
+    Job,
+    JobStatus,
+    Timestep,
+)
 
 
 def test_job_initial_status():
@@ -130,3 +138,37 @@ def test_dataset_cog_url_populated():
         cog_url="/storage/datasets/x/converted/data.tif",
     )
     assert d.cog_url == "/storage/datasets/x/converted/data.tif"
+
+
+def test_dataset_categorical_fields_default():
+    ds = Dataset(
+        id="test",
+        filename="test.tif",
+        dataset_type=DatasetType.RASTER,
+        format_pair=FormatPair.GEOTIFF_TO_COG,
+        tile_url="/tiles",
+        created_at=datetime.now(UTC),
+    )
+    assert ds.is_categorical is False
+    assert ds.categories is None
+
+
+def test_dataset_categorical_fields_populated():
+    ds = Dataset(
+        id="test",
+        filename="test.tif",
+        dataset_type=DatasetType.RASTER,
+        format_pair=FormatPair.GEOTIFF_TO_COG,
+        tile_url="/tiles",
+        created_at=datetime.now(UTC),
+        is_categorical=True,
+        categories=[
+            CategoryInfo(value=1, color="#FF0000", label="Cropland"),
+            CategoryInfo(value=2, color="#00FF00", label="Forest"),
+        ],
+    )
+    assert ds.is_categorical is True
+    assert len(ds.categories) == 2
+    assert ds.categories[0].value == 1
+    assert ds.categories[0].color == "#FF0000"
+    assert ds.categories[0].label == "Cropland"

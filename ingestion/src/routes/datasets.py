@@ -1,6 +1,9 @@
 """Dataset metadata routes."""
 
+import json
+
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
 from src.dependencies import get_session
 from src.models.dataset import DatasetRow
@@ -13,6 +16,11 @@ from src.services.story_utils import (
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
+
+
+class CategoryLabelUpdate(BaseModel):
+    value: int
+    label: str
 
 
 @router.get("/datasets")
@@ -68,5 +76,48 @@ async def delete_dataset_endpoint(dataset_id: str, request: Request):
         storage = StorageService()
         result = await delete_dataset(session, dataset_id, storage=storage)
         return result
+    finally:
+        session.close()
+
+
+@router.patch("/datasets/{dataset_id}/categories")
+async def update_category_labels(
+    dataset_id: str,
+    updates: list[CategoryLabelUpdate],
+    request: Request,
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+        meta = json.loads(row.metadata_json) if row.metadata_json else {}
+        if not meta.get("is_categorical"):
+            raise HTTPException(status_code=400, detail="Dataset is not categorical")
+
+        categories = meta.get("categories", [])
+        existing_values = {c["value"] for c in categories}
+        update_map = {}
+        for u in updates:
+            if u.value not in existing_values:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Category value {u.value} not found",
+                )
+            update_map[u.value] = u.label
+
+        for cat in categories:
+            if cat["value"] in update_map:
+                cat["label"] = update_map[cat["value"]]
+
+        meta["categories"] = categories
+        row.metadata_json = json.dumps(meta, default=str)
+        session.commit()
+        return categories
     finally:
         session.close()

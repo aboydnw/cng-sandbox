@@ -60,6 +60,12 @@ class FormatPair(StrEnum):
         return DatasetType.VECTOR
 
 
+class CategoryInfo(BaseModel):
+    value: int
+    color: str
+    label: str
+
+
 class ValidationCheck(BaseModel):
     name: str
     passed: bool
@@ -127,6 +133,8 @@ class Dataset(BaseModel):
     timesteps: list[Timestep] = []
     raster_min: float | None = None
     raster_max: float | None = None
+    is_categorical: bool = False
+    categories: list[CategoryInfo] | None = None
     crs: str | None = None
     crs_name: str | None = None
     pixel_width: int | None = None

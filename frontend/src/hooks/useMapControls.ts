@@ -25,6 +25,9 @@ interface UseMapControlsResult {
   hasRgb: boolean;
   selectableBands: BandInfo[];
   effectiveBand: "rgb" | number;
+  isCategorical: boolean;
+  categoricalOverride: boolean | null;
+  setCategoricalOverride: (v: boolean | null) => void;
   showingColormap: boolean;
   canClientRender: boolean;
   clientRenderDisabledReason: string | null;
@@ -35,12 +38,16 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
   const [colormapName, setColormapName] = useState("viridis");
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
   const [renderMode, setRenderMode] = useState<RenderMode>("server");
+  const [categoricalOverride, setCategoricalOverride] = useState<
+    boolean | null
+  >(null);
 
   useEffect(() => {
     setOpacity(0.8);
     setColormapName("viridis");
     setSelectedBand("rgb");
     setRenderMode(item?.dataType === "vector" ? "vector-tiles" : "server");
+    setCategoricalOverride(null);
   }, [item?.id, item?.dataType]);
 
   const isSingleBand = item?.bandCount === 1;
@@ -61,8 +68,12 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
   const effectiveBand =
     isMultiBand && !hasRgb && selectedBand === "rgb" ? 0 : selectedBand;
 
+  const isCategorical =
+    categoricalOverride !== null ? categoricalOverride : !!item?.isCategorical;
+
   const showingColormap =
-    isSingleBand || (isMultiBand && effectiveBand !== "rgb");
+    !isCategorical &&
+    (isSingleBand || (isMultiBand && effectiveBand !== "rgb"));
 
   const canClientRender =
     !!item &&
@@ -94,6 +105,9 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     hasRgb,
     selectableBands,
     effectiveBand,
+    isCategorical,
+    categoricalOverride,
+    setCategoricalOverride,
     showingColormap,
     canClientRender,
     clientRenderDisabledReason,

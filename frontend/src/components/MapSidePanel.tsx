@@ -45,6 +45,14 @@ interface MapSidePanelProps {
   onDetailsClick: () => void;
   // Vector
   onTableChange: (table: Table | null) => void;
+  // Categorical
+  isCategorical: boolean;
+  categories: { value: number; color: string; label: string }[] | null;
+  onCategoriesChange: (
+    categories: { value: number; color: string; label: string }[]
+  ) => void;
+  onCategoricalOverride: (v: boolean | null) => void;
+  showCategoricalToggle: boolean;
 }
 
 export function MapSidePanel({
@@ -66,6 +74,11 @@ export function MapSidePanel({
   bytesTransferred,
   onDetailsClick,
   onTableChange,
+  isCategorical,
+  categories,
+  onCategoriesChange,
+  onCategoricalOverride,
+  showCategoricalToggle,
 }: MapSidePanelProps) {
   const [mode, setMode] = useState<PanelMode>("controls");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -138,6 +151,13 @@ export function MapSidePanel({
               : "server"
           }
           onRenderModeChange={(m) => onRenderModeChange(m)}
+          isCategorical={isCategorical}
+          categories={categories}
+          datasetId={item.dataset?.id}
+          onCategoriesChange={onCategoriesChange}
+          onCategoricalOverride={
+            showCategoricalToggle ? onCategoricalOverride : undefined
+          }
         />
       )}
 

@@ -201,6 +201,7 @@ cd frontend && npx vitest run
 - **SSE named events**: The ingestion API sends `event: status` SSE events. The frontend must use `addEventListener("status", ...)`, not `onmessage` (which only handles unnamed events).
 - **COG tiler proxy preserves `/cog` prefix**: Unlike `/raster` and `/vector` (which strip their prefix before forwarding), the `/cog` proxy passes the path through unchanged because titiler's COG routes are already mounted under `/cog/`.
 - **Vendored maptool utilities**: `src/lib/maptool/` contains `createCOGLayer`, `createPMTilesProtocol`, `useColorScale`, `MapLegend`, and `listColormaps` — vendored from `@maptool/core` so the sandbox has no external dependency on the library.
+- **Categorical rasters use a JSON colormap, not `colormap_name`**: When a dataset has `isCategorical: true`, tile URLs are built with `colormap=<encoded-JSON>` (a `{value: [r,g,b]}` map) and `resampling=nearest` instead of the usual `colormap_name=` parameter. Mixing them will produce incorrect or broken tiles.
 
 ## Ingestion Service
 
@@ -222,13 +223,14 @@ cd ingestion && uv run pytest -v
 - `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
 - `GET /api/datasets` — List all converted datasets
 - `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`)
+- `PATCH /api/datasets/{id}/categories` — Update category labels for a categorical raster; body is a list of `{"value": int, "label": str}` objects; returns 400 if dataset is not categorical or a value doesn't exist
 - `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ghrsst-mur-v2-2024`, `gebco-2024`, `lg-land-carbon`)
 - `GET /api/health` — Health check
 
 ### Conversion pipeline
 
 1. **Upload/fetch** → save raw file
-2. **Scan** → detect file type, validate
+2. **Scan** → detect file type, validate; for rasters also runs categorical detection (color table → RAT → heuristic)
 3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG, HDF5→COG
 4. **Store** → COGs to Cloudflare R2, vectors to PostgreSQL
 5. **Register** → COGs registered in pgSTAC, vectors available via tipg

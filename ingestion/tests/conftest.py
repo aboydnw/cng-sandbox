@@ -44,6 +44,14 @@ def app(db_engine):
 
 
 @pytest.fixture
+def db_session(db_engine):
+    Session = sessionmaker(bind=db_engine)
+    session = Session()
+    yield session
+    session.close()
+
+
+@pytest.fixture
 def client(app):
     return TestClient(
         app, raise_server_exceptions=False, headers={"X-Workspace-Id": "testABCD"}

@@ -16,6 +16,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+import numpy as np
 import rasterio
 
 from src.models import Dataset, DatasetType, FormatPair, Job, Timestep
@@ -44,6 +45,71 @@ def _read_band_meta_sync(vsi_path: str) -> tuple[int, list[str], list[str], str]
 
 async def _read_band_meta(href: str) -> tuple[int, list[str], list[str], str]:
     return await asyncio.to_thread(_read_band_meta_sync, f"/vsicurl/{href}")
+
+
+def _compute_remote_stats_sync(
+    hrefs: list[str], max_samples: int = 5
+) -> tuple[float | None, float | None]:
+    """Compute p2/p98 rescale values from a sample of remote COGs.
+
+    Samples files evenly spread across the list (first, last, and evenly
+    spaced in between) to get representative statistics without reading
+    every file. Uses the coarsest overview for minimal data transfer.
+    """
+    if not hrefs:
+        return None, None
+
+    # Pick evenly-spaced sample indices
+    n = len(hrefs)
+    if n <= max_samples:
+        indices = list(range(n))
+    else:
+        indices = [round(i * (n - 1) / (max_samples - 1)) for i in range(max_samples)]
+
+    all_valid: list[np.ndarray] = []
+    for idx in indices:
+        vsi_path = f"/vsicurl/{hrefs[idx]}"
+        try:
+            with rasterio.open(vsi_path) as src:
+                for band_idx in range(1, src.count + 1):
+                    overviews = src.overviews(band_idx)
+                    if overviews:
+                        level = overviews[-1]
+                        out_shape = (
+                            max(1, src.height // level),
+                            max(1, src.width // level),
+                        )
+                    else:
+                        scale = max(1.0, max(src.height, src.width) / 1024)
+                        out_shape = (
+                            max(1, int(src.height / scale)),
+                            max(1, int(src.width / scale)),
+                        )
+                    data = src.read(band_idx, out_shape=out_shape).astype(np.float64)
+                    if src.nodata is not None:
+                        valid = data[data != src.nodata]
+                    else:
+                        valid = data.ravel()
+                    valid = valid[~np.isnan(valid)]
+                    if valid.size > 0:
+                        all_valid.append(valid)
+        except Exception:
+            safe_path = vsi_path.split("?", 1)[0]
+            logger.warning("Failed to read stats from %s, skipping", safe_path)
+            continue
+
+    if not all_valid:
+        return None, None
+
+    combined = np.concatenate(all_valid)
+    p2, p98 = np.percentile(combined, [2, 98])
+    return float(p2), float(p98)
+
+
+async def _compute_remote_stats(
+    hrefs: list[str], max_samples: int = 5
+) -> tuple[float | None, float | None]:
+    return await asyncio.to_thread(_compute_remote_stats_sync, hrefs, max_samples)
 
 
 def _format_datetime_z(dt: datetime) -> str:
@@ -127,6 +193,7 @@ async def register_remote_collection(
     )
 
     band_count, band_names, color_interp, dtype = await _read_band_meta(hrefs[0])
+    raster_min, raster_max = await _compute_remote_stats(hrefs)
 
     overall_bbox = [
         min(b[0] for b in bboxes),  # type: ignore[index]
@@ -151,6 +218,8 @@ async def register_remote_collection(
         color_interpretation=color_interp,
         dtype=dtype,
         stac_collection_id=f"sandbox-{job.dataset_id}",
+        raster_min=raster_min,
+        raster_max=raster_max,
         validation_results=[],
         credits=get_credits(FormatPair.GEOTIFF_TO_COG),
         workspace_id=job.workspace_id,

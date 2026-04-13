@@ -11,6 +11,14 @@ interface BandInfo {
   index: number;
 }
 
+export interface InitialRasterOverrides {
+  itemId: string;
+  rescaleMin: number | null;
+  rescaleMax: number | null;
+  colormapReversed: boolean;
+  colormapName?: string;
+}
+
 interface UseMapControlsResult {
   opacity: number;
   setOpacity: (v: number) => void;
@@ -31,24 +39,62 @@ interface UseMapControlsResult {
   showingColormap: boolean;
   canClientRender: boolean;
   clientRenderDisabledReason: string | null;
+  rescaleMin: number | null;
+  rescaleMax: number | null;
+  setRescale: (min: number | null, max: number | null) => void;
+  colormapReversed: boolean;
+  setColormapReversed: (v: boolean) => void;
 }
 
-export function useMapControls(item: MapItem | null): UseMapControlsResult {
+export function useMapControls(
+  item: MapItem | null,
+  initialOverrides?: InitialRasterOverrides
+): UseMapControlsResult {
+  const seedMatches =
+    !!initialOverrides && item?.id === initialOverrides.itemId;
+
   const [opacity, setOpacity] = useState(0.8);
-  const [colormapName, setColormapName] = useState("viridis");
+  const [colormapName, setColormapName] = useState(
+    seedMatches ? (initialOverrides!.colormapName ?? "viridis") : "viridis"
+  );
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
   const [renderMode, setRenderMode] = useState<RenderMode>("server");
   const [categoricalOverride, setCategoricalOverride] = useState<
     boolean | null
   >(null);
+  const [rescaleMin, setRescaleMin] = useState<number | null>(
+    seedMatches ? initialOverrides!.rescaleMin : null
+  );
+  const [rescaleMax, setRescaleMax] = useState<number | null>(
+    seedMatches ? initialOverrides!.rescaleMax : null
+  );
+  const [colormapReversed, setColormapReversed] = useState<boolean>(
+    seedMatches ? initialOverrides!.colormapReversed : false
+  );
 
   useEffect(() => {
     setOpacity(0.8);
-    setColormapName("viridis");
     setSelectedBand("rgb");
     setRenderMode(item?.dataType === "vector" ? "vector-tiles" : "server");
     setCategoricalOverride(null);
+    if (initialOverrides && item?.id === initialOverrides.itemId) {
+      setColormapName(initialOverrides.colormapName ?? "viridis");
+      setRescaleMin(initialOverrides.rescaleMin);
+      setRescaleMax(initialOverrides.rescaleMax);
+      setColormapReversed(initialOverrides.colormapReversed);
+    } else {
+      setColormapName("viridis");
+      setRescaleMin(null);
+      setRescaleMax(null);
+      setColormapReversed(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id, item?.dataType]);
+
+  const setRescale = (min: number | null, max: number | null) => {
+    setRescaleMin(min);
+    setRescaleMax(max);
+  };
 
   const isSingleBand = item?.bandCount === 1;
   const isMultiBand = (item?.bandCount ?? 0) > 1;
@@ -111,5 +157,10 @@ export function useMapControls(item: MapItem | null): UseMapControlsResult {
     showingColormap,
     canClientRender,
     clientRenderDisabledReason,
+    rescaleMin,
+    rescaleMax,
+    setRescale,
+    colormapReversed,
+    setColormapReversed,
   };
 }

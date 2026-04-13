@@ -314,7 +314,9 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
           {item?.connection && (
             <BugReportLink connectionId={item.connection.id} />
           )}
-          <ShareButton />
+          <ShareButton
+            shareUrl={`${window.location.origin}/map/${isConnectionRoute ? "connection/" : ""}${id}`}
+          />
         </Header>
       )}
 

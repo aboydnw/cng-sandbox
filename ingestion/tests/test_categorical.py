@@ -12,14 +12,27 @@ def categorical_tif_with_colormap(tmp_path):
     data = np.array([[1, 2, 3], [4, 5, 1]], dtype="uint8")
     transform = from_bounds(0, 0, 1, 1, 3, 2)
     with rasterio.open(
-        path, "w", driver="GTiff", width=3, height=2, count=1,
-        dtype="uint8", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=3,
+        height=2,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data, 1)
-        dst.write_colormap(1, {
-            1: (255, 0, 0, 255), 2: (0, 255, 0, 255), 3: (0, 0, 255, 255),
-            4: (255, 255, 0, 255), 5: (128, 128, 128, 255),
-        })
+        dst.write_colormap(
+            1,
+            {
+                1: (255, 0, 0, 255),
+                2: (0, 255, 0, 255),
+                3: (0, 0, 255, 255),
+                4: (255, 255, 0, 255),
+                5: (128, 128, 128, 255),
+            },
+        )
     return path
 
 
@@ -29,8 +42,15 @@ def categorical_tif_no_colormap(tmp_path):
     data = np.array([[1, 2, 3], [4, 5, 1]], dtype="uint8")
     transform = from_bounds(0, 0, 1, 1, 3, 2)
     with rasterio.open(
-        path, "w", driver="GTiff", width=3, height=2, count=1,
-        dtype="uint8", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=3,
+        height=2,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data, 1)
     return path
@@ -42,8 +62,15 @@ def continuous_float_tif(tmp_path):
     data = np.random.rand(64, 64).astype("float32")
     transform = from_bounds(0, 0, 1, 1, 64, 64)
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64, count=1,
-        dtype="float32", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data, 1)
     return path
@@ -55,8 +82,15 @@ def continuous_int_many_values(tmp_path):
     data = np.arange(0, 64 * 64, dtype="int16").reshape(64, 64)
     transform = from_bounds(0, 0, 1, 1, 64, 64)
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64, count=1,
-        dtype="int16", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="int16",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data, 1)
     return path
@@ -68,8 +102,16 @@ def categorical_tif_with_nodata(tmp_path):
     data = np.array([[1, 2, 255], [3, 255, 1]], dtype="uint8")
     transform = from_bounds(0, 0, 1, 1, 3, 2)
     with rasterio.open(
-        path, "w", driver="GTiff", width=3, height=2, count=1,
-        dtype="uint8", crs="EPSG:4326", transform=transform, nodata=255,
+        path,
+        "w",
+        driver="GTiff",
+        width=3,
+        height=2,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
+        nodata=255,
     ) as dst:
         dst.write(data, 1)
     return path
@@ -120,8 +162,15 @@ def test_multiband_raster_rejected(tmp_path):
     data = np.zeros((3, 4, 4), dtype="uint8")
     transform = from_bounds(0, 0, 1, 1, 4, 4)
     with rasterio.open(
-        path, "w", driver="GTiff", width=4, height=4, count=3,
-        dtype="uint8", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=4,
+        height=4,
+        count=3,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data)
     result = detect_categories(path)
@@ -133,8 +182,15 @@ def test_uint8_without_colormap_many_values_not_categorical(tmp_path):
     data = np.arange(0, 64, dtype="uint8").repeat(64).reshape(64, 64)
     transform = from_bounds(0, 0, 1, 1, 64, 64)
     with rasterio.open(
-        path, "w", driver="GTiff", width=64, height=64, count=1,
-        dtype="uint8", crs="EPSG:4326", transform=transform,
+        path,
+        "w",
+        driver="GTiff",
+        width=64,
+        height=64,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
     ) as dst:
         dst.write(data, 1)
     result = detect_categories(path)

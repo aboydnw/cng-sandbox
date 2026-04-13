@@ -176,13 +176,15 @@ def test_patch_categories_updates_labels(client, db_session):
         format_pair="geotiff-to-cog",
         tile_url="/tiles",
         workspace_id="testABCD",
-        metadata_json=json.dumps({
-            "is_categorical": True,
-            "categories": [
-                {"value": 1, "color": "#FF0000", "label": "Class 1"},
-                {"value": 2, "color": "#00FF00", "label": "Class 2"},
-            ],
-        }),
+        metadata_json=json.dumps(
+            {
+                "is_categorical": True,
+                "categories": [
+                    {"value": 1, "color": "#FF0000", "label": "Class 1"},
+                    {"value": 2, "color": "#00FF00", "label": "Class 2"},
+                ],
+            }
+        ),
     )
     db_session.add(row)
     db_session.commit()
@@ -236,12 +238,14 @@ def test_patch_categories_rejects_invalid_value(client, db_session):
         format_pair="geotiff-to-cog",
         tile_url="/tiles",
         workspace_id="testABCD",
-        metadata_json=json.dumps({
-            "is_categorical": True,
-            "categories": [
-                {"value": 1, "color": "#FF0000", "label": "Class 1"},
-            ],
-        }),
+        metadata_json=json.dumps(
+            {
+                "is_categorical": True,
+                "categories": [
+                    {"value": 1, "color": "#FF0000", "label": "Class 1"},
+                ],
+            }
+        ),
     )
     db_session.add(row)
     db_session.commit()

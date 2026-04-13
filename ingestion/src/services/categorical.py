@@ -9,10 +9,26 @@ MAX_UNIQUE_VALUES = 30
 HEURISTIC_INT_DTYPES = frozenset({"uint8", "int8", "uint16", "int16"})
 
 QUALITATIVE_PALETTE = [
-    "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F",
-    "#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC",
-    "#86BCB6", "#8CD17D", "#B6992D", "#499894", "#D37295",
-    "#D4A6C8", "#FABFD2", "#B3E2CD", "#F1CE63", "#A0CBE8",
+    "#4E79A7",
+    "#F28E2B",
+    "#E15759",
+    "#76B7B2",
+    "#59A14F",
+    "#EDC948",
+    "#B07AA1",
+    "#FF9DA7",
+    "#9C755F",
+    "#BAB0AC",
+    "#86BCB6",
+    "#8CD17D",
+    "#B6992D",
+    "#499894",
+    "#D37295",
+    "#D4A6C8",
+    "#FABFD2",
+    "#B3E2CD",
+    "#F1CE63",
+    "#A0CBE8",
 ]
 
 
@@ -60,6 +76,7 @@ def detect_categories(raster_path: str) -> CategoricalResult:
             non_default = {k: v for k, v in colormap.items() if v != (0, 0, 0, 255)}
             if non_default:
                 import numpy as np
+
                 data = src.read(1)
                 present_values = set(int(v) for v in np.unique(data))
                 if nodata is not None:
@@ -70,13 +87,18 @@ def detect_categories(raster_path: str) -> CategoricalResult:
                         continue
                     if len(rgba) >= 4 and rgba[3] == 0:
                         continue
-                    categories.append(Category(
-                        value=int(value),
-                        color=_rgba_to_hex(*rgba),
-                        label=f"Class {value}",
-                    ))
+                    categories.append(
+                        Category(
+                            value=int(value),
+                            color=_rgba_to_hex(*rgba),
+                            label=f"Class {value}",
+                        )
+                    )
                 if categories:
-                    logger.info("Detected categorical raster via color table: %d classes", len(categories))
+                    logger.info(
+                        "Detected categorical raster via color table: %d classes",
+                        len(categories),
+                    )
                     return CategoricalResult(is_categorical=True, categories=categories)
         except Exception as exc:
             logger.debug("Color table read failed: %s", exc)
@@ -84,6 +106,7 @@ def detect_categories(raster_path: str) -> CategoricalResult:
         # Tier 2: GDAL Raster Attribute Table
         try:
             from osgeo import gdal
+
             ds = gdal.Open(raster_path)
             if ds:
                 band = ds.GetRasterBand(1)
@@ -92,7 +115,13 @@ def detect_categories(raster_path: str) -> CategoricalResult:
                     label_col = -1
                     for col_idx in range(rat.GetColumnCount()):
                         col_name = rat.GetNameOfCol(col_idx).lower()
-                        if col_name in ("class", "name", "label", "description", "category"):
+                        if col_name in (
+                            "class",
+                            "name",
+                            "label",
+                            "description",
+                            "category",
+                        ):
                             label_col = col_idx
                             break
                     categories = []
@@ -100,13 +129,26 @@ def detect_categories(raster_path: str) -> CategoricalResult:
                         value = int(rat.GetValueAsInt(row, 0))
                         if nodata is not None and value == int(nodata):
                             continue
-                        label = rat.GetValueAsString(row, label_col) if label_col >= 0 else f"Class {value}"
-                        categories.append(Category(
-                            value=value, color=_assign_palette_color(row), label=label,
-                        ))
+                        label = (
+                            rat.GetValueAsString(row, label_col)
+                            if label_col >= 0
+                            else f"Class {value}"
+                        )
+                        categories.append(
+                            Category(
+                                value=value,
+                                color=_assign_palette_color(row),
+                                label=label,
+                            )
+                        )
                     if categories:
-                        logger.info("Detected categorical raster via RAT: %d classes", len(categories))
-                        return CategoricalResult(is_categorical=True, categories=categories)
+                        logger.info(
+                            "Detected categorical raster via RAT: %d classes",
+                            len(categories),
+                        )
+                        return CategoricalResult(
+                            is_categorical=True, categories=categories
+                        )
                 ds = None
         except ImportError:
             pass
@@ -138,9 +180,16 @@ def detect_categories(raster_path: str) -> CategoricalResult:
 
         categories = []
         for i, value in enumerate(sorted(unique_values)):
-            categories.append(Category(
-                value=int(value), color=_assign_palette_color(i), label=f"Class {value}",
-            ))
+            categories.append(
+                Category(
+                    value=int(value),
+                    color=_assign_palette_color(i),
+                    label=f"Class {value}",
+                )
+            )
 
-        logger.info("Detected categorical raster via heuristic: %d unique values", len(categories))
+        logger.info(
+            "Detected categorical raster via heuristic: %d unique values",
+            len(categories),
+        )
         return CategoricalResult(is_categorical=True, categories=categories)

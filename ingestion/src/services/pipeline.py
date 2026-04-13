@@ -603,11 +603,15 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             created_at=job.created_at,
             raster_min=raster_min,
             raster_max=raster_max,
-            is_categorical=categorical_result.is_categorical if categorical_result else False,
+            is_categorical=categorical_result.is_categorical
+            if categorical_result
+            else False,
             categories=[
                 CategoryInfo(value=c.value, color=c.color, label=c.label)
                 for c in categorical_result.categories
-            ] if categorical_result and categorical_result.is_categorical else None,
+            ]
+            if categorical_result and categorical_result.is_categorical
+            else None,
             crs=raster_geo_meta.crs
             if raster_geo_meta
             else (vector_geo_meta.crs if vector_geo_meta else None),

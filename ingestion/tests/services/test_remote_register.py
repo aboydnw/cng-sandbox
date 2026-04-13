@@ -2,14 +2,29 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from src.models import Job
+from src.models.base import Base
 from src.services.enumerators import RemoteItem
 from src.services.remote_register import (
     RemoteRegistrationError,
     register_remote_collection,
 )
 from src.services.source_coop_config import SourceCoopProduct
+
+
+@pytest.fixture
+def db_session_factory():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    return sessionmaker(bind=engine)
 
 
 @pytest.fixture
@@ -182,3 +197,57 @@ def test_format_datetime_z_naive_datetime_passthrough():
 
     dt = datetime(2024, 2, 3, 12, 34, 56)
     assert _format_datetime_z(dt) == "2024-02-03T12:34:56Z"
+
+
+def test_register_remote_collection_marks_example(monkeypatch, db_session_factory):
+    """When is_example=True, the persisted row has is_example and no workspace."""
+    import asyncio
+
+    from src.models import Job
+    from src.models.dataset import DatasetRow
+    from src.services import remote_register, stac_ingest
+    from src.services.enumerators import RemoteItem
+    from src.services.source_coop_config import get_product
+
+    async def fake_ingest(**kwargs):
+        return "/raster/tile/{z}/{x}/{y}"
+
+    async def fake_band_meta(href):
+        return 1, ["b1"], ["gray"], "float32"
+
+    async def fake_stats(hrefs):
+        return 0.0, 1.0
+
+    monkeypatch.setattr(stac_ingest, "ingest_mosaic_raster", fake_ingest)
+    monkeypatch.setattr(remote_register, "_read_band_meta", fake_band_meta)
+    monkeypatch.setattr(remote_register, "_compute_remote_stats", fake_stats)
+
+    job = Job(filename="test")
+    job.workspace_id = "wsABCD0000"
+    product = get_product("alexgleith/gebco-2024")
+    items = [
+        RemoteItem(
+            href="https://example.com/a.tif",
+            datetime=None,
+            bbox=[-1.0, -1.0, 1.0, 1.0],
+        )
+    ]
+
+    asyncio.run(
+        remote_register.register_remote_collection(
+            job=job,
+            product=product,
+            items=items,
+            db_session_factory=db_session_factory,
+            is_example=True,
+        )
+    )
+
+    session = db_session_factory()
+    try:
+        rows = session.query(DatasetRow).all()
+        assert len(rows) == 1
+        assert rows[0].is_example is True
+        assert rows[0].workspace_id is None
+    finally:
+        session.close()

@@ -62,9 +62,14 @@ export function buildLayersForChapter(
     if (conn.connection_type === "cog") {
       let finalTileUrl = tileUrl;
       if (conn.band_count === 1) {
+        const effColormap = lc.colormap_reversed ? `${lc.colormap}_r` : lc.colormap;
         const sep = finalTileUrl.includes("?") ? "&" : "?";
-        finalTileUrl += `${sep}colormap_name=${lc.colormap}`;
-        if (conn.rescale) {
+        finalTileUrl += `${sep}colormap_name=${effColormap}`;
+        const effMin = lc.rescale_min;
+        const effMax = lc.rescale_max;
+        if (effMin != null && effMax != null) {
+          finalTileUrl += `&rescale=${effMin},${effMax}`;
+        } else if (conn.rescale) {
           finalTileUrl += `&rescale=${conn.rescale}`;
         }
       }
@@ -128,9 +133,12 @@ export function buildLayersForChapter(
   if (ds.dataset_type === "raster") {
     const base = ds.tile_url;
     const sep = base.includes("?") ? "&" : "?";
-    let tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
-    if (ds.raster_min != null && ds.raster_max != null) {
-      tileUrl += `&rescale=${ds.raster_min},${ds.raster_max}`;
+    const effColormap = lc.colormap_reversed ? `${lc.colormap}_r` : lc.colormap;
+    const effMin = lc.rescale_min != null ? lc.rescale_min : ds.raster_min;
+    const effMax = lc.rescale_max != null ? lc.rescale_max : ds.raster_max;
+    let tileUrl = `${base}${sep}colormap_name=${effColormap}`;
+    if (effMin != null && effMax != null) {
+      tileUrl += `&rescale=${effMin},${effMax}`;
     }
     if (ds.is_temporal && ds.timesteps.length > 0) {
       const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;

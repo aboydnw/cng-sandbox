@@ -145,5 +145,6 @@ class Dataset(BaseModel):
     workspace_id: str | None = None
     is_mosaic: bool = False
     is_zero_copy: bool = False
+    is_example: bool = False
     source_url: str | None = None
     expires_at: datetime | None = None

@@ -31,9 +31,16 @@ async def list_datasets(request: Request):
     validate_workspace_id(workspace_id)
     session = get_session(request)
     try:
+        from sqlalchemy import or_
+
         rows = (
             session.query(DatasetRow)
-            .filter(DatasetRow.workspace_id == workspace_id)
+            .filter(
+                or_(
+                    DatasetRow.workspace_id == workspace_id,
+                    DatasetRow.is_example.is_(True),
+                )
+            )
             .order_by(DatasetRow.created_at.desc())
             .all()
         )
@@ -71,6 +78,10 @@ async def delete_dataset_endpoint(dataset_id: str, request: Request):
         row = session.get(DatasetRow, dataset_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be deleted"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         storage = StorageService()
@@ -93,6 +104,10 @@ async def update_category_labels(
         row = session.get(DatasetRow, dataset_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
 

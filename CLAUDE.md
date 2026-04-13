@@ -228,10 +228,10 @@ cd ingestion && uv run pytest -v
 - `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
 
 **Datasets:**
-- `GET /api/datasets` — List all converted datasets
-- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`)
-- `DELETE /api/datasets/{id}` — Delete a dataset
-- `PATCH /api/datasets/{id}/categories` — Update category labels for a categorical raster; body is a list of `{"value": int, "label": str}` objects; returns 400 if dataset is not categorical or a value doesn't exist
+- `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace)
+- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url` and `is_example`)
+- `DELETE /api/datasets/{id}` — Delete a dataset; returns 403 if the dataset is an example (`is_example=True`) or belongs to another workspace
+- `PATCH /api/datasets/{id}/categories` — Update category labels for a categorical raster; body is a list of `{"value": int, "label": str}` objects; returns 400 if dataset is not categorical or a value doesn't exist, 403 if the dataset is an example
 
 **Stories (shareable map narratives):**
 - `POST /api/stories` — Create a story with chapters linking to datasets
@@ -255,6 +255,10 @@ cd ingestion && uv run pytest -v
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
 - `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources)
 - `GET /api/health` — Health check
+
+### Example datasets
+
+On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and are surfaced to every workspace's `GET /api/datasets` response so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly.
 
 ### Conversion pipeline
 

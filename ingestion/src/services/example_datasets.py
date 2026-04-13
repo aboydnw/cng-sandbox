@@ -59,6 +59,14 @@ def ordered_products() -> list[SourceCoopProduct]:
     return fast + slow
 
 
+def missing_example_products(
+    db_session_factory: sessionmaker,
+) -> list[SourceCoopProduct]:
+    """Return curated products not yet registered as example datasets."""
+    already = _existing_example_source_urls(db_session_factory)
+    return [p for p in ordered_products() if p.listing_url not in already]
+
+
 def _existing_example_source_urls(db_session_factory: sessionmaker) -> set[str]:
     """Return the set of source.coop listing URLs already registered as examples."""
     session = db_session_factory()

@@ -32,6 +32,25 @@ interface UseLayerBuilderOptions {
   onVectorClick?: (info: any) => void;
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.substring(0, 2), 16),
+    parseInt(h.substring(2, 4), 16),
+    parseInt(h.substring(4, 6), 16),
+  ];
+}
+
+function buildCategoricalColormap(
+  categories: { value: number; color: string }[]
+): string {
+  const map: Record<string, number[]> = {};
+  for (const cat of categories) {
+    map[String(cat.value)] = hexToRgb(cat.color);
+  }
+  return JSON.stringify(map);
+}
+
 export function useLayerBuilder({
   item,
   renderMode,
@@ -71,6 +90,12 @@ export function useLayerBuilder({
     const base = item.tileUrl;
     if (!base) return "";
     const separator = base.includes("?") ? "&" : "?";
+
+    // Categorical rasters: discrete colormap + nearest resampling
+    if (item.isCategorical && item.categories && item.categories.length > 0) {
+      const colormapJson = buildCategoricalColormap(item.categories);
+      return `${base}${separator}colormap=${encodeURIComponent(colormapJson)}&resampling=nearest`;
+    }
 
     if (isSingleBand) {
       let url = `${base}${separator}colormap_name=${colormapName}`;

@@ -1,22 +1,44 @@
-import { useState } from "react";
 import { Box, Flex, Heading, SimpleGrid, Text } from "@chakra-ui/react";
 import { Globe } from "@phosphor-icons/react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   sourceCoopCatalog,
   type SourceCoopProduct,
 } from "../lib/sourceCoopCatalog";
+import { useWorkspace } from "../hooks/useWorkspace";
+import type { Dataset } from "../types";
 import {
-  cardHover,
   cardActive,
+  cardHover,
   focusRing,
   transition,
 } from "../lib/interactionStyles";
 
 interface SourceCoopGalleryProps {
-  onSelect: (slug: string) => void;
+  datasets: Dataset[];
 }
 
-export function SourceCoopGallery({ onSelect }: SourceCoopGalleryProps) {
+function listingUrlForSlug(slug: string): string {
+  return `https://data.source.coop/${slug}/`;
+}
+
+function matchDataset(
+  datasets: Dataset[],
+  slug: string,
+): Dataset | undefined {
+  const target = listingUrlForSlug(slug);
+  return datasets.find(
+    (d) =>
+      d.is_example &&
+      (d as Dataset & { source_url?: string }).source_url === target,
+  );
+}
+
+export function SourceCoopGallery({ datasets }: SourceCoopGalleryProps) {
+  const navigate = useNavigate();
+  const { workspacePath } = useWorkspace();
+
   return (
     <Box as="section" py={8}>
       <Flex align="center" gap={2} mb={2}>
@@ -40,13 +62,20 @@ export function SourceCoopGallery({ onSelect }: SourceCoopGalleryProps) {
       </Text>
 
       <SimpleGrid columns={{ base: 1, md: 3 }} gap={5}>
-        {sourceCoopCatalog.map((product) => (
-          <ProductCard
-            key={product.slug}
-            product={product}
-            onClick={() => onSelect(product.slug)}
-          />
-        ))}
+        {sourceCoopCatalog.map((product) => {
+          const dataset = matchDataset(datasets, product.slug);
+          return (
+            <ProductCard
+              key={product.slug}
+              product={product}
+              disabled={!dataset}
+              onClick={() => {
+                if (!dataset) return;
+                navigate(workspacePath(`/map/${dataset.id}`));
+              }}
+            />
+          );
+        })}
       </SimpleGrid>
     </Box>
   );
@@ -54,16 +83,18 @@ export function SourceCoopGallery({ onSelect }: SourceCoopGalleryProps) {
 
 interface ProductCardProps {
   product: SourceCoopProduct;
+  disabled: boolean;
   onClick: () => void;
 }
 
-function ProductCard({ product, onClick }: ProductCardProps) {
+function ProductCard({ product, disabled, onClick }: ProductCardProps) {
   const [imageBroken, setImageBroken] = useState(false);
   const fallbackLetter = product.name.charAt(0).toUpperCase();
 
   return (
     <Box
-      as="button"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {...({ as: "button", disabled } as any)}
       onClick={onClick}
       tabIndex={0}
       border="2px solid"
@@ -72,10 +103,11 @@ function ProductCard({ product, onClick }: ProductCardProps) {
       overflow="hidden"
       bg="white"
       textAlign="left"
-      cursor="pointer"
+      cursor={disabled ? "not-allowed" : "pointer"}
+      opacity={disabled ? 0.55 : 1}
       transition={transition(200)}
-      _hover={cardHover}
-      _active={cardActive}
+      _hover={disabled ? undefined : cardHover}
+      _active={disabled ? undefined : cardActive}
       _focusVisible={focusRing}
       width="100%"
       display="block"
@@ -124,6 +156,16 @@ function ProductCard({ product, onClick }: ProductCardProps) {
         <Text fontSize="13px" color="brand.textSecondary" lineHeight={1.5}>
           {product.description}
         </Text>
+        {disabled && (
+          <Text
+            fontSize="12px"
+            color="brand.textSecondary"
+            mt={2}
+            fontStyle="italic"
+          >
+            Preparing…
+          </Text>
+        )}
       </Box>
     </Box>
   );

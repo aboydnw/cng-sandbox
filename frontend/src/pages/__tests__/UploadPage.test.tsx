@@ -13,6 +13,7 @@ vi.mock("../../lib/api", () => ({
     create: vi.fn().mockResolvedValue({ id: "test-conn-1" }),
   },
   setWorkspaceId: vi.fn(),
+  workspaceFetch: vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) }),
 }));
 
 vi.mock("../../lib/connections", () => ({

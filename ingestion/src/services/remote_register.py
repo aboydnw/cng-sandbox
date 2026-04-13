@@ -75,12 +75,17 @@ def _compute_remote_stats_sync(
                     overviews = src.overviews(band_idx)
                     if overviews:
                         level = overviews[-1]
-                        data = src.read(
-                            band_idx,
-                            out_shape=(src.height // level, src.width // level),
-                        ).astype(np.float64)
+                        out_shape = (
+                            max(1, src.height // level),
+                            max(1, src.width // level),
+                        )
                     else:
-                        data = src.read(band_idx).astype(np.float64)
+                        scale = max(1.0, max(src.height, src.width) / 1024)
+                        out_shape = (
+                            max(1, int(src.height / scale)),
+                            max(1, int(src.width / scale)),
+                        )
+                    data = src.read(band_idx, out_shape=out_shape).astype(np.float64)
                     if src.nodata is not None:
                         valid = data[data != src.nodata]
                     else:
@@ -89,7 +94,8 @@ def _compute_remote_stats_sync(
                     if valid.size > 0:
                         all_valid.append(valid)
         except Exception:
-            logger.warning("Failed to read stats from %s, skipping", vsi_path)
+            safe_path = vsi_path.split("?", 1)[0]
+            logger.warning("Failed to read stats from %s, skipping", safe_path)
             continue
 
     if not all_valid:

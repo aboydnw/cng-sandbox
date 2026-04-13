@@ -37,12 +37,40 @@ async def _cleanup_scans():
 
 
 async def _register_examples(app):
-    try:
-        from src.services.example_datasets import register_example_datasets
+    """Register example datasets with bounded retry for transient startup failures.
 
-        await register_example_datasets(db_session_factory=app.state.db_session_factory)
-    except Exception:
-        logger.exception("Example dataset registration failed")
+    If upstream dependencies (database, STAC API, remote tiles) are not ready
+    when the ingestion container boots, registering any product may raise.
+    Retry a few times with backoff so a slow-starting deploy still populates
+    the gallery without requiring a manual restart.
+    """
+    from src.services.example_datasets import (
+        missing_example_products,
+        register_example_datasets,
+    )
+
+    backoffs = [0, 30, 60, 120, 240]
+    for attempt, delay in enumerate(backoffs, start=1):
+        if delay:
+            await asyncio.sleep(delay)
+        try:
+            await register_example_datasets(
+                db_session_factory=app.state.db_session_factory
+            )
+            missing = missing_example_products(app.state.db_session_factory)
+            if not missing:
+                return
+            logger.warning(
+                "Example dataset registration incomplete after attempt %d "
+                "(still missing: %s)",
+                attempt,
+                [p.slug for p in missing],
+            )
+        except Exception:
+            logger.exception("Example dataset registration attempt %d failed", attempt)
+    logger.error(
+        "Gave up registering example datasets after %d attempts", len(backoffs)
+    )
 
 
 async def _cleanup_expired(app):

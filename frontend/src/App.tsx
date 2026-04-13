@@ -38,6 +38,7 @@ function WorkspaceRoutes() {
         <Route path="/story/new" element={<StoryEditorPage />} />
         <Route path="/story/:id" element={<StoryReaderRedirect />} />
         <Route path="/story/:id/edit" element={<StoryEditorPage />} />
+        <Route path="/about" element={<AboutPage />} />
       </Routes>
     </WorkspaceProvider>
   );
@@ -51,7 +52,6 @@ export default function App() {
       <Route path="/map/:id" element={<MapPage shared />} />
       <Route path="/story/:id" element={<StoryReaderPage />} />
       <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
-      <Route path="/about" element={<AboutPage />} />
       <Route path="*" element={<WorkspaceRedirect />} />
     </Routes>
   );

@@ -1,15 +1,25 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, it, expect } from "vitest";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
+import { WorkspaceProvider } from "../../hooks/useWorkspace";
 import AboutPage from "../AboutPage";
 
 function renderAbout() {
   return render(
     <ChakraProvider value={system}>
-      <MemoryRouter>
-        <AboutPage />
+      <MemoryRouter initialEntries={["/w/test-workspace/about"]}>
+        <Routes>
+          <Route
+            path="/w/:workspaceId/*"
+            element={
+              <WorkspaceProvider>
+                <AboutPage />
+              </WorkspaceProvider>
+            }
+          />
+        </Routes>
       </MemoryRouter>
     </ChakraProvider>
   );
@@ -19,9 +29,7 @@ describe("AboutPage", () => {
   it("renders the mission section", () => {
     renderAbout();
     expect(screen.getByText("About CNG Sandbox")).toBeTruthy();
-    expect(
-      screen.getByText(/hands-on demonstration of the cloud-native/)
-    ).toBeTruthy();
+    expect(screen.getByText(/cloud-native geospatial ecosystem/)).toBeTruthy();
   });
 
   it("renders all pipeline steps", () => {

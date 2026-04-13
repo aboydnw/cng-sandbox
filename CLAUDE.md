@@ -215,16 +215,45 @@ cd ingestion && uv run pytest -v
 
 ### Key endpoints
 
+**Upload & conversion:**
 - `POST /api/upload` — Upload a file (multipart form); returns 409 with `{"detail": "duplicate_dataset", "dataset_id": ..., "filename": ...}` if a file with the same name already exists in the workspace
 - `POST /api/convert-url` — Fetch and convert a file from a URL; same 409 duplicate response as above
 - `GET /api/check-duplicate?filename=<name>` — Preflight duplicate check; returns 409 if a dataset with that filename exists, or `{"duplicate": false}` if not
 - `POST /api/check-format` — Pre-upload format validation; accepts a file chunk and filename, returns `{"valid": true}` or `{"valid": false, "error": "..."}`
 - `POST /api/upload-temporal` — Upload multiple raster files as a time series (2–50 files, same format)
+- `POST /api/scan/{scan_id}/convert` — Trigger conversion after a scan completes
+
+**Jobs:**
+- `GET /api/jobs/{id}` — Get job status
 - `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
+
+**Datasets:**
 - `GET /api/datasets` — List all converted datasets
 - `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`)
+- `DELETE /api/datasets/{id}` — Delete a dataset
 - `PATCH /api/datasets/{id}/categories` — Update category labels for a categorical raster; body is a list of `{"value": int, "label": str}` objects; returns 400 if dataset is not categorical or a value doesn't exist
+
+**Stories (shareable map narratives):**
+- `POST /api/stories` — Create a story with chapters linking to datasets
+- `GET /api/stories` — List stories in the workspace
+- `GET /api/stories/{id}` — Get a story by ID
+- `PATCH /api/stories/{id}` — Update a story
+- `DELETE /api/stories/{id}` — Delete a story
+
+**Connections (external tile sources):**
+- `GET /api/connections` — List connections in the workspace
+- `POST /api/connections` — Register an external tile source (XYZ raster/vector, COG, PMTiles)
+- `GET /api/connections/{id}` — Get a connection by ID
+- `DELETE /api/connections/{id}` — Delete a connection
+
+**Remote data discovery:**
+- `POST /api/discover` — Discover geospatial files at a URL or S3 prefix
+- `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset
 - `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ghrsst-mur-v2-2024`, `gebco-2024`, `lg-land-carbon`)
+
+**Other:**
+- `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
+- `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources)
 - `GET /api/health` — Health check
 
 ### Conversion pipeline

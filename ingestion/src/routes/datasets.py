@@ -31,9 +31,16 @@ async def list_datasets(request: Request):
     validate_workspace_id(workspace_id)
     session = get_session(request)
     try:
+        from sqlalchemy import or_
+
         rows = (
             session.query(DatasetRow)
-            .filter(DatasetRow.workspace_id == workspace_id)
+            .filter(
+                or_(
+                    DatasetRow.workspace_id == workspace_id,
+                    DatasetRow.is_example.is_(True),
+                )
+            )
             .order_by(DatasetRow.created_at.desc())
             .all()
         )

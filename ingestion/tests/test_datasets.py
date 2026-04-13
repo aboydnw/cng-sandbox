@@ -273,3 +273,62 @@ def test_storage_delete_prefix():
         obstore.get(store, "datasets/ds-001/file1")
     with pytest.raises(FileNotFoundError):
         obstore.get(store, "datasets/ds-001/file2")
+
+
+def test_list_datasets_includes_examples(client, app):
+    """Example datasets appear in the list regardless of workspace."""
+    from datetime import UTC, datetime
+
+    from src.models.dataset import DatasetRow
+
+    session = app.state.db_session_factory()
+    try:
+        session.add(
+            DatasetRow(
+                id="example-gebco",
+                filename="GEBCO 2024",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json="{}",
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.add(
+            DatasetRow(
+                id="mine",
+                filename="mine.tif",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json="{}",
+                is_example=False,
+                workspace_id="testABCD",
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.add(
+            DatasetRow(
+                id="other",
+                filename="other.tif",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json="{}",
+                is_example=False,
+                workspace_id="otherXYZ1",
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    resp = client.get("/api/datasets")
+    assert resp.status_code == 200
+    ids = {d["id"] for d in resp.json()}
+    assert "example-gebco" in ids
+    assert "mine" in ids
+    assert "other" not in ids

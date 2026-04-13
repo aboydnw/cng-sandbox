@@ -80,6 +80,18 @@ def _migrate_schema(engine):
             conn.rollback()
             if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
                 raise
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE datasets ADD COLUMN is_example BOOLEAN "
+                    "NOT NULL DEFAULT FALSE"
+                )
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
+                raise
 
 
 @asynccontextmanager

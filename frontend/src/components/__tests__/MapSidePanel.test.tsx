@@ -30,12 +30,25 @@ vi.mock("../ConnectionInfoCard", () => ({
 
 const mockItem: MapItem = {
   id: "test-id",
+  name: "test.tif",
   source: "dataset",
   dataType: "raster",
+  tileUrl: "/raster/tiles",
+  bounds: null,
+  minZoom: null,
+  maxZoom: null,
+  bandCount: 1,
+  bandNames: null,
+  colorInterpretation: null,
+  rasterMin: null,
+  rasterMax: null,
+  cogUrl: null,
+  rescale: null,
+  parquetUrl: null,
+  isTemporal: false,
+  timesteps: [],
   dataset: null,
   connection: null,
-  tileUrl: "/raster/tiles",
-  parquetUrl: null,
 };
 
 const defaultProps = {

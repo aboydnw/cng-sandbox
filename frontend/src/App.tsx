@@ -11,6 +11,7 @@ import LibraryPage from "./pages/LibraryPage";
 import StoryReaderPage from "./pages/StoryReaderPage";
 import StoryEditorPage from "./pages/StoryEditorPage";
 import StoryEmbedPage from "./pages/StoryEmbedPage";
+import AboutPage from "./pages/AboutPage";
 import { WelcomeToast } from "./components/WelcomeToast";
 
 function StoryReaderRedirect() {
@@ -50,6 +51,7 @@ export default function App() {
       <Route path="/map/:id" element={<MapPage shared />} />
       <Route path="/story/:id" element={<StoryReaderPage />} />
       <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="*" element={<WorkspaceRedirect />} />
     </Routes>
   );

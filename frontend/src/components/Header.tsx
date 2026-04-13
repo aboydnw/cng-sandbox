@@ -59,6 +59,16 @@ export function Header({ children }: HeaderProps) {
             Library
           </Text>
         </Link>
+        <Link to="/about" style={{ textDecoration: "none" }}>
+          <Text
+            fontSize="sm"
+            fontWeight={500}
+            color="gray.600"
+            _hover={{ color: "gray.800" }}
+          >
+            About
+          </Text>
+        </Link>
       </Flex>
       <Flex
         align="center"

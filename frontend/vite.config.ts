@@ -110,6 +110,6 @@ export default defineConfig({
       },
     },
     globals: true,
-    setupFiles: [],
+    setupFiles: ["./src/test-setup.ts"],
   },
 });

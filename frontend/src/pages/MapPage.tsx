@@ -464,6 +464,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               onCategoriesChange={setLocalCategories}
               onCategoricalOverride={controls.setCategoricalOverride}
               showCategoricalToggle={!!item?.isCategorical}
+              rescaleMin={controls.rescaleMin}
+              rescaleMax={controls.rescaleMax}
+              datasetMin={item?.rasterMin ?? null}
+              datasetMax={item?.rasterMax ?? null}
+              onRescaleChange={controls.setRescale}
+              colormapReversed={controls.colormapReversed}
+              onColormapReversedChange={controls.setColormapReversed}
               shared={shared}
             />
           </Box>

@@ -59,7 +59,7 @@ export function Header({ children }: HeaderProps) {
             Library
           </Text>
         </Link>
-        <Link to="/about" style={{ textDecoration: "none" }}>
+        <Link to={workspacePath("/about")} style={{ textDecoration: "none" }}>
           <Text
             fontSize="sm"
             fontWeight={500}

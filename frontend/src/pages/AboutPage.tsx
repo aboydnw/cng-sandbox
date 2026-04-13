@@ -6,7 +6,7 @@ import {
   GlobeHemisphereWest,
   ArrowRight,
 } from "@phosphor-icons/react";
-import { SharedHeader } from "../components/SharedHeader";
+import { Header } from "../components/Header";
 
 const PIPELINE_STEPS = [
   {
@@ -97,7 +97,7 @@ const OPEN_SOURCE_STACK = [
 export default function AboutPage() {
   return (
     <Box minH="100vh" bg="gray.50">
-      <SharedHeader />
+      <Header />
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Box mb={10}>
           <Heading size="lg" color="brand.brown" mb={4}>
@@ -148,19 +148,13 @@ export default function AboutPage() {
                 flex={1}
                 gap={{ base: 3, md: 0 }}
               >
-                <Flex
-                  align="center"
-                  justify="center"
-                  w={12}
-                  h={12}
-                  borderRadius="full"
-                  bg="brand.orange"
-                  color="white"
-                  flexShrink={0}
-                  mb={{ base: 0, md: 2 }}
-                >
-                  <step.icon size={24} />
-                </Flex>
+                <Box flexShrink={0} mb={{ base: 0, md: 2 }}>
+                  <step.icon
+                    size={28}
+                    weight="duotone"
+                    color="var(--chakra-colors-gray-500)"
+                  />
+                </Box>
                 <Box flex={1}>
                   <Text fontWeight={600} color="gray.800" fontSize="sm">
                     {step.label}
@@ -211,7 +205,7 @@ export default function AboutPage() {
                     Project
                   </Table.ColumnHeader>
                   <Table.ColumnHeader color="gray.600" fontWeight={600}>
-                    Maintained by
+                    Primary maintainer(s)
                   </Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>

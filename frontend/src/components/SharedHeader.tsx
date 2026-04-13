@@ -22,35 +22,23 @@ export function SharedHeader() {
           </Text>
         </Flex>
       </Link>
-      <Flex align="center" gap={6}>
-        <Link to="/about" style={{ textDecoration: "none" }}>
-          <Text
-            fontSize="sm"
-            fontWeight={500}
-            color="gray.600"
-            _hover={{ color: "gray.800" }}
-          >
-            About
-          </Text>
-        </Link>
-        <Link to="/" style={{ textDecoration: "none" }}>
-          <Flex
-            align="center"
-            gap={1.5}
-            bg="brand.orange"
-            color="white"
-            px={4}
-            py={1.5}
-            borderRadius="4px"
-            fontWeight={600}
-            fontSize="sm"
-            _hover={{ bg: "brand.orangeHover" }}
-          >
-            Make your own map
-            <ArrowRight size={14} weight="bold" />
-          </Flex>
-        </Link>
-      </Flex>
+      <Link to="/" style={{ textDecoration: "none" }}>
+        <Flex
+          align="center"
+          gap={1.5}
+          bg="brand.orange"
+          color="white"
+          px={4}
+          py={1.5}
+          borderRadius="4px"
+          fontWeight={600}
+          fontSize="sm"
+          _hover={{ bg: "brand.orangeHover" }}
+        >
+          Make your own map
+          <ArrowRight size={14} weight="bold" />
+        </Flex>
+      </Link>
     </Flex>
   );
 }

@@ -37,6 +37,7 @@ import { detectCadence } from "../utils/temporal";
 import { MapSidePanel } from "../components/MapSidePanel";
 import { useMapData } from "../hooks/useMapData";
 import { useMapControls } from "../hooks/useMapControls";
+import { useRasterOverrides } from "../hooks/useRasterOverrides";
 import { useLayerBuilder } from "../hooks/useLayerBuilder";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Table } from "apache-arrow";
@@ -67,8 +68,33 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     }
   }, [isExpired, id, navigate, workspacePath, workspace]);
 
+  // --- Raster overrides (rescale, flip) from URL ---
+  const { initialOverrides, persist: persistOverrides } = useRasterOverrides(
+    item?.id ?? null,
+    searchParams,
+    setSearchParams
+  );
+
   // --- Controls ---
-  const controls = useMapControls(item);
+  const controls = useMapControls(item, initialOverrides);
+
+  // Persist overrides to URL when they change
+  useEffect(() => {
+    if (!item?.id) return;
+    persistOverrides({
+      rescaleMin: controls.rescaleMin,
+      rescaleMax: controls.rescaleMax,
+      colormapReversed: controls.colormapReversed,
+      colormapName: controls.colormapName,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    item?.id,
+    controls.rescaleMin,
+    controls.rescaleMax,
+    controls.colormapReversed,
+    controls.colormapName,
+  ]);
 
   // --- Camera ---
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
@@ -234,6 +260,9 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     tileCacheRef,
     arrowTable,
     onVectorClick: vectorPopup.onClick,
+    rescaleMin: controls.rescaleMin,
+    rescaleMax: controls.rescaleMax,
+    colormapReversed: controls.colormapReversed,
   });
 
   // --- Color scale for legend ---
@@ -270,6 +299,16 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       return { text: props, style: { fontSize: "12px" } };
     };
   }, [item?.dataType, controls.renderMode]);
+
+  const shareUrl = useMemo(() => {
+    const base = `${window.location.origin}/map/${isConnectionRoute ? "connection/" : ""}${id}`;
+    const params = new URLSearchParams();
+    if (controls.rescaleMin != null) params.set("rmin", String(controls.rescaleMin));
+    if (controls.rescaleMax != null) params.set("rmax", String(controls.rescaleMax));
+    if (controls.colormapReversed) params.set("flip", "1");
+    const qs = params.toString();
+    return qs ? `${base}?${qs}` : base;
+  }, [id, isConnectionRoute, controls.rescaleMin, controls.rescaleMax, controls.colormapReversed]);
 
   // --- Render ---
   if (isLoading) {
@@ -314,9 +353,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
           {item?.connection && (
             <BugReportLink connectionId={item.connection.id} />
           )}
-          <ShareButton
-            shareUrl={`${window.location.origin}/map/${isConnectionRoute ? "connection/" : ""}${id}`}
-          />
+          <ShareButton shareUrl={shareUrl} />
         </Header>
       )}
 

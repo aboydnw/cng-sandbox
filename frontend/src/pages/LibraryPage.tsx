@@ -145,109 +145,205 @@ export default function LibraryPage() {
           </Flex>
         </Flex>
 
-        <Heading size="md" color="gray.700" mb={3}>
-          Datasets
-        </Heading>
+        {(() => {
+          const exampleDatasets = datasets.filter((d) => d.is_example);
+          const userDatasets = datasets.filter((d) => !d.is_example);
 
-        {loading ? (
-          <Flex justify="center" py={12}>
-            <SpinnerGap
-              size={32}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
-          </Flex>
-        ) : datasets.length === 0 ? (
-          <Flex
-            direction="column"
-            align="center"
-            py={12}
-            gap={3}
-            color="gray.500"
-          >
-            <Text>No datasets uploaded yet.</Text>
-            <Link to={workspacePath("/")}>
-              <Text color="brand.orange" fontWeight={600}>
-                Upload your first file
-              </Text>
-            </Link>
-          </Flex>
-        ) : (
-          <Table.Root size="sm" tableLayout="fixed">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>Filename</Table.ColumnHeader>
-                <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                <Table.ColumnHeader w="100px">Uploaded</Table.ColumnHeader>
-                <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
-                <Table.ColumnHeader w="80px" />
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {datasets.map((ds) => (
-                <Table.Row key={ds.id}>
-                  <Table.Cell>
-                    <Link to={workspacePath(`/map/${ds.id}`)}>
-                      <Text
-                        color="blue.600"
-                        _hover={{ textDecoration: "underline" }}
-                        fontWeight={500}
-                        truncate
-                        title={ds.filename}
-                      >
-                        {ds.filename}
-                      </Text>
-                    </Link>
-                    {ds.is_temporal && ds.timesteps.length > 0 && (
-                      <Text fontSize="xs" color="fg.subtle" mt={0.5}>
-                        {formatDateRangeBadge(
-                          ds.timesteps[0].datetime,
-                          ds.timesteps[ds.timesteps.length - 1].datetime,
-                          ds.timesteps.length,
-                          detectCadence(ds.timesteps.map((t) => t.datetime))
-                        )}
-                      </Text>
-                    )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text
-                      fontSize="xs"
-                      fontWeight={600}
-                      textTransform="uppercase"
-                      color={
-                        ds.dataset_type === "raster" ? "purple.600" : "teal.600"
-                      }
-                    >
-                      {ds.dataset_type}
+          return (
+            <>
+              {exampleDatasets.length > 0 && (
+                <Box mb={8}>
+                  <Heading size="md" color="gray.700" mb={3}>
+                    Example datasets
+                  </Heading>
+                  <Text fontSize="13px" color="gray.500" mb={3}>
+                    Public datasets shared with every workspace.
+                  </Text>
+                  <Table.Root size="sm" tableLayout="fixed">
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.ColumnHeader>Filename</Table.ColumnHeader>
+                        <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                        <Table.ColumnHeader w="100px">
+                          Uploaded
+                        </Table.ColumnHeader>
+                        <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {exampleDatasets.map((ds) => (
+                        <Table.Row key={ds.id}>
+                          <Table.Cell>
+                            <Link to={workspacePath(`/map/${ds.id}`)}>
+                              <Text
+                                color="brand.orange"
+                                _hover={{ textDecoration: "underline" }}
+                                fontWeight={500}
+                                truncate
+                                title={ds.filename}
+                              >
+                                {ds.filename}
+                              </Text>
+                            </Link>
+                            {ds.is_temporal && ds.timesteps.length > 0 && (
+                              <Text fontSize="xs" color="fg.subtle" mt={0.5}>
+                                {formatDateRangeBadge(
+                                  ds.timesteps[0].datetime,
+                                  ds.timesteps[ds.timesteps.length - 1]
+                                    .datetime,
+                                  ds.timesteps.length,
+                                  detectCadence(
+                                    ds.timesteps.map((t) => t.datetime)
+                                  )
+                                )}
+                              </Text>
+                            )}
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Text
+                              fontSize="xs"
+                              fontWeight={600}
+                              textTransform="uppercase"
+                              color={
+                                ds.dataset_type === "raster"
+                                  ? "purple.600"
+                                  : "teal.600"
+                              }
+                            >
+                              {ds.dataset_type}
+                            </Text>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Text fontSize="sm" color="gray.600">
+                              {ds.created_at
+                                ? timeAgo(ds.created_at as unknown as string)
+                                : "\u2014"}
+                            </Text>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Text fontSize="sm" color="gray.600">
+                              {formatBytes(ds.original_file_size)}
+                            </Text>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table.Root>
+                </Box>
+              )}
+
+              <Heading size="md" color="gray.700" mb={3}>
+                Your datasets
+              </Heading>
+
+              {loading ? (
+                <Flex justify="center" py={12}>
+                  <SpinnerGap
+                    size={32}
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                </Flex>
+              ) : userDatasets.length === 0 ? (
+                <Flex
+                  direction="column"
+                  align="center"
+                  py={12}
+                  gap={3}
+                  color="gray.500"
+                >
+                  <Text>No datasets uploaded yet.</Text>
+                  <Link to={workspacePath("/")}>
+                    <Text color="brand.orange" fontWeight={600}>
+                      Upload your first file
                     </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontSize="sm" color="gray.600">
-                      {ds.created_at
-                        ? timeAgo(ds.created_at as unknown as string)
-                        : "\u2014"}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontSize="sm" color="gray.600">
-                      {formatBytes(ds.original_file_size)}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      colorScheme="red"
-                      loading={deleting === ds.id}
-                      onClick={() => handleDelete(ds)}
-                    >
-                      Delete
-                    </Button>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
-        )}
+                  </Link>
+                </Flex>
+              ) : (
+                <Table.Root size="sm" tableLayout="fixed">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeader>Filename</Table.ColumnHeader>
+                      <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                      <Table.ColumnHeader w="100px">
+                        Uploaded
+                      </Table.ColumnHeader>
+                      <Table.ColumnHeader w="80px">Size</Table.ColumnHeader>
+                      <Table.ColumnHeader w="80px" />
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {userDatasets.map((ds) => (
+                      <Table.Row key={ds.id}>
+                        <Table.Cell>
+                          <Link to={workspacePath(`/map/${ds.id}`)}>
+                            <Text
+                              color="brand.orange"
+                              _hover={{ textDecoration: "underline" }}
+                              fontWeight={500}
+                              truncate
+                              title={ds.filename}
+                            >
+                              {ds.filename}
+                            </Text>
+                          </Link>
+                          {ds.is_temporal && ds.timesteps.length > 0 && (
+                            <Text fontSize="xs" color="fg.subtle" mt={0.5}>
+                              {formatDateRangeBadge(
+                                ds.timesteps[0].datetime,
+                                ds.timesteps[ds.timesteps.length - 1].datetime,
+                                ds.timesteps.length,
+                                detectCadence(
+                                  ds.timesteps.map((t) => t.datetime)
+                                )
+                              )}
+                            </Text>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={600}
+                            textTransform="uppercase"
+                            color={
+                              ds.dataset_type === "raster"
+                                ? "purple.600"
+                                : "teal.600"
+                            }
+                          >
+                            {ds.dataset_type}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontSize="sm" color="gray.600">
+                            {ds.created_at
+                              ? timeAgo(ds.created_at as unknown as string)
+                              : "\u2014"}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontSize="sm" color="gray.600">
+                            {formatBytes(ds.original_file_size)}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            loading={deleting === ds.id}
+                            onClick={() => handleDelete(ds)}
+                          >
+                            Delete
+                          </Button>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+              )}
+            </>
+          );
+        })()}
 
         {/* Connections section */}
         <Flex justify="space-between" align="center" mt={10} mb={3}>
@@ -309,7 +405,7 @@ export default function LibraryPage() {
                   <Table.Cell>
                     <Link to={workspacePath(`/map/connection/${conn.id}`)}>
                       <Text
-                        color="blue.600"
+                        color="brand.orange"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
                         truncate
@@ -400,7 +496,7 @@ export default function LibraryPage() {
                   <Table.Cell>
                     <Link to={workspacePath(`/story/${story.id}/edit`)}>
                       <Text
-                        color="blue.600"
+                        color="brand.orange"
                         _hover={{ textDecoration: "underline" }}
                         fontWeight={500}
                         truncate

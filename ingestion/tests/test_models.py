@@ -172,3 +172,36 @@ def test_dataset_categorical_fields_populated():
     assert ds.categories[0].value == 1
     assert ds.categories[0].color == "#FF0000"
     assert ds.categories[0].label == "Cropland"
+
+
+def test_dataset_is_example_defaults_false():
+    from datetime import UTC, datetime
+
+    from src.models import Dataset, DatasetType, FormatPair
+
+    d = Dataset(
+        id="abc",
+        filename="x.tif",
+        dataset_type=DatasetType.RASTER,
+        format_pair=FormatPair.GEOTIFF_TO_COG,
+        tile_url="/t",
+        created_at=datetime.now(UTC),
+    )
+    assert d.is_example is False
+
+
+def test_dataset_is_example_set_true():
+    from datetime import UTC, datetime
+
+    from src.models import Dataset, DatasetType, FormatPair
+
+    d = Dataset(
+        id="abc",
+        filename="x.tif",
+        dataset_type=DatasetType.RASTER,
+        format_pair=FormatPair.GEOTIFF_TO_COG,
+        tile_url="/t",
+        created_at=datetime.now(UTC),
+        is_example=True,
+    )
+    assert d.is_example is True

@@ -1,40 +1,58 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import { SourceCoopGallery } from "../SourceCoopGallery";
 import { system } from "../../theme";
+import { SourceCoopGallery } from "../SourceCoopGallery";
 
-function renderWithChakra(ui: React.ReactElement) {
-  return render(<ChakraProvider value={system}>{ui}</ChakraProvider>);
+const navigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom"
+    );
+  return { ...actual, useNavigate: () => navigate };
+});
+
+vi.mock("../../hooks/useWorkspace", () => ({
+  useWorkspace: () => ({ workspacePath: (p: string) => `/w/test${p}` }),
+}));
+
+function wrap(ui: React.ReactElement) {
+  return render(
+    <ChakraProvider value={system}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </ChakraProvider>
+  );
 }
 
 describe("SourceCoopGallery", () => {
-  it("renders a card for every product in the catalog", () => {
-    renderWithChakra(<SourceCoopGallery onSelect={vi.fn()} />);
-
-    expect(screen.getByText(/GHRSST/i)).toBeTruthy();
-    expect(screen.getByText(/GEBCO/i)).toBeTruthy();
-    expect(screen.getByText("Land & Carbon Lab Carbon Data")).toBeTruthy();
+  beforeEach(() => {
+    navigate.mockReset();
   });
 
-  it("calls onSelect with the slug when a card is clicked", () => {
-    const onSelect = vi.fn();
-    renderWithChakra(<SourceCoopGallery onSelect={onSelect} />);
+  it("navigates to the matching example dataset when a card is clicked", async () => {
+    const datasets = [
+      {
+        id: "example-gebco-id",
+        filename: "GEBCO 2024 Bathymetry",
+        source_url: "https://data.source.coop/alexgleith/gebco-2024/",
+        is_example: true,
+      },
+    ];
 
-    fireEvent.click(screen.getByText(/GEBCO/i));
+    wrap(<SourceCoopGallery datasets={datasets as never} />);
 
-    expect(onSelect).toHaveBeenCalledWith("alexgleith/gebco-2024");
+    await userEvent.click(screen.getByRole("button", { name: /GEBCO 2024/i }));
+
+    expect(navigate).toHaveBeenCalledWith("/w/test/map/example-gebco-id");
   });
 
-  it("renders a section heading", () => {
-    renderWithChakra(<SourceCoopGallery onSelect={vi.fn()} />);
-    expect(screen.getByRole("heading", { name: /source\.coop/i })).toBeTruthy();
-  });
+  it("disables a card whose example dataset has not registered yet", () => {
+    wrap(<SourceCoopGallery datasets={[] as never} />);
 
-  it("falls back when a thumbnail fails to load", () => {
-    renderWithChakra(<SourceCoopGallery onSelect={vi.fn()} />);
-    const images = screen.getAllByRole("img");
-    expect(images.length).toBeGreaterThan(0);
-    fireEvent.error(images[0]);
+    const btn = screen.getByRole("button", { name: /GEBCO 2024/i });
+    expect(btn).toBeDisabled();
   });
 });

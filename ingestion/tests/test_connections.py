@@ -115,7 +115,7 @@ def test_get_connection_not_found(client):
 
 def test_create_cog_connection_detects_categorical(client, monkeypatch):
     from src.routes import connections as connections_route
-    from src.services.categorical import Category, CategoricalResult
+    from src.services.categorical import CategoricalResult, Category
 
     def fake_detect(path):
         assert path.startswith("/vsicurl/")
@@ -145,7 +145,9 @@ def test_create_cog_connection_detects_categorical(client, monkeypatch):
     ]
 
 
-def test_create_cog_connection_non_categorical_when_detection_fails(client, monkeypatch):
+def test_create_cog_connection_non_categorical_when_detection_fails(
+    client, monkeypatch
+):
     from src.routes import connections as connections_route
 
     def boom(path):
@@ -168,7 +170,7 @@ def test_create_cog_connection_non_categorical_when_detection_fails(client, monk
 
 def test_patch_connection_categories_updates_labels(client, monkeypatch):
     from src.routes import connections as connections_route
-    from src.services.categorical import Category, CategoricalResult
+    from src.services.categorical import CategoricalResult, Category
 
     monkeypatch.setattr(
         connections_route,

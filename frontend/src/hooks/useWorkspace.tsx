@@ -27,7 +27,7 @@ function getOrCreateHomeWorkspaceId(): string {
   return newId;
 }
 
-interface WorkspaceContextValue {
+export interface WorkspaceContextValue {
   workspaceId: string;
   isHomeWorkspace: boolean;
   workspacePath: (path: string) => string;
@@ -78,4 +78,8 @@ export function useWorkspace(): WorkspaceContextValue {
   if (!ctx)
     throw new Error("useWorkspace must be used within WorkspaceProvider");
   return ctx;
+}
+
+export function useOptionalWorkspace(): WorkspaceContextValue | null {
+  return useContext(WorkspaceContext);
 }

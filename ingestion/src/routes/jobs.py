@@ -4,7 +4,7 @@ import asyncio
 import json
 import time
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from sse_starlette.sse import EventSourceResponse
 
 from src.models import JobStatus
@@ -13,21 +13,28 @@ from src.state import jobs
 router = APIRouter(prefix="/api")
 
 
-@router.get("/jobs/{job_id}")
-async def get_job(job_id: str):
-    """Get the current status of a conversion job."""
+def _get_job_for_workspace(job_id: str, request: Request):
+    """Look up a job, enforcing workspace scoping."""
     job = jobs.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    workspace_id = request.headers.get("x-workspace-id", "")
+    if job.workspace_id and workspace_id != job.workspace_id:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+
+@router.get("/jobs/{job_id}")
+async def get_job(job_id: str, request: Request):
+    """Get the current status of a conversion job."""
+    job = _get_job_for_workspace(job_id, request)
     return job.model_dump()
 
 
 @router.get("/jobs/{job_id}/stream")
-async def stream_job(job_id: str):
+async def stream_job(job_id: str, request: Request):
     """SSE stream of job status updates."""
-    job = jobs.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
+    job = _get_job_for_workspace(job_id, request)
 
     async def event_generator():
         last_status = (None, None)

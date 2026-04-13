@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
-import { useWorkspace } from "../hooks/useWorkspace";
+import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import type { MapItem, Connection } from "../types";
 import type { RenderMode } from "../hooks/useMapControls";
 import { DataSwitcher } from "./DataSwitcher";
@@ -45,6 +45,8 @@ interface MapSidePanelProps {
   onDetailsClick: () => void;
   // Vector
   onTableChange: (table: Table | null) => void;
+  // Shared view
+  shared?: boolean;
 }
 
 export function MapSidePanel({
@@ -66,11 +68,13 @@ export function MapSidePanel({
   bytesTransferred,
   onDetailsClick,
   onTableChange,
+  shared = false,
 }: MapSidePanelProps) {
   const [mode, setMode] = useState<PanelMode>("controls");
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
-  const { workspacePath } = useWorkspace();
+  const workspace = useOptionalWorkspace();
+  const workspacePath = workspace?.workspacePath ?? ((p: string) => p);
 
   const handleUploadCancel = useCallback(() => setMode("controls"), []);
   const handleConnectionCancel = useCallback(() => setMode("controls"), []);
@@ -109,13 +113,15 @@ export function MapSidePanel({
 
   return (
     <Box p={4}>
-      <DataSwitcher
-        activeId={item.id}
-        activeSource={item.source}
-        onUploadClick={() => setMode("upload")}
-        onAddConnectionClick={() => setMode("add-connection")}
-        refreshKey={refreshKey}
-      />
+      {!shared && (
+        <DataSwitcher
+          activeId={item.id}
+          activeSource={item.source}
+          onUploadClick={() => setMode("upload")}
+          onAddConnectionClick={() => setMode("add-connection")}
+          refreshKey={refreshKey}
+        />
+      )}
 
       {/* Raster controls */}
       {item.dataType === "raster" && (
@@ -188,9 +194,11 @@ export function MapSidePanel({
       )}
 
       {/* Story CTA — available for both datasets and connections */}
-      <Box mt={4}>
-        <StoryCTABanner dataset={ds} connection={item.connection} />
-      </Box>
+      {!shared && (
+        <Box mt={4}>
+          <StoryCTABanner dataset={ds} connection={item.connection} />
+        </Box>
+      )}
     </Box>
   );
 }

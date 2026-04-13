@@ -1,7 +1,5 @@
 """Tests for story access control — unpublished stories are private."""
 
-from sqlalchemy.orm import sessionmaker
-
 
 def test_unpublished_story_visible_to_owner(client):
     resp = client.post(

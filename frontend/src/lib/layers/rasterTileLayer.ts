@@ -41,10 +41,11 @@ export function buildRasterTileLayers({
     );
     const ts = timesteps[clampedIndex];
     const separator = tileUrl.includes("?") ? "&" : "?";
+    const fullUrl = `${tileUrl}${separator}datetime=${encodeURIComponent(ts.datetime)}`;
     return [
       createCOGLayer({
-        id,
-        tileUrl: `${tileUrl}${separator}datetime=${encodeURIComponent(ts.datetime)}`,
+        id: `${id}-ts-${clampedIndex}`,
+        tileUrl: fullUrl,
         opacity,
       }),
     ];

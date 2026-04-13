@@ -55,6 +55,8 @@ export interface Dataset {
   timesteps: Timestep[];
   raster_min: number | null;
   raster_max: number | null;
+  is_categorical: boolean;
+  categories: { value: number; color: string; label: string }[] | null;
   crs: string | null;
   crs_name: string | null;
   pixel_width: number | null;
@@ -152,6 +154,8 @@ export interface MapItem {
   colorInterpretation: string[] | null;
   rasterMin: number | null;
   rasterMax: number | null;
+  isCategorical: boolean;
+  categories: { value: number; color: string; label: string }[] | null;
   cogUrl: string | null;
   rescale: string | null;
   parquetUrl: string | null;

@@ -38,6 +38,8 @@ const BASE_DATASET: Dataset = {
   timesteps: [],
   raster_min: null,
   raster_max: null,
+  is_categorical: false,
+  categories: null,
   crs: null,
   crs_name: null,
   pixel_width: null,

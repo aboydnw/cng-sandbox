@@ -18,6 +18,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     colorInterpretation: ["gray"],
     rasterMin: 0,
     rasterMax: 255,
+    isCategorical: false,
+    categories: null,
     cogUrl: null,
     rescale: null,
     parquetUrl: null,

@@ -236,14 +236,17 @@ def large_categorical_tif_with_colormap(tmp_path):
 def test_colormap_tier_reads_overview_not_full_res(large_categorical_tif_with_colormap):
     """Regression: reading full-res 10k x 10k uint8 caused ~100 MB allocation
     and OOM for bigger tiles in production. Must use overviews."""
-    import resource
+    import tracemalloc
 
-    before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    result = detect_categories(large_categorical_tif_with_colormap)
-    after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    tracemalloc.start()
+    try:
+        result = detect_categories(large_categorical_tif_with_colormap)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
     assert result.is_categorical is True
     assert len(result.categories) == 5
     # Full-res would be ~100 MB; overview (~313x313 at level 32) is ~100 KB.
-    # Allow 30 MB of headroom for GDAL/rasterio overhead.
-    delta_mb = (after - before) / 1024
-    assert delta_mb < 30, f"Memory grew by {delta_mb:.1f} MB (expected <30)"
+    # Allow 30 MB for Python/numpy overhead around the coarse read.
+    peak_mb = peak / (1024 * 1024)
+    assert peak_mb < 30, f"Peak Python allocation was {peak_mb:.1f} MB (expected <30)"

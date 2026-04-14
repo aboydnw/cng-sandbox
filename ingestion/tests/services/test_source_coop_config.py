@@ -46,3 +46,8 @@ def test_gebco_uses_path_listing():
 def test_lg_land_uses_path_listing():
     p = get_product("vizzuality/lg-land-carbon-data")
     assert p.enumerator == "path_listing"
+
+
+def test_lg_land_pins_single_deforestation_emissions_raster():
+    p = get_product("vizzuality/lg-land-carbon-data")
+    assert p.enumerator_args.get("filenames") == ["deforest_carbon_100m_cog.tif"]

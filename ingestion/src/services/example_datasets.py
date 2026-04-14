@@ -36,7 +36,10 @@ logger = logging.getLogger(__name__)
 async def run_enumerator(product: SourceCoopProduct) -> list[RemoteItem]:
     """Dispatch to the enumerator named in the product config."""
     if product.enumerator == "path_listing":
-        return await enumerate_path_listing(listing_url=product.listing_url)
+        return await enumerate_path_listing(
+            listing_url=product.listing_url,
+            filenames=product.enumerator_args.get("filenames"),
+        )
     if product.enumerator == "stac_sidecars":
         return await enumerate_stac_sidecars(
             listing_url=product.listing_url,

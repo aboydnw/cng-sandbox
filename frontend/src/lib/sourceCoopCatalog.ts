@@ -33,11 +33,11 @@ export const sourceCoopCatalog: SourceCoopProduct[] = [
   },
   {
     slug: "vizzuality/lg-land-carbon-data",
-    name: "Land & Carbon Lab Carbon Data",
+    name: "Land & Carbon Lab: Deforestation Carbon Emissions",
     description:
-      "Land carbon flux and stock rasters produced by the WRI Land & Carbon Lab.",
+      "Gross carbon emissions from deforestation at 100 m resolution, produced by the WRI Land & Carbon Lab.",
     thumbnail: "/thumbnails/lg-land-carbon.jpg",
-    tags: ["carbon", "land", "climate"],
+    tags: ["carbon", "deforestation", "climate"],
     isTemporal: false,
   },
 ];

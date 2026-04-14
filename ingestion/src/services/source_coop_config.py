@@ -50,13 +50,16 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
     ),
     "vizzuality/lg-land-carbon-data": SourceCoopProduct(
         slug="vizzuality/lg-land-carbon-data",
-        name="Land & Carbon Lab Carbon Data",
+        name="Land & Carbon Lab: Deforestation Carbon Emissions",
         description=(
-            "Land carbon flux and stock rasters produced by the WRI Land & Carbon Lab."
+            "Gross carbon emissions from deforestation at 100 m resolution, "
+            "produced by the WRI Land & Carbon Lab. The source bucket holds an "
+            "atlas of related layers; this example pins the headline emissions "
+            "raster so the mosaic stays coherent."
         ),
         listing_url="https://data.source.coop/vizzuality/lg-land-carbon-data/",
         enumerator="path_listing",
-        enumerator_args={},
+        enumerator_args={"filenames": ["deforest_carbon_100m_cog.tif"]},
         is_temporal=False,
     ),
 }

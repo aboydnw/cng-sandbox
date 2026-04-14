@@ -1,6 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useGeoParquetQuery } from "./useGeoParquetQuery";
+
+function isValidColumnName(name: string): boolean {
+  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+}
 
 export interface GeometryInfo {
   type: string;
@@ -33,9 +37,15 @@ export function useGeoParquetValidation(
     geometryInfo: null,
   });
 
+  const validatingRef = useRef(false);
   const { runQuery } = useGeoParquetQuery(conn, parquetUrl);
 
   const validate = useCallback(async () => {
+    if (validatingRef.current) {
+      console.warn("Validation already in progress, skipping concurrent call");
+      return;
+    }
+
     if (!conn) {
       setState({
         validating: false,
@@ -46,6 +56,7 @@ export function useGeoParquetValidation(
       return;
     }
 
+    validatingRef.current = true;
     setState((prev) => ({ ...prev, validating: true }));
 
     try {
@@ -82,6 +93,18 @@ export function useGeoParquetValidation(
           error: "No geometry column detected",
           geometryInfo: null,
         });
+        validatingRef.current = false;
+        return;
+      }
+
+      if (!isValidColumnName(geometryColumnName)) {
+        setState({
+          validating: false,
+          valid: false,
+          error: "Invalid column name",
+          geometryInfo: null,
+        });
+        validatingRef.current = false;
         return;
       }
 
@@ -143,6 +166,8 @@ export function useGeoParquetValidation(
         error: errorMessage,
         geometryInfo: null,
       });
+    } finally {
+      validatingRef.current = false;
     }
   }, [conn, parquetUrl, runQuery]);
 
@@ -154,20 +179,26 @@ export function useGeoParquetValidation(
 
 function categorizeError(error: unknown): string {
   if (error instanceof Error) {
-    const message = error.message.toLowerCase();
+    const errorMsg = error.message;
+    const lowerMsg = errorMsg.toLowerCase();
 
-    if (message.includes("not found") || message.includes("404")) {
-      return "Could not access URL";
+    if (lowerMsg.includes("404") || lowerMsg.includes("not found")) {
+      return "Could not access URL: file not found (404)";
     }
-    if (
-      message.includes("network") ||
-      message.includes("fetch") ||
-      message.includes("connection")
-    ) {
-      return "Could not access URL";
+    if (lowerMsg.includes("403")) {
+      return "Could not access URL: permission denied (403)";
+    }
+    if (lowerMsg.includes("network") || lowerMsg.includes("fetch")) {
+      return `Could not access URL: ${errorMsg}`;
+    }
+    if (lowerMsg.includes("parquet")) {
+      return "File is not a valid Parquet";
+    }
+    if (lowerMsg.includes("geometry")) {
+      return "No geometry column detected";
     }
 
-    return error.message;
+    return "File validation failed";
   }
 
   return "Validation failed";

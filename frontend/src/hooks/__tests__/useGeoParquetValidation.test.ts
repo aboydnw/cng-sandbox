@@ -106,7 +106,7 @@ describe("useGeoParquetValidation", () => {
     });
 
     expect(result.current.valid).toBe(false);
-    expect(result.current.error).toBe("Could not access URL");
+    expect(result.current.error).toBe("Could not access URL: file not found (404)");
     expect(result.current.geometryInfo).toBeNull();
   });
 
@@ -217,5 +217,100 @@ describe("useGeoParquetValidation", () => {
     // State should eventually be set to valid=true
     await waitFor(() => expect(result.current.validating).toBe(false));
     expect(result.current.valid).toBe(true);
+  });
+
+  it("returns error when geometry column name contains invalid characters", async () => {
+    const mockConn = { query: vi.fn() } as any;
+
+    const describeResult = {
+      numRows: 1,
+      get: () => ({
+        column_name: "geom'; DROP TABLE--",
+        column_type: "GEOMETRY",
+      }),
+    };
+
+    mockRunQuery.mockImplementation(async (sql) => {
+      if (sql.includes("DESCRIBE")) {
+        return describeResult;
+      }
+    });
+
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(mockConn, "/api/test.parquet")
+    );
+
+    await act(async () => {
+      await result.current.validate();
+    });
+
+    expect(result.current.valid).toBe(false);
+    expect(result.current.error).toBe("Invalid column name");
+  });
+
+  it("does not allow concurrent validation calls", async () => {
+    const mockConn = { query: vi.fn() } as any;
+
+    let validateCallCount = 0;
+    mockRunQuery.mockImplementation(async (sql) => {
+      validateCallCount++;
+      if (sql.includes("DESCRIBE")) {
+        return {
+          numRows: 1,
+          get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+        };
+      }
+      if (sql.includes("ST_GeometryType")) {
+        return {
+          numRows: 1,
+          get: () => ({ geom_type: "POINT" }),
+        };
+      }
+      if (sql.includes("ST_Extent")) {
+        return {
+          numRows: 1,
+          get: () => ({
+            minx: -120,
+            miny: -45,
+            maxx: 120,
+            maxy: 45,
+          }),
+        };
+      }
+    });
+
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(mockConn, "/api/test.parquet")
+    );
+
+    await act(async () => {
+      result.current.validate();
+      result.current.validate();
+    });
+
+    await waitFor(() => expect(result.current.validating).toBe(false));
+
+    expect(validateCallCount).toBe(3);
+  });
+
+  it("sanitizes error messages to avoid exposing internal details", async () => {
+    const mockConn = { query: vi.fn() } as any;
+
+    mockRunQuery.mockImplementation(async () => {
+      throw new Error("DuckDB Internal Error: GDAL Exception: Unknown format");
+    });
+
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(mockConn, "/api/test.parquet")
+    );
+
+    await act(async () => {
+      await result.current.validate();
+    });
+
+    expect(result.current.valid).toBe(false);
+    expect(result.current.error).toBe("File validation failed");
+    expect(result.current.error).not.toContain("GDAL");
+    expect(result.current.error).not.toContain("DuckDB");
   });
 });

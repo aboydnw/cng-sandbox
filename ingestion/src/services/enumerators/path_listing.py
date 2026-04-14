@@ -19,17 +19,27 @@ from src.services.enumerators.stac_sidecars import _list_one_level
 _RASTER_EXTENSIONS = (".tif", ".tiff", ".nc", ".nc4", ".h5", ".hdf5")
 
 
-async def enumerate_path_listing(listing_url: str) -> list[RemoteItem]:
+async def enumerate_path_listing(
+    listing_url: str, filenames: list[str] | None = None
+) -> list[RemoteItem]:
     """Enumerate raster files from a flat S3 prefix.
 
     Args:
         listing_url: URL of the S3 prefix (e.g. ``https://host/bucket/prefix/``).
+        filenames: Optional allowlist of exact filenames to include. When set,
+            only keys matching one of these names are returned. Use this for
+            buckets that hold an "atlas" of heterogeneous rasters where a
+            greedy mosaic would stitch incompatible layers.
     """
     _common, keys = await _list_one_level(listing_url, prefix="")
+    allow = set(filenames) if filenames is not None else None
     items: list[RemoteItem] = []
     for key in keys:
-        if key.lower().endswith(_RASTER_EXTENSIONS):
-            items.append(
-                RemoteItem(href=urljoin(listing_url, key), datetime=None, bbox=None)
-            )
+        if not key.lower().endswith(_RASTER_EXTENSIONS):
+            continue
+        if allow is not None and key not in allow:
+            continue
+        items.append(
+            RemoteItem(href=urljoin(listing_url, key), datetime=None, bbox=None)
+        )
     return items

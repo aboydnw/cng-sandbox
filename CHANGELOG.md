@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.16.0](https://github.com/aboydnw/cng-sandbox/compare/v1.15.1...v1.16.0) (2026-04-14)
+
+
+### Features
+
+* add About page ([#190](https://github.com/aboydnw/cng-sandbox/issues/190)) ([d48f2b0](https://github.com/aboydnw/cng-sandbox/commit/d48f2b034605adad6969e2b52552906b990fc587))
+* add categorical raster support ([#188](https://github.com/aboydnw/cng-sandbox/issues/188)) ([7898d6b](https://github.com/aboydnw/cng-sandbox/commit/7898d6b7268b6f9d1f3da024e1a88c71277fa415))
+* connect curated source.coop directories ([#183](https://github.com/aboydnw/cng-sandbox/issues/183)) ([7812c67](https://github.com/aboydnw/cng-sandbox/commit/7812c677c1c7a53ac65158e8a68a75e1b2d701cc))
+* extend categorical support to COG connections ([#206](https://github.com/aboydnw/cng-sandbox/issues/206)) ([a649c91](https://github.com/aboydnw/cng-sandbox/commit/a649c9116563dce9ebf093918a9844d37b11a131))
+* **frontend:** add Dataset/Min/Max labels and section dividers to map sidebar ([#211](https://github.com/aboydnw/cng-sandbox/issues/211)) ([f374e2f](https://github.com/aboydnw/cng-sandbox/commit/f374e2ffaa58d4734071277321295fdafad1cf4b))
+* **frontend:** adjustable rescale and reversible colormap ([#204](https://github.com/aboydnw/cng-sandbox/issues/204)) ([54d3831](https://github.com/aboydnw/cng-sandbox/commit/54d3831cb63d07470b9c74d10c754a72ef6d4075))
+* retry example dataset registration on transient startup failures ([#205](https://github.com/aboydnw/cng-sandbox/issues/205)) ([2881d7a](https://github.com/aboydnw/cng-sandbox/commit/2881d7ae8f4eee5f703610056d36df2ab75cc082))
+* sharing datasets and stories via clean URLs ([#189](https://github.com/aboydnw/cng-sandbox/issues/189)) ([aba1ff7](https://github.com/aboydnw/cng-sandbox/commit/aba1ff7fc4d7849616b33cc0e0a3e9c669b4068c))
+* source.coop as shared example datasets ([#203](https://github.com/aboydnw/cng-sandbox/issues/203)) ([d2b8886](https://github.com/aboydnw/cng-sandbox/commit/d2b8886b593b0f5bc7561ffc0b1e2be970b827b2))
+
+
+### Bug Fixes
+
+* About page styling and routing improvements ([#191](https://github.com/aboydnw/cng-sandbox/issues/191)) ([37211a4](https://github.com/aboydnw/cng-sandbox/commit/37211a47a5d5c1bf860d09ef821a03add28680cf))
+* apply scale/offset when computing remote raster stats ([#193](https://github.com/aboydnw/cng-sandbox/issues/193)) ([7f44e1a](https://github.com/aboydnw/cng-sandbox/commit/7f44e1a12643cc45f815103cd45730642d7ddf4b))
+* avoid full-res read in categorical color table detection ([#209](https://github.com/aboydnw/cng-sandbox/issues/209)) ([b4c4c7c](https://github.com/aboydnw/cng-sandbox/commit/b4c4c7c9c499deafccf10d605824de081dca328f))
+* bump frontend dev container memory limit to 2G ([#207](https://github.com/aboydnw/cng-sandbox/issues/207)) ([b33e5d6](https://github.com/aboydnw/cng-sandbox/commit/b33e5d63b8d175bfba28ac02d34278b1748c3b36))
+* close SSRF holes and enforce access control ([#195](https://github.com/aboydnw/cng-sandbox/issues/195)) ([8fe62b8](https://github.com/aboydnw/cng-sandbox/commit/8fe62b8e690d143c18fa90f3004025f999144c26))
+* compute rescale stats for source.coop datasets ([#192](https://github.com/aboydnw/cng-sandbox/issues/192)) ([653da17](https://github.com/aboydnw/cng-sandbox/commit/653da1740e657ef396d012bee43de227ff691922))
+* force deck.gl tile refresh on temporal browse navigation ([#196](https://github.com/aboydnw/cng-sandbox/issues/196)) ([973a744](https://github.com/aboydnw/cng-sandbox/commit/973a744c8d0f88a0ba7fc8dc8e09a6b44fb374b1))
+* pin Land & Carbon Lab example to single emissions raster ([#212](https://github.com/aboydnw/cng-sandbox/issues/212)) ([7a0a938](https://github.com/aboydnw/cng-sandbox/commit/7a0a938d59e2ecf9424164befe114a374604fb01))
+* prevent ingestion OOM during tif conversion ([#210](https://github.com/aboydnw/cng-sandbox/issues/210)) ([14fdde3](https://github.com/aboydnw/cng-sandbox/commit/14fdde397198e25c3da1173aed0446263d93921b)), closes [#208](https://github.com/aboydnw/cng-sandbox/issues/208)
+* URL-encode temporal datetime in tile URLs ([#186](https://github.com/aboydnw/cng-sandbox/issues/186)) ([d2a07d1](https://github.com/aboydnw/cng-sandbox/commit/d2a07d17ab40c93739c4eda34869074a0f99f8eb))
+* use raw pixel values for rescale stats, not scaled values ([#194](https://github.com/aboydnw/cng-sandbox/issues/194)) ([84d9eb0](https://github.com/aboydnw/cng-sandbox/commit/84d9eb04c4be391656e5cf011dd0e9e2a0986891))
+
 ## [1.15.1](https://github.com/aboydnw/cng-sandbox/compare/v1.15.0...v1.15.1) (2026-04-10)
 
 

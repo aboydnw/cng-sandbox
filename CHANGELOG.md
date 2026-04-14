@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.17.0](https://github.com/aboydnw/cng-sandbox/compare/v1.16.0...v1.17.0) (2026-04-14)
+
+
+### Features
+
+* **frontend:** tighten story editor header for narrow widths ([#215](https://github.com/aboydnw/cng-sandbox/issues/215)) ([a8f3b22](https://github.com/aboydnw/cng-sandbox/commit/a8f3b2241d55d2697e84179d8c0bd39acc2a5a7f))
+
+
+### Bug Fixes
+
+* include uint32/int32 in categorical heuristic dtypes ([#213](https://github.com/aboydnw/cng-sandbox/issues/213)) ([169997b](https://github.com/aboydnw/cng-sandbox/commit/169997b2ae6e384fcc8ce708f7e2eb389e7f5fd7))
+
 ## [1.16.0](https://github.com/aboydnw/cng-sandbox/compare/v1.15.1...v1.16.0) (2026-04-14)
 
 

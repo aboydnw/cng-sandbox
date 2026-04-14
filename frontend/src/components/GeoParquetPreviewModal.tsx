@@ -10,6 +10,13 @@ import {
   Box,
   Spinner,
   Text,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
 import type { Table as ArrowTable } from "apache-arrow";
 import type { GeometryInfo } from "../hooks/useGeoParquetValidation";
@@ -78,35 +85,14 @@ export function GeoParquetPreviewModal({
     : [];
 
   return (
-    <Box
-      position="fixed"
-      inset={0}
-      zIndex={1000}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <Box
-        position="absolute"
-        inset={0}
-        bg="blackAlpha.500"
-        onClick={onCancel}
-      />
-
-      <Box
-        position="relative"
-        bg="white"
-        borderRadius="md"
-        shadow="lg"
-        maxW="2xl"
-        w="90%"
-        maxH="80vh"
-        overflowY="auto"
-        p={6}
-      >
-        <Box mb={6}>
+    <Modal isOpen={open} onClose={onCancel} size="2xl">
+      <ModalOverlay />
+      <ModalContent maxH="80vh" overflowY="auto">
+        <ModalHeader>
           <Heading size="md">Preview: {filename}</Heading>
-        </Box>
+        </ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
 
         {validating ? (
           <Box textAlign="center" py={12}>
@@ -221,8 +207,8 @@ export function GeoParquetPreviewModal({
             )}
           </Box>
         )}
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "24px" }}>
+        </ModalBody>
+        <ModalFooter gap={2}>
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
@@ -234,8 +220,8 @@ export function GeoParquetPreviewModal({
           >
             Confirm & Connect
           </Button>
-        </div>
-      </Box>
-    </Box>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }

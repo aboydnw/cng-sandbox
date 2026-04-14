@@ -10,6 +10,12 @@ import {
 } from "@phosphor-icons/react";
 import { useRemoteConnect } from "../hooks/useRemoteConnect";
 import { transition } from "../lib/interactionStyles";
+import { useGeoParquetValidation } from "../hooks/useGeoParquetValidation";
+import { GeoParquetPreviewModal } from "./GeoParquetPreviewModal";
+import { useDuckDB } from "../hooks/useDuckDB";
+import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
+import { workspaceFetch } from "../lib/api";
+import { config } from "../config";
 
 interface RemoteConnectFlowProps {
   onDatasetReady: (datasetId: string) => void;
@@ -19,16 +25,49 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   const { state, discover, startIngestion } = useRemoteConnect();
   const [inputUrl, setInputUrl] = useState("");
 
+  // GeoParquet validation modal state
+  const { db, conn } = useDuckDB();
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const {
+    validating,
+    valid,
+    error,
+    geometryInfo,
+    validate: validateGeoParquet,
+  } = useGeoParquetValidation(conn, previewUrl);
+
+  const { result: queryResult } = useGeoParquetQuery(conn, previewUrl);
+
   useEffect(() => {
     if (state.phase === "idle" && state.datasetId) {
       onDatasetReady(state.datasetId);
     }
   }, [state.phase, state.datasetId, onDatasetReady]);
 
-  const handleScan = useCallback(() => {
+  const isGeoParquetUrl = (url: string): boolean => {
+    return url.toLowerCase().endsWith(".parquet");
+  };
+
+  const handleScan = useCallback(async () => {
     if (!inputUrl.trim()) return;
-    discover(inputUrl.trim());
-  }, [inputUrl, discover]);
+    const trimmedUrl = inputUrl.trim();
+
+    // If the URL points to a single GeoParquet file, validate it before connecting
+    if (isGeoParquetUrl(trimmedUrl)) {
+      setPreviewUrl(trimmedUrl);
+      setShowPreview(true);
+      // Ensure DuckDB is initialized
+      if (!conn) {
+        await db?.instantiate?.();
+      }
+      await validateGeoParquet();
+      return; // Don't proceed to discovery
+    }
+
+    // Otherwise, use the existing discovery flow
+    discover(trimmedUrl);
+  }, [inputUrl, discover, conn, db, validateGeoParquet]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -36,6 +75,35 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     },
     [handleScan]
   );
+
+  const handleConfirmConnection = useCallback(async () => {
+    if (!valid || !previewUrl) return;
+
+    setShowPreview(false);
+
+    // Now make the actual connection POST request
+    try {
+      const response = await workspaceFetch("/api/connections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: previewUrl,
+          connection_type: "geoparquet",
+          name: previewUrl.split("/").pop() || "Untitled",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create connection");
+      }
+
+      const data = await response.json();
+      onDatasetReady(data.id); // Navigate to map
+    } catch (e) {
+      // Show error via existing error handler
+      console.error("Connection creation failed:", e);
+    }
+  }, [valid, previewUrl, onDatasetReady]);
 
   if (state.phase === "discovering") {
     return (
@@ -157,6 +225,19 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           Scan
         </Button>
       </Flex>
+
+      <GeoParquetPreviewModal
+        open={showPreview}
+        filename={previewUrl.split("/").pop() || "data.parquet"}
+        validating={validating}
+        valid={valid}
+        error={error}
+        geometryInfo={geometryInfo}
+        schema={queryResult.columnStats}
+        samples={queryResult.table}
+        onConfirm={handleConfirmConnection}
+        onCancel={() => setShowPreview(false)}
+      />
     </Box>
   );
 }

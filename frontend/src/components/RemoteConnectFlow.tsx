@@ -26,7 +26,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   const [inputUrl, setInputUrl] = useState("");
 
   // GeoParquet validation modal state
-  const { db, conn } = useDuckDB();
+  const { db, conn, initialize: initializeDuckDB } = useDuckDB();
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const {
@@ -59,7 +59,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
       setShowPreview(true);
       // Ensure DuckDB is initialized
       if (!conn) {
-        await db?.instantiate?.();
+        await initializeDuckDB();
       }
       await validateGeoParquet();
       return; // Don't proceed to discovery
@@ -67,7 +67,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
 
     // Otherwise, use the existing discovery flow
     discover(trimmedUrl);
-  }, [inputUrl, discover, conn, db, validateGeoParquet]);
+  }, [inputUrl, discover, conn, initializeDuckDB, validateGeoParquet]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

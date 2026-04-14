@@ -53,6 +53,23 @@ def _assign_palette_color(index: int) -> str:
     return QUALITATIVE_PALETTE[index % len(QUALITATIVE_PALETTE)]
 
 
+def _read_sample(src, band: int = 1):
+    """Read a band at its coarsest overview, or a decimated full read if no overviews."""
+    overviews = src.overviews(band)
+    if overviews:
+        level = overviews[-1]
+        height = max(1, src.height // level)
+        width = max(1, src.width // level)
+        return src.read(band, out_shape=(height, width))
+    target = 512
+    if src.height <= target and src.width <= target:
+        return src.read(band)
+    return src.read(
+        band,
+        out_shape=(min(target, src.height), min(target, src.width)),
+    )
+
+
 def detect_categories(raster_path: str) -> CategoricalResult:
     """Detect whether a raster is categorical and extract category metadata.
 
@@ -77,7 +94,7 @@ def detect_categories(raster_path: str) -> CategoricalResult:
             if non_default:
                 import numpy as np
 
-                data = src.read(1)
+                data = _read_sample(src, band=1)
                 present_values = set(int(v) for v in np.unique(data))
                 if nodata is not None:
                     present_values.discard(int(nodata))
@@ -161,15 +178,7 @@ def detect_categories(raster_path: str) -> CategoricalResult:
 
         import numpy as np
 
-        overviews = src.overviews(1)
-        if overviews:
-            overview_level = overviews[-1]
-            height = max(1, src.height // overview_level)
-            width = max(1, src.width // overview_level)
-            data = src.read(1, out_shape=(height, width))
-        else:
-            data = src.read(1)
-
+        data = _read_sample(src, band=1)
         unique_values = np.unique(data)
 
         if nodata is not None:

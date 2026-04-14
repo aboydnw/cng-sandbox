@@ -82,9 +82,7 @@ async def create_connection(body: ConnectionCreate, request: Request):
     categories_json = None
     if body.connection_type == "cog":
         try:
-            result = await asyncio.to_thread(
-                detect_categories, f"/vsicurl/{body.url}"
-            )
+            result = await asyncio.to_thread(detect_categories, f"/vsicurl/{body.url}")
             if result.is_categorical:
                 is_categorical = True
                 categories_json = json.dumps(
@@ -153,9 +151,7 @@ async def update_connection_category_labels(
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if not row.is_categorical:
-            raise HTTPException(
-                status_code=400, detail="Connection is not categorical"
-            )
+            raise HTTPException(status_code=400, detail="Connection is not categorical")
 
         categories = json.loads(row.categories_json) if row.categories_json else []
         existing_values = {c["value"] for c in categories}

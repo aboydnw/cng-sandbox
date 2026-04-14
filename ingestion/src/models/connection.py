@@ -45,6 +45,8 @@ class ConnectionRow(Base):
             "rescale": self.rescale,
             "workspace_id": self.workspace_id,
             "is_categorical": self.is_categorical,
-            "categories": json.loads(self.categories_json) if self.categories_json else None,
+            "categories": json.loads(self.categories_json)
+            if self.categories_json
+            else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

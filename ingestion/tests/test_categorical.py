@@ -250,3 +250,32 @@ def test_colormap_tier_reads_overview_not_full_res(large_categorical_tif_with_co
     # Allow 30 MB for Python/numpy overhead around the coarse read.
     peak_mb = peak / (1024 * 1024)
     assert peak_mb < 30, f"Peak Python allocation was {peak_mb:.1f} MB (expected <30)"
+
+
+@pytest.fixture
+def categorical_uint32_tif(tmp_path):
+    path = str(tmp_path / "pedotopes.tif")
+    data = np.array([[4, 5, 6], [7, 12, 4]], dtype="uint32")
+    transform = from_bounds(0, 0, 1, 1, 3, 2)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=3,
+        height=2,
+        count=1,
+        dtype="uint32",
+        crs="EPSG:4326",
+        transform=transform,
+    ) as dst:
+        dst.write(data, 1)
+    return path
+
+
+def test_heuristic_detects_uint32(categorical_uint32_tif):
+    """Regression: CEH pedotopes soil unit map (uint32, 9 classes) was not
+    detected as categorical because heuristic dtype set excluded uint32."""
+    result = detect_categories(categorical_uint32_tif)
+    assert result.is_categorical is True
+    values = sorted(c.value for c in result.categories)
+    assert values == [4, 5, 6, 7, 12]

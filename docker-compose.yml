@@ -180,7 +180,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
     ports:
       - "${FRONTEND_PORT:-5185}:5185"
     environment:

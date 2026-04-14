@@ -195,3 +195,58 @@ def test_uint8_without_colormap_many_values_not_categorical(tmp_path):
         dst.write(data, 1)
     result = detect_categories(path)
     assert result.is_categorical is False
+
+
+@pytest.fixture
+def large_categorical_tif_with_colormap(tmp_path):
+    """10000x10000 uint8 with colormap — reading full res is ~100 MB."""
+    path = str(tmp_path / "large_landcover.tif")
+    rng = np.random.default_rng(42)
+    data = rng.integers(1, 6, size=(10000, 10000), dtype="uint8")
+    transform = from_bounds(0, 0, 1, 1, 10000, 10000)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=10000,
+        height=10000,
+        count=1,
+        dtype="uint8",
+        crs="EPSG:4326",
+        transform=transform,
+        tiled=True,
+        blockxsize=512,
+        blockysize=512,
+    ) as dst:
+        dst.write(data, 1)
+        dst.write_colormap(
+            1,
+            {
+                1: (255, 0, 0, 255),
+                2: (0, 255, 0, 255),
+                3: (0, 0, 255, 255),
+                4: (255, 255, 0, 255),
+                5: (128, 128, 128, 255),
+            },
+        )
+        dst.build_overviews([2, 4, 8, 16, 32], rasterio.enums.Resampling.nearest)
+    return path
+
+
+def test_colormap_tier_reads_overview_not_full_res(large_categorical_tif_with_colormap):
+    """Regression: reading full-res 10k x 10k uint8 caused ~100 MB allocation
+    and OOM for bigger tiles in production. Must use overviews."""
+    import tracemalloc
+
+    tracemalloc.start()
+    try:
+        result = detect_categories(large_categorical_tif_with_colormap)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert result.is_categorical is True
+    assert len(result.categories) == 5
+    # Full-res would be ~100 MB; overview (~313x313 at level 32) is ~100 KB.
+    # Allow 30 MB for Python/numpy overhead around the coarse read.
+    peak_mb = peak / (1024 * 1024)
+    assert peak_mb < 30, f"Peak Python allocation was {peak_mb:.1f} MB (expected <30)"

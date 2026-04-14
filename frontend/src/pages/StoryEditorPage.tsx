@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Input, Text, Link } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Text, Menu, Portal } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import {
   PencilSimple,
@@ -6,6 +6,7 @@ import {
   ArrowCounterClockwise,
   Check,
   SpinnerGap,
+  CaretDown,
 } from "@phosphor-icons/react";
 import { useTooltipDismiss } from "../hooks/useTooltipDismiss";
 import { useStoryEditor } from "../hooks/useStoryEditor";
@@ -16,7 +17,6 @@ import { UploadModal } from "../components/UploadModal";
 import { ConnectionModal } from "../components/ConnectionModal";
 import { PublishDialog } from "../components/PublishDialog";
 import { Header } from "../components/Header";
-import { BugReportLink } from "../components/BugReportLink";
 import { SaveStatus } from "../components/SaveStatus";
 
 function TooltipCard({
@@ -142,8 +142,16 @@ export default function StoryEditorPage() {
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">
-      <Header>
-        <Flex align="center" gap={1} role="group" position="relative">
+      <Header showWorkspace={false}>
+        <Flex
+          align="center"
+          gap={1}
+          role="group"
+          position="relative"
+          flex="1 1 auto"
+          minW={0}
+          maxW="300px"
+        >
           <Input
             value={story.title}
             onChange={(e) =>
@@ -158,7 +166,9 @@ export default function StoryEditorPage() {
             borderRadius={0}
             outline="none"
             background="transparent"
-            width="300px"
+            width="100%"
+            minW={0}
+            textOverflow="ellipsis"
             p={0}
             height="auto"
             _hover={{ borderColor: "gray.300" }}
@@ -177,52 +187,71 @@ export default function StoryEditorPage() {
           </Box>
         </Flex>
         <SaveStatus state={saveState} />
-        <Flex gap={2} align="center">
-          <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              window.open(workspacePath(`/story/${story.id}`), "_blank")
-            }
-          >
-            Preview
-          </Button>
-          {story.published ? (
-            <Flex align="center" gap={2}>
-              <Flex align="center" gap={1.5}>
-                <Box w={2} h={2} borderRadius="full" bg="green.500" />
-                <Button
-                  size="sm"
-                  bg="green.500"
-                  color="white"
-                  _hover={{ bg: "green.600" }}
-                  onClick={() => setPublishDialogOpen(true)}
-                >
-                  Published
-                </Button>
-              </Flex>
-              <Link
-                fontSize="xs"
-                color="gray.500"
-                textDecoration="underline"
-                cursor="pointer"
-                onClick={handleUnpublish}
-              >
-                Unpublish
-              </Link>
+        <Flex gap={3} align="center">
+          {story.published && (
+            <Flex align="center" gap={1.5}>
+              <Box w={2} h={2} borderRadius="full" bg="green.500" />
+              <Text fontSize="xs" color="green.700" fontWeight={500}>
+                Published
+              </Text>
             </Flex>
-          ) : (
+          )}
+          <Flex align="center">
             <Button
               size="sm"
-              bg="brand.orange"
-              color="white"
-              onClick={() => setPublishDialogOpen(true)}
-              _hover={{ bg: "brand.orangeHover" }}
+              variant="outline"
+              borderRightRadius={0}
+              borderRightWidth={0}
+              onClick={() =>
+                window.open(workspacePath(`/story/${story.id}`), "_blank")
+              }
             >
-              Publish
+              Preview
             </Button>
-          )}
+            <Menu.Root positioning={{ placement: "bottom-end" }}>
+              <Menu.Trigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  borderLeftRadius={0}
+                  px={2}
+                  aria-label="More publish options"
+                >
+                  <CaretDown size={12} />
+                </Button>
+              </Menu.Trigger>
+              <Portal>
+                <Menu.Positioner>
+                  <Menu.Content minW="180px">
+                    {story.published ? (
+                      <>
+                        <Menu.Item
+                          value="share-settings"
+                          onSelect={() => setPublishDialogOpen(true)}
+                        >
+                          Share settings…
+                        </Menu.Item>
+                        <Menu.Item
+                          value="unpublish"
+                          color="red.600"
+                          onSelect={handleUnpublish}
+                        >
+                          Unpublish
+                        </Menu.Item>
+                      </>
+                    ) : (
+                      <Menu.Item
+                        value="publish"
+                        onSelect={() => setPublishDialogOpen(true)}
+                      >
+                        Publish…
+                      </Menu.Item>
+                    )}
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Portal>
+            </Menu.Root>
+          </Flex>
         </Flex>
       </Header>
 

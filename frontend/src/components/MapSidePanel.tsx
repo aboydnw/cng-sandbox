@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import type { MapItem, Connection } from "../types";
 import type { RenderMode } from "../hooks/useMapControls";
@@ -142,13 +142,25 @@ export function MapSidePanel({
   return (
     <Box p={4}>
       {!shared && (
-        <DataSwitcher
-          activeId={item.id}
-          activeSource={item.source}
-          onUploadClick={() => setMode("upload")}
-          onAddConnectionClick={() => setMode("add-connection")}
-          refreshKey={refreshKey}
-        />
+        <Box mb={4} pb={4} borderBottom="1px solid" borderColor="brand.border">
+          <Text
+            fontSize="11px"
+            color="brand.textSecondary"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing="1px"
+            mb={2}
+          >
+            Dataset
+          </Text>
+          <DataSwitcher
+            activeId={item.id}
+            activeSource={item.source}
+            onUploadClick={() => setMode("upload")}
+            onAddConnectionClick={() => setMode("add-connection")}
+            refreshKey={refreshKey}
+          />
+        </Box>
       )}
 
       {/* Raster controls */}

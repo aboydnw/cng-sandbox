@@ -29,6 +29,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   const { db, conn, initialize: initializeDuckDB } = useDuckDB();
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const {
     validating,
     valid,
@@ -59,7 +60,13 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
       setShowPreview(true);
       // Ensure DuckDB is initialized
       if (!conn) {
-        await initializeDuckDB();
+        try {
+          await initializeDuckDB();
+        } catch (e) {
+          console.error("DuckDB initialization failed:", e);
+          // Error will be displayed in modal via useGeoParquetValidation hook
+          return;
+        }
       }
       await validateGeoParquet();
       return; // Don't proceed to discovery
@@ -67,7 +74,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
 
     // Otherwise, use the existing discovery flow
     discover(trimmedUrl);
-  }, [inputUrl, discover, conn, initializeDuckDB, validateGeoParquet]);
+  }, [inputUrl, discover, initializeDuckDB, validateGeoParquet]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -80,6 +87,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     if (!valid || !previewUrl) return;
 
     setShowPreview(false);
+    setConnectionError(null);
 
     // Now make the actual connection POST request
     try {
@@ -98,10 +106,16 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
       }
 
       const data = await response.json();
+      if (!data.id) {
+        throw new Error("No dataset ID returned from connection creation");
+      }
       onDatasetReady(data.id); // Navigate to map
     } catch (e) {
-      // Show error via existing error handler
+      const errorMsg = e instanceof Error ? e.message : "Unknown error";
       console.error("Connection creation failed:", e);
+      setConnectionError(`Connection creation failed: ${errorMsg}`);
+      // Re-open preview modal to show error to user
+      setShowPreview(true);
     }
   }, [valid, previewUrl, onDatasetReady]);
 
@@ -231,12 +245,15 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         filename={previewUrl.split("/").pop() || "data.parquet"}
         validating={validating}
         valid={valid}
-        error={error}
+        error={error || connectionError}
         geometryInfo={geometryInfo}
         schema={queryResult.columnStats}
         samples={queryResult.table}
         onConfirm={handleConfirmConnection}
-        onCancel={() => setShowPreview(false)}
+        onCancel={() => {
+          setShowPreview(false);
+          setConnectionError(null);
+        }}
       />
     </Box>
   );

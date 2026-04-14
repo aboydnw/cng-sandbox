@@ -32,7 +32,7 @@ async def enumerate_path_listing(
             greedy mosaic would stitch incompatible layers.
     """
     _common, keys = await _list_one_level(listing_url, prefix="")
-    allow = set(filenames) if filenames else None
+    allow = set(filenames) if filenames is not None else None
     items: list[RemoteItem] = []
     for key in keys:
         if not key.lower().endswith(_RASTER_EXTENSIONS):

@@ -6,7 +6,9 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 MAX_UNIQUE_VALUES = 30
-HEURISTIC_INT_DTYPES = frozenset({"uint8", "int8", "uint16", "int16"})
+HEURISTIC_INT_DTYPES = frozenset(
+    {"uint8", "int8", "uint16", "int16", "uint32", "int32"}
+)
 
 QUALITATIVE_PALETTE = [
     "#4E79A7",

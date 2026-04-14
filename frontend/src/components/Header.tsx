@@ -6,9 +6,10 @@ import { useWorkspace } from "../hooks/useWorkspace";
 
 interface HeaderProps {
   children?: ReactNode;
+  showWorkspace?: boolean;
 }
 
-export function Header({ children }: HeaderProps) {
+export function Header({ children, showWorkspace = true }: HeaderProps) {
   const { workspaceId, workspacePath } = useWorkspace();
   const [copied, setCopied] = useState(false);
 
@@ -30,9 +31,12 @@ export function Header({ children }: HeaderProps) {
       borderBottom="1px solid"
       borderColor="brand.border"
     >
-      <Flex align="center" gap={6}>
-        <Link to={workspacePath("/")} style={{ textDecoration: "none" }}>
-          <Flex align="center" gap={3}>
+      <Flex align="center" gap={6} flexShrink={0}>
+        <Link
+          to={workspacePath("/")}
+          style={{ textDecoration: "none", flexShrink: 0 }}
+        >
+          <Flex align="center" gap={3} flexShrink={0}>
             <img
               src="/logo.svg"
               alt="Development Seed"
@@ -44,6 +48,7 @@ export function Header({ children }: HeaderProps) {
               color="brand.brown"
               fontWeight={700}
               fontSize="15px"
+              whiteSpace="nowrap"
             >
               CNG Sandbox
             </Text>
@@ -70,22 +75,35 @@ export function Header({ children }: HeaderProps) {
           </Text>
         </Link>
       </Flex>
-      <Flex
-        align="center"
-        gap={1}
-        px={2}
-        py={1}
-        borderRadius="md"
-        bg="gray.100"
-        cursor="pointer"
-        onClick={copyWorkspaceUrl}
-        title="Click to copy workspace link"
-        fontSize="xs"
-        color="gray.500"
-      >
-        <Text>{copied ? "Copied!" : `Workspace ${workspaceId}`}</Text>
-      </Flex>
-      {children && <Flex gap={2}>{children}</Flex>}
+      {showWorkspace && (
+        <Flex
+          align="center"
+          gap={1}
+          px={2}
+          py={1}
+          borderRadius="md"
+          bg="gray.100"
+          cursor="pointer"
+          onClick={copyWorkspaceUrl}
+          title="Click to copy workspace link"
+          fontSize="xs"
+          color="gray.500"
+        >
+          <Text>{copied ? "Copied!" : `Workspace ${workspaceId}`}</Text>
+        </Flex>
+      )}
+      {children && (
+        <Flex
+          gap={2}
+          align="center"
+          flex="1 1 auto"
+          minW={0}
+          justify="flex-end"
+          ml={6}
+        >
+          {children}
+        </Flex>
+      )}
     </Flex>
   );
 }

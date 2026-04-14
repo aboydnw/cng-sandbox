@@ -205,51 +205,61 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
               <Text fontSize="11px" color="brand.textSecondary" mb={1}>
                 Rescale
               </Text>
-              <Flex gap={2} align="center">
-                <input
-                  aria-label="Rescale min"
-                  type="number"
-                  step="any"
-                  value={minDraft}
-                  placeholder={datasetMin != null ? String(datasetMin) : ""}
-                  onChange={(e) => setMinDraft(e.target.value)}
-                  onBlur={() => commit(minDraft, maxDraft)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") commit(minDraft, maxDraft);
-                  }}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    height: "28px",
-                    padding: "0 8px",
-                    border: "1px solid var(--chakra-colors-brand-border)",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    background: "white",
-                  }}
-                />
-                <input
-                  aria-label="Rescale max"
-                  type="number"
-                  step="any"
-                  value={maxDraft}
-                  placeholder={datasetMax != null ? String(datasetMax) : ""}
-                  onChange={(e) => setMaxDraft(e.target.value)}
-                  onBlur={() => commit(minDraft, maxDraft)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") commit(minDraft, maxDraft);
-                  }}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    height: "28px",
-                    padding: "0 8px",
-                    border: "1px solid var(--chakra-colors-brand-border)",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    background: "white",
-                  }}
-                />
+              <Flex gap={2} align="flex-end">
+                <Box flex={1} minW={0}>
+                  <Text fontSize="10px" color="brand.textSecondary" mb={1}>
+                    Min
+                  </Text>
+                  <input
+                    aria-label="Rescale min"
+                    type="number"
+                    step="any"
+                    value={minDraft}
+                    placeholder={datasetMin != null ? String(datasetMin) : ""}
+                    onChange={(e) => setMinDraft(e.target.value)}
+                    onBlur={() => commit(minDraft, maxDraft)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commit(minDraft, maxDraft);
+                    }}
+                    style={{
+                      width: "100%",
+                      minWidth: 0,
+                      height: "28px",
+                      padding: "0 8px",
+                      border: "1px solid var(--chakra-colors-brand-border)",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      background: "white",
+                    }}
+                  />
+                </Box>
+                <Box flex={1} minW={0}>
+                  <Text fontSize="10px" color="brand.textSecondary" mb={1}>
+                    Max
+                  </Text>
+                  <input
+                    aria-label="Rescale max"
+                    type="number"
+                    step="any"
+                    value={maxDraft}
+                    placeholder={datasetMax != null ? String(datasetMax) : ""}
+                    onChange={(e) => setMaxDraft(e.target.value)}
+                    onBlur={() => commit(minDraft, maxDraft)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commit(minDraft, maxDraft);
+                    }}
+                    style={{
+                      width: "100%",
+                      minWidth: 0,
+                      height: "28px",
+                      padding: "0 8px",
+                      border: "1px solid var(--chakra-colors-brand-border)",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      background: "white",
+                    }}
+                  />
+                </Box>
                 <IconButton
                   aria-label="Reset rescale"
                   size="sm"
@@ -285,7 +295,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         </Text>
       )}
 
-      <Box mb={3}>
+      <Box mb={3} pt={3} borderTop="1px solid" borderColor="brand.border">
         <Flex justify="space-between" mb={1}>
           <Text fontSize="11px" color="brand.textSecondary">
             Opacity
@@ -306,7 +316,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
       </Box>
 
       {canClientRender && onRenderModeChange && (
-        <Box mb={3}>
+        <Box mb={3} pt={3} borderTop="1px solid" borderColor="brand.border">
           <Flex justify="space-between" align="center">
             <Box>
               <Text fontSize="11px" color="brand.textSecondary">

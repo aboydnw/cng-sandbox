@@ -10,12 +10,14 @@ interface Category {
 
 interface EditableCategoryLegendProps {
   datasetId: string;
+  source?: "dataset" | "connection";
   categories: Category[];
   onCategoriesChange: (categories: Category[]) => void;
 }
 
 export function EditableCategoryLegend({
   datasetId,
+  source = "dataset",
   categories,
   onCategoriesChange,
 }: EditableCategoryLegendProps) {
@@ -39,7 +41,11 @@ export function EditableCategoryLegend({
     onCategoriesChange(updated);
 
     // Persist
-    workspaceFetch(`/api/datasets/${datasetId}/categories`, {
+    const endpoint =
+      source === "connection"
+        ? `/api/connections/${datasetId}/categories`
+        : `/api/datasets/${datasetId}/categories`;
+    workspaceFetch(endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify([{ value, label: newLabel }]),

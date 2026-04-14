@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 from src.models.base import Base
 
@@ -25,6 +25,8 @@ class ConnectionRow(Base):
     band_count = Column(Integer, nullable=True)
     rescale = Column(String, nullable=True)  # "min,max" for single-band COGs
     workspace_id = Column(String, nullable=True)
+    is_categorical = Column(Boolean, nullable=False, default=False)
+    categories_json = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict:
@@ -42,5 +44,9 @@ class ConnectionRow(Base):
             "band_count": self.band_count,
             "rescale": self.rescale,
             "workspace_id": self.workspace_id,
+            "is_categorical": self.is_categorical,
+            "categories": json.loads(self.categories_json)
+            if self.categories_json
+            else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

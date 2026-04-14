@@ -89,6 +89,11 @@ export function useLayerBuilder({
         item.dataType === "raster" &&
         item.connection?.connection_type === "cog"
       ) {
+        if (isCategorical && item.categories && item.categories.length > 0) {
+          const colormapJson = buildCategoricalColormap(item.categories);
+          const sep = base.includes("?") ? "&" : "?";
+          return `${base}${sep}colormap=${encodeURIComponent(colormapJson)}&resampling=nearest`;
+        }
         const isSingleBandCOG = item.bandCount === 1;
         if (isSingleBandCOG) {
           let url = `${base}&colormap_name=${effColormap}`;

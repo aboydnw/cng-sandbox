@@ -1,6 +1,8 @@
 """Connection CRUD endpoints."""
 
+import asyncio
 import json
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -9,12 +11,20 @@ from pydantic import BaseModel
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
+from src.services.categorical import detect_categories
 from src.workspace import validate_workspace_id
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
 VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles"}
 VALID_TILE_TYPES = {"raster", "vector", None}
+
+
+class CategoryLabelUpdate(BaseModel):
+    value: int
+    label: str
 
 
 class ConnectionCreate(BaseModel):
@@ -68,6 +78,22 @@ async def create_connection(body: ConnectionCreate, request: Request):
             status_code=422,
             detail=f"Invalid tile_type: {body.tile_type}",
         )
+    is_categorical = False
+    categories_json = None
+    if body.connection_type == "cog":
+        try:
+            result = await asyncio.to_thread(detect_categories, f"/vsicurl/{body.url}")
+            if result.is_categorical:
+                is_categorical = True
+                categories_json = json.dumps(
+                    [
+                        {"value": c.value, "color": c.color, "label": c.label}
+                        for c in result.categories
+                    ]
+                )
+        except Exception:
+            logger.exception("Categorical detection failed for %s", body.url)
+
     session = get_session(request)
     try:
         row = ConnectionRow(
@@ -82,6 +108,8 @@ async def create_connection(body: ConnectionCreate, request: Request):
             band_count=body.band_count,
             rescale=body.rescale,
             workspace_id=workspace_id,
+            is_categorical=is_categorical,
+            categories_json=categories_json,
             created_at=datetime.now(UTC),
         )
         session.add(row)
@@ -103,6 +131,46 @@ async def get_connection(connection_id: str, request: Request):
         if row.workspace_id and row.workspace_id != workspace_id:
             raise HTTPException(status_code=404, detail="Connection not found")
         return row.to_dict()
+    finally:
+        session.close()
+
+
+@router.patch("/connections/{connection_id}/categories")
+async def update_connection_category_labels(
+    connection_id: str,
+    updates: list[CategoryLabelUpdate],
+    request: Request,
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        if not row.is_categorical:
+            raise HTTPException(status_code=400, detail="Connection is not categorical")
+
+        categories = json.loads(row.categories_json) if row.categories_json else []
+        existing_values = {c["value"] for c in categories}
+        update_map = {}
+        for u in updates:
+            if u.value not in existing_values:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Category value {u.value} not found",
+                )
+            update_map[u.value] = u.label
+
+        for cat in categories:
+            if cat["value"] in update_map:
+                cat["label"] = update_map[cat["value"]]
+
+        row.categories_json = json.dumps(categories)
+        session.commit()
+        return categories
     finally:
         session.close()
 

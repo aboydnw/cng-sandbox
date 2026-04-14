@@ -222,6 +222,8 @@ const BASE_CONNECTION: Connection = {
   rescale: "0,200",
   workspace_id: null,
   created_at: "2024-01-01T00:00:00Z",
+  is_categorical: false,
+  categories: null,
 };
 
 describe("buildLayersForChapter — connection COG rescale and colormap_reversed", () => {

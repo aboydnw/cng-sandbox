@@ -174,7 +174,8 @@ export function MapSidePanel({
           onRenderModeChange={(m) => onRenderModeChange(m)}
           isCategorical={isCategorical}
           categories={categories}
-          datasetId={item.dataset?.id}
+          datasetId={item.source === "connection" ? item.id : item.dataset?.id}
+          source={item.source === "connection" ? "connection" : "dataset"}
           onCategoriesChange={onCategoriesChange}
           onCategoricalOverride={
             showCategoricalToggle ? onCategoricalOverride : undefined

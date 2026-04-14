@@ -101,7 +101,12 @@ def _migrate_schema(engine):
     from sqlalchemy.exc import DBAPIError
 
     with engine.connect() as conn:
-        for col, typ in [("band_count", "INTEGER"), ("rescale", "TEXT")]:
+        for col, typ in [
+            ("band_count", "INTEGER"),
+            ("rescale", "TEXT"),
+            ("is_categorical", "BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("categories_json", "TEXT"),
+        ]:
             try:
                 conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
                 conn.commit()

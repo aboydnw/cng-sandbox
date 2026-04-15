@@ -314,3 +314,42 @@ def test_connection_row_has_conversion_fields(db_session):
     assert d["render_path"] == "server"
     assert d["conversion_status"] == "pending"
     assert d["tile_url"] is None
+
+
+def test_connection_conversion_stream_emits_terminal_event_when_ready(client, db_engine):
+    from src.models.connection import ConnectionRow
+    from sqlalchemy.orm import sessionmaker
+    import uuid
+
+    Session = sessionmaker(bind=db_engine)
+    s = Session()
+    conn_id = str(uuid.uuid4())
+    s.add(
+        ConnectionRow(
+            id=conn_id,
+            name="t",
+            url="https://example.com/x.parquet",
+            connection_type="geoparquet",
+            render_path="server",
+            conversion_status="ready",
+            tile_url="/pmtiles/connections/x/data.pmtiles",
+            feature_count=42,
+            workspace_id="testABCD",
+        )
+    )
+    s.commit()
+    s.close()
+
+    with client.stream("GET", f"/api/connections/{conn_id}/stream") as r:
+        assert r.status_code == 200
+        text = "".join(chunk for chunk in r.iter_text())
+    assert "event: status" in text
+    assert '"status": "ready"' in text
+    assert '"tile_url": "/pmtiles/connections/x/data.pmtiles"' in text
+
+
+def test_connection_conversion_stream_returns_not_found_for_missing_row(client):
+    with client.stream("GET", "/api/connections/does-not-exist/stream") as r:
+        assert r.status_code == 200
+        text = "".join(chunk for chunk in r.iter_text())
+    assert '"status": "not_found"' in text

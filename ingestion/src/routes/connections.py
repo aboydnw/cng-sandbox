@@ -3,11 +3,13 @@
 import asyncio
 import json
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
@@ -145,6 +147,41 @@ async def create_connection(
         return row.to_dict()
     finally:
         session.close()
+
+
+@router.get("/connections/{connection_id}/stream")
+async def stream_connection_conversion(connection_id: str, request: Request):
+    """SSE stream of connection conversion progress."""
+    workspace_id = request.headers.get("x-workspace-id", "")
+
+    async def event_generator():
+        start = time.monotonic()
+        last_payload = None
+        while time.monotonic() - start < 600:
+            if await request.is_disconnected():
+                return
+            session = get_session(request)
+            try:
+                row = session.get(ConnectionRow, connection_id)
+                if row is None or (row.workspace_id and row.workspace_id != workspace_id):
+                    yield {"event": "status", "data": json.dumps({"status": "not_found"})}
+                    return
+                payload = {
+                    "status": row.conversion_status or "unknown",
+                    "tile_url": row.tile_url,
+                    "error": row.conversion_error,
+                    "feature_count": row.feature_count,
+                }
+                if payload != last_payload:
+                    last_payload = payload
+                    yield {"event": "status", "data": json.dumps(payload)}
+                if row.conversion_status in {"ready", "failed"}:
+                    return
+            finally:
+                session.close()
+            await asyncio.sleep(0.5)
+
+    return EventSourceResponse(event_generator())
 
 
 @router.get("/connections/{connection_id}")

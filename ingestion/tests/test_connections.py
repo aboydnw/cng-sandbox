@@ -238,6 +238,59 @@ def test_patch_connection_categories_rejects_non_categorical(client):
     assert patch_resp.status_code == 400
 
 
+def test_create_geoparquet_server_connection_enqueues_conversion(client, monkeypatch):
+    from src.services import geoparquet_to_pmtiles
+
+    calls = []
+
+    def fake_run(conn_id, session):
+        calls.append(conn_id)
+
+    monkeypatch.setattr(geoparquet_to_pmtiles, "run_conversion", fake_run)
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Big parcels",
+            "url": "https://example.com/parcels.parquet",
+            "connection_type": "geoparquet",
+            "render_path": "server",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["render_path"] == "server"
+    assert body["conversion_status"] == "pending"
+    assert body["tile_url"] is None
+    assert calls == [body["id"]]
+
+
+def test_create_geoparquet_client_connection_does_not_enqueue(client, monkeypatch):
+    from src.services import geoparquet_to_pmtiles
+
+    calls = []
+    monkeypatch.setattr(
+        geoparquet_to_pmtiles,
+        "run_conversion",
+        lambda cid, session: calls.append(cid),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Small parcels",
+            "url": "https://example.com/parcels.parquet",
+            "connection_type": "geoparquet",
+            "render_path": "client",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["render_path"] == "client"
+    assert body["conversion_status"] is None
+    assert calls == []
+
+
 def test_connection_row_has_conversion_fields(db_session):
     from src.models.connection import ConnectionRow
     import uuid

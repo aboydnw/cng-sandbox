@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useGeoParquetValidation } from "../useGeoParquetValidation";
 
 const mockRunQuery = vi.fn();
@@ -17,7 +18,7 @@ beforeEach(() => {
 
 describe("useGeoParquetValidation", () => {
   it("returns valid state with geometry info for valid GeoParquet", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
     const describeResult = {
       numRows: 2,
@@ -90,7 +91,7 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("returns error state for unreachable URL", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
     mockRunQuery.mockImplementation(async () => {
       const error = new Error("Not found (404)");
@@ -111,7 +112,7 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("returns error state when no geometry column detected", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
     const describeResult = {
       numRows: 2,
@@ -162,10 +163,9 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("sets validating to true while validation is in progress", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
-    let describeResolved = false;
-    let resolveDescribe: any;
+    let resolveDescribe: (value: unknown) => void = () => {};
     const describePromise = new Promise((resolve) => {
       resolveDescribe = resolve;
     });
@@ -177,7 +177,6 @@ describe("useGeoParquetValidation", () => {
 
     mockRunQuery.mockImplementation(async (sql) => {
       if (sql.includes("DESCRIBE")) {
-        describeResolved = true;
         await describePromise;
         return describeResult;
       }
@@ -204,14 +203,11 @@ describe("useGeoParquetValidation", () => {
       useGeoParquetValidation(mockConn, "/api/test.parquet")
     );
 
-    let validatingDuringCall = false;
     const validatePromise = act(async () => {
-      result.current.validate().then(() => {
-        validatingDuringCall = result.current.validating;
-      });
+      result.current.validate();
     });
 
-    resolveDescribe();
+    resolveDescribe(undefined);
     await validatePromise;
 
     // State should eventually be set to valid=true
@@ -220,7 +216,7 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("returns error when geometry column name contains invalid characters", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
     const describeResult = {
       numRows: 1,
@@ -249,7 +245,7 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("does not allow concurrent validation calls", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
     let validateCallCount = 0;
     mockRunQuery.mockImplementation(async (sql) => {
@@ -294,7 +290,7 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("sanitizes error messages to avoid exposing internal details", async () => {
-    const mockConn = { query: vi.fn() } as any;
+    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
 
     mockRunQuery.mockImplementation(async () => {
       throw new Error("DuckDB Internal Error: GDAL Exception: Unknown format");

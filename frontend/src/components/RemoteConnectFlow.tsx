@@ -15,7 +15,6 @@ import { GeoParquetPreviewModal } from "./GeoParquetPreviewModal";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { workspaceFetch } from "../lib/api";
-import { config } from "../config";
 
 interface RemoteConnectFlowProps {
   onDatasetReady: (datasetId: string) => void;
@@ -26,7 +25,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   const [inputUrl, setInputUrl] = useState("");
 
   // GeoParquet validation modal state
-  const { db, conn, initialize: initializeDuckDB } = useDuckDB();
+  const { conn, initialize: initializeDuckDB } = useDuckDB();
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [connectionError, setConnectionError] = useState<string | null>(null);

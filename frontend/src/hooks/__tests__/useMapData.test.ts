@@ -66,6 +66,12 @@ const MOCK_CONNECTION = {
   created_at: "2026-03-28T00:00:00Z",
   is_categorical: false,
   categories: null,
+  tile_url: null,
+  render_path: null,
+  conversion_status: null,
+  conversion_error: null,
+  feature_count: null,
+  file_size: null,
 };
 
 beforeEach(() => {

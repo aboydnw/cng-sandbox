@@ -224,6 +224,12 @@ const BASE_CONNECTION: Connection = {
   created_at: "2024-01-01T00:00:00Z",
   is_categorical: false,
   categories: null,
+  tile_url: null,
+  render_path: null,
+  conversion_status: null,
+  conversion_error: null,
+  feature_count: null,
+  file_size: null,
 };
 
 describe("buildLayersForChapter — connection COG rescale and colormap_reversed", () => {

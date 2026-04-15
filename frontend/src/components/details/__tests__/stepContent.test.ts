@@ -183,6 +183,12 @@ const geoparquetConnection: Connection = {
   workspace_id: null,
   is_categorical: false,
   categories: null,
+  tile_url: null,
+  render_path: null,
+  conversion_status: null,
+  conversion_error: null,
+  feature_count: null,
+  file_size: null,
   created_at: "2026-04-15T00:00:00Z",
 };
 

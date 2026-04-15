@@ -208,6 +208,20 @@ def test_patch_connection_categories_updates_labels(client, monkeypatch):
     assert get_resp.json()["categories"][0]["label"] == "Forest"
 
 
+def test_create_geoparquet_connection(client):
+    body = {
+        "name": "Remote GeoParquet",
+        "url": "https://example.com/data.parquet",
+        "connection_type": "geoparquet",
+    }
+    resp = client.post("/api/connections", json=body)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["connection_type"] == "geoparquet"
+    assert data["url"] == "https://example.com/data.parquet"
+    assert data["id"]
+
+
 def test_patch_connection_categories_rejects_non_categorical(client):
     body = {
         "name": "Plain",

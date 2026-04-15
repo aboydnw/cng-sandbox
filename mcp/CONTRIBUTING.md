@@ -31,7 +31,7 @@ uv sync
 
 ## Commit Messages
 
-Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
+Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
 
 ## PRs
 

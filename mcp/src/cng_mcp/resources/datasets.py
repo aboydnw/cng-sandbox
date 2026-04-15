@@ -15,7 +15,9 @@ async def list_datasets_resource(client: SandboxAPIClient) -> str:
         filename = ds.get("filename", "unknown")
         ds_type = ds.get("dataset_type", "unknown")
         is_example = ds.get("is_example", False)
-        metadata = ds.get("metadata", {})
+        metadata = ds.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            metadata = {}
         bbox = metadata.get("bbox", [])
         crs = metadata.get("crs", "")
         example_note = " (example)" if is_example else ""

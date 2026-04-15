@@ -34,8 +34,10 @@ async def validate_layer_config_tool(
             f"Dataset: `{dataset_id}`",
             f"Colormap: `{colormap}`",
         ]
-        if rescale_min is not None:
-            lines.append(f"Rescale: [{rescale_min}, {rescale_max}]")
+        if rescale_min is not None or rescale_max is not None:
+            lo = rescale_min if rescale_min is not None else "—"
+            hi = rescale_max if rescale_max is not None else "—"
+            lines.append(f"Rescale: [{lo}, {hi}]")
     else:
         lines = [
             "# Layer Configuration Invalid\n",

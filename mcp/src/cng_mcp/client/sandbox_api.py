@@ -1,6 +1,7 @@
 """HTTP client for CNG Sandbox API."""
 
 from typing import Any, Optional
+from urllib.parse import quote
 import httpx
 
 
@@ -19,7 +20,7 @@ class SandboxAPIClient:
 
     async def get_story(self, story_id: str) -> dict[str, Any]:
         """Get story by ID."""
-        response = await self.http_client.get(f"{self.api_url}/api/stories/{story_id}")
+        response = await self.http_client.get(f"{self.api_url}/api/stories/{quote(story_id, safe='')}")
         response.raise_for_status()
         return response.json()
 
@@ -40,7 +41,7 @@ class SandboxAPIClient:
     async def update_story(self, story_id: str, updates: dict[str, Any]) -> dict[str, Any]:
         """Update an existing story."""
         response = await self.http_client.patch(
-            f"{self.api_url}/api/stories/{story_id}",
+            f"{self.api_url}/api/stories/{quote(story_id, safe='')}",
             json=updates,
         )
         response.raise_for_status()

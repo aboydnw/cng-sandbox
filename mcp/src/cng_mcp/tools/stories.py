@@ -9,7 +9,7 @@ async def read_story_tool(client: SandboxAPIClient, story_id: str) -> TextConten
     """Get a story by ID."""
     story = await client.get_story(story_id)
     lines = [f"# {story.get('title', 'Untitled Story')}\n",
-             f"**Description**: {story.get('description', 'No description')}\n"]
+             f"**Description**: {story.get('description') or 'No description'}\n"]
 
     chapters = story.get("chapters", [])
     if chapters:

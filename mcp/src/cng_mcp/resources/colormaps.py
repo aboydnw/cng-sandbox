@@ -23,8 +23,11 @@ async def list_colormaps_resource() -> str:
         lines.append(f"- `{cm}` — {colormaps[cm]}")
 
     lines.append("\n## Diverging (for data with a midpoint like anomalies)\n")
-    for cm in ["RdBu", "RdYlGn", "twilight"]:
+    for cm in ["RdBu", "RdYlGn"]:
         lines.append(f"- `{cm}` — {colormaps[cm]}")
+
+    lines.append("\n## Cyclic (for directional or phase data)\n")
+    lines.append(f"- `twilight` — {colormaps['twilight']}")
 
     lines.append("\n## Grayscale\n")
     for cm in ["gray", "binary"]:

@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - "mcp/**"
+      - ".github/workflows/test-mcp.yml"
 
 permissions:
   contents: read

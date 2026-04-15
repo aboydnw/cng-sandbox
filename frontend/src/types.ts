@@ -70,7 +70,7 @@ export interface Dataset {
   expires_at: string | null;
 }
 
-export type ConnectionType = "xyz_raster" | "xyz_vector" | "cog" | "pmtiles";
+export type ConnectionType = "xyz_raster" | "xyz_vector" | "cog" | "pmtiles" | "geoparquet";
 
 export interface Connection {
   id: string;

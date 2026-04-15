@@ -281,6 +281,41 @@ On startup, the ingestion service runs a background task (`src/services/example_
 - Uses GDAL internally. GDAL < 3.11 requires `AWS_S3_ENDPOINT` (hostname:port without protocol) for S3 access, in addition to `AWS_ENDPOINT_URL`.
 - `AWS_VIRTUAL_HOSTING=FALSE` is required for R2 (path-style access).
 
+## MCP Server
+
+A Model Context Protocol server that wraps the ingestion API, exposing datasets, stories, connections, and validation as composable tools for MCP-compatible agents (Claude Desktop, Claude Code, etc.). Source in `mcp/src/cng_mcp/`.
+
+### Running tests
+
+```bash
+cd mcp && uv run pytest -v
+```
+
+### Tools
+
+- `read_datasets` — List workspace datasets
+- `read_story` / `create_story` / `update_story` — Manage stories
+- `read_connections` — List external tile source connections
+- `validate_layer_config` — Pre-flight check for a chapter's layer config
+
+### Resources
+
+- `cng://datasets` — Catalog of datasets in the workspace
+- `cng://story-templates` — Pre-built story templates agents can reference
+- `cng://colormaps` — Valid colormap names
+
+### Running the server
+
+```bash
+cng-mcp --api-url http://localhost:8086    # Communicates over stdio
+```
+
+See `mcp/README.md` for client config examples and `mcp/ARCHITECTURE.md` for design notes.
+
+### Open dependency
+
+`validate_layer_config` calls `POST /api/validate-layer-config` on the ingestion service, which does not yet exist. The tool is wired up in advance of that endpoint landing.
+
 ## Agent Isolation & Worktrees
 
 All code changes happen in worktrees. The main session stays on `main` at all times.

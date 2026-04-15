@@ -57,23 +57,26 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     if (isGeoParquetUrl(trimmedUrl)) {
       setPreviewUrl(trimmedUrl);
       setShowPreview(true);
-      // Ensure DuckDB is initialized
-      if (!conn) {
+      // Ensure DuckDB is initialized and use the freshly-returned conn
+      // to avoid racing with React state updates.
+      let activeConn = conn;
+      if (!activeConn) {
         try {
-          await initializeDuckDB();
+          const result = await initializeDuckDB();
+          activeConn = result?.conn ?? null;
         } catch (e) {
           console.error("DuckDB initialization failed:", e);
           // Error will be displayed in modal via useGeoParquetValidation hook
           return;
         }
       }
-      await validateGeoParquet();
+      await validateGeoParquet(activeConn);
       return; // Don't proceed to discovery
     }
 
     // Otherwise, use the existing discovery flow
     discover(trimmedUrl);
-  }, [inputUrl, discover, initializeDuckDB, validateGeoParquet]);
+  }, [inputUrl, conn, discover, initializeDuckDB, validateGeoParquet]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

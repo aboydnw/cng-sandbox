@@ -25,7 +25,10 @@ export function useDuckDB() {
   });
   const initializingRef = useRef(false);
 
-  const initialize = useCallback(async () => {
+  const initialize = useCallback(async (): Promise<{
+    db: duckdb.AsyncDuckDB;
+    conn: duckdb.AsyncDuckDBConnection;
+  } | null> => {
     if (dbSingleton.db && dbSingleton.conn) {
       setState({
         db: dbSingleton.db,
@@ -33,9 +36,9 @@ export function useDuckDB() {
         loading: false,
         error: null,
       });
-      return;
+      return { db: dbSingleton.db, conn: dbSingleton.conn };
     }
-    if (initializingRef.current) return;
+    if (initializingRef.current) return null;
     initializingRef.current = true;
     setState((s) => ({ ...s, loading: true, error: null }));
 
@@ -65,9 +68,11 @@ export function useDuckDB() {
       dbSingleton.db = db;
       dbSingleton.conn = conn;
       setState({ db, conn, loading: false, error: null });
+      return { db, conn };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "DuckDB could not be loaded";
       setState({ db: null, conn: null, loading: false, error: msg });
+      return null;
     } finally {
       initializingRef.current = false;
     }

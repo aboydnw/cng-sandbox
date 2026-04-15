@@ -1,0 +1,27 @@
+name: Test MCP Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mcp/**"
+      - ".github/workflows/test-mcp.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "mcp/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v2
+      - run: cd mcp && uv sync --extra dev
+      - run: cd mcp && uv run pytest tests/ -v --cov=src/cng_mcp

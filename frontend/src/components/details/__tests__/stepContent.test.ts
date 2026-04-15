@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { getStepContent, getStepCount, getPipelineType } from "../stepContent";
-import type { Dataset } from "../../../types";
+import { getConnectionStepContent } from "../connectionStepContent";
+import type { Dataset, Connection } from "../../../types";
 
 const rasterDataset: Partial<Dataset> = {
   id: "abc123",
@@ -165,5 +166,35 @@ describe("getStepContent", () => {
     expect(content.subtitle).toBe("cloud hosted");
     expect(content.title).toContain("cloud");
     expect(content.title).not.toContain("PostGIS");
+  });
+});
+
+const geoparquetConnection: Connection = {
+  id: "c5",
+  name: "Parcels",
+  url: "https://example.com/parcels.parquet",
+  connection_type: "geoparquet",
+  bounds: null,
+  min_zoom: null,
+  max_zoom: null,
+  tile_type: null,
+  band_count: null,
+  rescale: null,
+  workspace_id: null,
+  is_categorical: false,
+  categories: null,
+  created_at: "2026-04-15T00:00:00Z",
+};
+
+describe("getConnectionStepContent (geoparquet)", () => {
+  it("returns DuckDB-based source step for geoparquet connections", () => {
+    const step = getConnectionStepContent(geoparquetConnection, 1);
+    expect(step.title.toLowerCase()).toContain("duckdb");
+    expect(step.tools.some((t) => /duckdb/i.test(t.name))).toBe(true);
+  });
+
+  it("returns deck.gl GeoJson display step for geoparquet", () => {
+    const step = getConnectionStepContent(geoparquetConnection, 2);
+    expect(step.tools.some((t) => /deck\.gl/i.test(t.name))).toBe(true);
   });
 });

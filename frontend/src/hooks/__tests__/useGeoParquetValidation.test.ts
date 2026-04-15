@@ -3,23 +3,20 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useGeoParquetValidation } from "../useGeoParquetValidation";
 
-const mockRunQuery = vi.fn();
-
-vi.mock("../useGeoParquetQuery", () => ({
-  useGeoParquetQuery: () => ({
-    runQuery: mockRunQuery,
-  }),
-}));
-
 beforeEach(() => {
-  mockRunQuery.mockReset();
   vi.clearAllMocks();
 });
 
+function makeConn(
+  impl: (sql: string) => Promise<unknown> | unknown
+): AsyncDuckDBConnection {
+  return {
+    query: vi.fn(async (sql: string) => impl(sql)),
+  } as unknown as AsyncDuckDBConnection;
+}
+
 describe("useGeoParquetValidation", () => {
   it("returns valid state with geometry info for valid GeoParquet", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
-
     const describeResult = {
       numRows: 2,
       get: (i: number) => {
@@ -53,16 +50,10 @@ describe("useGeoParquetValidation", () => {
       }),
     };
 
-    mockRunQuery.mockImplementation(async (sql) => {
-      if (sql.includes("DESCRIBE")) {
-        return describeResult;
-      }
-      if (sql.includes("ST_GeometryType")) {
-        return geomTypeResult;
-      }
-      if (sql.includes("ST_Extent")) {
-        return bboxResult;
-      }
+    const mockConn = makeConn((sql) => {
+      if (sql.includes("DESCRIBE")) return describeResult;
+      if (sql.includes("ST_GeometryType")) return geomTypeResult;
+      if (sql.includes("ST_Extent")) return bboxResult;
     });
 
     const { result } = renderHook(() =>
@@ -91,11 +82,8 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("returns error state for unreachable URL", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
-
-    mockRunQuery.mockImplementation(async () => {
-      const error = new Error("Not found (404)");
-      throw error;
+    const mockConn = makeConn(() => {
+      throw new Error("Not found (404)");
     });
 
     const { result } = renderHook(() =>
@@ -112,8 +100,6 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("returns error state when no geometry column detected", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
-
     const describeResult = {
       numRows: 2,
       get: (i: number) => {
@@ -130,10 +116,8 @@ describe("useGeoParquetValidation", () => {
       },
     };
 
-    mockRunQuery.mockImplementation(async (sql) => {
-      if (sql.includes("DESCRIBE")) {
-        return describeResult;
-      }
+    const mockConn = makeConn((sql) => {
+      if (sql.includes("DESCRIBE")) return describeResult;
     });
 
     const { result } = renderHook(() =>
@@ -162,9 +146,37 @@ describe("useGeoParquetValidation", () => {
     expect(result.current.error).toBe("DuckDB connection not available");
   });
 
-  it("sets validating to true while validation is in progress", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
+  it("uses the override conn when provided even if hook conn is null", async () => {
+    const describeResult = {
+      numRows: 1,
+      get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+    };
+    const overrideConn = makeConn((sql) => {
+      if (sql.includes("DESCRIBE")) return describeResult;
+      if (sql.includes("ST_GeometryType")) {
+        return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
+      }
+      if (sql.includes("ST_Extent")) {
+        return {
+          numRows: 1,
+          get: () => ({ minx: -1, miny: -1, maxx: 1, maxy: 1 }),
+        };
+      }
+    });
 
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(null, "/api/test.parquet")
+    );
+
+    await act(async () => {
+      await result.current.validate(overrideConn);
+    });
+
+    expect(result.current.valid).toBe(true);
+    expect(result.current.geometryInfo?.type).toBe("POINT");
+  });
+
+  it("sets validating to true while validation is in progress", async () => {
     let resolveDescribe: (value: unknown) => void = () => {};
     const describePromise = new Promise((resolve) => {
       resolveDescribe = resolve;
@@ -175,7 +187,7 @@ describe("useGeoParquetValidation", () => {
       get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
     };
 
-    mockRunQuery.mockImplementation(async (sql) => {
+    const mockConn = makeConn(async (sql) => {
       if (sql.includes("DESCRIBE")) {
         await describePromise;
         return describeResult;
@@ -216,8 +228,6 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("returns error when geometry column name contains invalid characters", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
-
     const describeResult = {
       numRows: 1,
       get: () => ({
@@ -226,10 +236,8 @@ describe("useGeoParquetValidation", () => {
       }),
     };
 
-    mockRunQuery.mockImplementation(async (sql) => {
-      if (sql.includes("DESCRIBE")) {
-        return describeResult;
-      }
+    const mockConn = makeConn((sql) => {
+      if (sql.includes("DESCRIBE")) return describeResult;
     });
 
     const { result } = renderHook(() =>
@@ -245,10 +253,8 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("does not allow concurrent validation calls", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
-
     let validateCallCount = 0;
-    mockRunQuery.mockImplementation(async (sql) => {
+    const mockConn = makeConn(async (sql) => {
       validateCallCount++;
       if (sql.includes("DESCRIBE")) {
         return {
@@ -290,9 +296,7 @@ describe("useGeoParquetValidation", () => {
   });
 
   it("sanitizes error messages to avoid exposing internal details", async () => {
-    const mockConn = { query: vi.fn() } as unknown as AsyncDuckDBConnection;
-
-    mockRunQuery.mockImplementation(async () => {
+    const mockConn = makeConn(() => {
       throw new Error("DuckDB Internal Error: GDAL Exception: Unknown format");
     });
 
@@ -308,5 +312,44 @@ describe("useGeoParquetValidation", () => {
     expect(result.current.error).toBe("File validation failed");
     expect(result.current.error).not.toContain("GDAL");
     expect(result.current.error).not.toContain("DuckDB");
+  });
+
+  it("escapes single quotes in the URL to prevent SQL injection", async () => {
+    const queries: string[] = [];
+    const describeResult = {
+      numRows: 1,
+      get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+    };
+    const mockConn = {
+      query: vi.fn(async (sql: string) => {
+        queries.push(sql);
+        if (sql.includes("DESCRIBE")) return describeResult;
+        if (sql.includes("ST_GeometryType")) {
+          return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
+        }
+        if (sql.includes("ST_Extent")) {
+          return {
+            numRows: 1,
+            get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
+          };
+        }
+      }),
+    } as unknown as AsyncDuckDBConnection;
+
+    const trickyUrl = "/api/data's.parquet";
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(mockConn, trickyUrl)
+    );
+
+    await act(async () => {
+      await result.current.validate();
+    });
+
+    expect(result.current.valid).toBe(true);
+    // Every SQL query should contain the escaped form, never a raw single quote breaking the literal
+    for (const q of queries) {
+      expect(q).toContain("data''s.parquet");
+      expect(q).not.toContain("data's.parquet");
+    }
   });
 });

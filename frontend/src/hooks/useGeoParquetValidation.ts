@@ -1,9 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
-import { useGeoParquetQuery } from "./useGeoParquetQuery";
 
 function isValidColumnName(name: string): boolean {
   return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+}
+
+function escapeSqlLiteral(value: string): string {
+  return value.replace(/'/g, "''");
 }
 
 export interface GeometryInfo {
@@ -38,138 +41,143 @@ export function useGeoParquetValidation(
   });
 
   const validatingRef = useRef(false);
-  const { runQuery } = useGeoParquetQuery(conn, parquetUrl);
 
-  const validate = useCallback(async () => {
-    if (validatingRef.current) {
-      console.warn("Validation already in progress, skipping concurrent call");
-      return;
-    }
+  const validate = useCallback(
+    async (overrideConn?: AsyncDuckDBConnection | null) => {
+      if (validatingRef.current) {
+        console.warn("Validation already in progress, skipping concurrent call");
+        return;
+      }
 
-    if (!conn) {
-      setState({
-        validating: false,
-        valid: false,
-        error: "DuckDB connection not available",
-        geometryInfo: null,
-      });
-      return;
-    }
+      const activeConn = overrideConn ?? conn;
 
-    validatingRef.current = true;
-    setState((prev) => ({ ...prev, validating: true }));
+      if (!activeConn) {
+        setState({
+          validating: false,
+          valid: false,
+          error: "DuckDB connection not available",
+          geometryInfo: null,
+        });
+        return;
+      }
 
-    try {
-      const fullUrl = `${window.location.origin}${parquetUrl}`;
+      validatingRef.current = true;
+      setState((prev) => ({ ...prev, validating: true }));
 
-      // Step 1: Detect geometry column
-      const descResult = await runQuery(
-        `DESCRIBE SELECT * FROM read_parquet('${fullUrl}') LIMIT 0`
-      );
+      try {
+        const fullUrl = `${window.location.origin}${parquetUrl}`;
+        const escapedUrl = escapeSqlLiteral(fullUrl);
 
-      let geometryColumnName: string | null = null;
+        // Step 1: Detect geometry column
+        const descResult = await activeConn.query(
+          `DESCRIBE SELECT * FROM read_parquet('${escapedUrl}') LIMIT 0`
+        );
 
-      if (descResult && descResult.numRows) {
-        for (let i = 0; i < descResult.numRows; i++) {
-          const row = descResult.get(i);
-          if (!row) continue;
-          const colType = String(row.column_type);
-          const colName = String(row.column_name);
+        let geometryColumnName: string | null = null;
 
-          if (
-            colType.includes("GEOMETRY") ||
-            (colType === "BLOB" && GEOM_NAMES.includes(colName.toLowerCase()))
-          ) {
-            geometryColumnName = colName;
-            break;
+        if (descResult && descResult.numRows) {
+          for (let i = 0; i < descResult.numRows; i++) {
+            const row = descResult.get(i);
+            if (!row) continue;
+            const colType = String(row.column_type);
+            const colName = String(row.column_name);
+
+            if (
+              colType.includes("GEOMETRY") ||
+              (colType === "BLOB" && GEOM_NAMES.includes(colName.toLowerCase()))
+            ) {
+              geometryColumnName = colName;
+              break;
+            }
           }
         }
-      }
 
-      if (!geometryColumnName) {
+        if (!geometryColumnName) {
+          setState({
+            validating: false,
+            valid: false,
+            error: "No geometry column detected",
+            geometryInfo: null,
+          });
+          validatingRef.current = false;
+          return;
+        }
+
+        if (!isValidColumnName(geometryColumnName)) {
+          setState({
+            validating: false,
+            valid: false,
+            error: "Invalid column name",
+            geometryInfo: null,
+          });
+          validatingRef.current = false;
+          return;
+        }
+
+        // Step 2: Get geometry type
+        const geomTypeResult = await activeConn.query(
+          `SELECT DISTINCT ST_GeometryType("${geometryColumnName}") as geom_type FROM read_parquet('${escapedUrl}') WHERE "${geometryColumnName}" IS NOT NULL LIMIT 1`
+        );
+
+        let geometryType = "UNKNOWN";
+        if (geomTypeResult && geomTypeResult.numRows > 0) {
+          const row = geomTypeResult.get(0);
+          if (row && row.geom_type) {
+            geometryType = String(row.geom_type);
+          }
+        }
+
+        // Step 3: Get bounding box
+        const bboxResult = await activeConn.query(
+          `SELECT ST_MinX(ST_Extent("${geometryColumnName}")) as minx,
+                  ST_MinY(ST_Extent("${geometryColumnName}")) as miny,
+                  ST_MaxX(ST_Extent("${geometryColumnName}")) as maxx,
+                  ST_MaxY(ST_Extent("${geometryColumnName}")) as maxy
+           FROM read_parquet('${escapedUrl}') WHERE "${geometryColumnName}" IS NOT NULL`
+        );
+
+        let bbox: GeometryInfo["bbox"] = null;
+        if (bboxResult && bboxResult.numRows > 0) {
+          const row = bboxResult.get(0);
+          if (
+            row &&
+            row.minx != null &&
+            row.miny != null &&
+            row.maxx != null &&
+            row.maxy != null
+          ) {
+            bbox = {
+              minLon: Number(row.minx),
+              minLat: Number(row.miny),
+              maxLon: Number(row.maxx),
+              maxLat: Number(row.maxy),
+            };
+          }
+        }
+
+        setState({
+          validating: false,
+          valid: true,
+          error: null,
+          geometryInfo: {
+            type: geometryType,
+            bbox,
+          },
+        });
+      } catch (e) {
+        const errorMessage = categorizeError(e);
         setState({
           validating: false,
           valid: false,
-          error: "No geometry column detected",
+          error: errorMessage,
           geometryInfo: null,
         });
+      } finally {
         validatingRef.current = false;
-        return;
       }
-
-      if (!isValidColumnName(geometryColumnName)) {
-        setState({
-          validating: false,
-          valid: false,
-          error: "Invalid column name",
-          geometryInfo: null,
-        });
-        validatingRef.current = false;
-        return;
-      }
-
-      // Step 2: Get geometry type
-      const geomTypeResult = await runQuery(
-        `SELECT DISTINCT ST_GeometryType("${geometryColumnName}") as geom_type FROM read_parquet('${fullUrl}') WHERE "${geometryColumnName}" IS NOT NULL LIMIT 1`
-      );
-
-      let geometryType = "UNKNOWN";
-      if (geomTypeResult && geomTypeResult.numRows > 0) {
-        const row = geomTypeResult.get(0);
-        if (row && row.geom_type) {
-          geometryType = String(row.geom_type);
-        }
-      }
-
-      // Step 3: Get bounding box
-      const bboxResult = await runQuery(
-        `SELECT ST_MinX(ST_Extent("${geometryColumnName}")) as minx,
-                ST_MinY(ST_Extent("${geometryColumnName}")) as miny,
-                ST_MaxX(ST_Extent("${geometryColumnName}")) as maxx,
-                ST_MaxY(ST_Extent("${geometryColumnName}")) as maxy
-         FROM read_parquet('${fullUrl}') WHERE "${geometryColumnName}" IS NOT NULL`
-      );
-
-      let bbox: GeometryInfo["bbox"] = null;
-      if (bboxResult && bboxResult.numRows > 0) {
-        const row = bboxResult.get(0);
-        if (
-          row &&
-          row.minx != null &&
-          row.miny != null &&
-          row.maxx != null &&
-          row.maxy != null
-        ) {
-          bbox = {
-            minLon: Number(row.minx),
-            minLat: Number(row.miny),
-            maxLon: Number(row.maxx),
-            maxLat: Number(row.maxy),
-          };
-        }
-      }
-
-      setState({
-        validating: false,
-        valid: true,
-        error: null,
-        geometryInfo: {
-          type: geometryType,
-          bbox,
-        },
-      });
-    } catch (e) {
-      const errorMessage = categorizeError(e);
-      setState({
-        validating: false,
-        valid: false,
-        error: errorMessage,
-        geometryInfo: null,
-      });
-    } finally {
-      validatingRef.current = false;
-    }
-  }, [conn, parquetUrl, runQuery]);
+    },
+    [conn, parquetUrl]
+  );
 
   return {
     ...state,

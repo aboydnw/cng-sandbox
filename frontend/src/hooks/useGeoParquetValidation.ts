@@ -10,7 +10,7 @@ function escapeSqlLiteral(value: string): string {
 }
 
 function resolveParquetUrl(parquetUrl: string): string {
-  if (/^https?:\/\//i.test(parquetUrl)) {
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(parquetUrl) || parquetUrl.startsWith("//")) {
     return parquetUrl;
   }
   const path = parquetUrl.startsWith("/") ? parquetUrl : `/${parquetUrl}`;
@@ -109,7 +109,6 @@ export function useGeoParquetValidation(
             error: "No geometry column detected",
             geometryInfo: null,
           });
-          validatingRef.current = false;
           return;
         }
 
@@ -120,7 +119,6 @@ export function useGeoParquetValidation(
             error: "Invalid column name",
             geometryInfo: null,
           });
-          validatingRef.current = false;
           return;
         }
 

@@ -240,13 +240,10 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     item.connection?.connection_type === "geoparquet";
 
   const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
-  const {
-    table: geoParquetTable,
-    loading: _geoParquetLoading,
-    error: _geoParquetError,
-    overCap: _geoParquetOverCap,
-    load: loadGeoParquet,
-  } = useGeoParquetRender(duckConn, isGeoParquetConnection ? item.connection!.url : "");
+  const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
+    duckConn,
+    isGeoParquetConnection ? (item.connection?.url ?? "") : "",
+  );
 
   useEffect(() => {
     if (!isGeoParquetConnection) return;

@@ -9,6 +9,14 @@ function escapeSqlLiteral(value: string): string {
   return value.replace(/'/g, "''");
 }
 
+function resolveParquetUrl(parquetUrl: string): string {
+  if (/^https?:\/\//i.test(parquetUrl)) {
+    return parquetUrl;
+  }
+  const path = parquetUrl.startsWith("/") ? parquetUrl : `/${parquetUrl}`;
+  return `${window.location.origin}${path}`;
+}
+
 export interface GeometryInfo {
   type: string;
   bbox: {
@@ -67,7 +75,7 @@ export function useGeoParquetValidation(
       setState((prev) => ({ ...prev, validating: true }));
 
       try {
-        const fullUrl = `${window.location.origin}${parquetUrl}`;
+        const fullUrl = resolveParquetUrl(parquetUrl);
         const escapedUrl = escapeSqlLiteral(fullUrl);
 
         // Step 1: Detect geometry column
@@ -129,13 +137,15 @@ export function useGeoParquetValidation(
           }
         }
 
-        // Step 3: Get bounding box
+        // Step 3: Get bounding box (compute ST_Extent once via CTE)
         const bboxResult = await activeConn.query(
-          `SELECT ST_MinX(ST_Extent("${geometryColumnName}")) as minx,
-                  ST_MinY(ST_Extent("${geometryColumnName}")) as miny,
-                  ST_MaxX(ST_Extent("${geometryColumnName}")) as maxx,
-                  ST_MaxY(ST_Extent("${geometryColumnName}")) as maxy
-           FROM read_parquet('${escapedUrl}') WHERE "${geometryColumnName}" IS NOT NULL`
+          `WITH extent AS (
+             SELECT ST_Extent("${geometryColumnName}") as ext
+             FROM read_parquet('${escapedUrl}') WHERE "${geometryColumnName}" IS NOT NULL
+           )
+           SELECT ST_MinX(ext) as minx, ST_MinY(ext) as miny,
+                  ST_MaxX(ext) as maxx, ST_MaxY(ext) as maxy
+           FROM extent`
         );
 
         let bbox: GeometryInfo["bbox"] = null;
@@ -204,8 +214,14 @@ function categorizeError(error: unknown): string {
     if (lowerMsg.includes("parquet")) {
       return "File is not a valid Parquet";
     }
-    if (lowerMsg.includes("geometry")) {
+    if (
+      lowerMsg.includes("no geometry") ||
+      lowerMsg.includes("geometry column not found")
+    ) {
       return "No geometry column detected";
+    }
+    if (lowerMsg.includes("geometry")) {
+      return "Geometry processing failed";
     }
 
     return "File validation failed";

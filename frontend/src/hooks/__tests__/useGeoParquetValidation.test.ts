@@ -217,12 +217,18 @@ describe("useGeoParquetValidation", () => {
       useGeoParquetValidation(mockConn, "/api/test.parquet")
     );
 
-    const validatePromise = act(async () => {
-      result.current.validate();
+    let validatePromise: Promise<void> = Promise.resolve();
+    act(() => {
+      validatePromise = result.current.validate();
     });
 
+    // Assert mid-flight: validating should be true while DESCRIBE is pending
+    await waitFor(() => expect(result.current.validating).toBe(true));
+
     resolveDescribe(undefined);
-    await validatePromise;
+    await act(async () => {
+      await validatePromise;
+    });
 
     // State should eventually be set to valid=true
     await waitFor(() => expect(result.current.validating).toBe(false));
@@ -294,6 +300,10 @@ describe("useGeoParquetValidation", () => {
 
     await waitFor(() => expect(result.current.validating).toBe(false));
 
+    // validateCallCount counts SQL queries issued to the mock conn (3 per
+    // validation: DESCRIBE, ST_GeometryType, ST_Extent). The second
+    // validate() call is skipped due to the in-flight guard, so we expect
+    // exactly 3 queries, not 6.
     expect(validateCallCount).toBe(3);
   });
 
@@ -314,6 +324,76 @@ describe("useGeoParquetValidation", () => {
     expect(result.current.error).toBe("File validation failed");
     expect(result.current.error).not.toContain("GDAL");
     expect(result.current.error).not.toContain("DuckDB");
+  });
+
+  it("passes absolute URLs through unchanged and prefixes relative paths with window.location.origin", async () => {
+    const queries: string[] = [];
+    const describeResult = {
+      numRows: 1,
+      get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+    };
+    const makeQueryConn = () =>
+      ({
+        query: vi.fn(async (sql: string) => {
+          queries.push(sql);
+          if (sql.includes("DESCRIBE")) return describeResult;
+          if (sql.includes("ST_GeometryType")) {
+            return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
+          }
+          if (sql.includes("ST_Extent")) {
+            return {
+              numRows: 1,
+              get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
+            };
+          }
+        }),
+      }) as unknown as AsyncDuckDBConnection;
+
+    // Absolute URL: passed through unchanged
+    queries.length = 0;
+    const absoluteConn = makeQueryConn();
+    const absoluteUrl = "https://example.com/data.parquet";
+    const { result: absoluteResult } = renderHook(() =>
+      useGeoParquetValidation(absoluteConn, absoluteUrl)
+    );
+    await act(async () => {
+      await absoluteResult.current.validate();
+    });
+    expect(absoluteResult.current.valid).toBe(true);
+    for (const q of queries) {
+      expect(q).toContain("https://example.com/data.parquet");
+      expect(q).not.toContain(`${window.location.origin}https://`);
+    }
+
+    // Relative path: prefixed with window.location.origin
+    queries.length = 0;
+    const relativeConn = makeQueryConn();
+    const relativePath = "/api/data.parquet";
+    const { result: relativeResult } = renderHook(() =>
+      useGeoParquetValidation(relativeConn, relativePath)
+    );
+    await act(async () => {
+      await relativeResult.current.validate();
+    });
+    expect(relativeResult.current.valid).toBe(true);
+    for (const q of queries) {
+      expect(q).toContain(`${window.location.origin}/api/data.parquet`);
+    }
+
+    // Path without leading slash: still prefixed correctly with a single slash
+    queries.length = 0;
+    const bareConn = makeQueryConn();
+    const barePath = "api/data.parquet";
+    const { result: bareResult } = renderHook(() =>
+      useGeoParquetValidation(bareConn, barePath)
+    );
+    await act(async () => {
+      await bareResult.current.validate();
+    });
+    expect(bareResult.current.valid).toBe(true);
+    for (const q of queries) {
+      expect(q).toContain(`${window.location.origin}/api/data.parquet`);
+    }
   });
 
   it("escapes single quotes in the URL to prevent SQL injection", async () => {

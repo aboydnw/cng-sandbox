@@ -236,3 +236,28 @@ def test_patch_connection_categories_rejects_non_categorical(client):
         json=[{"value": 1, "label": "X"}],
     )
     assert patch_resp.status_code == 400
+
+
+def test_connection_row_has_conversion_fields(db_session):
+    from src.models.connection import ConnectionRow
+    import uuid
+
+    row = ConnectionRow(
+        id=str(uuid.uuid4()),
+        name="t",
+        url="https://example.com/a.parquet",
+        connection_type="geoparquet",
+        render_path="server",
+        conversion_status="pending",
+    )
+    db_session.add(row)
+    db_session.commit()
+    db_session.refresh(row)
+    assert row.render_path == "server"
+    assert row.conversion_status == "pending"
+    assert row.tile_url is None
+    assert row.conversion_error is None
+    d = row.to_dict()
+    assert d["render_path"] == "server"
+    assert d["conversion_status"] == "pending"
+    assert d["tile_url"] is None

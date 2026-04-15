@@ -28,6 +28,12 @@ class ConnectionRow(Base):
     is_categorical = Column(Boolean, nullable=False, default=False)
     categories_json = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    tile_url = Column(String, nullable=True)
+    render_path = Column(String, nullable=True)  # "client" | "server"
+    conversion_status = Column(String, nullable=True)  # pending | running | ready | failed
+    conversion_error = Column(Text, nullable=True)
+    feature_count = Column(Integer, nullable=True)
+    file_size = Column(Integer, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -49,4 +55,10 @@ class ConnectionRow(Base):
             if self.categories_json
             else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "tile_url": self.tile_url,
+            "render_path": self.render_path,
+            "conversion_status": self.conversion_status,
+            "conversion_error": self.conversion_error,
+            "feature_count": self.feature_count,
+            "file_size": self.file_size,
         }

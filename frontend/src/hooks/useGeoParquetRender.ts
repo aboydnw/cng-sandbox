@@ -31,14 +31,23 @@ export function useGeoParquetRender(
     overCap: false,
   });
   const geomColRef = useRef<string | null>(null);
+  const reqIdRef = useRef(0);
 
   const load = useCallback(async () => {
     if (!conn || !url) return;
+    // Reset geometry column detection for each new load so URL switches
+    // don't reuse a column name that may not exist in the new file.
+    geomColRef.current = null;
+    const myReq = ++reqIdRef.current;
     setState((s) => ({ ...s, loading: true, error: null, overCap: false }));
     try {
+      // Escape single quotes to prevent SQL injection via URL values.
+      const safeUrl = url.split("'").join("''");
+
       const countResult = await conn.query(
-        `SELECT COUNT(*) as cnt FROM read_parquet('${url}')`
+        `SELECT COUNT(*) as cnt FROM read_parquet('${safeUrl}')`
       );
+      if (myReq !== reqIdRef.current) return;
       const featureCount = Number(countResult.get(0)?.cnt ?? 0);
 
       if (featureCount > featureCap) {
@@ -54,8 +63,9 @@ export function useGeoParquetRender(
 
       if (!geomColRef.current) {
         const desc = await conn.query(
-          `DESCRIBE SELECT * FROM read_parquet('${url}') LIMIT 0`
+          `DESCRIBE SELECT * FROM read_parquet('${safeUrl}') LIMIT 0`
         );
+        if (myReq !== reqIdRef.current) return;
         for (let i = 0; i < desc.numRows; i++) {
           const row = desc.get(i);
           if (!row) continue;
@@ -73,9 +83,10 @@ export function useGeoParquetRender(
 
       const geomCol = geomColRef.current;
       const sql = geomCol
-        ? `SELECT * EXCLUDE ("${geomCol}"), ST_AsGeoJSON("${geomCol}") as __geojson FROM read_parquet('${url}') LIMIT ${featureCap}`
-        : `SELECT * FROM read_parquet('${url}') LIMIT ${featureCap}`;
+        ? `SELECT * EXCLUDE ("${geomCol}"), ST_AsGeoJSON("${geomCol}") as __geojson FROM read_parquet('${safeUrl}') LIMIT ${featureCap}`
+        : `SELECT * FROM read_parquet('${safeUrl}') LIMIT ${featureCap}`;
       const table = (await conn.query(sql)) as unknown as Table;
+      if (myReq !== reqIdRef.current) return;
 
       setState({
         table,
@@ -85,6 +96,7 @@ export function useGeoParquetRender(
         overCap: false,
       });
     } catch (e) {
+      if (myReq !== reqIdRef.current) return;
       setState({
         table: null,
         featureCount: 0,

@@ -202,6 +202,7 @@ cd frontend && npx vitest run
 - **COG tiler proxy preserves `/cog` prefix**: Unlike `/raster` and `/vector` (which strip their prefix before forwarding), the `/cog` proxy passes the path through unchanged because titiler's COG routes are already mounted under `/cog/`.
 - **Vendored maptool utilities**: `src/lib/maptool/` contains `createCOGLayer`, `createPMTilesProtocol`, `useColorScale`, `MapLegend`, and `listColormaps` — vendored from `@maptool/core` so the sandbox has no external dependency on the library.
 - **Categorical rasters use a JSON colormap, not `colormap_name`**: When a dataset has `isCategorical: true`, tile URLs are built with `colormap=<encoded-JSON>` (a `{value: [r,g,b]}` map) and `resampling=nearest` instead of the usual `colormap_name=` parameter. Mixing them will produce incorrect or broken tiles.
+- **GeoParquet connections render client-side via DuckDB-WASM**: Remote GeoParquet connections (`connection_type: "geoparquet"`) are not tiled. The frontend hook `useGeoParquetRender` (`src/hooks/useGeoParquetRender.ts`) loads the file into DuckDB-WASM, returns an Arrow `Table`, and `useLayerBuilder` renders it via deck.gl. A 500k feature cap protects the browser from oversized files.
 
 ## Ingestion Service
 
@@ -242,7 +243,7 @@ cd ingestion && uv run pytest -v
 
 **Connections (external tile sources):**
 - `GET /api/connections` — List connections in the workspace
-- `POST /api/connections` — Register an external tile source (XYZ raster/vector, COG, PMTiles); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row
+- `POST /api/connections` — Register an external tile source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections are rendered client-side via DuckDB-WASM (no tiler involved).
 - `GET /api/connections/{id}` — Get a connection by ID
 - `PATCH /api/connections/{id}/categories` — Update category labels for a categorical COG connection; body is a list of `{"value": int, "label": str}` objects; returns 400 if connection is not categorical or a value doesn't exist
 - `DELETE /api/connections/{id}` — Delete a connection

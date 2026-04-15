@@ -1,22 +1,19 @@
 import {
-  Button,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
   Box,
+  Button,
+  CloseButton,
+  DialogBackdrop,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  Heading,
   Spinner,
+  Table,
   Text,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
 } from "@chakra-ui/react";
 import type { Table as ArrowTable } from "apache-arrow";
 import type { GeometryInfo } from "../hooks/useGeoParquetValidation";
@@ -80,135 +77,157 @@ export function GeoParquetPreviewModal({
   };
 
   const sampleRows = getSampleRows();
-  const sampleColumnNames = sampleRows.length > 0
-    ? Object.keys(sampleRows[0]).filter((col) => col !== "__geojson")
-    : [];
+  const sampleColumnNames =
+    sampleRows.length > 0
+      ? Object.keys(sampleRows[0]).filter((col) => col !== "__geojson")
+      : [];
 
   return (
-    <Modal isOpen={open} onClose={onCancel} size="2xl">
-      <ModalOverlay />
-      <ModalContent maxH="80vh" overflowY="auto">
-        <ModalHeader>
-          <Heading size="md">Preview: {filename}</Heading>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-
-        {validating ? (
-          <Box textAlign="center" py={12}>
-            <Spinner
-              size="lg"
-              color="brand.orange"
-              data-testid="validating-spinner"
-              mb={4}
-            />
-            <Text>Validating...</Text>
-          </Box>
-        ) : error ? (
-          <Box p={4} bg="red.50" borderRadius="md" borderLeft="4px solid" borderColor="red.500">
-            <Text color="red.700">{error}</Text>
-          </Box>
-        ) : (
-          <Box>
-            {geometryInfo && (
-              <Box mb={6}>
-                <Heading size="sm" mb={3}>
-                  Geometry Information
-                </Heading>
-                <Box overflowX="auto">
-                  <Table size="sm">
-                    <Tbody>
-                      <Tr>
-                        <Td fontWeight="600" w="25%">
-                          Type
-                        </Td>
-                        <Td>{geometryInfo.type}</Td>
-                      </Tr>
-                      {geometryInfo.bbox && (
-                        <>
-                          <Tr>
-                            <Td fontWeight="600">Min Longitude</Td>
-                            <Td>{geometryInfo.bbox.minLon}</Td>
-                          </Tr>
-                          <Tr>
-                            <Td fontWeight="600">Min Latitude</Td>
-                            <Td>{geometryInfo.bbox.minLat}</Td>
-                          </Tr>
-                          <Tr>
-                            <Td fontWeight="600">Max Longitude</Td>
-                            <Td>{geometryInfo.bbox.maxLon}</Td>
-                          </Tr>
-                          <Tr>
-                            <Td fontWeight="600">Max Latitude</Td>
-                            <Td>{geometryInfo.bbox.maxLat}</Td>
-                          </Tr>
-                        </>
-                      )}
-                    </Tbody>
-                  </Table>
+    <DialogRoot
+      open={open}
+      onOpenChange={(e) => !e.open && onCancel()}
+      size="xl"
+    >
+      <DialogBackdrop />
+      <DialogContent shadow="lg" maxH="80vh" overflowY="auto">
+        <DialogHeader>
+          <DialogTitle>Preview: {filename}</DialogTitle>
+          <DialogCloseTrigger asChild>
+            <CloseButton size="sm" />
+          </DialogCloseTrigger>
+        </DialogHeader>
+        <DialogBody>
+          {validating ? (
+            <Box textAlign="center" py={12}>
+              <Spinner
+                size="lg"
+                color="brand.orange"
+                data-testid="validating-spinner"
+                mb={4}
+              />
+              <Text>Validating...</Text>
+            </Box>
+          ) : error ? (
+            <Box
+              p={4}
+              bg="red.50"
+              borderRadius="md"
+              borderLeft="4px solid"
+              borderColor="red.500"
+            >
+              <Text color="red.700">{error}</Text>
+            </Box>
+          ) : (
+            <Box>
+              {geometryInfo && (
+                <Box mb={6}>
+                  <Heading size="sm" mb={3}>
+                    Geometry Information
+                  </Heading>
+                  <Box overflowX="auto">
+                    <Table.Root size="sm">
+                      <Table.Body>
+                        <Table.Row>
+                          <Table.Cell fontWeight="600" w="25%">
+                            Type
+                          </Table.Cell>
+                          <Table.Cell>{geometryInfo.type}</Table.Cell>
+                        </Table.Row>
+                        {geometryInfo.bbox && (
+                          <>
+                            <Table.Row>
+                              <Table.Cell fontWeight="600">
+                                Min Longitude
+                              </Table.Cell>
+                              <Table.Cell>{geometryInfo.bbox.minLon}</Table.Cell>
+                            </Table.Row>
+                            <Table.Row>
+                              <Table.Cell fontWeight="600">
+                                Min Latitude
+                              </Table.Cell>
+                              <Table.Cell>{geometryInfo.bbox.minLat}</Table.Cell>
+                            </Table.Row>
+                            <Table.Row>
+                              <Table.Cell fontWeight="600">
+                                Max Longitude
+                              </Table.Cell>
+                              <Table.Cell>{geometryInfo.bbox.maxLon}</Table.Cell>
+                            </Table.Row>
+                            <Table.Row>
+                              <Table.Cell fontWeight="600">
+                                Max Latitude
+                              </Table.Cell>
+                              <Table.Cell>{geometryInfo.bbox.maxLat}</Table.Cell>
+                            </Table.Row>
+                          </>
+                        )}
+                      </Table.Body>
+                    </Table.Root>
+                  </Box>
                 </Box>
-              </Box>
-            )}
+              )}
 
-            {schema.length > 0 && (
-              <Box mb={6}>
-                <Heading size="sm" mb={3}>
-                  Schema
-                </Heading>
-                <Box overflowX="auto">
-                  <Table size="sm">
-                    <Thead>
-                      <Tr bg="brand.bgSubtle">
-                        <Th>Column</Th>
-                        <Th>Type</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {schema.map((col) => (
-                        <Tr key={col.name}>
-                          <Td>{col.name}</Td>
-                          <Td>{col.type}</Td>
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
-                </Box>
-              </Box>
-            )}
-
-            {sampleRows.length > 0 && (
-              <Box mb={6}>
-                <Heading size="sm" mb={3}>
-                  Sample Rows (first {sampleRows.length})
-                </Heading>
-                <Box overflowX="auto">
-                  <Table size="sm">
-                    <Thead>
-                      <Tr bg="brand.bgSubtle">
-                        {sampleColumnNames.map((col) => (
-                          <Th key={col}>{col}</Th>
+              {schema.length > 0 && (
+                <Box mb={6}>
+                  <Heading size="sm" mb={3}>
+                    Schema
+                  </Heading>
+                  <Box overflowX="auto">
+                    <Table.Root size="sm">
+                      <Table.Header>
+                        <Table.Row bg="brand.bgSubtle">
+                          <Table.ColumnHeader>Column</Table.ColumnHeader>
+                          <Table.ColumnHeader>Type</Table.ColumnHeader>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {schema.map((col) => (
+                          <Table.Row key={col.name}>
+                            <Table.Cell>{col.name}</Table.Cell>
+                            <Table.Cell>{col.type}</Table.Cell>
+                          </Table.Row>
                         ))}
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {sampleRows.map((row, idx) => (
-                        <Tr key={idx}>
-                          {sampleColumnNames.map((col) => (
-                            <Td key={`${idx}-${col}`}>
-                              {truncateValue(row[col], 100)}
-                            </Td>
-                          ))}
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
+                      </Table.Body>
+                    </Table.Root>
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </Box>
-        )}
-        </ModalBody>
-        <ModalFooter gap={2}>
+              )}
+
+              {sampleRows.length > 0 && (
+                <Box mb={6}>
+                  <Heading size="sm" mb={3}>
+                    Sample Rows (first {sampleRows.length})
+                  </Heading>
+                  <Box overflowX="auto">
+                    <Table.Root size="sm">
+                      <Table.Header>
+                        <Table.Row bg="brand.bgSubtle">
+                          {sampleColumnNames.map((col) => (
+                            <Table.ColumnHeader key={col}>
+                              {col}
+                            </Table.ColumnHeader>
+                          ))}
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {sampleRows.map((row, idx) => (
+                          <Table.Row key={idx}>
+                            {sampleColumnNames.map((col) => (
+                              <Table.Cell key={`${idx}-${col}`}>
+                                {truncateValue(row[col], 100)}
+                              </Table.Cell>
+                            ))}
+                          </Table.Row>
+                        ))}
+                      </Table.Body>
+                    </Table.Root>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogBody>
+        <DialogFooter gap={2}>
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
@@ -220,8 +239,8 @@ export function GeoParquetPreviewModal({
           >
             Confirm & Connect
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

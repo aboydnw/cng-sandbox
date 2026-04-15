@@ -81,7 +81,7 @@ describe("GeoParquetPreviewModal", () => {
     expect(confirmButton).toBeDisabled();
   });
 
-  it.skip("disables confirm button when valid is false", () => {
+  it("disables confirm button when valid is false", () => {
     renderWithChakra(
       <GeoParquetPreviewModal {...defaultProps} valid={false} open={true} />
     );
@@ -106,7 +106,7 @@ describe("GeoParquetPreviewModal", () => {
     expect(confirmButton).toBeDisabled();
   });
 
-  it.skip("enables confirm button when valid is true and validating is false", () => {
+  it("enables confirm button when valid is true and validating is false", () => {
     renderWithChakra(
       <GeoParquetPreviewModal
         {...defaultProps}
@@ -122,7 +122,7 @@ describe("GeoParquetPreviewModal", () => {
     expect(confirmButton).not.toBeDisabled();
   });
 
-  it.skip("calls onConfirm when confirm button is clicked and valid is true", () => {
+  it("calls onConfirm when confirm button is clicked and valid is true", () => {
     const onConfirm = vi.fn();
     renderWithChakra(
       <GeoParquetPreviewModal
@@ -140,7 +140,7 @@ describe("GeoParquetPreviewModal", () => {
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 
-  it.skip("calls onCancel when cancel button is clicked", () => {
+  it("calls onCancel when cancel button is clicked", () => {
     const onCancel = vi.fn();
     renderWithChakra(
       <GeoParquetPreviewModal
@@ -154,7 +154,7 @@ describe("GeoParquetPreviewModal", () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  it.skip("renders geometry info when valid is true", () => {
+  it("renders geometry info when valid is true", () => {
     renderWithChakra(
       <GeoParquetPreviewModal
         {...defaultProps}
@@ -164,11 +164,11 @@ describe("GeoParquetPreviewModal", () => {
       />
     );
     expect(screen.getByText("Point")).toBeTruthy();
-    expect(screen.getByText(/-120.5/)).toBeTruthy();
-    expect(screen.getByText(/40.0/)).toBeTruthy();
+    expect(screen.getByText(/-120\.5/)).toBeTruthy();
+    expect(screen.getByText(/-110/)).toBeTruthy();
   });
 
-  it.skip("renders schema table when valid is true", () => {
+  it("renders schema table when valid is true", () => {
     renderWithChakra(
       <GeoParquetPreviewModal
         {...defaultProps}

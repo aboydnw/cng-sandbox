@@ -13,6 +13,7 @@ const TYPE_LABELS: Record<string, string> = {
   pmtiles: "PMTiles",
   xyz_raster: "XYZ Raster Tiles",
   xyz_vector: "XYZ Vector Tiles",
+  geoparquet: "Remote GeoParquet",
 };
 
 const TYPE_SHORT: Record<string, string> = {
@@ -20,6 +21,7 @@ const TYPE_SHORT: Record<string, string> = {
   pmtiles: "PMTiles",
   xyz_raster: "XYZ raster",
   xyz_vector: "XYZ vector",
+  geoparquet: "GeoParquet",
 };
 
 interface ConnectionInfoCardProps {

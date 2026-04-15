@@ -145,6 +145,51 @@ function getSourceStep(connection: Connection): StepContent {
     };
   }
 
+  if (type === "geoparquet") {
+    const metadata: MetadataTileData[] = [
+      { label: "Format", value: "GeoParquet" },
+      { label: "Source URL", value: connection.url, colSpan: 2 },
+      ...(connection.bounds
+        ? [
+            {
+              label: "Bounding Box",
+              value: formatBounds(connection.bounds),
+              colSpan: 2 as const,
+            },
+          ]
+        : []),
+    ];
+
+    const tools: ToolCardData[] = [
+      {
+        name: "DuckDB WASM",
+        url: "https://duckdb.org/docs/api/wasm/overview",
+        description:
+          "An in-browser analytical database that can query remote Parquet files directly over HTTP using range requests, returning results as Arrow record batches.",
+      },
+      {
+        name: "Apache Arrow",
+        url: "https://arrow.apache.org/",
+        description:
+          "A columnar memory format used to transfer query results from DuckDB WASM to the rendering layer with zero serialization overhead.",
+      },
+    ];
+
+    return {
+      label: "Source",
+      subtitle: "remote file",
+      badge: "Step 1 of 2",
+      title: "Fetch via DuckDB WASM",
+      explanation: [
+        "This connection points to a <strong>GeoParquet</strong> file hosted remotely. GeoParquet is a columnar format built on Apache Parquet with standardized geometry encoding.",
+        "The browser queries the file directly using <strong>DuckDB WASM</strong>, an in-browser analytical database. Features stream back as Arrow record batches, convert WKB → GeoJSON, and render on the map without any server round-trip.",
+      ],
+      metadata,
+      tools,
+      toolSectionTitle: "About this format",
+    };
+  }
+
   // xyz_vector
   const metadata: MetadataTileData[] = [
     { label: "Format", value: "XYZ Vector Tiles" },
@@ -224,6 +269,40 @@ function getDisplayStep(connection: Connection): StepContent {
       explanation: [
         "Vector tiles are decoded in the browser and rendered as <strong>GPU-accelerated geometry</strong> using deck.gl's MVTLayer. Each feature is individually addressable — you can hover, click, and inspect properties.",
         "Because rendering happens client-side, the same tiles support different visual styles without re-fetching. The map composites your data layer over a basemap from Carto.",
+      ],
+      metadata,
+      tools,
+      toolSectionTitle: "Open source tools used",
+    };
+  }
+
+  if (type === "geoparquet") {
+    const metadata: MetadataTileData[] = [
+      { label: "Renderer", value: "WebGL (deck.gl GeoJsonLayer)" },
+      {
+        label: "Basemap",
+        value: "Carto Positron",
+        subValue: "OpenStreetMap data",
+      },
+    ];
+
+    const tools: ToolCardData[] = [
+      {
+        name: "deck.gl",
+        url: "https://deck.gl/",
+        description:
+          "WebGL-powered visualization framework. The GeoJsonLayer renders GeoJSON features as GPU-accelerated geometry with interactive picking.",
+      },
+    ];
+
+    return {
+      label: "Display",
+      subtitle: "browser render",
+      badge: "Step 2 of 2",
+      title: "deck.gl GeoJsonLayer",
+      explanation: [
+        "Features are drawn as a single <strong>deck.gl GeoJsonLayer</strong> on the shared map canvas. No tile server is involved — all geometry was fetched directly by the browser.",
+        "Because rendering happens client-side with WebGL, each feature is individually addressable for hover and click interactions.",
       ],
       metadata,
       tools,

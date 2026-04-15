@@ -17,7 +17,7 @@ class ConnectionRow(Base):
     url = Column(String, nullable=False)
     connection_type = Column(
         String, nullable=False
-    )  # xyz_raster, xyz_vector, cog, pmtiles
+    )  # xyz_raster, xyz_vector, cog, pmtiles, geoparquet
     bounds_json = Column(String, nullable=True)  # JSON array [w, s, e, n]
     min_zoom = Column(Integer, nullable=True)
     max_zoom = Column(Integer, nullable=True)

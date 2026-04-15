@@ -40,6 +40,8 @@ import { useMapControls } from "../hooks/useMapControls";
 import { useRasterOverrides } from "../hooks/useRasterOverrides";
 import { useLayerBuilder } from "../hooks/useLayerBuilder";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { useDuckDB } from "../hooks/useDuckDB";
+import { useGeoParquetRender } from "../hooks/useGeoParquetRender";
 import type { Table } from "apache-arrow";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
@@ -232,6 +234,43 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const handleTableChange = useCallback((table: Table | null) => {
     setArrowTable(table);
   }, []);
+
+  const isGeoParquetConnection =
+    item?.source === "connection" &&
+    item.connection?.connection_type === "geoparquet";
+
+  const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
+  const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
+    duckConn,
+    isGeoParquetConnection ? (item.connection?.url ?? "") : ""
+  );
+
+  useEffect(() => {
+    if (!isGeoParquetConnection) return;
+    let cancelled = false;
+    (async () => {
+      if (!duckConn) {
+        await initializeDuckDB();
+      }
+      if (cancelled) return;
+      await loadGeoParquet();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isGeoParquetConnection,
+    item?.id,
+    duckConn,
+    initializeDuckDB,
+    loadGeoParquet,
+  ]);
+
+  useEffect(() => {
+    if (isGeoParquetConnection && geoParquetTable) {
+      setArrowTable(geoParquetTable);
+    }
+  }, [isGeoParquetConnection, geoParquetTable]);
 
   // --- Popups & pixel inspector ---
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());

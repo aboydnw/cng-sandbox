@@ -63,4 +63,14 @@ describe("buildConnectionTileUrl", () => {
       "https://example.com/data.pmtiles"
     );
   });
+
+  it("returns the raw URL for geoparquet connections", () => {
+    const conn = makeConnection({
+      url: "https://example.com/parcels.parquet",
+      connection_type: "geoparquet",
+    });
+    expect(buildConnectionTileUrl(conn)).toBe(
+      "https://example.com/parcels.parquet"
+    );
+  });
 });

@@ -16,6 +16,8 @@ import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { workspaceFetch } from "../lib/api";
 
+const CLIENT_FEATURE_CAP = 500_000;
+
 interface RemoteConnectFlowProps {
   onDatasetReady: (datasetId: string) => void;
 }
@@ -38,6 +40,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   } = useGeoParquetValidation(conn, previewUrl);
 
   const { result: queryResult } = useGeoParquetQuery(conn, previewUrl);
+  const tooLarge = queryResult.totalCount > CLIENT_FEATURE_CAP;
 
   useEffect(() => {
     if (state.phase === "idle" && state.datasetId) {
@@ -86,7 +89,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   );
 
   const handleConfirmConnection = useCallback(async () => {
-    if (!valid || !previewUrl) return;
+    if (!valid || !previewUrl || tooLarge) return;
 
     setShowPreview(false);
     setConnectionError(null);
@@ -119,7 +122,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
       // Re-open preview modal to show error to user
       setShowPreview(true);
     }
-  }, [valid, previewUrl, onDatasetReady]);
+  }, [valid, previewUrl, tooLarge, onDatasetReady]);
 
   if (state.phase === "discovering") {
     return (
@@ -246,8 +249,14 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         open={showPreview}
         filename={previewUrl.split("/").pop() || "data.parquet"}
         validating={validating}
-        valid={valid}
-        error={error || connectionError}
+        valid={valid && !tooLarge}
+        error={
+          error ||
+          connectionError ||
+          (tooLarge
+            ? `This file has ${queryResult.totalCount.toLocaleString()} features, which exceeds the current in-browser limit of ${CLIENT_FEATURE_CAP.toLocaleString()}. Server-side rendering is coming soon.`
+            : null)
+        }
         geometryInfo={geometryInfo}
         schema={queryResult.columnStats}
         samples={queryResult.table}

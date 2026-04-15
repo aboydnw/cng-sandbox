@@ -208,6 +208,10 @@ export function useLayerBuilder({
         ];
       }
 
+      if (connType === "geoparquet") {
+        return buildGeoJsonLayer({ geojson });
+      }
+
       return [];
     }
 

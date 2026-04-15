@@ -216,4 +216,20 @@ describe("useMapData", () => {
     expect(result.current.isExpired).toBe(true);
     expect(result.current.data).toBeNull();
   });
+
+  it("treats geoparquet connections as vector data", async () => {
+    mockConnectionsGet.mockResolvedValue({
+      ...MOCK_CONNECTION,
+      id: "conn-gp",
+      name: "Parcels",
+      url: "https://example.com/parcels.parquet",
+      connection_type: "geoparquet",
+      tile_type: null,
+    });
+
+    const { result } = renderHook(() => useMapData("conn-gp", true));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data!.dataType).toBe("vector");
+  });
 });

@@ -10,7 +10,10 @@ function escapeSqlLiteral(value: string): string {
 }
 
 function resolveParquetUrl(parquetUrl: string): string {
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(parquetUrl) || parquetUrl.startsWith("//")) {
+  if (
+    /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(parquetUrl) ||
+    parquetUrl.startsWith("//")
+  ) {
     return parquetUrl;
   }
   const path = parquetUrl.startsWith("/") ? parquetUrl : `/${parquetUrl}`;

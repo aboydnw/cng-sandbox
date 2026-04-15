@@ -17,6 +17,7 @@ const TYPE_LABELS: Record<ConnectionType, string> = {
   pmtiles: "PMTiles",
   xyz_raster: "XYZ Raster Tiles",
   xyz_vector: "XYZ Vector Tiles",
+  geoparquet: "Remote GeoParquet",
 };
 
 const ALL_TYPES: ConnectionType[] = [

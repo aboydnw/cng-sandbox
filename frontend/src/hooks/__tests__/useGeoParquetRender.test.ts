@@ -30,7 +30,9 @@ function makeMockConn(rows: MockGeoParquetRow[]) {
     }
     return mockTable;
   });
-  return { query } as unknown as import("@duckdb/duckdb-wasm").AsyncDuckDBConnection;
+  return {
+    query,
+  } as unknown as import("@duckdb/duckdb-wasm").AsyncDuckDBConnection;
 }
 
 describe("useGeoParquetRender", () => {
@@ -61,7 +63,9 @@ describe("useGeoParquetRender", () => {
     } as unknown as import("@duckdb/duckdb-wasm").AsyncDuckDBConnection;
 
     const { result } = renderHook(() =>
-      useGeoParquetRender(conn, "https://example.com/big.parquet", { featureCap: 500_000 })
+      useGeoParquetRender(conn, "https://example.com/big.parquet", {
+        featureCap: 500_000,
+      })
     );
     await act(async () => {
       await result.current.load();

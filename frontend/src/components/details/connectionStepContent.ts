@@ -279,7 +279,11 @@ function getDisplayStep(connection: Connection): StepContent {
   if (type === "geoparquet") {
     const metadata: MetadataTileData[] = [
       { label: "Renderer", value: "WebGL (deck.gl GeoJsonLayer)" },
-      { label: "Basemap", value: "Carto Positron", subValue: "OpenStreetMap data" },
+      {
+        label: "Basemap",
+        value: "Carto Positron",
+        subValue: "OpenStreetMap data",
+      },
     ];
 
     const tools: ToolCardData[] = [

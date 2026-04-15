@@ -242,7 +242,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
   const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
     duckConn,
-    isGeoParquetConnection ? (item.connection?.url ?? "") : "",
+    isGeoParquetConnection ? (item.connection?.url ?? "") : ""
   );
 
   useEffect(() => {
@@ -258,7 +258,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [isGeoParquetConnection, item?.id, duckConn, initializeDuckDB, loadGeoParquet]);
+  }, [
+    isGeoParquetConnection,
+    item?.id,
+    duckConn,
+    initializeDuckDB,
+    loadGeoParquet,
+  ]);
 
   useEffect(() => {
     if (isGeoParquetConnection && geoParquetTable) {

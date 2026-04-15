@@ -30,6 +30,7 @@ interface GeoParquetPreviewModalProps {
   samples: ArrowTable | null;
   onConfirm: () => void;
   onCancel: () => void;
+  renderServerAction?: { label: string; onClick: () => void };
 }
 
 export function GeoParquetPreviewModal({
@@ -43,6 +44,7 @@ export function GeoParquetPreviewModal({
   samples,
   onConfirm,
   onCancel,
+  renderServerAction,
 }: GeoParquetPreviewModalProps) {
   if (!open) return null;
 
@@ -239,6 +241,11 @@ export function GeoParquetPreviewModal({
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
+          {renderServerAction && (
+            <Button variant="outline" onClick={renderServerAction.onClick}>
+              {renderServerAction.label}
+            </Button>
+          )}
           <Button
             bg="brand.orange"
             color="white"

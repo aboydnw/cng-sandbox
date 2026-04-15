@@ -88,6 +88,33 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     [handleScan]
   );
 
+  const handleConfirmServerConnection = useCallback(async () => {
+    if (!previewUrl) return;
+    setShowPreview(false);
+    setConnectionError(null);
+    try {
+      const response = await workspaceFetch("/api/connections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: previewUrl,
+          connection_type: "geoparquet",
+          name: previewUrl.split("/").pop() || "Untitled",
+          render_path: "server",
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create connection");
+      const data = await response.json();
+      if (!data.id) throw new Error("No connection ID returned");
+      onDatasetReady(data.id);
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : "Unknown error";
+      console.error("Server connection creation failed:", e);
+      setConnectionError(`Connection creation failed: ${errorMsg}`);
+      setShowPreview(true);
+    }
+  }, [previewUrl, onDatasetReady]);
+
   const handleConfirmConnection = useCallback(async () => {
     if (!valid || !previewUrl || tooLarge) return;
 
@@ -254,7 +281,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           error ||
           connectionError ||
           (tooLarge
-            ? `This file has ${queryResult.totalCount.toLocaleString()} features, which exceeds the current in-browser limit of ${CLIENT_FEATURE_CAP.toLocaleString()}. Server-side rendering is coming soon.`
+            ? `This file has ${queryResult.totalCount.toLocaleString()} features, which exceeds the ${CLIENT_FEATURE_CAP.toLocaleString()}-feature in-browser limit. You can convert it on the server instead.`
             : null)
         }
         geometryInfo={geometryInfo}
@@ -265,6 +292,11 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           setShowPreview(false);
           setConnectionError(null);
         }}
+        renderServerAction={
+          tooLarge
+            ? { label: "Convert to tiles (server)", onClick: handleConfirmServerConnection }
+            : undefined
+        }
       />
     </Box>
   );

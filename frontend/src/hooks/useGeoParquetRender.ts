@@ -34,11 +34,21 @@ export function useGeoParquetRender(
   const reqIdRef = useRef(0);
 
   const load = useCallback(async () => {
-    if (!conn || !url) return;
+    const myReq = ++reqIdRef.current;
+    if (!conn || !url) {
+      geomColRef.current = null;
+      setState({
+        table: null,
+        featureCount: 0,
+        loading: false,
+        error: null,
+        overCap: false,
+      });
+      return;
+    }
     // Reset geometry column detection for each new load so URL switches
     // don't reuse a column name that may not exist in the new file.
     geomColRef.current = null;
-    const myReq = ++reqIdRef.current;
     setState((s) => ({ ...s, loading: true, error: null, overCap: false }));
     try {
       // Escape single quotes to prevent SQL injection via URL values.
@@ -82,8 +92,9 @@ export function useGeoParquetRender(
       }
 
       const geomCol = geomColRef.current;
-      const sql = geomCol
-        ? `SELECT * EXCLUDE ("${geomCol}"), ST_AsGeoJSON("${geomCol}") as __geojson FROM read_parquet('${safeUrl}') LIMIT ${featureCap}`
+      const safeGeomCol = geomCol ? geomCol.replace(/"/g, '""') : null;
+      const sql = safeGeomCol
+        ? `SELECT * EXCLUDE ("${safeGeomCol}"), ST_AsGeoJSON("${safeGeomCol}") as __geojson FROM read_parquet('${safeUrl}') LIMIT ${featureCap}`
         : `SELECT * FROM read_parquet('${safeUrl}') LIMIT ${featureCap}`;
       const table = (await conn.query(sql)) as unknown as Table;
       if (myReq !== reqIdRef.current) return;

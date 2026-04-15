@@ -243,7 +243,7 @@ cd ingestion && uv run pytest -v
 
 **Connections (external tile sources):**
 - `GET /api/connections` — List connections in the workspace
-- `POST /api/connections` — Register an external tile source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections are rendered client-side via DuckDB-WASM (no tiler involved).
+- `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections are rendered client-side via DuckDB-WASM (no tiler involved).
 - `GET /api/connections/{id}` — Get a connection by ID
 - `PATCH /api/connections/{id}/categories` — Update category labels for a categorical COG connection; body is a list of `{"value": int, "label": str}` objects; returns 400 if connection is not categorical or a value doesn't exist
 - `DELETE /api/connections/{id}` — Delete a connection

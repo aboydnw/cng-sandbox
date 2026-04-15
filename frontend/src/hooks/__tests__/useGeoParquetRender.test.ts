@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useGeoParquetRender } from "../useGeoParquetRender";
 
-function makeMockConn(rows: { __geojson: string; name: string }[]) {
+interface MockGeoParquetRow {
+  __geojson: string;
+  name: string;
+}
+
+function makeMockConn(rows: MockGeoParquetRow[]) {
   const mockTable = {
     numRows: rows.length,
     get: (i: number) => rows[i],

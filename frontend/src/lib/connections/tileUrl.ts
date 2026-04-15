@@ -7,6 +7,7 @@ export function buildConnectionTileUrl(connection: Connection): string {
     case "pmtiles":
     case "xyz_raster":
     case "xyz_vector":
+    case "geoparquet":
       return connection.url;
     default:
       return connection.url;

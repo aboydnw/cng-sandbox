@@ -95,7 +95,9 @@ describe("useGeoParquetValidation", () => {
     });
 
     expect(result.current.valid).toBe(false);
-    expect(result.current.error).toBe("Could not access URL: file not found (404)");
+    expect(result.current.error).toBe(
+      "Could not access URL: file not found (404)"
+    );
     expect(result.current.geometryInfo).toBeNull();
   });
 

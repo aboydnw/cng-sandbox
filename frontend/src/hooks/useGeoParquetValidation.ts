@@ -45,7 +45,9 @@ export function useGeoParquetValidation(
   const validate = useCallback(
     async (overrideConn?: AsyncDuckDBConnection | null) => {
       if (validatingRef.current) {
-        console.warn("Validation already in progress, skipping concurrent call");
+        console.warn(
+          "Validation already in progress, skipping concurrent call"
+        );
         return;
       }
 

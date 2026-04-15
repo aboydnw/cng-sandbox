@@ -139,25 +139,33 @@ export function GeoParquetPreviewModal({
                               <Table.Cell fontWeight="600">
                                 Min Longitude
                               </Table.Cell>
-                              <Table.Cell>{geometryInfo.bbox.minLon}</Table.Cell>
+                              <Table.Cell>
+                                {geometryInfo.bbox.minLon}
+                              </Table.Cell>
                             </Table.Row>
                             <Table.Row>
                               <Table.Cell fontWeight="600">
                                 Min Latitude
                               </Table.Cell>
-                              <Table.Cell>{geometryInfo.bbox.minLat}</Table.Cell>
+                              <Table.Cell>
+                                {geometryInfo.bbox.minLat}
+                              </Table.Cell>
                             </Table.Row>
                             <Table.Row>
                               <Table.Cell fontWeight="600">
                                 Max Longitude
                               </Table.Cell>
-                              <Table.Cell>{geometryInfo.bbox.maxLon}</Table.Cell>
+                              <Table.Cell>
+                                {geometryInfo.bbox.maxLon}
+                              </Table.Cell>
                             </Table.Row>
                             <Table.Row>
                               <Table.Cell fontWeight="600">
                                 Max Latitude
                               </Table.Cell>
-                              <Table.Cell>{geometryInfo.bbox.maxLat}</Table.Cell>
+                              <Table.Cell>
+                                {geometryInfo.bbox.maxLat}
+                              </Table.Cell>
                             </Table.Row>
                           </>
                         )}

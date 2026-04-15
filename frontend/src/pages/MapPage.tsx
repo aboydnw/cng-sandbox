@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text, Spinner } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { SharedHeader } from "../components/SharedHeader";
@@ -42,6 +42,7 @@ import { useLayerBuilder } from "../hooks/useLayerBuilder";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetRender } from "../hooks/useGeoParquetRender";
+import { useConnectionConversion } from "../hooks/useConnectionConversion";
 import type { Table } from "apache-arrow";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
@@ -61,6 +62,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     isLoading,
     error,
     isExpired,
+    refresh,
   } = useMapData(id, isConnectionRoute);
 
   // Redirect on expiry
@@ -239,14 +241,32 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     item?.source === "connection" &&
     item.connection?.connection_type === "geoparquet";
 
-  const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
-  const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
-    duckConn,
-    isGeoParquetConnection ? (item.connection?.url ?? "") : ""
+  const isServerGeoParquet =
+    isGeoParquetConnection && item?.connection?.render_path === "server";
+  const needsConversion =
+    isServerGeoParquet && item?.connection?.conversion_status !== "ready";
+  const isClientGeoParquet =
+    isGeoParquetConnection && !isServerGeoParquet;
+
+  const conversion = useConnectionConversion(
+    needsConversion ? (item?.id ?? null) : null,
+    needsConversion,
   );
 
   useEffect(() => {
-    if (!isGeoParquetConnection) return;
+    if (conversion.status === "ready") {
+      refresh();
+    }
+  }, [conversion.status, refresh]);
+
+  const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
+  const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
+    duckConn,
+    isClientGeoParquet ? (item?.connection?.url ?? "") : ""
+  );
+
+  useEffect(() => {
+    if (!isClientGeoParquet) return;
     let cancelled = false;
     (async () => {
       if (!duckConn) {
@@ -259,7 +279,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       cancelled = true;
     };
   }, [
-    isGeoParquetConnection,
+    isClientGeoParquet,
     item?.id,
     duckConn,
     initializeDuckDB,
@@ -267,10 +287,10 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   ]);
 
   useEffect(() => {
-    if (isGeoParquetConnection && geoParquetTable) {
+    if (isClientGeoParquet && geoParquetTable) {
       setArrowTable(geoParquetTable);
     }
-  }, [isGeoParquetConnection, geoParquetTable]);
+  }, [isClientGeoParquet, geoParquetTable]);
 
   // --- Popups & pixel inspector ---
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
@@ -406,6 +426,36 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       <ErrorBoundary>
         <Flex flex={1} overflow="hidden">
           <Box flex={7} position="relative" ref={mapContainerRef}>
+            {isServerGeoParquet && needsConversion && (
+              <Box
+                position="absolute"
+                inset={0}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                zIndex={10}
+                bg="whiteAlpha.800"
+              >
+                {conversion.status === "failed" ? (
+                  <Box textAlign="center">
+                    <Text color="red.600" fontWeight="semibold">
+                      Conversion failed
+                    </Text>
+                    <Text fontSize="sm">{conversion.error}</Text>
+                  </Box>
+                ) : (
+                  <Box textAlign="center">
+                    <Spinner color="brand.orange" />
+                    <Text mt={2}>Converting GeoParquet to PMTiles…</Text>
+                    {conversion.featureCount != null && (
+                      <Text fontSize="sm" color="gray.600">
+                        {conversion.featureCount.toLocaleString()} features
+                      </Text>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            )}
             <UnifiedMap
               ref={deckRef}
               camera={camera}

@@ -32,3 +32,22 @@ def test_pmtiles_output_is_readable(tmp_path):
     assert header[:7] == b"PMTiles"
     min_zoom, max_zoom = header[100], header[101]
     assert min_zoom <= max_zoom
+
+
+def test_upload_pmtiles_uses_storage_and_returns_proxy_url(tmp_path):
+    out = tmp_path / "x.pmtiles"
+    out.write_bytes(b"fake-pmtiles-bytes")
+
+    uploaded = {}
+
+    class FakeStorage:
+        def upload_file(self, file_path, key):
+            uploaded["file_path"] = file_path
+            uploaded["key"] = key
+
+    tile_url = geoparquet_to_pmtiles.upload_pmtiles(
+        str(out), "conn-123", storage=FakeStorage()
+    )
+    assert uploaded["key"] == "connections/conn-123/data.pmtiles"
+    assert uploaded["file_path"] == str(out)
+    assert tile_url == "/pmtiles/connections/conn-123/data.pmtiles"

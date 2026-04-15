@@ -19,6 +19,7 @@ import {
   LinkSimple,
 } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
+import { useDuckDB } from "../hooks/useDuckDB";
 import { workspaceFetch } from "../lib/api";
 import { config } from "../config";
 import { formatBytes } from "../utils/format";
@@ -54,6 +55,13 @@ export default function UploadPage() {
     "none" | "upload" | "connect" | "story"
   >("none");
   const [reportOpen, setReportOpen] = useState(false);
+  const { initialize: initializeDuckDB } = useDuckDB();
+
+  useEffect(() => {
+    initializeDuckDB().catch((err) => {
+      console.warn("DuckDB initialization in background failed:", err);
+    });
+  }, [initializeDuckDB]);
 
   const isProcessing =
     state.isUploading || (state.jobId !== null && state.status !== "failed");

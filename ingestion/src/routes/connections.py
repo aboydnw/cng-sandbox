@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
-VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles"}
+VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles", "geoparquet"}
 VALID_TILE_TYPES = {"raster", "vector", None}
 
 

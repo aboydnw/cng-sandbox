@@ -1,6 +1,8 @@
 """Convert a (remote or local) GeoParquet to PMTiles via tippecanoe."""
 from __future__ import annotations
 
+import logging
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,6 +11,8 @@ from src.services.pmtiles_ingest import (
     parquet_to_pmtiles_file,
 )
 from src.services.storage import StorageService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -58,3 +62,42 @@ def upload_pmtiles(
     key = f"connections/{connection_id}/data.pmtiles"
     store.upload_file(path, key)
     return get_connection_pmtiles_tile_url(connection_id)
+
+
+def run_conversion(connection_id: str, session) -> None:
+    """Run the full conversion pipeline for a connection row.
+
+    Downloads the remote GeoParquet, converts to PMTiles, uploads to storage,
+    and updates the row with tile_url/feature_count/zoom range. Swallows
+    exceptions — records them on the row as status='failed'.
+    """
+    from src.models.connection import ConnectionRow
+
+    row = session.get(ConnectionRow, connection_id)
+    if row is None:
+        logger.error("Connection %s not found", connection_id)
+        return
+
+    row.conversion_status = "running"
+    session.commit()
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / f"{connection_id}.pmtiles"
+            result = convert_to_pmtiles(row.url, str(out))
+            tile_url = upload_pmtiles(str(out), connection_id)
+
+        row.tile_url = tile_url
+        row.feature_count = result.feature_count
+        row.min_zoom = result.min_zoom
+        row.max_zoom = result.max_zoom
+        row.file_size = result.file_size
+        row.tile_type = "vector"
+        row.conversion_status = "ready"
+        row.conversion_error = None
+        session.commit()
+    except Exception as e:
+        logger.exception("Conversion failed for %s", connection_id)
+        row.conversion_status = "failed"
+        row.conversion_error = str(e)[:2000]
+        session.commit()

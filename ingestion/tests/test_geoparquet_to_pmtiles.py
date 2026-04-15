@@ -51,3 +51,67 @@ def test_upload_pmtiles_uses_storage_and_returns_proxy_url(tmp_path):
     assert uploaded["key"] == "connections/conn-123/data.pmtiles"
     assert uploaded["file_path"] == str(out)
     assert tile_url == "/pmtiles/connections/conn-123/data.pmtiles"
+
+
+def test_run_conversion_updates_connection_row(db_session, monkeypatch):
+    from src.models.connection import ConnectionRow
+    import uuid
+
+    conn_id = str(uuid.uuid4())
+    db_session.add(
+        ConnectionRow(
+            id=conn_id,
+            name="t",
+            url=str(FIXTURE),
+            connection_type="geoparquet",
+            render_path="server",
+            conversion_status="pending",
+            workspace_id="ws-1",
+        )
+    )
+    db_session.commit()
+
+    monkeypatch.setattr(
+        geoparquet_to_pmtiles,
+        "upload_pmtiles",
+        lambda path, cid, storage=None: f"/pmtiles/connections/{cid}/data.pmtiles",
+    )
+
+    geoparquet_to_pmtiles.run_conversion(conn_id, db_session)
+
+    row = db_session.get(ConnectionRow, conn_id)
+    assert row.conversion_status == "ready"
+    assert row.tile_url == f"/pmtiles/connections/{conn_id}/data.pmtiles"
+    assert row.feature_count == 10
+    assert row.tile_type == "vector"
+    assert row.conversion_error is None
+
+
+def test_run_conversion_marks_failed_on_error(db_session, monkeypatch):
+    from src.models.connection import ConnectionRow
+    import uuid
+
+    conn_id = str(uuid.uuid4())
+    db_session.add(
+        ConnectionRow(
+            id=conn_id,
+            name="t",
+            url="/nonexistent/path.parquet",
+            connection_type="geoparquet",
+            render_path="server",
+            conversion_status="pending",
+            workspace_id="ws-1",
+        )
+    )
+    db_session.commit()
+
+    geoparquet_to_pmtiles.run_conversion(conn_id, db_session)
+
+    row = db_session.get(ConnectionRow, conn_id)
+    assert row.conversion_status == "failed"
+    assert row.conversion_error is not None
+
+
+def test_run_conversion_no_op_when_row_missing(db_session):
+    geoparquet_to_pmtiles.run_conversion("does-not-exist", db_session)
+    # should not raise

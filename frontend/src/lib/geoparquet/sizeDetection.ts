@@ -13,7 +13,12 @@ export async function detectRemoteSize(
     const res = await fetch(url, { method: "HEAD" });
     if (res.ok) {
       const len = res.headers.get("content-length");
-      if (len) return { sizeBytes: Number(len), source: "head" };
+      if (len) {
+        const sizeBytes = Number(len);
+        if (Number.isFinite(sizeBytes) && sizeBytes >= 0) {
+          return { sizeBytes, source: "head" };
+        }
+      }
     }
   } catch {
     // fall through to footer read

@@ -15,6 +15,7 @@ import { GeoParquetPreviewModal } from "./GeoParquetPreviewModal";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { workspaceFetch } from "../lib/api";
+import { pickRenderPath } from "../lib/geoparquet/pickRenderPath";
 
 interface RemoteConnectFlowProps {
   onDatasetReady: (datasetId: string) => void;
@@ -41,6 +42,11 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
   } = useGeoParquetValidation(conn, previewUrl);
 
   const { result: queryResult } = useGeoParquetQuery(conn, previewUrl);
+
+  const effectiveRenderPath = pickRenderPath({
+    sizeBytes,
+    featureCount: queryResult.totalCount > 0 ? queryResult.totalCount : null,
+  });
 
   useEffect(() => {
     if (state.phase === "idle" && state.datasetId) {
@@ -102,7 +108,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           url: previewUrl,
           connection_type: "geoparquet",
           name: previewUrl.split("/").pop() || "Untitled",
-          render_path: renderPath,
+          render_path: effectiveRenderPath,
         }),
       });
 
@@ -121,7 +127,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
       setConnectionError(`Connection creation failed: ${errorMsg}`);
       setShowPreview(true);
     }
-  }, [valid, previewUrl, renderPath, onDatasetReady]);
+  }, [valid, previewUrl, effectiveRenderPath, onDatasetReady]);
 
   if (state.phase === "discovering") {
     return (
@@ -255,7 +261,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         samples={queryResult.table}
         sizeBytes={sizeBytes}
         sizeSource={sizeSource}
-        renderPath={renderPath}
+        renderPath={effectiveRenderPath}
         onConfirm={handleConfirmConnection}
         onCancel={() => {
           setShowPreview(false);

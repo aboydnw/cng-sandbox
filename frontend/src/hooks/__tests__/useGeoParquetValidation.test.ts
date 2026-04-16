@@ -300,11 +300,11 @@ describe("useGeoParquetValidation", () => {
 
     await waitFor(() => expect(result.current.validating).toBe(false));
 
-    // validateCallCount counts SQL queries issued to the mock conn (3 per
-    // validation: DESCRIBE, ST_GeometryType, ST_Extent). The second
-    // validate() call is skipped due to the in-flight guard, so we expect
-    // exactly 3 queries, not 6.
-    expect(validateCallCount).toBe(3);
+    // validateCallCount counts SQL queries issued to the mock conn (4 per
+    // validation: DESCRIBE, ST_GeometryType, ST_Extent, parquet_metadata for
+    // size detection). The second validate() call is skipped due to the
+    // in-flight guard, so we expect exactly 4 queries, not 8.
+    expect(validateCallCount).toBe(4);
   });
 
   it("sanitizes error messages to avoid exposing internal details", async () => {

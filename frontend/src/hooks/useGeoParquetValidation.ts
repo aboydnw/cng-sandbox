@@ -185,7 +185,7 @@ export function useGeoParquetValidation(
           }
         }
 
-        const sz = await detectRemoteSize(fullUrl, null);
+        const sz = await detectRemoteSize(fullUrl, activeConn);
         const renderPath = pickRenderPath({
           sizeBytes: sz.sizeBytes,
           featureCount: null,

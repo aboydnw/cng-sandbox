@@ -1,12 +1,20 @@
 """Tests for the GeoParquet → PMTiles conversion service."""
 
+import shutil
 from pathlib import Path
+
+import pytest
 
 from src.services import geoparquet_to_pmtiles
 
 FIXTURE = Path(__file__).parent / "fixtures" / "tiny.parquet"
 
+needs_tippecanoe = pytest.mark.skipif(
+    shutil.which("tippecanoe") is None, reason="tippecanoe not installed"
+)
 
+
+@needs_tippecanoe
 def test_convert_local_parquet_to_pmtiles(tmp_path):
     out = tmp_path / "tiny.pmtiles"
     result = geoparquet_to_pmtiles.convert_to_pmtiles(
@@ -20,6 +28,7 @@ def test_convert_local_parquet_to_pmtiles(tmp_path):
     assert result.max_zoom is not None
 
 
+@needs_tippecanoe
 def test_pmtiles_output_is_readable(tmp_path):
     out = tmp_path / "tiny.pmtiles"
     geoparquet_to_pmtiles.convert_to_pmtiles(
@@ -72,6 +81,17 @@ def test_run_conversion_updates_connection_row(db_session, monkeypatch):
     )
     db_session.commit()
 
+    monkeypatch.setattr(
+        geoparquet_to_pmtiles,
+        "convert_to_pmtiles",
+        lambda source_url, output_path: geoparquet_to_pmtiles.ConversionResult(
+            output_path=output_path,
+            feature_count=10,
+            min_zoom=0,
+            max_zoom=9,
+            file_size=3500,
+        ),
+    )
     monkeypatch.setattr(
         geoparquet_to_pmtiles,
         "upload_pmtiles",

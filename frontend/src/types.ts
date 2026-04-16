@@ -166,6 +166,7 @@ export interface MapItem {
   bandCount: number | null;
   bandNames: string[] | null;
   colorInterpretation: string[] | null;
+  dtype: string | null;
   rasterMin: number | null;
   rasterMax: number | null;
   isCategorical: boolean;

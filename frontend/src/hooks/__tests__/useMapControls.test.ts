@@ -16,6 +16,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     bandCount: 1,
     bandNames: ["band1"],
     colorInterpretation: ["gray"],
+    dtype: null,
     rasterMin: 0,
     rasterMax: 255,
     isCategorical: false,

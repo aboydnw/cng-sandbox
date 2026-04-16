@@ -3,7 +3,7 @@
 import json
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.dependencies import get_session
 from src.models.dataset import DatasetRow
@@ -26,7 +26,8 @@ router = APIRouter(prefix="/api")
 
 class CategoryLabelUpdate(BaseModel):
     value: int
-    label: str
+    label: str | None = None
+    color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
 
 
 class DatasetUpdate(BaseModel):
@@ -170,18 +171,29 @@ async def update_category_labels(
 
         categories = meta.get("categories", [])
         existing_values = {c["value"] for c in categories}
-        update_map = {}
+        update_map: dict[int, dict] = {}
         for u in updates:
             if u.value not in existing_values:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Category value {u.value} not found",
                 )
-            update_map[u.value] = u.label
+            if u.label is None and u.color is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Update for value {u.value} must include label or color",
+                )
+            update_map[u.value] = {"label": u.label, "color": u.color}
 
         for cat in categories:
-            if cat["value"] in update_map:
-                cat["label"] = update_map[cat["value"]]
+            patch = update_map.get(cat["value"])
+            if not patch:
+                continue
+            if patch["label"] is not None:
+                cat["label"] = patch["label"]
+            if patch["color"] is not None:
+                cat.setdefault("defaultColor", cat.get("color", patch["color"]))
+                cat["color"] = patch["color"]
 
         meta["categories"] = categories
         row.metadata_json = json.dumps(meta, default=str)

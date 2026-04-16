@@ -11,16 +11,16 @@ function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
-test("renders logo linking to homepage", () => {
+test("renders logo and title as static (non-linked) content", () => {
   renderWithProviders(<SharedHeader />);
-  const link = screen.getByRole("link", { name: /cng sandbox/i });
-  expect(link).toHaveAttribute("href", "/");
+  expect(screen.getByText(/cng sandbox/i)).toBeInTheDocument();
+  expect(screen.getByAltText(/development seed/i)).toBeInTheDocument();
+  expect(screen.queryByRole("link")).not.toBeInTheDocument();
 });
 
-test("renders Make your own map CTA linking to homepage", () => {
+test("does not render Make your own map CTA", () => {
   renderWithProviders(<SharedHeader />);
-  const cta = screen.getByRole("link", { name: /make your own map/i });
-  expect(cta).toHaveAttribute("href", "/");
+  expect(screen.queryByText(/make your own map/i)).not.toBeInTheDocument();
 });
 
 test("does not render Library link", () => {

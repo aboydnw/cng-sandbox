@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
-import { ArrowLeft, ArrowRight, SpinnerGap } from "@phosphor-icons/react";
+import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
 import { StoryRenderer } from "../components/StoryRenderer";
 
 import { getStoryFromServer, migrateStory } from "../lib/story";
@@ -155,35 +155,12 @@ export default function StoryReaderPage({
           <Heading size="sm" fontWeight={600} color="gray.800">
             {story.title}
           </Heading>
-          {shared ? (
-            <Link to="/" style={{ textDecoration: "none", marginLeft: "auto" }}>
-              <Flex
-                align="center"
-                gap={1.5}
-                bg="brand.orange"
-                color="white"
-                px={3}
-                py={1}
-                borderRadius="4px"
-                fontWeight={600}
-                fontSize="xs"
-                _hover={{ bg: "brand.orangeHover" }}
-              >
-                Make your own map
-                <ArrowRight size={12} weight="bold" />
-              </Flex>
-            </Link>
-          ) : (
-            <>
-              <BugReportLink
-                storyId={story.id}
-                datasetIds={story.dataset_ids}
-              />
-              <Text ml="auto" fontSize="xs" color="gray.500">
-                Made with CNG Sandbox
-              </Text>
-            </>
+          {!shared && (
+            <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
           )}
+          <Text ml="auto" fontSize="xs" color="gray.500">
+            Made with CNG Sandbox
+          </Text>
         </Flex>
       )}
 

@@ -39,7 +39,7 @@ class DatasetUpdate(BaseModel):
         if v is None:
             return v
         if len(v) < 1 or len(v) > 200:
-            raise ValueError("Title must be 1–200 chars")
+            raise ValueError("Title must be 1-200 chars")
         return v
 
 
@@ -242,20 +242,20 @@ async def mark_categorical(dataset_id: str, request: Request):
 
         try:
             values = extract_unique_values_from_dataset(row)
-        except FileNotFoundError:
+        except FileNotFoundError as exc:
             raise HTTPException(
                 status_code=400, detail={"error": "no_raster_path"}
-            )
+            ) from exc
         except UnsupportedDtype as exc:
             raise HTTPException(
                 status_code=400,
                 detail={"error": "unsupported_dtype", "dtype": exc.dtype},
-            )
+            ) from exc
         except TooManyValues as exc:
             raise HTTPException(
                 status_code=400,
                 detail={"error": "too_many_values", "count": exc.count},
-            )
+            ) from exc
 
         categories = []
         for i, value in enumerate(values):

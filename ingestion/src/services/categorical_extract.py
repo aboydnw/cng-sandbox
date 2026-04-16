@@ -57,5 +57,5 @@ def extract_unique_values(raster_path: str) -> list[int]:
         if nodata is not None:
             uniques = uniques[uniques != int(nodata)]
         if len(uniques) > MAX_UNIQUE_VALUES:
-            raise TooManyValues(int(len(uniques)))
+            raise TooManyValues(len(uniques))
         return [int(v) for v in sorted(uniques)]

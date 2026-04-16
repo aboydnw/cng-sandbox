@@ -100,19 +100,34 @@ def _migrate_schema(engine):
     from sqlalchemy import text
     from sqlalchemy.exc import DBAPIError
 
+    def _is_duplicate_column(exc: DBAPIError) -> bool:
+        # PostgreSQL raises SQLSTATE 42701 (duplicate_column); SQLite and
+        # other dialects don't set pgcode, so fall back to matching the
+        # canonical "duplicate column" phrase in the driver message.
+        orig = getattr(exc, "orig", None)
+        if getattr(orig, "pgcode", None) == "42701":
+            return True
+        return "duplicate column" in str(orig).lower()
+
     with engine.connect() as conn:
         for col, typ in [
             ("band_count", "INTEGER"),
             ("rescale", "TEXT"),
             ("is_categorical", "BOOLEAN NOT NULL DEFAULT FALSE"),
             ("categories_json", "TEXT"),
+            ("tile_url", "TEXT"),
+            ("render_path", "TEXT"),
+            ("conversion_status", "TEXT"),
+            ("conversion_error", "TEXT"),
+            ("feature_count", "INTEGER"),
+            ("file_size", "BIGINT"),
         ]:
             try:
                 conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
                 conn.commit()
             except DBAPIError as exc:
                 conn.rollback()
-                if getattr(getattr(exc, "orig", None), "pgcode", None) == "42701":
+                if _is_duplicate_column(exc):
                     continue
                 raise
         try:
@@ -120,7 +135,7 @@ def _migrate_schema(engine):
             conn.commit()
         except DBAPIError as exc:
             conn.rollback()
-            if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
+            if not _is_duplicate_column(exc):
                 raise
         try:
             conn.execute(
@@ -132,7 +147,7 @@ def _migrate_schema(engine):
             conn.commit()
         except DBAPIError as exc:
             conn.rollback()
-            if getattr(getattr(exc, "orig", None), "pgcode", None) != "42701":
+            if not _is_duplicate_column(exc):
                 raise
 
 

@@ -380,7 +380,9 @@ def test_create_geoparquet_without_render_path_defaults_to_server(client, monkey
     assert resp.json()["render_path"] == "server"
 
 
-def test_create_geoparquet_without_render_path_small_size_picks_client(client, monkeypatch):
+def test_create_geoparquet_without_render_path_small_size_picks_client(
+    client, monkeypatch
+):
     from src.routes import connections as connections_route
 
     async def fake_head(_url):

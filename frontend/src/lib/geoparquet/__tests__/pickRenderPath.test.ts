@@ -3,19 +3,27 @@ import { pickRenderPath } from "../pickRenderPath";
 
 describe("pickRenderPath", () => {
   it("picks client for small files under feature cap", () => {
-    expect(pickRenderPath({ sizeBytes: 8_000_000, featureCount: 10_000 })).toBe("client");
+    expect(pickRenderPath({ sizeBytes: 8_000_000, featureCount: 10_000 })).toBe(
+      "client"
+    );
   });
 
   it("picks server when over size threshold", () => {
-    expect(pickRenderPath({ sizeBytes: 80_000_000, featureCount: 100_000 })).toBe("server");
+    expect(
+      pickRenderPath({ sizeBytes: 80_000_000, featureCount: 100_000 })
+    ).toBe("server");
   });
 
   it("picks server when over feature cap", () => {
-    expect(pickRenderPath({ sizeBytes: 8_000_000, featureCount: 700_000 })).toBe("server");
+    expect(
+      pickRenderPath({ sizeBytes: 8_000_000, featureCount: 700_000 })
+    ).toBe("server");
   });
 
   it("defaults to server when size is unknown", () => {
-    expect(pickRenderPath({ sizeBytes: null, featureCount: 10_000 })).toBe("server");
+    expect(pickRenderPath({ sizeBytes: null, featureCount: 10_000 })).toBe(
+      "server"
+    );
   });
 
   it("thresholds are overridable", () => {

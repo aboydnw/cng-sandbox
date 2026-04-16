@@ -34,6 +34,7 @@ async def _head_content_length(url: str) -> int | None:
     except Exception:
         return None
 
+
 VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles", "geoparquet"}
 VALID_TILE_TYPES = {"raster", "vector", None}
 

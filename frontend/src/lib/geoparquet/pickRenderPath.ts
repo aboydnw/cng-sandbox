@@ -16,7 +16,8 @@ export function pickRenderPath(
   options: PickRenderPathOptions = {}
 ): "client" | "server" {
   const sizeThreshold = options.sizeThreshold ?? DEFAULT_SIZE_THRESHOLD;
-  const featureThreshold = options.featureThreshold ?? DEFAULT_FEATURE_THRESHOLD;
+  const featureThreshold =
+    options.featureThreshold ?? DEFAULT_FEATURE_THRESHOLD;
   if (sizeBytes == null) return "server";
   if (sizeBytes > sizeThreshold) return "server";
   if (featureCount != null && featureCount > featureThreshold) return "server";

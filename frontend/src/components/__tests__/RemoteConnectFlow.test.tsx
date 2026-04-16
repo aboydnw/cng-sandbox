@@ -3,7 +3,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
 
-const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<{ ok: boolean; json: () => Promise<{ id: string }> }>>(async () => ({
+const fetchMock = vi.fn<
+  (
+    input: RequestInfo | URL,
+    init?: RequestInit
+  ) => Promise<{ ok: boolean; json: () => Promise<{ id: string }> }>
+>(async () => ({
   ok: true,
   json: async () => ({ id: "c1" }),
 }));
@@ -87,9 +92,7 @@ describe("RemoteConnectFlow GeoParquet dispatch", () => {
     fireEvent.click(screen.getByRole("button", { name: /scan/i }));
 
     await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: /confirm/i })
-      ).not.toBeNull();
+      expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeNull();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /confirm/i }));
@@ -115,9 +118,7 @@ describe("RemoteConnectFlow GeoParquet dispatch", () => {
     fireEvent.click(screen.getByRole("button", { name: /scan/i }));
 
     await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: /confirm/i })
-      ).not.toBeNull();
+      expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeNull();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /confirm/i }));

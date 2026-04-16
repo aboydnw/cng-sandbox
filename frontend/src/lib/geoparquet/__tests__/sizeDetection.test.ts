@@ -15,7 +15,10 @@ describe("detectRemoteSize", () => {
       }))
     );
     const conn = { query: vi.fn() } as never;
-    const result = await detectRemoteSize("https://example.com/x.parquet", conn);
+    const result = await detectRemoteSize(
+      "https://example.com/x.parquet",
+      conn
+    );
     expect(result).toEqual({ sizeBytes: 12345, source: "head" });
   });
 
@@ -30,7 +33,10 @@ describe("detectRemoteSize", () => {
         get: () => ({ total_uncompressed_size: 9_000_000 }),
       })),
     } as never;
-    const result = await detectRemoteSize("https://example.com/x.parquet", conn);
+    const result = await detectRemoteSize(
+      "https://example.com/x.parquet",
+      conn
+    );
     expect(result).toEqual({ sizeBytes: 9_000_000, source: "footer" });
   });
 
@@ -46,7 +52,10 @@ describe("detectRemoteSize", () => {
         throw new Error("no");
       }),
     } as never;
-    const result = await detectRemoteSize("https://example.com/x.parquet", conn);
+    const result = await detectRemoteSize(
+      "https://example.com/x.parquet",
+      conn
+    );
     expect(result).toEqual({ sizeBytes: null, source: "unknown" });
   });
 });

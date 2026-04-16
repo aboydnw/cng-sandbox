@@ -103,6 +103,8 @@ def run_conversion(connection_id: str, session) -> None:
     session.commit()
 
     try:
+        if not row.url.startswith(("http://", "https://")):
+            raise ValueError("Server-side conversion requires an HTTP(S) URL")
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / f"{connection_id}.pmtiles"
             result = convert_to_pmtiles(row.url, str(out))
@@ -119,6 +121,10 @@ def run_conversion(connection_id: str, session) -> None:
         session.commit()
     except Exception as e:
         logger.exception("Conversion failed for %s", connection_id)
+        # Sanitize: strip query strings that may contain signed tokens
+        error_msg = str(e)[:2000]
+        if "?" in error_msg:
+            error_msg = error_msg.split("?")[0] + "?<redacted>"
         row.conversion_status = "failed"
-        row.conversion_error = str(e)[:2000]
+        row.conversion_error = error_msg
         session.commit()

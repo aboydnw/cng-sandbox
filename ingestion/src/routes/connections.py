@@ -51,13 +51,15 @@ class ConnectionCreate(BaseModel):
 
 async def _run_conversion_bg(connection_id: str, db_session_factory) -> None:
     """Background wrapper that opens its own session and runs the sync job."""
-    session = db_session_factory()
-    try:
-        await asyncio.to_thread(
-            geoparquet_to_pmtiles.run_conversion, connection_id, session
-        )
-    finally:
-        session.close()
+
+    def _job() -> None:
+        session = db_session_factory()
+        try:
+            geoparquet_to_pmtiles.run_conversion(connection_id, session)
+        finally:
+            session.close()
+
+    await asyncio.to_thread(_job)
 
 
 @router.get("/connections")
@@ -113,8 +115,19 @@ async def create_connection(
         except Exception:
             logger.exception("Categorical detection failed for %s", body.url)
 
+    # Normalize/validate render_path for geoparquet connections
+    render_path = body.render_path
+    if body.connection_type == "geoparquet":
+        if render_path not in ("client", "server", None):
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
+            )
+        if render_path is None:
+            render_path = "client"
+
     is_server_conversion = (
-        body.connection_type == "geoparquet" and body.render_path == "server"
+        body.connection_type == "geoparquet" and render_path == "server"
     )
 
     session = get_session(request)
@@ -134,7 +147,7 @@ async def create_connection(
             is_categorical=is_categorical,
             categories_json=categories_json,
             created_at=datetime.now(UTC),
-            render_path=body.render_path,
+            render_path=render_path,
             conversion_status="pending" if is_server_conversion else None,
         )
         session.add(row)

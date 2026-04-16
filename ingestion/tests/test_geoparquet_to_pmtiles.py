@@ -72,7 +72,7 @@ def test_run_conversion_updates_connection_row(db_session, monkeypatch):
         ConnectionRow(
             id=conn_id,
             name="t",
-            url=str(FIXTURE),
+            url="https://example.com/tiny.parquet",
             connection_type="geoparquet",
             render_path="server",
             conversion_status="pending",

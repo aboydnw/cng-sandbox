@@ -304,6 +304,7 @@ export function useLayerBuilder({
     onVectorClick,
     getLoadCallback,
     tileCacheRef,
+    isCategorical,
   ]);
 
   return { layers, tileUrl, geojson };

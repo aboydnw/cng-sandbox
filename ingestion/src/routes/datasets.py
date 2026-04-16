@@ -3,7 +3,7 @@
 import json
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from src.dependencies import get_session
 from src.models.dataset import DatasetRow
@@ -27,6 +27,19 @@ router = APIRouter(prefix="/api")
 class CategoryLabelUpdate(BaseModel):
     value: int
     label: str
+
+
+class DatasetUpdate(BaseModel):
+    title: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def _check_title(cls, v):
+        if v is None:
+            return v
+        if not isinstance(v, str) or len(v) < 1 or len(v) > 200:
+            raise ValueError("Title must be 1–200 chars")
+        return v
 
 
 @router.get("/datasets")
@@ -71,6 +84,40 @@ async def get_dataset(dataset_id: str, request: Request):
         d = row.to_dict()
         d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
         return d
+    finally:
+        session.close()
+
+
+@router.patch("/datasets/{dataset_id}")
+async def update_dataset(
+    dataset_id: str,
+    update: DatasetUpdate,
+    request: Request,
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be modified"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+        meta = json.loads(row.metadata_json) if row.metadata_json else {}
+        payload = update.model_dump(exclude_unset=True)
+        if "title" in payload:
+            if payload["title"] is None:
+                meta.pop("title", None)
+            else:
+                meta["title"] = payload["title"]
+        row.metadata_json = json.dumps(meta, default=str)
+        session.commit()
+        return row.to_dict()
     finally:
         session.close()
 

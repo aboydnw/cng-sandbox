@@ -87,3 +87,12 @@ def test_patch_rejects_cross_workspace(client, db_engine):
         json={"title": "x"},
     )
     assert resp.status_code == 403
+
+
+def test_patch_404_when_dataset_not_found(client):
+    resp = client.patch(
+        "/api/datasets/ds-nope",
+        headers={"x-workspace-id": "wsTest01"},
+        json={"title": "x"},
+    )
+    assert resp.status_code == 404

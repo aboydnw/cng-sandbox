@@ -37,7 +37,7 @@ class DatasetUpdate(BaseModel):
     def _check_title(cls, v):
         if v is None:
             return v
-        if not isinstance(v, str) or len(v) < 1 or len(v) > 200:
+        if len(v) < 1 or len(v) > 200:
             raise ValueError("Title must be 1–200 chars")
         return v
 

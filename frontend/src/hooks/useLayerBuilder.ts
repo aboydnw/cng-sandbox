@@ -209,6 +209,24 @@ export function useLayerBuilder({
       }
 
       if (connType === "geoparquet") {
+        const renderPath = item.connection.render_path;
+        if (renderPath === "server") {
+          if (
+            item.connection.conversion_status !== "ready" ||
+            !item.connection.tile_url
+          ) {
+            return [];
+          }
+          return [
+            buildVectorLayer({
+              tileUrl,
+              isPMTiles: true,
+              opacity,
+              minZoom: item.minZoom ?? undefined,
+              maxZoom: item.maxZoom ?? undefined,
+            }),
+          ];
+        }
         return buildGeoJsonLayer({ geojson });
       }
 

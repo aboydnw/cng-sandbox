@@ -3,14 +3,17 @@
 import asyncio
 import json
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
+from src.services import geoparquet_to_pmtiles
 from src.services.categorical import detect_categories
 from src.workspace import validate_workspace_id
 
@@ -37,12 +40,26 @@ class ConnectionCreate(BaseModel):
     tile_type: str | None = None
     band_count: int | None = None
     rescale: str | None = None
+    render_path: str | None = None  # "client" | "server"
 
     def model_post_init(self, __context):
         if self.bounds is not None and len(self.bounds) != 4:
             raise ValueError(
                 "bounds must have exactly 4 elements [west, south, east, north]"
             )
+
+
+async def _run_conversion_bg(connection_id: str, db_session_factory) -> None:
+    """Background wrapper that opens its own session and runs the sync job."""
+
+    def _job() -> None:
+        session = db_session_factory()
+        try:
+            geoparquet_to_pmtiles.run_conversion(connection_id, session)
+        finally:
+            session.close()
+
+    await asyncio.to_thread(_job)
 
 
 @router.get("/connections")
@@ -65,7 +82,11 @@ async def list_connections(request: Request):
 
 
 @router.post("/connections", status_code=201)
-async def create_connection(body: ConnectionCreate, request: Request):
+async def create_connection(
+    body: ConnectionCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
     if body.connection_type not in VALID_CONNECTION_TYPES:
@@ -94,6 +115,21 @@ async def create_connection(body: ConnectionCreate, request: Request):
         except Exception:
             logger.exception("Categorical detection failed for %s", body.url)
 
+    # Normalize/validate render_path for geoparquet connections
+    render_path = body.render_path
+    if body.connection_type == "geoparquet":
+        if render_path not in ("client", "server", None):
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
+            )
+        if render_path is None:
+            render_path = "client"
+
+    is_server_conversion = (
+        body.connection_type == "geoparquet" and render_path == "server"
+    )
+
     session = get_session(request)
     try:
         row = ConnectionRow(
@@ -111,13 +147,62 @@ async def create_connection(body: ConnectionCreate, request: Request):
             is_categorical=is_categorical,
             categories_json=categories_json,
             created_at=datetime.now(UTC),
+            render_path=render_path,
+            conversion_status="pending" if is_server_conversion else None,
         )
         session.add(row)
         session.commit()
         session.refresh(row)
+        if is_server_conversion:
+            background_tasks.add_task(
+                _run_conversion_bg,
+                row.id,
+                request.app.state.db_session_factory,
+            )
         return row.to_dict()
     finally:
         session.close()
+
+
+@router.get("/connections/{connection_id}/stream")
+async def stream_connection_conversion(connection_id: str, request: Request):
+    """SSE stream of connection conversion progress.
+
+    No workspace check — EventSource cannot send custom headers.
+    Connection IDs are UUIDs, which provides sufficient access control.
+    """
+
+    async def event_generator():
+        start = time.monotonic()
+        last_payload = None
+        while time.monotonic() - start < 600:
+            if await request.is_disconnected():
+                return
+            session = get_session(request)
+            try:
+                row = session.get(ConnectionRow, connection_id)
+                if row is None:
+                    yield {
+                        "event": "status",
+                        "data": json.dumps({"status": "not_found"}),
+                    }
+                    return
+                payload = {
+                    "status": row.conversion_status or "unknown",
+                    "tile_url": row.tile_url,
+                    "error": row.conversion_error,
+                    "feature_count": row.feature_count,
+                }
+                if payload != last_payload:
+                    last_payload = payload
+                    yield {"event": "status", "data": json.dumps(payload)}
+                if row.conversion_status in {"ready", "failed"}:
+                    return
+            finally:
+                session.close()
+            await asyncio.sleep(0.5)
+
+    return EventSourceResponse(event_generator())
 
 
 @router.get("/connections/{connection_id}")

@@ -1,5 +1,6 @@
 """Convert GeoParquet to PMTiles and upload for vector tile serving."""
 
+import logging
 import os
 import subprocess
 import tempfile
@@ -7,6 +8,8 @@ import tempfile
 import geopandas as gpd
 
 from src.services.storage import StorageService
+
+logger = logging.getLogger(__name__)
 
 
 def get_pmtiles_tile_url(dataset_id: str) -> str:
@@ -26,6 +29,43 @@ def _read_pmtiles_zoom_range(pmtiles_path: str) -> tuple[int, int]:
     return header[100], header[101]
 
 
+def parquet_to_pmtiles_file(parquet_path: str, pmtiles_path: str) -> int:
+    """Convert a GeoParquet file (local path or URL) to a PMTiles file on disk.
+
+    Returns the feature count. Raises ValueError on empty input, RuntimeError
+    on tippecanoe failure. Sync — call via asyncio.to_thread() from async code.
+    """
+    gdf = gpd.read_parquet(parquet_path)
+    gdf.columns = [c.lower() for c in gdf.columns]
+    feature_count = len(gdf)
+    if feature_count == 0:
+        raise ValueError(f"GeoParquet at {parquet_path} has no features")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        geojson_path = os.path.join(tmpdir, "data.geojson")
+        gdf.to_file(geojson_path, driver="GeoJSON")
+
+        cmd = [
+            "tippecanoe",
+            f"--output={pmtiles_path}",
+            "--no-feature-limit",
+            "--no-tile-size-limit",
+            "--force",
+            "--maximum-zoom=g",
+            "--layer=default",
+            geojson_path,
+        ]
+        logger.info("Running tippecanoe: %s", " ".join(cmd))
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError("tippecanoe timed out after 600s") from exc
+        if result.returncode != 0:
+            raise RuntimeError(f"tippecanoe failed:\n{result.stderr}")
+
+    return feature_count
+
+
 def ingest_pmtiles(
     dataset_id: str,
     parquet_path: str,
@@ -43,37 +83,9 @@ def ingest_pmtiles(
     """
     storage = _storage or StorageService()
 
-    gdf = gpd.read_parquet(parquet_path)
-    gdf.columns = [c.lower() for c in gdf.columns]
-
-    if len(gdf) == 0:
-        raise ValueError(
-            f"Dataset {dataset_id} has no features — cannot generate PMTiles"
-        )
-
     with tempfile.TemporaryDirectory() as tmpdir:
-        geojson_path = os.path.join(tmpdir, "data.geojson")
         pmtiles_path = os.path.join(tmpdir, "data.pmtiles")
-
-        gdf.to_file(geojson_path, driver="GeoJSON")
-
-        result = subprocess.run(
-            [
-                "tippecanoe",
-                f"--output={pmtiles_path}",
-                "--no-feature-limit",
-                "--no-tile-size-limit",
-                "--force",
-                "--maximum-zoom=g",
-                "--layer=default",
-                geojson_path,
-            ],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"tippecanoe failed:\n{result.stderr}")
-
+        parquet_to_pmtiles_file(parquet_path, pmtiles_path)
         storage.upload_pmtiles(pmtiles_path, dataset_id)
         min_zoom, max_zoom = _read_pmtiles_zoom_range(pmtiles_path)
         file_size = os.path.getsize(pmtiles_path)

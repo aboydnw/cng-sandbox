@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import { buildConnectionTileUrl } from "../lib/connections";
 import type { Dataset, Connection, MapItem } from "../types";
@@ -70,6 +70,7 @@ interface UseMapDataResult {
   isLoading: boolean;
   error: string | null;
   isExpired: boolean;
+  refresh: () => void;
 }
 
 export function useMapData(
@@ -148,5 +149,20 @@ export function useMapData(
     };
   }, [id, isConnection]);
 
-  return { data, isLoading, error, isExpired };
+  const refresh = useCallback(() => {
+    if (!id || !isConnection) return;
+    connectionsApi
+      .get(id)
+      .then((conn) => {
+        setData(connectionToMapItem(conn));
+        setError(null);
+      })
+      .catch((e) => {
+        setError(
+          e instanceof Error ? e.message : "Failed to refresh connection"
+        );
+      });
+  }, [id, isConnection]);
+
+  return { data, isLoading, error, isExpired, refresh };
 }

@@ -91,6 +91,12 @@ export interface Connection {
   workspace_id: string | null;
   is_categorical: boolean;
   categories: { value: number; color: string; label: string }[] | null;
+  tile_url: string | null;
+  render_path: "client" | "server" | null;
+  conversion_status: "pending" | "running" | "ready" | "failed" | null;
+  conversion_error: string | null;
+  feature_count: number | null;
+  file_size: number | null;
   created_at: string;
 }
 

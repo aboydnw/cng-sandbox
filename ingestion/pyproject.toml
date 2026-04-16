@@ -28,6 +28,7 @@ dependencies = [
     "geojson-pydantic>=1.1.0",
     "h5py>=3.10.0",
     "beautifulsoup4>=4.14.3",
+    "pyarrow>=17.0.0",
 ]
 
 [project.optional-dependencies]

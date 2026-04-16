@@ -236,3 +236,125 @@ def test_patch_connection_categories_rejects_non_categorical(client):
         json=[{"value": 1, "label": "X"}],
     )
     assert patch_resp.status_code == 400
+
+
+def test_create_geoparquet_server_connection_enqueues_conversion(client, monkeypatch):
+    from src.services import geoparquet_to_pmtiles
+
+    calls = []
+
+    def fake_run(conn_id, session):
+        calls.append(conn_id)
+
+    monkeypatch.setattr(geoparquet_to_pmtiles, "run_conversion", fake_run)
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Big parcels",
+            "url": "https://example.com/parcels.parquet",
+            "connection_type": "geoparquet",
+            "render_path": "server",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["render_path"] == "server"
+    assert body["conversion_status"] == "pending"
+    assert body["tile_url"] is None
+    assert calls == [body["id"]]
+
+
+def test_create_geoparquet_client_connection_does_not_enqueue(client, monkeypatch):
+    from src.services import geoparquet_to_pmtiles
+
+    calls = []
+    monkeypatch.setattr(
+        geoparquet_to_pmtiles,
+        "run_conversion",
+        lambda cid, session: calls.append(cid),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Small parcels",
+            "url": "https://example.com/parcels.parquet",
+            "connection_type": "geoparquet",
+            "render_path": "client",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["render_path"] == "client"
+    assert body["conversion_status"] is None
+    assert calls == []
+
+
+def test_connection_row_has_conversion_fields(db_session):
+    import uuid
+
+    from src.models.connection import ConnectionRow
+
+    row = ConnectionRow(
+        id=str(uuid.uuid4()),
+        name="t",
+        url="https://example.com/a.parquet",
+        connection_type="geoparquet",
+        render_path="server",
+        conversion_status="pending",
+    )
+    db_session.add(row)
+    db_session.commit()
+    db_session.refresh(row)
+    assert row.render_path == "server"
+    assert row.conversion_status == "pending"
+    assert row.tile_url is None
+    assert row.conversion_error is None
+    d = row.to_dict()
+    assert d["render_path"] == "server"
+    assert d["conversion_status"] == "pending"
+    assert d["tile_url"] is None
+
+
+def test_connection_conversion_stream_emits_terminal_event_when_ready(
+    client, db_engine
+):
+    import uuid
+
+    from sqlalchemy.orm import sessionmaker
+
+    from src.models.connection import ConnectionRow
+
+    Session = sessionmaker(bind=db_engine)
+    s = Session()
+    conn_id = str(uuid.uuid4())
+    s.add(
+        ConnectionRow(
+            id=conn_id,
+            name="t",
+            url="https://example.com/x.parquet",
+            connection_type="geoparquet",
+            render_path="server",
+            conversion_status="ready",
+            tile_url="/pmtiles/connections/x/data.pmtiles",
+            feature_count=42,
+            workspace_id="testABCD",
+        )
+    )
+    s.commit()
+    s.close()
+
+    with client.stream("GET", f"/api/connections/{conn_id}/stream") as r:
+        assert r.status_code == 200
+        text = "".join(chunk for chunk in r.iter_text())
+    assert "event: status" in text
+    assert '"status": "ready"' in text
+    assert '"tile_url": "/pmtiles/connections/x/data.pmtiles"' in text
+
+
+def test_connection_conversion_stream_returns_not_found_for_missing_row(client):
+    with client.stream("GET", "/api/connections/does-not-exist/stream") as r:
+        assert r.status_code == 200
+        text = "".join(chunk for chunk in r.iter_text())
+    assert '"status": "not_found"' in text

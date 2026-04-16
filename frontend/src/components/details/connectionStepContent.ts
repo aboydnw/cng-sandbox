@@ -146,6 +146,50 @@ function getSourceStep(connection: Connection): StepContent {
   }
 
   if (type === "geoparquet") {
+    if (connection.render_path === "server") {
+      return {
+        label: "Source",
+        subtitle: "server-side conversion",
+        badge: "Step 1 of 2",
+        title: "Convert to PMTiles",
+        explanation: [
+          "This remote <strong>GeoParquet</strong> file was too large to render in the browser, so the ingestion service downloaded it and converted it to <strong>PMTiles</strong> — a single-file vector tile archive.",
+          "<strong>tippecanoe</strong> built zoom-appropriate tiles for every level; the result was uploaded to object storage and is served through the sandbox's <code>/pmtiles</code> proxy.",
+        ],
+        metadata: [
+          { label: "Format", value: "GeoParquet → PMTiles" },
+          { label: "Source URL", value: connection.url, colSpan: 2 },
+          connection.feature_count != null
+            ? {
+                label: "Features",
+                value: connection.feature_count.toLocaleString(),
+              }
+            : null,
+        ].filter(Boolean) as MetadataTileData[],
+        tools: [
+          {
+            name: "tippecanoe",
+            url: "https://github.com/felt/tippecanoe",
+            description:
+              "Builds vector tilesets from GeoJSON input, generating zoom-appropriate tiles at every level without dropping features.",
+          },
+          {
+            name: "GeoParquet",
+            url: "https://geoparquet.org/",
+            description:
+              "A columnar format with standardized geometry encoding, read with geopandas + pyarrow.",
+          },
+          {
+            name: "PMTiles",
+            url: "https://docs.protomaps.com/pmtiles/",
+            description:
+              "A single-file archive of vector tiles served over HTTP range requests — no tile server process needed.",
+          },
+        ],
+        toolSectionTitle: "Open source tools used",
+      };
+    }
+
     const metadata: MetadataTileData[] = [
       { label: "Format", value: "GeoParquet" },
       { label: "Source URL", value: connection.url, colSpan: 2 },
@@ -277,6 +321,43 @@ function getDisplayStep(connection: Connection): StepContent {
   }
 
   if (type === "geoparquet") {
+    if (connection.render_path === "server") {
+      return {
+        label: "Display",
+        subtitle: "PMTiles vector tiles",
+        badge: "Step 2 of 2",
+        title: "MapLibre PMTiles render",
+        explanation: [
+          "The converted <strong>PMTiles</strong> archive is fetched with HTTP range requests — the browser pulls only the tiles needed for the current view.",
+          "Vector geometry is decoded in the browser and rendered as GPU-accelerated features via <strong>deck.gl's MVTLayer</strong>.",
+        ],
+        metadata: [
+          { label: "Renderer", value: "WebGL (deck.gl MVTLayer)" },
+          { label: "Tile Format", value: "MVT (vector)" },
+          {
+            label: "Basemap",
+            value: "Carto Positron",
+            subValue: "OpenStreetMap data",
+          },
+        ],
+        tools: [
+          {
+            name: "PMTiles",
+            url: "https://docs.protomaps.com/pmtiles/",
+            description:
+              "Serves vector tiles from a single archive file via HTTP range requests.",
+          },
+          {
+            name: "deck.gl",
+            url: "https://deck.gl/",
+            description:
+              "WebGL-powered visualization. MVTLayer renders vector tiles as GPU-accelerated geometry with interactive picking.",
+          },
+        ],
+        toolSectionTitle: "Open source tools used",
+      };
+    }
+
     const metadata: MetadataTileData[] = [
       { label: "Renderer", value: "WebGL (deck.gl GeoJsonLayer)" },
       {

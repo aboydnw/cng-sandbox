@@ -183,6 +183,12 @@ const geoparquetConnection: Connection = {
   workspace_id: null,
   is_categorical: false,
   categories: null,
+  tile_url: null,
+  render_path: null,
+  conversion_status: null,
+  conversion_error: null,
+  feature_count: null,
+  file_size: null,
   created_at: "2026-04-15T00:00:00Z",
 };
 
@@ -196,5 +202,34 @@ describe("getConnectionStepContent (geoparquet)", () => {
   it("returns deck.gl GeoJson display step for geoparquet", () => {
     const step = getConnectionStepContent(geoparquetConnection, 2);
     expect(step.tools.some((t) => /deck\.gl/i.test(t.name))).toBe(true);
+  });
+
+  it("shows tippecanoe source step for server-rendered geoparquet", () => {
+    const conn: Connection = {
+      id: "c8",
+      name: "Big",
+      url: "https://example.com/big.parquet",
+      connection_type: "geoparquet",
+      render_path: "server",
+      conversion_status: "ready",
+      conversion_error: null,
+      tile_url: "/pmtiles/connections/c8/data.pmtiles",
+      feature_count: 900_000,
+      file_size: 150_000_000,
+      bounds: null,
+      min_zoom: null,
+      max_zoom: null,
+      tile_type: "vector",
+      band_count: null,
+      rescale: null,
+      workspace_id: null,
+      is_categorical: false,
+      categories: null,
+      created_at: "2026-04-15T00:00:00Z",
+    };
+    const source = getConnectionStepContent(conn, 1);
+    expect(source?.tools?.some((t) => /tippecanoe/i.test(t.name))).toBe(true);
+    const display = getConnectionStepContent(conn, 2);
+    expect(display?.title?.toLowerCase()).toContain("pmtiles");
   });
 });

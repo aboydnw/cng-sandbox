@@ -18,6 +18,12 @@ function makeConnection(overrides: Partial<Connection>): Connection {
     created_at: "2026-01-01T00:00:00Z",
     is_categorical: false,
     categories: null,
+    tile_url: null,
+    render_path: null,
+    conversion_status: null,
+    conversion_error: null,
+    feature_count: null,
+    file_size: null,
     ...overrides,
   };
 }
@@ -71,6 +77,22 @@ describe("buildConnectionTileUrl", () => {
     });
     expect(buildConnectionTileUrl(conn)).toBe(
       "https://example.com/parcels.parquet"
+    );
+  });
+
+  it("prefers tile_url for server-converted geoparquet", () => {
+    const conn = makeConnection({
+      url: "https://example.com/big.parquet",
+      connection_type: "geoparquet",
+      tile_url: "/pmtiles/connections/c7/data.pmtiles",
+      render_path: "server",
+      conversion_status: "ready",
+      conversion_error: null,
+      feature_count: 900_000,
+      file_size: 150_000_000,
+    });
+    expect(buildConnectionTileUrl(conn)).toBe(
+      "/pmtiles/connections/c7/data.pmtiles"
     );
   });
 });

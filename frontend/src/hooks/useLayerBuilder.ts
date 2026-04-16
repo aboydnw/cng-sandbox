@@ -8,10 +8,12 @@ import {
   buildRasterTileLayers,
   buildRasterPMTilesLayer,
   buildCogLayerContinuous,
+  buildCogLayerPaletted,
   buildVectorLayer,
   buildGeoJsonLayer,
   arrowTableToGeoJSON,
 } from "../lib/layers";
+import { classifyCogRenderPath } from "../lib/layers/cogDtype";
 
 interface UseLayerBuilderOptions {
   item: MapItem | null;
@@ -238,6 +240,16 @@ export function useLayerBuilder({
 
     if (item.dataType === "raster") {
       if (renderMode === "client" && canClientRender) {
+        const renderPath = classifyCogRenderPath({
+          dtype: item.dtype,
+          isCategorical,
+        });
+        if (renderPath === "paletted") {
+          return buildCogLayerPaletted({
+            cogUrl: item.cogUrl!,
+            opacity,
+          });
+        }
         return buildCogLayerContinuous({
           cogUrl: item.cogUrl!,
           opacity,

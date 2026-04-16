@@ -20,8 +20,8 @@ describe("buildCogLayerPaletted", () => {
 
     expect(layers).toHaveLength(1);
     expect(COGLayer).toHaveBeenCalledTimes(1);
-    const props = (COGLayer as unknown as { mock: { calls: unknown[][] } })
-      .mock.calls[0][0] as Record<string, unknown>;
+    const props = (COGLayer as unknown as { mock: { calls: unknown[][] } }).mock
+      .calls[0][0] as Record<string, unknown>;
 
     expect(props.getTileData).toBeUndefined();
     expect(props.renderTile).toBeUndefined();

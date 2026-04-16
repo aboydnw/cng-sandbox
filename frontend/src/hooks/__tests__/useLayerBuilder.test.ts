@@ -193,6 +193,24 @@ describe("client-side COG render dispatch", () => {
     expect(buildCogLayerContinuous).not.toHaveBeenCalled();
   });
 
+  it("uses the paletted builder for uint16 categorical datasets", () => {
+    const item = makeItem({
+      dtype: "uint16",
+      isCategorical: true,
+      cogUrl: "/cog/classified.tif",
+      dataset: makeDataset({ dtype: "uint16", is_categorical: true }),
+    });
+    renderBuilder({
+      item,
+      renderMode: "client",
+      canClientRender: true,
+      isCategorical: true,
+    });
+
+    expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerContinuous).not.toHaveBeenCalled();
+  });
+
   it("uses the continuous builder for float32 datasets", () => {
     const item = makeItem({
       dtype: "float32",

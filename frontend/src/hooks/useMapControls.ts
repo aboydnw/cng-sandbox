@@ -135,7 +135,7 @@ export function useMapControls(
       ? CLIENT_RENDER_MAX_BYTES_PALETTED
       : CLIENT_RENDER_MAX_BYTES_CONTINUOUS;
 
-  const clientRenderCapLabel = renderPath === "paletted" ? "2 GB" : "500 MB";
+  const clientRenderCapLabel = formatBytes(clientRenderCapBytes);
 
   const canClientRender =
     !!item &&

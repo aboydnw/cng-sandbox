@@ -254,7 +254,7 @@ describe("client render size caps", () => {
     const item = itemWithSize(2_500 * 1024 * 1024);
     const { result } = renderHook(() => useMapControls(item));
     expect(result.current.canClientRender).toBe(false);
-    expect(result.current.clientRenderDisabledReason).toMatch(/2 GB/);
+    expect(result.current.clientRenderDisabledReason).toMatch(/2\.0 GB/);
   });
 
   it("allows 400 MB for float32 COGs", () => {
@@ -273,7 +273,7 @@ describe("client render size caps", () => {
     });
     const { result } = renderHook(() => useMapControls(item));
     expect(result.current.canClientRender).toBe(false);
-    expect(result.current.clientRenderDisabledReason).toMatch(/500 MB/);
+    expect(result.current.clientRenderDisabledReason).toMatch(/500\.0 MB/);
   });
 
   it("treats null dtype as continuous (500 MB cap)", () => {
@@ -283,6 +283,6 @@ describe("client render size caps", () => {
     });
     const { result } = renderHook(() => useMapControls(item));
     expect(result.current.canClientRender).toBe(false);
-    expect(result.current.clientRenderDisabledReason).toMatch(/500 MB/);
+    expect(result.current.clientRenderDisabledReason).toMatch(/500\.0 MB/);
   });
 });

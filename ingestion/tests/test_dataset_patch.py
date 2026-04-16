@@ -90,7 +90,7 @@ def test_patch_rejects_cross_workspace(client, db_engine):
         headers={"x-workspace-id": "wsOther1"},
         json={"title": "x"},
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 404
 
 
 def test_patch_404_when_dataset_not_found(client):

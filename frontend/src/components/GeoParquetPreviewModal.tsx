@@ -30,7 +30,32 @@ interface GeoParquetPreviewModalProps {
   samples: ArrowTable | null;
   onConfirm: () => void;
   onCancel: () => void;
-  renderServerAction?: { label: string; onClick: () => void };
+  sizeBytes: number | null;
+  sizeSource: "head" | "footer" | "unknown";
+  renderPath: "client" | "server";
+}
+
+function formatBytes(bytes: number | null): string {
+  if (bytes == null) return "size unknown";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function formatRouteDescription(
+  path: "client" | "server",
+  bytes: number | null,
+  source: "head" | "footer" | "unknown"
+): string {
+  const sz = formatBytes(bytes);
+  if (path === "client") {
+    return `${sz} · features load into memory and render with deck.gl.`;
+  }
+  return source === "unknown"
+    ? "Size unknown — will convert to tiles on the server for safety."
+    : `${sz} · will convert to PMTiles on the server (~30s for typical files).`;
 }
 
 export function GeoParquetPreviewModal({
@@ -44,7 +69,9 @@ export function GeoParquetPreviewModal({
   samples,
   onConfirm,
   onCancel,
-  renderServerAction,
+  sizeBytes,
+  sizeSource,
+  renderPath,
 }: GeoParquetPreviewModalProps) {
   if (!open) return null;
 
@@ -121,6 +148,23 @@ export function GeoParquetPreviewModal({
             </Box>
           ) : (
             <Box>
+              <Box
+                mb={4}
+                p={3}
+                bg="brand.bgSubtle"
+                border="1px solid"
+                borderColor="brand.border"
+                borderRadius="md"
+              >
+                <Text fontWeight={600} mb={1}>
+                  {renderPath === "client"
+                    ? "Will render directly in browser"
+                    : "Will convert to tiles (server-side)"}
+                </Text>
+                <Text fontSize="sm" color="brand.textSecondary">
+                  {formatRouteDescription(renderPath, sizeBytes, sizeSource)}
+                </Text>
+              </Box>
               {geometryInfo && (
                 <Box mb={6}>
                   <Heading size="sm" mb={3}>
@@ -241,11 +285,6 @@ export function GeoParquetPreviewModal({
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          {renderServerAction && (
-            <Button variant="outline" onClick={renderServerAction.onClick}>
-              {renderServerAction.label}
-            </Button>
-          )}
           <Button
             bg="brand.orange"
             color="white"

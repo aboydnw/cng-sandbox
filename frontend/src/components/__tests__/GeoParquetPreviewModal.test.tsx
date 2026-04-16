@@ -49,6 +49,9 @@ describe("GeoParquetPreviewModal", () => {
     samples: null,
     onConfirm: vi.fn(),
     onCancel: vi.fn(),
+    sizeBytes: null,
+    sizeSource: "unknown" as const,
+    renderPath: "client" as const,
   };
 
   it("renders null when open is false", () => {
@@ -182,5 +185,35 @@ describe("GeoParquetPreviewModal", () => {
     expect(screen.getByText("value")).toBeTruthy();
     expect(screen.getByText("categorical")).toBeTruthy();
     expect(screen.getByText("numeric")).toBeTruthy();
+  });
+
+  it("shows client-render route when renderPath is client", () => {
+    renderWithChakra(
+      <GeoParquetPreviewModal
+        {...defaultProps}
+        valid={true}
+        geometryInfo={{ type: "Point", bbox: null }}
+        sizeBytes={8 * 1024 * 1024}
+        sizeSource="head"
+        renderPath="client"
+      />
+    );
+    expect(screen.getByText(/render directly in browser/i)).toBeTruthy();
+    expect(screen.getByText(/8\.0 MB/i)).toBeTruthy();
+  });
+
+  it("shows server conversion route when renderPath is server", () => {
+    renderWithChakra(
+      <GeoParquetPreviewModal
+        {...defaultProps}
+        valid={true}
+        geometryInfo={{ type: "Point", bbox: null }}
+        sizeBytes={480 * 1024 * 1024}
+        sizeSource="head"
+        renderPath="server"
+      />
+    );
+    expect(screen.getByText(/convert to tiles/i)).toBeTruthy();
+    expect(screen.getByText(/480\.0 MB/i)).toBeTruthy();
   });
 });

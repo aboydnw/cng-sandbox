@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 
 vi.mock("@developmentseed/deck.gl-geotiff", () => ({
   COGLayer: vi.fn().mockImplementation((props) => ({ props })),
@@ -12,6 +12,10 @@ import { COGLayer } from "@developmentseed/deck.gl-geotiff";
 import { buildCogLayerPaletted } from "../cogLayer";
 
 describe("buildCogLayerPaletted", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("constructs a COGLayer with no custom getTileData/renderTile", () => {
     const layers = buildCogLayerPaletted({
       cogUrl: "/cog/test.tif",

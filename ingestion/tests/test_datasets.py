@@ -367,7 +367,9 @@ def test_delete_example_dataset_returns_403(client, app):
 def test_patch_categories_updates_color(client, db_engine):
     import json
     from datetime import UTC, datetime
+
     from sqlalchemy.orm import sessionmaker
+
     from src.models.dataset import DatasetRow
 
     session = sessionmaker(bind=db_engine)()
@@ -413,7 +415,9 @@ def test_patch_categories_updates_color(client, db_engine):
 def test_patch_categories_rejects_bad_hex(client, db_engine):
     import json
     from datetime import UTC, datetime
+
     from sqlalchemy.orm import sessionmaker
+
     from src.models.dataset import DatasetRow
 
     session = sessionmaker(bind=db_engine)()
@@ -450,7 +454,9 @@ def test_patch_categories_rejects_bad_hex(client, db_engine):
 def test_patch_categories_requires_label_or_color(client, db_engine):
     import json
     from datetime import UTC, datetime
+
     from sqlalchemy.orm import sessionmaker
+
     from src.models.dataset import DatasetRow
 
     session = sessionmaker(bind=db_engine)()

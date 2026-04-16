@@ -19,7 +19,8 @@ export function CategoryColorPopover({
   const [draft, setDraft] = useState(color);
   const [error, setError] = useState<string | null>(null);
 
-  const normalize = (v: string) => (v.startsWith("#") ? v : `#${v}`).toUpperCase();
+  const normalize = (v: string) =>
+    (v.startsWith("#") ? v : `#${v}`).toUpperCase();
 
   const handleSave = () => {
     const v = normalize(draft);
@@ -49,7 +50,13 @@ export function CategoryColorPopover({
             setDraft(e.target.value.toUpperCase());
             setError(null);
           }}
-          style={{ width: 36, height: 36, border: 0, padding: 0, background: "transparent" }}
+          style={{
+            width: 36,
+            height: 36,
+            border: 0,
+            padding: 0,
+            background: "transparent",
+          }}
           aria-label="Color picker"
         />
         <Input
@@ -70,7 +77,11 @@ export function CategoryColorPopover({
         </Text>
       )}
       <Flex gap={2}>
-        <Button size="xs" variant="outline" onClick={() => setDraft(defaultColor)}>
+        <Button
+          size="xs"
+          variant="outline"
+          onClick={() => setDraft(defaultColor)}
+        >
           Reset
         </Button>
         <Button size="xs" bg="brand.orange" color="white" onClick={handleSave}>

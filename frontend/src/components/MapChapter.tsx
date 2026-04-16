@@ -237,7 +237,11 @@ export function MapChapter({
               maxW="250px"
             >
               <Text fontSize="11px" fontWeight={600} color="gray.700" mb={1}>
-                {connection ? connection.name : dataset ? displayName(dataset) : ""}
+                {connection
+                  ? connection.name
+                  : dataset
+                    ? displayName(dataset)
+                    : ""}
               </Text>
               {(dataset?.dataset_type === "raster" ||
                 (connection?.connection_type === "cog" &&

@@ -17,14 +17,26 @@ describe("EditableDatasetTitle", () => {
 
   it("renders filename when title is null", () => {
     renderWithProvider(
-      <EditableDatasetTitle datasetId="ds-1" title={null} filename="raw.tif" onSaved={vi.fn()} editable />,
+      <EditableDatasetTitle
+        datasetId="ds-1"
+        title={null}
+        filename="raw.tif"
+        onSaved={vi.fn()}
+        editable
+      />
     );
     expect(screen.getByText("raw.tif")).toBeInTheDocument();
   });
 
   it("renders title when set", () => {
     renderWithProvider(
-      <EditableDatasetTitle datasetId="ds-1" title="Pedotopes" filename="raw.tif" onSaved={vi.fn()} editable />,
+      <EditableDatasetTitle
+        datasetId="ds-1"
+        title="Pedotopes"
+        filename="raw.tif"
+        onSaved={vi.fn()}
+        editable
+      />
     );
     expect(screen.getByText("Pedotopes")).toBeInTheDocument();
   });
@@ -33,7 +45,13 @@ describe("EditableDatasetTitle", () => {
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
     const onSaved = vi.fn();
     renderWithProvider(
-      <EditableDatasetTitle datasetId="ds-1" title={null} filename="raw.tif" onSaved={onSaved} editable />,
+      <EditableDatasetTitle
+        datasetId="ds-1"
+        title={null}
+        filename="raw.tif"
+        onSaved={onSaved}
+        editable
+      />
     );
 
     fireEvent.click(screen.getByText("raw.tif"));
@@ -47,14 +65,20 @@ describe("EditableDatasetTitle", () => {
       expect.objectContaining({
         method: "PATCH",
         body: JSON.stringify({ title: "New name" }),
-      }),
+      })
     );
   });
 
   it("cancels on Escape", () => {
     const onSaved = vi.fn();
     renderWithProvider(
-      <EditableDatasetTitle datasetId="ds-1" title="Pedotopes" filename="raw.tif" onSaved={onSaved} editable />,
+      <EditableDatasetTitle
+        datasetId="ds-1"
+        title="Pedotopes"
+        filename="raw.tif"
+        onSaved={onSaved}
+        editable
+      />
     );
 
     fireEvent.click(screen.getByText("Pedotopes"));
@@ -68,7 +92,13 @@ describe("EditableDatasetTitle", () => {
 
   it("does not enter edit mode when editable=false", () => {
     renderWithProvider(
-      <EditableDatasetTitle datasetId="ds-1" title="X" filename="y.tif" onSaved={vi.fn()} editable={false} />,
+      <EditableDatasetTitle
+        datasetId="ds-1"
+        title="X"
+        filename="y.tif"
+        onSaved={vi.fn()}
+        editable={false}
+      />
     );
     fireEvent.click(screen.getByText("X"));
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();

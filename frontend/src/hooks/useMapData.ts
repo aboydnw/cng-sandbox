@@ -175,7 +175,9 @@ export function useMapData(
           setError(null);
         })
         .catch((e) => {
-          setError(e instanceof Error ? e.message : "Failed to refresh dataset");
+          setError(
+            e instanceof Error ? e.message : "Failed to refresh dataset"
+          );
         });
     }
   }, [id, isConnection]);

@@ -25,20 +25,22 @@ export function EditableCategoryLegend({
   onCategoriesChange,
 }: EditableCategoryLegendProps) {
   const [editingValue, setEditingValue] = useState<number | null>(null);
-  const [colorEditingValue, setColorEditingValue] = useState<number | null>(null);
+  const [colorEditingValue, setColorEditingValue] = useState<number | null>(
+    null
+  );
   const cancelledRef = useRef(false);
   const swatchRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const popupRef = useRef<HTMLDivElement>(null);
-  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   useEffect(() => {
     if (colorEditingValue === null) return;
     function handleClickOutside(e: MouseEvent) {
       const swatchEl = swatchRefs.current.get(colorEditingValue!);
-      if (
-        swatchEl &&
-        swatchEl.contains(e.target as Node)
-      ) {
+      if (swatchEl && swatchEl.contains(e.target as Node)) {
         return;
       }
       if (popupRef.current && popupRef.current.contains(e.target as Node)) {
@@ -88,7 +90,7 @@ export function EditableCategoryLegend({
     const updated = categories.map((c) =>
       c.value === value
         ? { ...c, color: nextColor, defaultColor: c.defaultColor ?? c.color }
-        : c,
+        : c
     );
     onCategoriesChange(updated);
 
@@ -221,7 +223,7 @@ export function EditableCategoryLegend({
               );
             })()}
           </Box>,
-          document.body,
+          document.body
         )}
     </Box>
   );

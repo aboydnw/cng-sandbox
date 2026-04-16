@@ -103,8 +103,8 @@ def test_mark_categorical_returns_409_when_already_categorical(client, db_engine
 
 def test_mark_categorical_surfaces_too_many_values(client, db_engine, monkeypatch):
     _make_dataset(db_engine, dataset_id="ds-tmv", workspace_id="wsTest01", filename="t.tif")
-    from src.services.categorical_extract import TooManyValues
     import src.routes.datasets as routes
+    from src.services.categorical_extract import TooManyValues
 
     def _raise(_row):
         raise TooManyValues(42)
@@ -123,8 +123,8 @@ def test_mark_categorical_surfaces_too_many_values(client, db_engine, monkeypatc
 
 def test_mark_categorical_surfaces_unsupported_dtype(client, db_engine, monkeypatch):
     _make_dataset(db_engine, dataset_id="ds-bad", workspace_id="wsTest01", filename="f.tif")
-    from src.services.categorical_extract import UnsupportedDtype
     import src.routes.datasets as routes
+    from src.services.categorical_extract import UnsupportedDtype
 
     def _raise_dtype(_row):
         raise UnsupportedDtype("float32")

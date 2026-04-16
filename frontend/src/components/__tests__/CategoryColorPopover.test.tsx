@@ -16,7 +16,7 @@ describe("CategoryColorPopover", () => {
         defaultColor="#AAAAAA"
         onSave={onSave}
         onClose={vi.fn()}
-      />,
+      />
     );
 
     const hex = screen.getByLabelText(/hex/i) as HTMLInputElement;
@@ -34,7 +34,7 @@ describe("CategoryColorPopover", () => {
         defaultColor="#AAAAAA"
         onSave={onSave}
         onClose={vi.fn()}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByRole("button", { name: /reset/i }));
@@ -50,7 +50,7 @@ describe("CategoryColorPopover", () => {
         defaultColor="#AAAAAA"
         onSave={onSave}
         onClose={vi.fn()}
-      />,
+      />
     );
 
     const hex = screen.getByLabelText(/hex/i) as HTMLInputElement;

@@ -7,7 +7,10 @@ interface MarkAsCategoricalCardProps {
   onSuccess: () => void;
 }
 
-export function MarkAsCategoricalCard({ datasetId, onSuccess }: MarkAsCategoricalCardProps) {
+export function MarkAsCategoricalCard({
+  datasetId,
+  onSuccess,
+}: MarkAsCategoricalCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -15,18 +18,23 @@ export function MarkAsCategoricalCard({ datasetId, onSuccess }: MarkAsCategorica
     setError(null);
     setPending(true);
     try {
-      const resp = await workspaceFetch(`/api/datasets/${datasetId}/mark-categorical`, {
-        method: "POST",
-      });
+      const resp = await workspaceFetch(
+        `/api/datasets/${datasetId}/mark-categorical`,
+        {
+          method: "POST",
+        }
+      );
       if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
         const detail = body?.detail;
         if (detail?.error === "too_many_values") {
           setError(
-            `Found ${detail.count} unique values; only rasters with 30 or fewer categories can be marked categorical.`,
+            `Found ${detail.count} unique values; only rasters with 30 or fewer categories can be marked categorical.`
           );
         } else if (detail?.error === "unsupported_dtype") {
-          setError(`Raster dtype ${detail.dtype} cannot be treated as categorical.`);
+          setError(
+            `Raster dtype ${detail.dtype} cannot be treated as categorical.`
+          );
         } else {
           setError("Could not mark as categorical.");
         }

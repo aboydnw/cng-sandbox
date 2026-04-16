@@ -16,16 +16,23 @@ describe("MarkAsCategoricalCard", () => {
   beforeEach(() => fetchMock.mockReset());
 
   it("posts to the endpoint and calls onSuccess", async () => {
-    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ is_categorical: true }) });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ is_categorical: true }),
+    });
     const onSuccess = vi.fn();
-    renderWithProvider(<MarkAsCategoricalCard datasetId="ds-1" onSuccess={onSuccess} />);
+    renderWithProvider(
+      <MarkAsCategoricalCard datasetId="ds-1" onSuccess={onSuccess} />
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: /mark as categorical/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mark as categorical/i })
+    );
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/datasets/ds-1/mark-categorical",
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
   });
 
@@ -35,9 +42,13 @@ describe("MarkAsCategoricalCard", () => {
       status: 400,
       json: async () => ({ detail: { error: "too_many_values", count: 57 } }),
     });
-    renderWithProvider(<MarkAsCategoricalCard datasetId="ds-1" onSuccess={vi.fn()} />);
+    renderWithProvider(
+      <MarkAsCategoricalCard datasetId="ds-1" onSuccess={vi.fn()} />
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: /mark as categorical/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mark as categorical/i })
+    );
     expect(await screen.findByText(/57 unique values/)).toBeInTheDocument();
   });
 
@@ -45,11 +56,17 @@ describe("MarkAsCategoricalCard", () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 400,
-      json: async () => ({ detail: { error: "unsupported_dtype", dtype: "float32" } }),
+      json: async () => ({
+        detail: { error: "unsupported_dtype", dtype: "float32" },
+      }),
     });
-    renderWithProvider(<MarkAsCategoricalCard datasetId="ds-1" onSuccess={vi.fn()} />);
+    renderWithProvider(
+      <MarkAsCategoricalCard datasetId="ds-1" onSuccess={vi.fn()} />
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: /mark as categorical/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /mark as categorical/i })
+    );
     expect(await screen.findByText(/float32/)).toBeInTheDocument();
   });
 });

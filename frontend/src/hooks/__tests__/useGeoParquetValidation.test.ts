@@ -434,4 +434,47 @@ describe("useGeoParquetValidation", () => {
       expect(q).not.toContain("data's.parquet");
     }
   });
+
+  it("reports size and picks a render path after validation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        headers: new Headers({ "content-length": "8000000" }),
+      }))
+    );
+
+    const mockConn = makeConn((sql) => {
+      if (sql.includes("DESCRIBE")) {
+        return {
+          numRows: 1,
+          get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+        };
+      }
+      if (sql.includes("ST_GeometryType")) {
+        return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
+      }
+      if (sql.includes("ST_Extent")) {
+        return {
+          numRows: 1,
+          get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
+        };
+      }
+    });
+
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(mockConn, "https://example.com/small.parquet")
+    );
+
+    await act(async () => {
+      await result.current.validate();
+    });
+
+    expect(result.current.valid).toBe(true);
+    expect(result.current.sizeBytes).toBe(8000000);
+    expect(result.current.sizeSource).toBe("head");
+    expect(result.current.renderPath).toBe("client");
+
+    vi.unstubAllGlobals();
+  });
 });

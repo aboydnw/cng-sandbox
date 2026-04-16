@@ -78,7 +78,11 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           return;
         }
       }
-      await validateGeoParquet(activeConn);
+      // Pass trimmedUrl explicitly: setPreviewUrl above is async, so
+      // validateGeoParquet's closure still holds the previous parquetUrl
+      // until React re-renders. Without this override the first validation
+      // would run against an empty URL.
+      await validateGeoParquet(activeConn, trimmedUrl);
       return; // Don't proceed to discovery
     }
 

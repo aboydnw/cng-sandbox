@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import type { MapItem } from "../types";
 import { formatBytes } from "../utils/format";
+import { classifyCogRenderPath } from "../lib/layers/cogDtype";
 
-const CLIENT_RENDER_MAX_BYTES = 200 * 1024 * 1024; // 200MB
+const CLIENT_RENDER_MAX_BYTES_PALETTED = 2 * 1024 * 1024 * 1024; // 2 GB
+const CLIENT_RENDER_MAX_BYTES_CONTINUOUS = 500 * 1024 * 1024; // 500 MB
 
 export type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
 
@@ -120,6 +122,21 @@ export function useMapControls(
     !isCategorical &&
     (isSingleBand || (isMultiBand && effectiveBand !== "rgb"));
 
+  const renderPath =
+    item && item.cogUrl
+      ? classifyCogRenderPath({
+          dtype: item.dtype,
+          isCategorical,
+        })
+      : "continuous";
+
+  const clientRenderCapBytes =
+    renderPath === "paletted"
+      ? CLIENT_RENDER_MAX_BYTES_PALETTED
+      : CLIENT_RENDER_MAX_BYTES_CONTINUOUS;
+
+  const clientRenderCapLabel = renderPath === "paletted" ? "2 GB" : "500 MB";
+
   const canClientRender =
     !!item &&
     !item.isTemporal &&
@@ -127,13 +144,13 @@ export function useMapControls(
     !!item.bounds &&
     Math.abs(item.bounds[1]) < 85.05 &&
     Math.abs(item.bounds[3]) < 85.05 &&
-    (item.dataset?.converted_file_size ?? 0) <= CLIENT_RENDER_MAX_BYTES;
+    (item.dataset?.converted_file_size ?? 0) <= clientRenderCapBytes;
 
   const clientRenderDisabledReason =
     item?.cogUrl &&
     item?.dataset?.converted_file_size != null &&
-    item.dataset.converted_file_size > CLIENT_RENDER_MAX_BYTES
-      ? `File exceeds 200 MB browser limit (${formatBytes(item.dataset.converted_file_size)})`
+    item.dataset.converted_file_size > clientRenderCapBytes
+      ? `File exceeds ${clientRenderCapLabel} browser limit (${formatBytes(item.dataset.converted_file_size)})`
       : null;
 
   return {

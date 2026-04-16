@@ -199,3 +199,90 @@ describe("useMapControls", () => {
     expect(result.current.colormapReversed).toBe(true);
   });
 });
+
+describe("client render size caps", () => {
+  function itemWithSize(
+    size: number,
+    overrides: Partial<MapItem> = {}
+  ): MapItem {
+    return {
+      id: "test-1",
+      name: "test",
+      source: "dataset",
+      dataType: "raster",
+      tileUrl: "/tiles/{z}/{x}/{y}",
+      bounds: [-125, 24, -66, 49],
+      minZoom: null,
+      maxZoom: null,
+      bandCount: 1,
+      bandNames: ["band1"],
+      colorInterpretation: ["gray"],
+      dtype: "uint8",
+      rasterMin: 0,
+      rasterMax: 255,
+      isCategorical: true,
+      categories: null,
+      cogUrl: "/cog/large.tif",
+      rescale: null,
+      parquetUrl: null,
+      isTemporal: false,
+      timesteps: [],
+      dataset: {
+        id: "ds-1",
+        filename: "large.tif",
+        data_type: "raster",
+        status: "ready",
+        tile_url: "/tiles/{z}/{x}/{y}",
+        cog_url: "/cog/large.tif",
+        parquet_url: null,
+        bounds: [-125, 24, -66, 49],
+        converted_file_size: size,
+      } as unknown as MapItem["dataset"],
+      connection: null,
+      ...overrides,
+    };
+  }
+
+  it("allows 1.5 GB for uint8 paletted COGs", () => {
+    const item = itemWithSize(1_500 * 1024 * 1024);
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.canClientRender).toBe(true);
+    expect(result.current.clientRenderDisabledReason).toBeNull();
+  });
+
+  it("blocks above 2 GB for uint8 paletted COGs with a size-specific message", () => {
+    const item = itemWithSize(2_500 * 1024 * 1024);
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.canClientRender).toBe(false);
+    expect(result.current.clientRenderDisabledReason).toMatch(/2 GB/);
+  });
+
+  it("allows 400 MB for float32 COGs", () => {
+    const item = itemWithSize(400 * 1024 * 1024, {
+      dtype: "float32",
+      isCategorical: false,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.canClientRender).toBe(true);
+  });
+
+  it("blocks above 500 MB for float32 COGs with a size-specific message", () => {
+    const item = itemWithSize(600 * 1024 * 1024, {
+      dtype: "float32",
+      isCategorical: false,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.canClientRender).toBe(false);
+    expect(result.current.clientRenderDisabledReason).toMatch(/500 MB/);
+  });
+
+  it("treats null dtype as continuous (500 MB cap)", () => {
+    const item = itemWithSize(600 * 1024 * 1024, {
+      dtype: null,
+      isCategorical: false,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.canClientRender).toBe(false);
+    expect(result.current.clientRenderDisabledReason).toMatch(/500 MB/);
+  });
+});

@@ -7,7 +7,7 @@ import type { Table } from "apache-arrow";
 import {
   buildRasterTileLayers,
   buildRasterPMTilesLayer,
-  buildCogLayer,
+  buildCogLayerContinuous,
   buildVectorLayer,
   buildGeoJsonLayer,
   arrowTableToGeoJSON,
@@ -238,7 +238,7 @@ export function useLayerBuilder({
 
     if (item.dataType === "raster") {
       if (renderMode === "client" && canClientRender) {
-        return buildCogLayer({
+        return buildCogLayerContinuous({
           cogUrl: item.cogUrl!,
           opacity,
           rasterMin: item.rasterMin ?? 0,

@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 
 // Mock the cogLayer module to avoid the broken @developmentseed/deck.gl-geotiff import
 vi.mock("../../layers/cogLayer", () => ({
-  buildCogLayer: vi.fn(() => []),
+  buildCogLayerContinuous: vi.fn(() => []),
+  buildCogLayerPaletted: vi.fn(() => []),
 }));
 
 // Mock buildConnectionTileUrl for connection tests

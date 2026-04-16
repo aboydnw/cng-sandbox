@@ -122,7 +122,7 @@ export function buildCogLayerPaletted({
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
-export function buildCogLayer({
+export function buildCogLayerContinuous({
   cogUrl,
   opacity,
   rasterMin,
@@ -227,7 +227,7 @@ export function buildCogLayer({
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return [
     new COGLayer({
-      id: "direct-cog-layer",
+      id: "direct-cog-layer-continuous",
       geotiff: url,
       opacity,
       getTileData,

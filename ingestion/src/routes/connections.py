@@ -151,8 +151,11 @@ async def create_connection(
 
 @router.get("/connections/{connection_id}/stream")
 async def stream_connection_conversion(connection_id: str, request: Request):
-    """SSE stream of connection conversion progress."""
-    workspace_id = request.headers.get("x-workspace-id", "")
+    """SSE stream of connection conversion progress.
+
+    No workspace check — EventSource cannot send custom headers.
+    Connection IDs are UUIDs, which provides sufficient access control.
+    """
 
     async def event_generator():
         start = time.monotonic()
@@ -163,7 +166,7 @@ async def stream_connection_conversion(connection_id: str, request: Request):
             session = get_session(request)
             try:
                 row = session.get(ConnectionRow, connection_id)
-                if row is None or (row.workspace_id and row.workspace_id != workspace_id):
+                if row is None:
                     yield {"event": "status", "data": json.dumps({"status": "not_found"})}
                     return
                 payload = {

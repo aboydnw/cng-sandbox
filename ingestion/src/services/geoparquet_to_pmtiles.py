@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import logging
+import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+
+import httpx
 
 from src.services.pmtiles_ingest import (
     _read_pmtiles_zoom_range,
@@ -24,6 +27,20 @@ class ConversionResult:
     file_size: int
 
 
+def _download_if_remote(source_url: str, tmp_dir: str) -> str:
+    """If source_url is an HTTP(S) URL, download to a local temp file and return its path."""
+    if source_url.startswith(("http://", "https://")):
+        local_path = os.path.join(tmp_dir, "source.parquet")
+        logger.info("Downloading %s", source_url)
+        with httpx.stream("GET", source_url, follow_redirects=True, timeout=300) as r:
+            r.raise_for_status()
+            with open(local_path, "wb") as f:
+                for chunk in r.iter_bytes(chunk_size=8192):
+                    f.write(chunk)
+        return local_path
+    return source_url
+
+
 def convert_to_pmtiles(source_url: str, output_path: str) -> ConversionResult:
     """Download (if remote) and convert a GeoParquet to PMTiles.
 
@@ -32,7 +49,10 @@ def convert_to_pmtiles(source_url: str, output_path: str) -> ConversionResult:
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    feature_count = parquet_to_pmtiles_file(source_url, str(out))
+    with tempfile.TemporaryDirectory() as dl_tmp:
+        local_parquet = _download_if_remote(source_url, dl_tmp)
+        feature_count = parquet_to_pmtiles_file(local_parquet, str(out))
+
     min_zoom, max_zoom = _read_pmtiles_zoom_range(str(out))
 
     return ConversionResult(

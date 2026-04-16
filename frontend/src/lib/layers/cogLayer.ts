@@ -101,6 +101,27 @@ interface CogLayerOptions {
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
 }
 
+interface CogLayerPalettedOptions {
+  cogUrl: string;
+  opacity: number;
+}
+
+export function buildCogLayerPaletted({
+  cogUrl,
+  opacity,
+}: CogLayerPalettedOptions) {
+  const url = window.location.origin + cogUrl;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return [
+    new COGLayer({
+      id: "direct-cog-layer-paletted",
+      geotiff: url,
+      opacity,
+    } as any),
+  ];
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
 export function buildCogLayer({
   cogUrl,
   opacity,

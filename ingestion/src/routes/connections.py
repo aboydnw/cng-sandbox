@@ -53,7 +53,9 @@ async def _run_conversion_bg(connection_id: str, db_session_factory) -> None:
     """Background wrapper that opens its own session and runs the sync job."""
     session = db_session_factory()
     try:
-        await asyncio.to_thread(geoparquet_to_pmtiles.run_conversion, connection_id, session)
+        await asyncio.to_thread(
+            geoparquet_to_pmtiles.run_conversion, connection_id, session
+        )
     finally:
         session.close()
 
@@ -167,7 +169,10 @@ async def stream_connection_conversion(connection_id: str, request: Request):
             try:
                 row = session.get(ConnectionRow, connection_id)
                 if row is None:
-                    yield {"event": "status", "data": json.dumps({"status": "not_found"})}
+                    yield {
+                        "event": "status",
+                        "data": json.dumps({"status": "not_found"}),
+                    }
                     return
                 payload = {
                     "status": row.conversion_status or "unknown",

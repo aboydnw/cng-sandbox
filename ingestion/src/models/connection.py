@@ -30,7 +30,9 @@ class ConnectionRow(Base):
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     tile_url = Column(String, nullable=True)
     render_path = Column(String, nullable=True)  # "client" | "server"
-    conversion_status = Column(String, nullable=True)  # pending | running | ready | failed
+    conversion_status = Column(
+        String, nullable=True
+    )  # pending | running | ready | failed
     conversion_error = Column(Text, nullable=True)
     feature_count = Column(Integer, nullable=True)
     file_size = Column(BigInteger, nullable=True)

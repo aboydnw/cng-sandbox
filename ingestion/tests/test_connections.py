@@ -317,7 +317,9 @@ def test_connection_row_has_conversion_fields(db_session):
     assert d["tile_url"] is None
 
 
-def test_connection_conversion_stream_emits_terminal_event_when_ready(client, db_engine):
+def test_connection_conversion_stream_emits_terminal_event_when_ready(
+    client, db_engine
+):
     import uuid
 
     from sqlalchemy.orm import sessionmaker

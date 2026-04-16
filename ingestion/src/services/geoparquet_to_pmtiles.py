@@ -1,4 +1,5 @@
 """Convert a (remote or local) GeoParquet to PMTiles via tippecanoe."""
+
 from __future__ import annotations
 
 import logging

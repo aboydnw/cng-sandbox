@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.18.0](https://github.com/aboydnw/cng-sandbox/compare/v1.17.0...v1.18.0) (2026-04-16)
+
+
+### Features
+
+* **frontend:** auto-dispatch GeoParquet to client or server render (Ticket C) ([#228](https://github.com/aboydnw/cng-sandbox/issues/228)) ([3f7f1c6](https://github.com/aboydnw/cng-sandbox/commit/3f7f1c679bb3013e52f0af77b4f754b18a878dcb))
+* **frontend:** render remote GeoParquet via DuckDB WASM (Ticket A) ([#225](https://github.com/aboydnw/cng-sandbox/issues/225)) ([c937ce2](https://github.com/aboydnw/cng-sandbox/commit/c937ce28d46255fc60fd3db4907939f913d5a978))
+* **mcp:** MCP server for agent-driven story creation ([#221](https://github.com/aboydnw/cng-sandbox/issues/221)) ([#223](https://github.com/aboydnw/cng-sandbox/issues/223)) ([d7df2fb](https://github.com/aboydnw/cng-sandbox/commit/d7df2fb7ec8b601bd11c8a11bc223f38cf702454))
+* open shared map/story views to the public ([#230](https://github.com/aboydnw/cng-sandbox/issues/230)) ([24d96a0](https://github.com/aboydnw/cng-sandbox/commit/24d96a06025bbeedc26909635602a6ed86be77bb))
+* server-side GeoParquet → PMTiles pipeline (Ticket B) ([#227](https://github.com/aboydnw/cng-sandbox/issues/227)) ([5c51367](https://github.com/aboydnw/cng-sandbox/commit/5c513673dfc15dd3e59966625e04fef42c80a8b2))
+* validate remote GeoParquet URLs before connecting ([#222](https://github.com/aboydnw/cng-sandbox/issues/222)) ([8fb1c63](https://github.com/aboydnw/cng-sandbox/commit/8fb1c633248059a677414d84b0bdfbeb3a11527b))
+
+
+### Bug Fixes
+
+* **frontend:** GeoParquet validation against remote URLs ([#229](https://github.com/aboydnw/cng-sandbox/issues/229)) ([aae3a01](https://github.com/aboydnw/cng-sandbox/commit/aae3a014aa7a0aaec41d5ce45d3d3a1fad16733b))
+* **ingestion:** migrate `connections` columns added by server-side GeoParquet work ([#231](https://github.com/aboydnw/cng-sandbox/issues/231)) ([f731315](https://github.com/aboydnw/cng-sandbox/commit/f7313155ff4177e5949e7b0b5d1e85f2ebea6035))
+
 ## [1.17.0](https://github.com/aboydnw/cng-sandbox/compare/v1.16.0...v1.17.0) (2026-04-14)
 
 

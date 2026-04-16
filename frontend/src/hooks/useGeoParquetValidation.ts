@@ -62,7 +62,10 @@ export function useGeoParquetValidation(
   const validatingRef = useRef(false);
 
   const validate = useCallback(
-    async (overrideConn?: AsyncDuckDBConnection | null) => {
+    async (
+      overrideConn?: AsyncDuckDBConnection | null,
+      overrideUrl?: string
+    ) => {
       if (validatingRef.current) {
         console.warn(
           "Validation already in progress, skipping concurrent call"
@@ -71,6 +74,7 @@ export function useGeoParquetValidation(
       }
 
       const activeConn = overrideConn ?? conn;
+      const activeUrl = overrideUrl ?? parquetUrl;
 
       if (!activeConn) {
         setState({
@@ -89,7 +93,7 @@ export function useGeoParquetValidation(
       setState((prev) => ({ ...prev, validating: true }));
 
       try {
-        const fullUrl = resolveParquetUrl(parquetUrl);
+        const fullUrl = resolveParquetUrl(activeUrl);
         const escapedUrl = escapeSqlLiteral(fullUrl);
 
         // Step 1: Detect geometry column
@@ -155,15 +159,16 @@ export function useGeoParquetValidation(
           }
         }
 
-        // Step 3: Get bounding box (compute ST_Extent once via CTE)
+        // Step 3: Get bounding box. DuckDB spatial exposes ST_XMin/ST_YMin/
+        // ST_XMax/ST_YMax on GEOMETRY values (not BOX_2D), so aggregate the
+        // per-row coordinates with MIN/MAX to get the dataset extent.
         const bboxResult = await activeConn.query(
-          `WITH extent AS (
-             SELECT ST_Extent("${geometryColumnName}") as ext
-             FROM read_parquet('${escapedUrl}') WHERE "${geometryColumnName}" IS NOT NULL
-           )
-           SELECT ST_MinX(ext) as minx, ST_MinY(ext) as miny,
-                  ST_MaxX(ext) as maxx, ST_MaxY(ext) as maxy
-           FROM extent`
+          `SELECT MIN(ST_XMin("${geometryColumnName}")) as minx,
+                  MIN(ST_YMin("${geometryColumnName}")) as miny,
+                  MAX(ST_XMax("${geometryColumnName}")) as maxx,
+                  MAX(ST_YMax("${geometryColumnName}")) as maxy
+           FROM read_parquet('${escapedUrl}')
+           WHERE "${geometryColumnName}" IS NOT NULL`
         );
 
         let bbox: GeometryInfo["bbox"] = null;

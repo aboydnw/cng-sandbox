@@ -53,7 +53,7 @@ describe("useGeoParquetValidation", () => {
     const mockConn = makeConn((sql) => {
       if (sql.includes("DESCRIBE")) return describeResult;
       if (sql.includes("ST_GeometryType")) return geomTypeResult;
-      if (sql.includes("ST_Extent")) return bboxResult;
+      if (sql.includes("ST_XMin")) return bboxResult;
     });
 
     const { result } = renderHook(() =>
@@ -158,7 +158,7 @@ describe("useGeoParquetValidation", () => {
       if (sql.includes("ST_GeometryType")) {
         return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
       }
-      if (sql.includes("ST_Extent")) {
+      if (sql.includes("ST_XMin")) {
         return {
           numRows: 1,
           get: () => ({ minx: -1, miny: -1, maxx: 1, maxy: 1 }),
@@ -200,7 +200,7 @@ describe("useGeoParquetValidation", () => {
           get: () => ({ geom_type: "POINT" }),
         };
       }
-      if (sql.includes("ST_Extent")) {
+      if (sql.includes("ST_XMin")) {
         return {
           numRows: 1,
           get: () => ({
@@ -276,7 +276,7 @@ describe("useGeoParquetValidation", () => {
           get: () => ({ geom_type: "POINT" }),
         };
       }
-      if (sql.includes("ST_Extent")) {
+      if (sql.includes("ST_XMin")) {
         return {
           numRows: 1,
           get: () => ({
@@ -301,9 +301,10 @@ describe("useGeoParquetValidation", () => {
     await waitFor(() => expect(result.current.validating).toBe(false));
 
     // validateCallCount counts SQL queries issued to the mock conn (4 per
-    // validation: DESCRIBE, ST_GeometryType, ST_Extent, parquet_metadata for
-    // size detection). The second validate() call is skipped due to the
-    // in-flight guard, so we expect exactly 4 queries, not 8.
+    // validation: DESCRIBE, ST_GeometryType, bbox (ST_XMin/MAX aggregate),
+    // parquet_metadata for size detection). The second validate() call is
+    // skipped due to the in-flight guard, so we expect exactly 4 queries,
+    // not 8.
     expect(validateCallCount).toBe(4);
   });
 
@@ -340,7 +341,7 @@ describe("useGeoParquetValidation", () => {
           if (sql.includes("ST_GeometryType")) {
             return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
           }
-          if (sql.includes("ST_Extent")) {
+          if (sql.includes("ST_XMin")) {
             return {
               numRows: 1,
               get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
@@ -409,7 +410,7 @@ describe("useGeoParquetValidation", () => {
         if (sql.includes("ST_GeometryType")) {
           return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
         }
-        if (sql.includes("ST_Extent")) {
+        if (sql.includes("ST_XMin")) {
           return {
             numRows: 1,
             get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
@@ -454,7 +455,7 @@ describe("useGeoParquetValidation", () => {
       if (sql.includes("ST_GeometryType")) {
         return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
       }
-      if (sql.includes("ST_Extent")) {
+      if (sql.includes("ST_XMin")) {
         return {
           numRows: 1,
           get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
@@ -476,5 +477,88 @@ describe("useGeoParquetValidation", () => {
     expect(result.current.renderPath).toBe("client");
 
     vi.unstubAllGlobals();
+  });
+
+  it("uses the overrideUrl argument when provided instead of the hook's parquetUrl", async () => {
+    const queries: string[] = [];
+    const describeResult = {
+      numRows: 1,
+      get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+    };
+    const mockConn = {
+      query: vi.fn(async (sql: string) => {
+        queries.push(sql);
+        if (sql.includes("DESCRIBE")) return describeResult;
+        if (sql.includes("ST_GeometryType")) {
+          return { numRows: 1, get: () => ({ geom_type: "POLYGON" }) };
+        }
+        if (sql.includes("ST_XMin")) {
+          return {
+            numRows: 1,
+            get: () => ({ minx: -1, miny: -1, maxx: 1, maxy: 1 }),
+          };
+        }
+      }),
+    } as unknown as AsyncDuckDBConnection;
+
+    // Hook is created with an empty parquetUrl. Without the override, every
+    // query would run against `${window.location.origin}/` (empty URL
+    // resolving to the dev server root). This simulates the common case
+    // where the caller issues setPreviewUrl(...) and then immediately calls
+    // validate() before React has re-rendered the hook with the new URL.
+    const { result } = renderHook(() => useGeoParquetValidation(mockConn, ""));
+
+    const overrideUrl = "https://example.com/override.parquet";
+    await act(async () => {
+      await result.current.validate(undefined, overrideUrl);
+    });
+
+    expect(result.current.valid).toBe(true);
+    for (const q of queries) {
+      expect(q).toContain(overrideUrl);
+      expect(q).not.toContain(`${window.location.origin}/'`);
+    }
+  });
+
+  it("computes the bbox with aggregate MIN/MAX of ST_XMin/YMin/XMax/YMax", async () => {
+    const queries: string[] = [];
+    const mockConn = {
+      query: vi.fn(async (sql: string) => {
+        queries.push(sql);
+        if (sql.includes("DESCRIBE")) {
+          return {
+            numRows: 1,
+            get: () => ({ column_name: "geometry", column_type: "GEOMETRY" }),
+          };
+        }
+        if (sql.includes("ST_GeometryType")) {
+          return { numRows: 1, get: () => ({ geom_type: "POINT" }) };
+        }
+        if (sql.includes("ST_XMin")) {
+          return {
+            numRows: 1,
+            get: () => ({ minx: 0, miny: 0, maxx: 1, maxy: 1 }),
+          };
+        }
+      }),
+    } as unknown as AsyncDuckDBConnection;
+
+    const { result } = renderHook(() =>
+      useGeoParquetValidation(mockConn, "https://example.com/t.parquet")
+    );
+
+    await act(async () => {
+      await result.current.validate();
+    });
+
+    expect(result.current.valid).toBe(true);
+    const bboxQuery = queries.find((q) => q.includes("ST_XMin"));
+    expect(bboxQuery).toBeDefined();
+    // Aggregate form (not the broken scalar ST_MinX(ext) / ST_Extent CTE)
+    expect(bboxQuery).toContain("MIN(ST_XMin");
+    expect(bboxQuery).toContain("MIN(ST_YMin");
+    expect(bboxQuery).toContain("MAX(ST_XMax");
+    expect(bboxQuery).toContain("MAX(ST_YMax");
+    expect(bboxQuery).not.toMatch(/ST_MinX|ST_MaxX|ST_MinY|ST_MaxY/);
   });
 });

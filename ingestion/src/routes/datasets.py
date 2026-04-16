@@ -24,7 +24,7 @@ from src.workspace import validate_workspace_id
 router = APIRouter(prefix="/api")
 
 
-class CategoryLabelUpdate(BaseModel):
+class CategoryUpdate(BaseModel):
     value: int
     label: str | None = None
     color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
@@ -148,7 +148,7 @@ async def delete_dataset_endpoint(dataset_id: str, request: Request):
 @router.patch("/datasets/{dataset_id}/categories")
 async def update_category_labels(
     dataset_id: str,
-    updates: list[CategoryLabelUpdate],
+    updates: list[CategoryUpdate],
     request: Request,
 ):
     workspace_id = request.headers.get("x-workspace-id", "")

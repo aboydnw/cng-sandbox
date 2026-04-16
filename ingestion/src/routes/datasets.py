@@ -262,6 +262,11 @@ async def mark_categorical(dataset_id: str, request: Request):
                 detail={"error": "too_many_values", "count": exc.count},
             ) from exc
 
+        if not values:
+            raise HTTPException(
+                status_code=400, detail={"error": "no_categorical_values"}
+            )
+
         categories = []
         for i, value in enumerate(values):
             color = QUALITATIVE_PALETTE[i % len(QUALITATIVE_PALETTE)]

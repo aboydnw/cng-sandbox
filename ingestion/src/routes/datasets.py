@@ -232,13 +232,13 @@ async def mark_categorical(dataset_id: str, request: Request):
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if row.dataset_type != "raster":
-            raise HTTPException(
-                status_code=400, detail={"error": "not_a_raster"}
-            )
+            raise HTTPException(status_code=400, detail={"error": "not_a_raster"})
 
         meta = json.loads(row.metadata_json) if row.metadata_json else {}
         if meta.get("is_categorical"):
-            raise HTTPException(status_code=409, detail="Dataset is already categorical")
+            raise HTTPException(
+                status_code=409, detail="Dataset is already categorical"
+            )
 
         try:
             values = extract_unique_values_from_dataset(row)

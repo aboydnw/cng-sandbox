@@ -38,8 +38,12 @@ def test_patch_sets_title(client, db_engine):
 
 
 def test_patch_clears_title_with_null(client, db_engine):
-    _make(db_engine, dataset_id="ds-t2", workspace_id="wsTest01",
-          metadata={"title": "Old title"})
+    _make(
+        db_engine,
+        dataset_id="ds-t2",
+        workspace_id="wsTest01",
+        metadata={"title": "Old title"},
+    )
     resp = client.patch(
         "/api/datasets/ds-t2",
         headers={"x-workspace-id": "wsTest01"},

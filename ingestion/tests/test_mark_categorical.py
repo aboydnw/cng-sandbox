@@ -6,8 +6,16 @@ from sqlalchemy.orm import sessionmaker
 from src.models.dataset import DatasetRow
 
 
-def _make_dataset(db_engine, *, dataset_id, workspace_id, filename, is_example=False,
-                  metadata=None, dataset_type="raster"):
+def _make_dataset(
+    db_engine,
+    *,
+    dataset_id,
+    workspace_id,
+    filename,
+    is_example=False,
+    metadata=None,
+    dataset_type="raster",
+):
     session = sessionmaker(bind=db_engine)()
     try:
         row = DatasetRow(
@@ -39,7 +47,8 @@ def test_mark_categorical_writes_metadata(client, db_engine, monkeypatch):
     import src.routes.datasets as routes
 
     monkeypatch.setattr(
-        routes, "extract_unique_values_from_dataset",
+        routes,
+        "extract_unique_values_from_dataset",
         lambda row: [0, 1, 2],
     )
 
@@ -74,8 +83,9 @@ def test_mark_categorical_rejects_example(client, db_engine):
 
 
 def test_mark_categorical_rejects_cross_workspace(client, db_engine):
-    _make_dataset(db_engine, dataset_id="ds-ws", workspace_id="wsOwner1",
-                  filename="x.tif")
+    _make_dataset(
+        db_engine, dataset_id="ds-ws", workspace_id="wsOwner1", filename="x.tif"
+    )
     resp = client.post(
         "/api/datasets/ds-ws/mark-categorical",
         headers={"x-workspace-id": "wsOther1"},
@@ -102,7 +112,9 @@ def test_mark_categorical_returns_409_when_already_categorical(client, db_engine
 
 
 def test_mark_categorical_surfaces_too_many_values(client, db_engine, monkeypatch):
-    _make_dataset(db_engine, dataset_id="ds-tmv", workspace_id="wsTest01", filename="t.tif")
+    _make_dataset(
+        db_engine, dataset_id="ds-tmv", workspace_id="wsTest01", filename="t.tif"
+    )
     import src.routes.datasets as routes
     from src.services.categorical_extract import TooManyValues
 
@@ -122,7 +134,9 @@ def test_mark_categorical_surfaces_too_many_values(client, db_engine, monkeypatc
 
 
 def test_mark_categorical_surfaces_unsupported_dtype(client, db_engine, monkeypatch):
-    _make_dataset(db_engine, dataset_id="ds-bad", workspace_id="wsTest01", filename="f.tif")
+    _make_dataset(
+        db_engine, dataset_id="ds-bad", workspace_id="wsTest01", filename="f.tif"
+    )
     import src.routes.datasets as routes
     from src.services.categorical_extract import UnsupportedDtype
 

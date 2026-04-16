@@ -21,7 +21,8 @@ export function ConnectionReportCard({
   onClose,
 }: ConnectionReportCardProps) {
   const [activeStep, setActiveStep] = useState(1);
-  const totalSteps = getConnectionStepCount();
+  const totalSteps = getConnectionStepCount(connection);
+  const startStep = connection.connection_type === "geoparquet" ? 0 : 1;
 
   useEffect(() => {
     if (isOpen) setActiveStep(1);
@@ -46,9 +47,9 @@ export function ConnectionReportCard({
   const allSteps = useMemo(
     () =>
       Array.from({ length: totalSteps }, (_, i) =>
-        getConnectionStepContent(connection, i + 1)
+        getConnectionStepContent(connection, startStep + i)
       ),
-    [connection, totalSteps]
+    [connection, totalSteps, startStep]
   );
 
   if (!isOpen) return null;

@@ -37,7 +37,6 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     geometryInfo,
     sizeBytes,
     sizeSource,
-    renderPath,
     validate: validateGeoParquet,
   } = useGeoParquetValidation(conn, previewUrl);
 

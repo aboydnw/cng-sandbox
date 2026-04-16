@@ -85,7 +85,7 @@ const defaultProps = {
   datasetMin: null,
   datasetMax: null,
   canMarkCategorical: false,
-  onMarkCategoricalSuccess: vi.fn(),
+  onDatasetUpdated: vi.fn(),
 };
 
 function renderWithProviders(ui: React.ReactElement) {

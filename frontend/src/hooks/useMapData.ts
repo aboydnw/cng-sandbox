@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import { buildConnectionTileUrl } from "../lib/connections";
 import type { Dataset, Connection, MapItem } from "../types";
+import { displayName } from "../utils/dataset";
 
 function datasetToMapItem(ds: Dataset): MapItem {
   return {
     id: ds.id,
-    name: ds.filename,
+    name: displayName(ds),
     source: "dataset",
     dataType: ds.dataset_type,
     tileUrl: ds.tile_url,

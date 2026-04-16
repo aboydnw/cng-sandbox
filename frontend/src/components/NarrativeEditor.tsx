@@ -3,6 +3,7 @@ import { useRef } from "react";
 import type { ChapterType, LayerConfig } from "../lib/story";
 import type { Connection, Dataset, MapItemSource, Timestep } from "../types";
 import { detectCadence } from "../utils/temporal";
+import { displayName } from "../utils/dataset";
 import { CalendarPopover } from "./CalendarPopover";
 import { ChapterTypePicker } from "./ChapterTypePicker";
 import { ColormapDropdown } from "./ColormapDropdown";
@@ -64,7 +65,7 @@ export function NarrativeEditor({
   const dataSelectorItems: DataSelectorItem[] = [
     ...datasets.map((ds) => ({
       id: ds.id,
-      name: ds.filename,
+      name: displayName(ds),
       source: "dataset" as const,
       dataType: ds.dataset_type,
     })),

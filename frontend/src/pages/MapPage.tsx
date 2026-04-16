@@ -43,6 +43,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetRender } from "../hooks/useGeoParquetRender";
 import { useConnectionConversion } from "../hooks/useConnectionConversion";
+import { displayName } from "../utils/dataset";
 import type { Table } from "apache-arrow";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
@@ -476,7 +477,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                         {
                           type: "categorical" as const,
                           id: "raster-categorical",
-                          title: item?.dataset?.filename ?? "",
+                          title: item?.dataset ? displayName(item.dataset) : "",
                           categories: effectiveCategories.map((c) => ({
                             value: String(c.value),
                             color: c.color,
@@ -496,7 +497,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                         {
                           type: "continuous" as const,
                           id: "raster",
-                          title: item?.dataset?.filename ?? "",
+                          title: item?.dataset ? displayName(item.dataset) : "",
                           domain,
                           colors,
                         },
@@ -609,7 +610,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 !item.dataset?.is_example &&
                 !item.dataset?.is_categorical
               }
-              onMarkCategoricalSuccess={refresh}
+              onDatasetUpdated={refresh}
               shared={shared}
             />
           </Box>

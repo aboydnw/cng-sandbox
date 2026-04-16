@@ -13,6 +13,7 @@ import { InlineConnectionForm } from "./InlineConnectionForm";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { ConnectionInfoCard } from "./ConnectionInfoCard";
 import { StoryCTABanner } from "./StoryCTABanner";
+import { EditableDatasetTitle } from "./EditableDatasetTitle";
 import type { Table } from "apache-arrow";
 
 type PanelMode = "controls" | "upload" | "add-connection";
@@ -63,7 +64,7 @@ interface MapSidePanelProps {
   onColormapReversedChange: (reversed: boolean) => void;
   // Mark as categorical
   canMarkCategorical: boolean;
-  onMarkCategoricalSuccess: () => void;
+  onDatasetUpdated: () => void;
   // Shared view
   shared?: boolean;
 }
@@ -100,7 +101,7 @@ export function MapSidePanel({
   colormapReversed,
   onColormapReversedChange,
   canMarkCategorical,
-  onMarkCategoricalSuccess,
+  onDatasetUpdated,
   shared = false,
 }: MapSidePanelProps) {
   const [mode, setMode] = useState<PanelMode>("controls");
@@ -146,6 +147,19 @@ export function MapSidePanel({
 
   return (
     <Box p={4}>
+      {!shared && item?.source === "dataset" && item.dataset && (
+        <Box mb={3}>
+          <EditableDatasetTitle
+            datasetId={item.dataset.id}
+            title={item.dataset.title ?? null}
+            filename={item.dataset.filename}
+            editable={!item.dataset.is_example}
+            onSaved={() => onDatasetUpdated()}
+            fontSize="18px"
+          />
+        </Box>
+      )}
+
       {!shared && (
         <Box mb={4} pb={4} borderBottom="1px solid" borderColor="brand.border">
           <Text
@@ -198,7 +212,7 @@ export function MapSidePanel({
             showCategoricalToggle ? onCategoricalOverride : undefined
           }
           canMarkCategorical={canMarkCategorical}
-          onMarkCategoricalSuccess={onMarkCategoricalSuccess}
+          onDatasetUpdated={onDatasetUpdated}
           rescaleMin={rescaleMin}
           rescaleMax={rescaleMax}
           datasetMin={datasetMin}

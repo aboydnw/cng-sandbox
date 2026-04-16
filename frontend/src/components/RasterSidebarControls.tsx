@@ -30,7 +30,7 @@ interface RasterSidebarControlsProps {
   datasetId?: string;
   source?: "dataset" | "connection";
   canMarkCategorical?: boolean;
-  onMarkCategoricalSuccess?: () => void;
+  onDatasetUpdated?: () => void;
   onCategoriesChange?: (
     categories: { value: number; color: string; label: string }[]
   ) => void;
@@ -71,7 +71,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
     datasetId,
     source,
     canMarkCategorical,
-    onMarkCategoricalSuccess,
+    onDatasetUpdated,
     onCategoriesChange,
     onCategoricalOverride,
     rescaleMin,
@@ -145,10 +145,10 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
 
       {!isCategorical && (
         <>
-          {canMarkCategorical && datasetId && onMarkCategoricalSuccess && (
+          {canMarkCategorical && datasetId && onDatasetUpdated && (
             <MarkAsCategoricalCard
               datasetId={datasetId}
-              onSuccess={onMarkCategoricalSuccess}
+              onSuccess={onDatasetUpdated}
             />
           )}
 

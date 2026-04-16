@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import type { Dataset } from "../types";
+import { displayName } from "../utils/dataset";
 import { DataSelector } from "./DataSelector";
 import type { DataSelectorItem } from "./DataSelector";
 
@@ -36,7 +37,7 @@ export function DataSwitcher({
         datasetItems.push(
           ...list.map((d) => ({
             id: d.id,
-            name: d.filename,
+            name: displayName(d),
             source: "dataset" as const,
             dataType: d.dataset_type,
             isZeroCopy: d.is_zero_copy,

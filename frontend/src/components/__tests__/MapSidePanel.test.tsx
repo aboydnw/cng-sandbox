@@ -40,6 +40,7 @@ const mockItem: MapItem = {
   bandCount: 1,
   bandNames: null,
   colorInterpretation: null,
+  dtype: null,
   rasterMin: null,
   rasterMax: null,
   cogUrl: null,

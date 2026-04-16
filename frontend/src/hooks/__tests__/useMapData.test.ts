@@ -238,4 +238,22 @@ describe("useMapData", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.data!.dataType).toBe("vector");
   });
+
+  it("propagates dataset.dtype onto MapItem.dtype", async () => {
+    mockWorkspaceFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          ...MOCK_DATASET,
+          dtype: "uint8",
+        }),
+    });
+
+    const { result } = renderHook(() => useMapData("ds-1", false));
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.data?.dtype).toBe("uint8");
+  });
 });

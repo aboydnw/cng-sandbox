@@ -7,6 +7,12 @@ from pydantic import BaseModel
 
 from src.dependencies import get_session
 from src.models.dataset import DatasetRow
+from src.services.categorical import QUALITATIVE_PALETTE
+from src.services.categorical_extract import (
+    TooManyValues,
+    UnsupportedDtype,
+    extract_unique_values,
+)
 from src.services.dataset_delete import delete_dataset
 from src.services.storage import StorageService
 from src.services.story_utils import (
@@ -134,5 +140,70 @@ async def update_category_labels(
         row.metadata_json = json.dumps(meta, default=str)
         session.commit()
         return categories
+    finally:
+        session.close()
+
+
+def extract_unique_values_from_dataset(row: DatasetRow) -> list[int]:
+    """Read unique integer values from the dataset's stored raster.
+
+    Exposed as a module-level function so tests can monkeypatch the I/O without
+    needing a real R2 fixture.
+    """
+    meta = json.loads(row.metadata_json) if row.metadata_json else {}
+    raster_path = meta.get("cog_path") or meta.get("source_path") or row.tile_url
+    return extract_unique_values(raster_path)
+
+
+@router.post("/datasets/{dataset_id}/mark-categorical")
+async def mark_categorical(dataset_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be modified"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+        meta = json.loads(row.metadata_json) if row.metadata_json else {}
+        if meta.get("is_categorical"):
+            raise HTTPException(status_code=409, detail="Dataset is already categorical")
+
+        try:
+            values = extract_unique_values_from_dataset(row)
+        except UnsupportedDtype as exc:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "unsupported_dtype", "dtype": exc.dtype},
+            )
+        except TooManyValues as exc:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "too_many_values", "count": exc.count},
+            )
+
+        categories = []
+        for i, value in enumerate(values):
+            color = QUALITATIVE_PALETTE[i % len(QUALITATIVE_PALETTE)]
+            categories.append(
+                {
+                    "value": value,
+                    "label": f"Class {value}",
+                    "color": color,
+                    "defaultColor": color,
+                }
+            )
+
+        meta["is_categorical"] = True
+        meta["categories"] = categories
+        row.metadata_json = json.dumps(meta, default=str)
+        session.commit()
+        return row.to_dict()
     finally:
         session.close()

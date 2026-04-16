@@ -1,11 +1,14 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Box, Flex, Text, Input } from "@chakra-ui/react";
 import { workspaceFetch } from "../lib/api";
+import { CategoryColorPopover } from "./CategoryColorPopover";
 
 interface Category {
   value: number;
   color: string;
   label: string;
+  defaultColor?: string;
 }
 
 interface EditableCategoryLegendProps {
@@ -22,7 +25,10 @@ export function EditableCategoryLegend({
   onCategoriesChange,
 }: EditableCategoryLegendProps) {
   const [editingValue, setEditingValue] = useState<number | null>(null);
+  const [colorEditingValue, setColorEditingValue] = useState<number | null>(null);
   const cancelledRef = useRef(false);
+  const swatchRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
 
   const handleBlur = (value: number, newLabel: string) => {
     if (cancelledRef.current) {
@@ -51,6 +57,30 @@ export function EditableCategoryLegend({
       body: JSON.stringify([{ value, label: newLabel }]),
     }).catch(() => {
       // Revert on failure
+      onCategoriesChange(categories);
+    });
+  };
+
+  const handleColorSave = (value: number, nextColor: string) => {
+    const original = categories.find((c) => c.value === value);
+    if (!original || original.color === nextColor) return;
+
+    const updated = categories.map((c) =>
+      c.value === value
+        ? { ...c, color: nextColor, defaultColor: c.defaultColor ?? c.color }
+        : c,
+    );
+    onCategoriesChange(updated);
+
+    const endpoint =
+      source === "connection"
+        ? `/api/connections/${datasetId}/categories`
+        : `/api/datasets/${datasetId}/categories`;
+    workspaceFetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([{ value, color: nextColor }]),
+    }).catch(() => {
       onCategoriesChange(categories);
     });
   };
@@ -85,11 +115,27 @@ export function EditableCategoryLegend({
             fontSize="12px"
           >
             <Box
+              as="button"
+              aria-label={`Edit color for ${cat.label}`}
+              ref={(el: HTMLButtonElement | null) => {
+                if (el) swatchRefs.current.set(cat.value, el);
+                else swatchRefs.current.delete(cat.value);
+              }}
               flexShrink={0}
               w="12px"
               h="12px"
               rounded="sm"
               style={{ backgroundColor: cat.color }}
+              border="1px solid"
+              borderColor="brand.border"
+              onClick={() => {
+                const btn = swatchRefs.current.get(cat.value);
+                if (btn) {
+                  const rect = btn.getBoundingClientRect();
+                  setPopoverPos({ top: rect.bottom + 4, left: rect.left });
+                }
+                setColorEditingValue(cat.value);
+              }}
             />
             {editingValue === cat.value ? (
               <Input
@@ -129,6 +175,33 @@ export function EditableCategoryLegend({
           </Flex>
         ))}
       </Box>
+      {colorEditingValue !== null &&
+        popoverPos !== null &&
+        createPortal(
+          <Box
+            position="fixed"
+            top={`${popoverPos.top}px`}
+            left={`${popoverPos.left}px`}
+            zIndex={1000}
+          >
+            {(() => {
+              const cat = categories.find((c) => c.value === colorEditingValue);
+              if (!cat) return null;
+              return (
+                <CategoryColorPopover
+                  color={cat.color}
+                  defaultColor={cat.defaultColor ?? cat.color}
+                  onClose={() => setColorEditingValue(null)}
+                  onSave={(nextColor) => {
+                    handleColorSave(colorEditingValue, nextColor);
+                    setColorEditingValue(null);
+                  }}
+                />
+              );
+            })()}
+          </Box>,
+          document.body,
+        )}
     </Box>
   );
 }

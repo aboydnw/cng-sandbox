@@ -151,7 +151,9 @@ def extract_unique_values_from_dataset(row: DatasetRow) -> list[int]:
     needing a real R2 fixture.
     """
     meta = json.loads(row.metadata_json) if row.metadata_json else {}
-    raster_path = meta.get("cog_path") or meta.get("source_path") or row.tile_url
+    raster_path = meta.get("cog_path") or meta.get("source_path")
+    if not raster_path:
+        raise FileNotFoundError("No raster path stored on dataset")
     return extract_unique_values(raster_path)
 
 
@@ -170,6 +172,10 @@ async def mark_categorical(dataset_id: str, request: Request):
             )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
+        if row.dataset_type != "raster":
+            raise HTTPException(
+                status_code=400, detail={"error": "not_a_raster"}
+            )
 
         meta = json.loads(row.metadata_json) if row.metadata_json else {}
         if meta.get("is_categorical"):
@@ -177,6 +183,10 @@ async def mark_categorical(dataset_id: str, request: Request):
 
         try:
             values = extract_unique_values_from_dataset(row)
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=400, detail={"error": "no_raster_path"}
+            )
         except UnsupportedDtype as exc:
             raise HTTPException(
                 status_code=400,

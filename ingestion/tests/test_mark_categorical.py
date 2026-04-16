@@ -7,13 +7,13 @@ from src.models.dataset import DatasetRow
 
 
 def _make_dataset(db_engine, *, dataset_id, workspace_id, filename, is_example=False,
-                  metadata=None):
+                  metadata=None, dataset_type="raster"):
     session = sessionmaker(bind=db_engine)()
     try:
         row = DatasetRow(
             id=dataset_id,
             filename=filename,
-            dataset_type="raster",
+            dataset_type=dataset_type,
             format_pair="geotiff-to-cog",
             tile_url=f"/raster/collections/sandbox-{dataset_id}/tiles/{{z}}/{{x}}/{{y}}",
             metadata_json=json.dumps(metadata or {}),
@@ -89,7 +89,10 @@ def test_mark_categorical_returns_409_when_already_categorical(client, db_engine
         dataset_id="ds-already",
         workspace_id="wsTest01",
         filename="c.tif",
-        metadata={"is_categorical": True, "categories": [{"value": 1, "label": "A", "color": "#000000"}]},
+        metadata={
+            "is_categorical": True,
+            "categories": [{"value": 1, "label": "A", "color": "#000000"}],
+        },
     )
     resp = client.post(
         "/api/datasets/ds-already/mark-categorical",
@@ -123,10 +126,10 @@ def test_mark_categorical_surfaces_unsupported_dtype(client, db_engine, monkeypa
     from src.services.categorical_extract import UnsupportedDtype
     import src.routes.datasets as routes
 
-    monkeypatch.setattr(
-        routes, "extract_unique_values_from_dataset",
-        lambda _row: (_ for _ in ()).throw(UnsupportedDtype("float32")),
-    )
+    def _raise_dtype(_row):
+        raise UnsupportedDtype("float32")
+
+    monkeypatch.setattr(routes, "extract_unique_values_from_dataset", _raise_dtype)
 
     resp = client.post(
         "/api/datasets/ds-bad/mark-categorical",
@@ -135,3 +138,35 @@ def test_mark_categorical_surfaces_unsupported_dtype(client, db_engine, monkeypa
     assert resp.status_code == 400
     assert resp.json()["detail"]["error"] == "unsupported_dtype"
     assert resp.json()["detail"]["dtype"] == "float32"
+
+
+def test_mark_categorical_rejects_vector(client, db_engine):
+    _make_dataset(
+        db_engine,
+        dataset_id="ds-vec",
+        workspace_id="wsTest01",
+        filename="roads.geojson",
+        dataset_type="vector",
+    )
+    resp = client.post(
+        "/api/datasets/ds-vec/mark-categorical",
+        headers={"x-workspace-id": "wsTest01"},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"]["error"] == "not_a_raster"
+
+
+def test_mark_categorical_400_when_no_raster_path(client, db_engine):
+    _make_dataset(
+        db_engine,
+        dataset_id="ds-nopath",
+        workspace_id="wsTest01",
+        filename="mystery.tif",
+        metadata={"some_other_key": "value"},
+    )
+    resp = client.post(
+        "/api/datasets/ds-nopath/mark-categorical",
+        headers={"x-workspace-id": "wsTest01"},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"]["error"] == "no_raster_path"

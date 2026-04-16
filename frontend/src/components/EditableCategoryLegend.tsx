@@ -103,7 +103,7 @@ export function EditableCategoryLegend({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify([{ value, color: nextColor }]),
     }).catch(() => {
-      onCategoriesChange(categories);
+      onCategoriesChange(categories.map((c) => (c.value === value ? original : c)));
     });
   };
 

@@ -38,12 +38,16 @@ export function EditableDatasetTitle({
     const prevTitle = title && title.length > 0 ? title : null;
     if (nextTitle === prevTitle) return;
 
-    const resp = await workspaceFetch(`/api/datasets/${datasetId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: nextTitle }),
-    });
-    if (resp.ok) onSaved(nextTitle);
+    try {
+      const resp = await workspaceFetch(`/api/datasets/${datasetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: nextTitle }),
+      });
+      if (resp.ok) onSaved(nextTitle);
+    } catch {
+      // network error — title stays unchanged
+    }
   };
 
   if (!editable) {

@@ -4,5 +4,6 @@ export interface NameableDataset {
 }
 
 export function displayName(ds: NameableDataset): string {
-  return ds.title && ds.title.length > 0 ? ds.title : ds.filename;
+  const title = ds.title?.trim();
+  return title && title.length > 0 ? title : ds.filename;
 }

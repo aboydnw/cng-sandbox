@@ -271,6 +271,11 @@ async def update_connection_category_labels(
                     status_code=400,
                     detail=f"Update for value {u.value} must include label or color",
                 )
+            if u.value in update_map:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Duplicate update for category value {u.value}",
+                )
             update_map[u.value] = {"label": u.label, "color": u.color}
 
         for cat in categories:

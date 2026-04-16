@@ -41,6 +41,8 @@ export function MarkAsCategoricalCard({
         return;
       }
       onSuccess();
+    } catch {
+      setError("Could not mark as categorical.");
     } finally {
       setPending(false);
     }

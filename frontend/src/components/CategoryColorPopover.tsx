@@ -80,7 +80,7 @@ export function CategoryColorPopover({
         <Button
           size="xs"
           variant="outline"
-          onClick={() => setDraft(defaultColor)}
+          onClick={() => { setDraft(defaultColor); setError(null); }}
         >
           Reset
         </Button>

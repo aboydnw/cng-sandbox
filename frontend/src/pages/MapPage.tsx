@@ -245,12 +245,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     isGeoParquetConnection && item?.connection?.render_path === "server";
   const needsConversion =
     isServerGeoParquet && item?.connection?.conversion_status !== "ready";
-  const isClientGeoParquet =
-    isGeoParquetConnection && !isServerGeoParquet;
+  const isClientGeoParquet = isGeoParquetConnection && !isServerGeoParquet;
 
   const conversion = useConnectionConversion(
     needsConversion ? (item?.id ?? null) : null,
-    needsConversion,
+    needsConversion
   );
 
   useEffect(() => {

@@ -56,7 +56,10 @@ def parquet_to_pmtiles_file(parquet_path: str, pmtiles_path: str) -> int:
             geojson_path,
         ]
         logger.info("Running tippecanoe: %s", " ".join(cmd))
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError("tippecanoe timed out after 600s") from exc
         if result.returncode != 0:
             raise RuntimeError(f"tippecanoe failed:\n{result.stderr}")
 

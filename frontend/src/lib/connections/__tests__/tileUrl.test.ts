@@ -92,7 +92,7 @@ describe("buildConnectionTileUrl", () => {
       file_size: 150_000_000,
     });
     expect(buildConnectionTileUrl(conn)).toBe(
-      "/pmtiles/connections/c7/data.pmtiles",
+      "/pmtiles/connections/c7/data.pmtiles"
     );
   });
 });

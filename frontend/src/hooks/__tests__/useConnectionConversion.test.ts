@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useConnectionConversion } from "../useConnectionConversion";
 
@@ -20,10 +20,16 @@ class FakeEventSource {
   }
 }
 
+const OriginalEventSource = globalThis.EventSource;
+
 beforeEach(() => {
   FakeEventSource.instances = [];
   // @ts-expect-error override
   globalThis.EventSource = FakeEventSource;
+});
+
+afterEach(() => {
+  globalThis.EventSource = OriginalEventSource;
 });
 
 describe("useConnectionConversion", () => {

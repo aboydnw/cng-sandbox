@@ -292,8 +292,9 @@ def test_create_geoparquet_client_connection_does_not_enqueue(client, monkeypatc
 
 
 def test_connection_row_has_conversion_fields(db_session):
-    from src.models.connection import ConnectionRow
     import uuid
+
+    from src.models.connection import ConnectionRow
 
     row = ConnectionRow(
         id=str(uuid.uuid4()),
@@ -317,9 +318,11 @@ def test_connection_row_has_conversion_fields(db_session):
 
 
 def test_connection_conversion_stream_emits_terminal_event_when_ready(client, db_engine):
-    from src.models.connection import ConnectionRow
-    from sqlalchemy.orm import sessionmaker
     import uuid
+
+    from sqlalchemy.orm import sessionmaker
+
+    from src.models.connection import ConnectionRow
 
     Session = sessionmaker(bind=db_engine)
     s = Session()

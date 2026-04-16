@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, Text
 
 from src.models.base import Base
 
@@ -33,7 +33,7 @@ class ConnectionRow(Base):
     conversion_status = Column(String, nullable=True)  # pending | running | ready | failed
     conversion_error = Column(Text, nullable=True)
     feature_count = Column(Integer, nullable=True)
-    file_size = Column(Integer, nullable=True)
+    file_size = Column(BigInteger, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""

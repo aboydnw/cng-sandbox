@@ -294,7 +294,10 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         }}
         renderServerAction={
           tooLarge
-            ? { label: "Convert to tiles (server)", onClick: handleConfirmServerConnection }
+            ? {
+                label: "Convert to tiles (server)",
+                onClick: handleConfirmServerConnection,
+              }
             : undefined
         }
       />

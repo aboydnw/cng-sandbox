@@ -160,7 +160,10 @@ function getSourceStep(connection: Connection): StepContent {
           { label: "Format", value: "GeoParquet → PMTiles" },
           { label: "Source URL", value: connection.url, colSpan: 2 },
           connection.feature_count != null
-            ? { label: "Features", value: connection.feature_count.toLocaleString() }
+            ? {
+                label: "Features",
+                value: connection.feature_count.toLocaleString(),
+              }
             : null,
         ].filter(Boolean) as MetadataTileData[],
         tools: [

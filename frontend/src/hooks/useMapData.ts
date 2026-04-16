@@ -151,7 +151,17 @@ export function useMapData(
 
   const refresh = useCallback(() => {
     if (!id || !isConnection) return;
-    connectionsApi.get(id).then((conn) => setData(connectionToMapItem(conn)));
+    connectionsApi
+      .get(id)
+      .then((conn) => {
+        setData(connectionToMapItem(conn));
+        setError(null);
+      })
+      .catch((e) => {
+        setError(
+          e instanceof Error ? e.message : "Failed to refresh connection"
+        );
+      });
   }, [id, isConnection]);
 
   return { data, isLoading, error, isExpired, refresh };

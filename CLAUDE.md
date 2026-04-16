@@ -202,7 +202,7 @@ cd frontend && npx vitest run
 - **COG tiler proxy preserves `/cog` prefix**: Unlike `/raster` and `/vector` (which strip their prefix before forwarding), the `/cog` proxy passes the path through unchanged because titiler's COG routes are already mounted under `/cog/`.
 - **Vendored maptool utilities**: `src/lib/maptool/` contains `createCOGLayer`, `createPMTilesProtocol`, `useColorScale`, `MapLegend`, and `listColormaps` — vendored from `@maptool/core` so the sandbox has no external dependency on the library.
 - **Categorical rasters use a JSON colormap, not `colormap_name`**: When a dataset has `isCategorical: true`, tile URLs are built with `colormap=<encoded-JSON>` (a `{value: [r,g,b]}` map) and `resampling=nearest` instead of the usual `colormap_name=` parameter. Mixing them will produce incorrect or broken tiles.
-- **GeoParquet connections support two render paths**: `render_path: "client"` (default) loads the file into DuckDB-WASM via `useGeoParquetRender`, returns an Arrow `Table`, and renders via deck.gl (500k feature cap). `render_path: "server"` triggers a background conversion (tippecanoe → PMTiles → R2); the frontend `useConnectionConversion` hook polls `GET /api/connections/{id}/stream` and shows a conversion overlay on `MapPage` until the job finishes and a `tile_url` is available.
+- **GeoParquet connections support two render paths**: `render_path: "client"` (default) loads the file into DuckDB-WASM via `useGeoParquetRender`, returns an Arrow `Table`, and renders via deck.gl (500k feature cap). `render_path: "server"` triggers a background conversion (tippecanoe → PMTiles → R2); the frontend `useConnectionConversion` hook subscribes via EventSource (SSE) to `GET /api/connections/{id}/stream` and shows a conversion overlay on `MapPage` until the job finishes and a `tile_url` is available.
 
 ## Ingestion Service
 
@@ -244,7 +244,7 @@ cd ingestion && uv run pytest -v
 **Connections (external tile sources):**
 - `GET /api/connections` — List connections in the workspace
 - `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections support two render paths via the `render_path` field: `"client"` (DuckDB-WASM, default) or `"server"` (tippecanoe → PMTiles → R2, async background job).
-- `GET /api/connections/{id}/stream` — SSE stream of server-side conversion progress for a GeoParquet connection; emits `event: status` events with `{status, tile_url, error, feature_count}`; no workspace auth (EventSource cannot send custom headers; UUID provides access control)
+- `GET /api/connections/{id}/stream` — SSE stream of server-side conversion progress for a GeoParquet connection; emits `event: status` events with `{status, tile_url, error, feature_count}`; no workspace auth on this endpoint (EventSource cannot send custom headers); connection UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
 - `GET /api/connections/{id}` — Get a connection by ID
 - `PATCH /api/connections/{id}/categories` — Update category labels for a categorical COG connection; body is a list of `{"value": int, "label": str}` objects; returns 400 if connection is not categorical or a value doesn't exist
 - `DELETE /api/connections/{id}` — Delete a connection

@@ -16,7 +16,7 @@ const INITIAL: ConversionStatus = {
 
 export function useConnectionConversion(
   connectionId: string | null,
-  enabled: boolean,
+  enabled: boolean
 ): ConversionStatus {
   const [state, setState] = useState<ConversionStatus>(INITIAL);
 

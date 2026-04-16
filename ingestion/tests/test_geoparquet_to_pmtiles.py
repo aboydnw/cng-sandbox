@@ -3,7 +3,6 @@ from pathlib import Path
 
 from src.services import geoparquet_to_pmtiles
 
-
 FIXTURE = Path(__file__).parent / "fixtures" / "tiny.parquet"
 
 
@@ -54,8 +53,9 @@ def test_upload_pmtiles_uses_storage_and_returns_proxy_url(tmp_path):
 
 
 def test_run_conversion_updates_connection_row(db_session, monkeypatch):
-    from src.models.connection import ConnectionRow
     import uuid
+
+    from src.models.connection import ConnectionRow
 
     conn_id = str(uuid.uuid4())
     db_session.add(
@@ -88,8 +88,9 @@ def test_run_conversion_updates_connection_row(db_session, monkeypatch):
 
 
 def test_run_conversion_marks_failed_on_error(db_session, monkeypatch):
-    from src.models.connection import ConnectionRow
     import uuid
+
+    from src.models.connection import ConnectionRow
 
     conn_id = str(uuid.uuid4())
     db_session.add(

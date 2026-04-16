@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Box, Flex, Text, Input } from "@chakra-ui/react";
 import { workspaceFetch } from "../lib/api";
@@ -28,7 +28,27 @@ export function EditableCategoryLegend({
   const [colorEditingValue, setColorEditingValue] = useState<number | null>(null);
   const cancelledRef = useRef(false);
   const swatchRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const popupRef = useRef<HTMLDivElement>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (colorEditingValue === null) return;
+    function handleClickOutside(e: MouseEvent) {
+      const swatchEl = swatchRefs.current.get(colorEditingValue!);
+      if (
+        swatchEl &&
+        swatchEl.contains(e.target as Node)
+      ) {
+        return;
+      }
+      if (popupRef.current && popupRef.current.contains(e.target as Node)) {
+        return;
+      }
+      setColorEditingValue(null);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [colorEditingValue]);
 
   const handleBlur = (value: number, newLabel: string) => {
     if (cancelledRef.current) {
@@ -179,6 +199,7 @@ export function EditableCategoryLegend({
         popoverPos !== null &&
         createPortal(
           <Box
+            ref={popupRef}
             position="fixed"
             top={`${popoverPos.top}px`}
             left={`${popoverPos.left}px`}

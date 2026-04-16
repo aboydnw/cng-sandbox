@@ -67,7 +67,14 @@ Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tile
 
 ## Production Deployment (Hetzner)
 
-The sandbox can be deployed to a public URL with HTTPS and basic auth using the `prod` Docker Compose profile.
+The sandbox can be deployed to a public URL with HTTPS using the `prod` Docker Compose profile. The frontend and shared `/map` / `/story` views are public; write operations and workspace listings are gated behind HTTP basic auth via Caddy.
+
+### Auth model
+
+Caddy applies basic auth selectively (see `Caddyfile`):
+
+- **Public (no auth):** frontend SPA, `/storage/*` (R2 proxy), `/cog/*`, `/raster/*`, `/vector/*`, individual resource reads like `GET /api/datasets/{id}`, `GET /api/connections/{id}`, `GET /api/stories/{id}`, `/api/proxy`, `/api/health`. This lets shared map/story URLs load for anyone without a password prompt, and lets PMTiles / DuckDB-WASM range requests succeed (they can't send basic auth).
+- **Auth required:** all non-GET/HEAD requests to `/api/*` (uploads, creates, updates, deletes) and workspace-listing reads (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`).
 
 ### Prerequisites
 
@@ -95,8 +102,8 @@ docker compose --profile prod up -d --build
 
 ### Verify
 
-- Visit `https://cngsandbox.org` — should prompt for username/password
-- After auth, the sandbox should load normally
+- Visit `https://cngsandbox.org` — the SPA should load without a password prompt
+- Attempt an authenticated action (e.g. opening the dataset library or uploading a file) — should prompt for username/password
 - Upload a file to verify CORS works end-to-end
 
 ### Notes

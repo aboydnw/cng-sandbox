@@ -20,7 +20,9 @@ export function classifyCogRenderPath({
   isCategorical,
 }: ClassifyInput): CogRenderPath {
   const normalizedDtype = dtype?.trim().toLowerCase() ?? null;
-  if (normalizedDtype && PALETTED_DTYPES.has(normalizedDtype)) return "paletted";
-  if (isCategorical && normalizedDtype && INTEGER_DTYPES.has(normalizedDtype)) return "paletted";
+  if (normalizedDtype && PALETTED_DTYPES.has(normalizedDtype))
+    return "paletted";
+  if (isCategorical && normalizedDtype && INTEGER_DTYPES.has(normalizedDtype))
+    return "paletted";
   return "continuous";
 }

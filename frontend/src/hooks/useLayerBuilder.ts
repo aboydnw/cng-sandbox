@@ -7,11 +7,13 @@ import type { Table } from "apache-arrow";
 import {
   buildRasterTileLayers,
   buildRasterPMTilesLayer,
-  buildCogLayer,
+  buildCogLayerContinuous,
+  buildCogLayerPaletted,
   buildVectorLayer,
   buildGeoJsonLayer,
   arrowTableToGeoJSON,
 } from "../lib/layers";
+import { classifyCogRenderPath } from "../lib/layers/cogDtype";
 
 interface UseLayerBuilderOptions {
   item: MapItem | null;
@@ -238,7 +240,17 @@ export function useLayerBuilder({
 
     if (item.dataType === "raster") {
       if (renderMode === "client" && canClientRender) {
-        return buildCogLayer({
+        const renderPath = classifyCogRenderPath({
+          dtype: item.dtype,
+          isCategorical,
+        });
+        if (renderPath === "paletted") {
+          return buildCogLayerPaletted({
+            cogUrl: item.cogUrl!,
+            opacity,
+          });
+        }
+        return buildCogLayerContinuous({
           cogUrl: item.cogUrl!,
           opacity,
           rasterMin: item.rasterMin ?? 0,
@@ -292,6 +304,7 @@ export function useLayerBuilder({
     onVectorClick,
     getLoadCallback,
     tileCacheRef,
+    isCategorical,
   ]);
 
   return { layers, tileUrl, geojson };

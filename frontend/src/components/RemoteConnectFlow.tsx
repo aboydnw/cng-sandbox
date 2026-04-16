@@ -16,8 +16,6 @@ import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { workspaceFetch } from "../lib/api";
 
-const CLIENT_FEATURE_CAP = 500_000;
-
 interface RemoteConnectFlowProps {
   onDatasetReady: (datasetId: string) => void;
 }
@@ -36,11 +34,13 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     valid,
     error,
     geometryInfo,
+    sizeBytes,
+    sizeSource,
+    renderPath,
     validate: validateGeoParquet,
   } = useGeoParquetValidation(conn, previewUrl);
 
   const { result: queryResult } = useGeoParquetQuery(conn, previewUrl);
-  const tooLarge = queryResult.totalCount > CLIENT_FEATURE_CAP;
 
   useEffect(() => {
     if (state.phase === "idle" && state.datasetId) {
@@ -88,40 +88,12 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     [handleScan]
   );
 
-  const handleConfirmServerConnection = useCallback(async () => {
-    if (!previewUrl) return;
-    setShowPreview(false);
-    setConnectionError(null);
-    try {
-      const response = await workspaceFetch("/api/connections", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: previewUrl,
-          connection_type: "geoparquet",
-          name: previewUrl.split("/").pop() || "Untitled",
-          render_path: "server",
-        }),
-      });
-      if (!response.ok) throw new Error("Failed to create connection");
-      const data = await response.json();
-      if (!data.id) throw new Error("No connection ID returned");
-      onDatasetReady(data.id);
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : "Unknown error";
-      console.error("Server connection creation failed:", e);
-      setConnectionError(`Connection creation failed: ${errorMsg}`);
-      setShowPreview(true);
-    }
-  }, [previewUrl, onDatasetReady]);
-
   const handleConfirmConnection = useCallback(async () => {
-    if (!valid || !previewUrl || tooLarge) return;
+    if (!valid || !previewUrl) return;
 
     setShowPreview(false);
     setConnectionError(null);
 
-    // Now make the actual connection POST request
     try {
       const response = await workspaceFetch("/api/connections", {
         method: "POST",
@@ -130,6 +102,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           url: previewUrl,
           connection_type: "geoparquet",
           name: previewUrl.split("/").pop() || "Untitled",
+          render_path: renderPath,
         }),
       });
 
@@ -139,17 +112,16 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
 
       const data = await response.json();
       if (!data.id) {
-        throw new Error("No dataset ID returned from connection creation");
+        throw new Error("No connection ID returned");
       }
-      onDatasetReady(data.id); // Navigate to map
+      onDatasetReady(data.id);
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : "Unknown error";
       console.error("Connection creation failed:", e);
       setConnectionError(`Connection creation failed: ${errorMsg}`);
-      // Re-open preview modal to show error to user
       setShowPreview(true);
     }
-  }, [valid, previewUrl, tooLarge, onDatasetReady]);
+  }, [valid, previewUrl, renderPath, onDatasetReady]);
 
   if (state.phase === "discovering") {
     return (
@@ -276,30 +248,19 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         open={showPreview}
         filename={previewUrl.split("/").pop() || "data.parquet"}
         validating={validating}
-        valid={valid && !tooLarge}
-        error={
-          error ||
-          connectionError ||
-          (tooLarge
-            ? `This file has ${queryResult.totalCount.toLocaleString()} features, which exceeds the ${CLIENT_FEATURE_CAP.toLocaleString()}-feature in-browser limit. You can convert it on the server instead.`
-            : null)
-        }
+        valid={valid}
+        error={error || connectionError}
         geometryInfo={geometryInfo}
         schema={queryResult.columnStats}
         samples={queryResult.table}
+        sizeBytes={sizeBytes}
+        sizeSource={sizeSource}
+        renderPath={renderPath}
         onConfirm={handleConfirmConnection}
         onCancel={() => {
           setShowPreview(false);
           setConnectionError(null);
         }}
-        renderServerAction={
-          tooLarge
-            ? {
-                label: "Convert to tiles (server)",
-                onClick: handleConfirmServerConnection,
-              }
-            : undefined
-        }
       />
     </Box>
   );

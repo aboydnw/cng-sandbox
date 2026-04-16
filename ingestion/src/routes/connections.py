@@ -7,6 +7,7 @@ import time
 import uuid
 from datetime import UTC, datetime
 
+import httpx
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
@@ -20,6 +21,18 @@ from src.workspace import validate_workspace_id
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
+
+SIZE_THRESHOLD_BYTES = 50 * 1024 * 1024
+
+
+async def _head_content_length(url: str) -> int | None:
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            r = await http.head(url)
+            cl = r.headers.get("content-length")
+            return int(cl) if cl else None
+    except Exception:
+        return None
 
 VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles", "geoparquet"}
 VALID_TILE_TYPES = {"raster", "vector", None}
@@ -124,7 +137,11 @@ async def create_connection(
                 detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
             )
         if render_path is None:
-            render_path = "client"
+            inferred_size = await _head_content_length(body.url)
+            if inferred_size is None or inferred_size > SIZE_THRESHOLD_BYTES:
+                render_path = "server"
+            else:
+                render_path = "client"
 
     is_server_conversion = (
         body.connection_type == "geoparquet" and render_path == "server"

@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
@@ -39,9 +39,10 @@ VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles", "geoparq
 VALID_TILE_TYPES = {"raster", "vector", None}
 
 
-class CategoryLabelUpdate(BaseModel):
+class CategoryUpdate(BaseModel):
     value: int
-    label: str
+    label: str | None = None
+    color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
 
 
 class ConnectionCreate(BaseModel):
@@ -241,7 +242,7 @@ async def get_connection(connection_id: str, request: Request):
 @router.patch("/connections/{connection_id}/categories")
 async def update_connection_category_labels(
     connection_id: str,
-    updates: list[CategoryLabelUpdate],
+    updates: list[CategoryUpdate],
     request: Request,
 ):
     workspace_id = request.headers.get("x-workspace-id", "")
@@ -258,18 +259,34 @@ async def update_connection_category_labels(
 
         categories = json.loads(row.categories_json) if row.categories_json else []
         existing_values = {c["value"] for c in categories}
-        update_map = {}
+        update_map: dict[int, dict] = {}
         for u in updates:
             if u.value not in existing_values:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Category value {u.value} not found",
                 )
-            update_map[u.value] = u.label
+            if u.label is None and u.color is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Update for value {u.value} must include label or color",
+                )
+            if u.value in update_map:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Duplicate update for category value {u.value}",
+                )
+            update_map[u.value] = {"label": u.label, "color": u.color}
 
         for cat in categories:
-            if cat["value"] in update_map:
-                cat["label"] = update_map[cat["value"]]
+            patch = update_map.get(cat["value"])
+            if not patch:
+                continue
+            if patch["label"] is not None:
+                cat["label"] = patch["label"]
+            if patch["color"] is not None:
+                cat.setdefault("defaultColor", cat.get("color", patch["color"]))
+                cat["color"] = patch["color"]
 
         row.categories_json = json.dumps(categories)
         session.commit()

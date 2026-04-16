@@ -3,6 +3,7 @@ import { Box, Flex, NativeSelect, Text, IconButton } from "@chakra-ui/react";
 import { ArrowsLeftRight, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { ColormapDropdown } from "./ColormapDropdown";
 import { EditableCategoryLegend } from "./EditableCategoryLegend";
+import { MarkAsCategoricalCard } from "./MarkAsCategoricalCard";
 
 interface BandInfo {
   name: string;
@@ -28,6 +29,8 @@ interface RasterSidebarControlsProps {
   categories?: { value: number; color: string; label: string }[] | null;
   datasetId?: string;
   source?: "dataset" | "connection";
+  canMarkCategorical?: boolean;
+  onDatasetUpdated?: () => void;
   onCategoriesChange?: (
     categories: { value: number; color: string; label: string }[]
   ) => void;
@@ -67,6 +70,8 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
     categories,
     datasetId,
     source,
+    canMarkCategorical,
+    onDatasetUpdated,
     onCategoriesChange,
     onCategoricalOverride,
     rescaleMin,
@@ -140,6 +145,13 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
 
       {!isCategorical && (
         <>
+          {canMarkCategorical && datasetId && onDatasetUpdated && (
+            <MarkAsCategoricalCard
+              datasetId={datasetId}
+              onSuccess={onDatasetUpdated}
+            />
+          )}
+
           {showBands && bands && bands.length > 0 && (
             <Box mb={3}>
               <Text fontSize="11px" color="brand.textSecondary" mb={1}>

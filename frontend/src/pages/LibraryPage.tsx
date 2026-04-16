@@ -7,6 +7,7 @@ import { Header } from "../components/Header";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
 import type { Dataset, Connection } from "../types";
+import { displayName } from "../utils/dataset";
 import type { Story } from "../lib/story/types";
 import { ConnectionModal } from "../components/ConnectionModal";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
@@ -112,7 +113,7 @@ export default function LibraryPage() {
         ? `\n\nThis dataset is used in ${ds.story_count} story${ds.story_count > 1 ? "s" : ""}. Those chapters will no longer display.`
         : "";
 
-    if (!window.confirm(`Delete "${ds.filename}"?${storyWarning}`)) return;
+    if (!window.confirm(`Delete "${displayName(ds)}"?${storyWarning}`)) return;
 
     setDeleting(ds.id);
     try {
@@ -182,9 +183,14 @@ export default function LibraryPage() {
                                 truncate
                                 title={ds.filename}
                               >
-                                {ds.filename}
+                                {displayName(ds)}
                               </Text>
                             </Link>
+                            {ds.title ? (
+                              <Text fontSize="11px" color="fg.subtle" mt={0.5}>
+                                {ds.filename}
+                              </Text>
+                            ) : null}
                             {ds.is_temporal && ds.timesteps.length > 0 && (
                               <Text fontSize="xs" color="fg.subtle" mt={0.5}>
                                 {formatDateRangeBadge(
@@ -283,9 +289,14 @@ export default function LibraryPage() {
                               truncate
                               title={ds.filename}
                             >
-                              {ds.filename}
+                              {displayName(ds)}
                             </Text>
                           </Link>
+                          {ds.title ? (
+                            <Text fontSize="11px" color="fg.subtle" mt={0.5}>
+                              {ds.filename}
+                            </Text>
+                          ) : null}
                           {ds.is_temporal && ds.timesteps.length > 0 && (
                             <Text fontSize="xs" color="fg.subtle" mt={0.5}>
                               {formatDateRangeBadge(

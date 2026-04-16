@@ -10,6 +10,7 @@ import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { detectCadence } from "../utils/temporal";
+import { displayName } from "../utils/dataset";
 
 interface MapChapterProps {
   chapter: Chapter;
@@ -236,7 +237,11 @@ export function MapChapter({
               maxW="250px"
             >
               <Text fontSize="11px" fontWeight={600} color="gray.700" mb={1}>
-                {connection ? connection.name : dataset?.filename}
+                {connection
+                  ? connection.name
+                  : dataset
+                    ? displayName(dataset)
+                    : ""}
               </Text>
               {(dataset?.dataset_type === "raster" ||
                 (connection?.connection_type === "cog" &&

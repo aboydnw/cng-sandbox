@@ -29,6 +29,7 @@ export interface Timestep {
 export interface Dataset {
   id: string;
   filename: string;
+  title?: string | null;
   dataset_type: DatasetType;
   format_pair: string;
   tile_url: string;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { X } from "@phosphor-icons/react";
 import type { Dataset } from "../types";
+import { displayName } from "../utils/dataset";
 import { PipelineTimeline } from "./details/PipelineTimeline";
 import { StepCard } from "./details/StepCard";
 import { getStepContent, getStepCount } from "./details/stepContent";
@@ -91,7 +92,7 @@ export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
               Your data, transformed
             </Text>
             <Text fontSize="18px" fontWeight={700} color="brand.brown">
-              {dataset.filename}
+              {displayName(dataset)}
             </Text>
           </Box>
           <Box

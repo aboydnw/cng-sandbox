@@ -30,6 +30,7 @@ class DatasetRow(Base):
         bounds = json.loads(self.bounds_json) if self.bounds_json else None
         return {
             **meta,
+            "title": meta.get("title"),
             "id": self.id,
             "filename": self.filename,
             "dataset_type": self.dataset_type,

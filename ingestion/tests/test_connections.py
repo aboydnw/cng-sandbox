@@ -400,3 +400,106 @@ def test_create_geoparquet_without_render_path_small_size_picks_client(
     )
     assert resp.status_code == 201
     assert resp.json()["render_path"] == "client"
+
+
+def test_patch_connection_categories_updates_color(client, monkeypatch):
+    from src.routes import connections as connections_route
+    from src.services.categorical import CategoricalResult, Category
+
+    monkeypatch.setattr(
+        connections_route,
+        "detect_categories",
+        lambda path: CategoricalResult(
+            is_categorical=True,
+            categories=[
+                Category(value=1, color="#000000", label="A"),
+                Category(value=2, color="#FFFFFF", label="B"),
+            ],
+        ),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "LC",
+            "url": "https://example.com/lc.tif",
+            "connection_type": "cog",
+        },
+    )
+    conn_id = resp.json()["id"]
+
+    patch_resp = client.patch(
+        f"/api/connections/{conn_id}/categories",
+        json=[{"value": 1, "color": "#AB1234"}],
+    )
+    assert patch_resp.status_code == 200
+    cats = patch_resp.json()
+    cat1 = next(c for c in cats if c["value"] == 1)
+    assert cat1["color"] == "#AB1234"
+    assert cat1["label"] == "A"
+    assert cat1["defaultColor"] == "#000000"
+
+    get_resp = client.get(f"/api/connections/{conn_id}")
+    stored = next(c for c in get_resp.json()["categories"] if c["value"] == 1)
+    assert stored["color"] == "#AB1234"
+    assert stored["defaultColor"] == "#000000"
+
+
+def test_patch_connection_categories_rejects_bad_hex(client, monkeypatch):
+    from src.routes import connections as connections_route
+    from src.services.categorical import CategoricalResult, Category
+
+    monkeypatch.setattr(
+        connections_route,
+        "detect_categories",
+        lambda path: CategoricalResult(
+            is_categorical=True,
+            categories=[Category(value=1, color="#000000", label="A")],
+        ),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "LC2",
+            "url": "https://example.com/lc2.tif",
+            "connection_type": "cog",
+        },
+    )
+    conn_id = resp.json()["id"]
+
+    patch_resp = client.patch(
+        f"/api/connections/{conn_id}/categories",
+        json=[{"value": 1, "color": "not-a-hex"}],
+    )
+    assert patch_resp.status_code == 422
+
+
+def test_patch_connection_categories_requires_label_or_color(client, monkeypatch):
+    from src.routes import connections as connections_route
+    from src.services.categorical import CategoricalResult, Category
+
+    monkeypatch.setattr(
+        connections_route,
+        "detect_categories",
+        lambda path: CategoricalResult(
+            is_categorical=True,
+            categories=[Category(value=1, color="#000000", label="A")],
+        ),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "LC3",
+            "url": "https://example.com/lc3.tif",
+            "connection_type": "cog",
+        },
+    )
+    conn_id = resp.json()["id"]
+
+    patch_resp = client.patch(
+        f"/api/connections/{conn_id}/categories",
+        json=[{"value": 1}],
+    )
+    assert patch_resp.status_code == 400

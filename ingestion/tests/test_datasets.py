@@ -362,3 +362,129 @@ def test_delete_example_dataset_returns_403(client, app):
     resp = client.delete("/api/datasets/example-lock")
     assert resp.status_code == 403
     assert "example" in resp.json()["detail"].lower()
+
+
+def test_patch_categories_updates_color(client, db_engine):
+    import json
+    from datetime import UTC, datetime
+
+    from sqlalchemy.orm import sessionmaker
+
+    from src.models.dataset import DatasetRow
+
+    session = sessionmaker(bind=db_engine)()
+    try:
+        session.add(
+            DatasetRow(
+                id="ds-color-1",
+                filename="c.tif",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/raster/x",
+                metadata_json=json.dumps(
+                    {
+                        "is_categorical": True,
+                        "categories": [
+                            {"value": 1, "label": "A", "color": "#000000"},
+                            {"value": 2, "label": "B", "color": "#FFFFFF"},
+                        ],
+                    }
+                ),
+                created_at=datetime.now(UTC),
+                workspace_id="wsTest01",
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    resp = client.patch(
+        "/api/datasets/ds-color-1/categories",
+        headers={"x-workspace-id": "wsTest01"},
+        json=[{"value": 1, "color": "#AB1234"}],
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    cat1 = next(c for c in body if c["value"] == 1)
+    assert cat1["color"] == "#AB1234"
+    assert cat1["label"] == "A"  # unchanged
+    # defaultColor gets backfilled from original color on first touch
+    assert cat1["defaultColor"] == "#000000"
+
+
+def test_patch_categories_rejects_bad_hex(client, db_engine):
+    import json
+    from datetime import UTC, datetime
+
+    from sqlalchemy.orm import sessionmaker
+
+    from src.models.dataset import DatasetRow
+
+    session = sessionmaker(bind=db_engine)()
+    try:
+        session.add(
+            DatasetRow(
+                id="ds-color-2",
+                filename="c.tif",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/raster/x",
+                metadata_json=json.dumps(
+                    {
+                        "is_categorical": True,
+                        "categories": [{"value": 1, "label": "A", "color": "#000000"}],
+                    }
+                ),
+                created_at=datetime.now(UTC),
+                workspace_id="wsTest01",
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    resp = client.patch(
+        "/api/datasets/ds-color-2/categories",
+        headers={"x-workspace-id": "wsTest01"},
+        json=[{"value": 1, "color": "not-a-hex"}],
+    )
+    assert resp.status_code == 422
+
+
+def test_patch_categories_requires_label_or_color(client, db_engine):
+    import json
+    from datetime import UTC, datetime
+
+    from sqlalchemy.orm import sessionmaker
+
+    from src.models.dataset import DatasetRow
+
+    session = sessionmaker(bind=db_engine)()
+    try:
+        session.add(
+            DatasetRow(
+                id="ds-color-3",
+                filename="c.tif",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/raster/x",
+                metadata_json=json.dumps(
+                    {
+                        "is_categorical": True,
+                        "categories": [{"value": 1, "label": "A", "color": "#000000"}],
+                    }
+                ),
+                created_at=datetime.now(UTC),
+                workspace_id="wsTest01",
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    resp = client.patch(
+        "/api/datasets/ds-color-3/categories",
+        headers={"x-workspace-id": "wsTest01"},
+        json=[{"value": 1}],
+    )
+    assert resp.status_code == 400

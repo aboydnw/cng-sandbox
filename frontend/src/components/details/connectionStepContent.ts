@@ -10,6 +10,15 @@ function formatBounds(bounds: readonly number[] | null | undefined): string {
   return `${lon(w)} to ${lon(e)}, ${lat(s)} to ${lat(n)}`;
 }
 
+function formatBytes(bytes: number | null | undefined): string {
+  if (bytes == null) return "size unknown";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 function formatZoomRange(
   minZoom: number | null | undefined,
   maxZoom: number | null | undefined,
@@ -18,6 +27,29 @@ function formatZoomRange(
   return minZoom != null && maxZoom != null
     ? `${minZoom} – ${maxZoom}`
     : fallback;
+}
+
+function getDispatchStep(connection: Connection): StepContent {
+  const path = connection.render_path ?? "client";
+  const size = connection.file_size;
+  const sizeLabel = size ? formatBytes(size) : "size unknown";
+  return {
+    label: "Dispatch",
+    subtitle: "Render route",
+    badge: path === "client" ? "IN-BROWSER" : "SERVER",
+    title: path === "client" ? "Render in browser" : "Convert on server",
+    explanation:
+      path === "client"
+        ? [
+            `This file is small enough (${sizeLabel}) to fetch and render directly in your browser via DuckDB WASM.`,
+          ]
+        : [
+            `This file is large (${sizeLabel}). The sandbox converted it to PMTiles on the server for tile-based rendering.`,
+          ],
+    metadata: size ? [{ label: "Size", value: sizeLabel }] : [],
+    tools: [],
+    toolSectionTitle: "",
+  };
 }
 
 function getSourceStep(connection: Connection): StepContent {
@@ -474,19 +506,32 @@ function getDisplayStep(connection: Connection): StepContent {
   };
 }
 
-export function getConnectionStepCount(): number {
-  return 2;
+export function getConnectionStepCount(connection: Connection): number {
+  return connection.connection_type === "geoparquet" ? 3 : 2;
 }
 
 export function getConnectionStepContent(
   connection: Connection,
   step: number
 ): StepContent {
+  if (step === 0 && connection.connection_type === "geoparquet") {
+    return getDispatchStep(connection);
+  }
   switch (step) {
-    case 1:
-      return getSourceStep(connection);
-    case 2:
-      return getDisplayStep(connection);
+    case 1: {
+      const content = getSourceStep(connection);
+      if (connection.connection_type === "geoparquet") {
+        return { ...content, badge: "Step 2 of 3" };
+      }
+      return content;
+    }
+    case 2: {
+      const content = getDisplayStep(connection);
+      if (connection.connection_type === "geoparquet") {
+        return { ...content, badge: "Step 3 of 3" };
+      }
+      return content;
+    }
     default:
       throw new Error(`Invalid step: ${step}`);
   }

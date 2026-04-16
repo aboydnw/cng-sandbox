@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import { detectRemoteSize } from "../lib/geoparquet/sizeDetection";
+import { pickRenderPath } from "../lib/geoparquet/pickRenderPath";
 
 function isValidColumnName(name: string): boolean {
   return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
@@ -36,6 +38,9 @@ export interface ValidationState {
   valid: boolean;
   error: string | null;
   geometryInfo: GeometryInfo | null;
+  sizeBytes: number | null;
+  sizeSource: "head" | "footer" | "unknown";
+  renderPath: "client" | "server";
 }
 
 const GEOM_NAMES = ["geometry", "geom", "wkb_geometry", "the_geom"];
@@ -49,6 +54,9 @@ export function useGeoParquetValidation(
     valid: false,
     error: null,
     geometryInfo: null,
+    sizeBytes: null,
+    sizeSource: "unknown",
+    renderPath: "client",
   });
 
   const validatingRef = useRef(false);
@@ -70,6 +78,9 @@ export function useGeoParquetValidation(
           valid: false,
           error: "DuckDB connection not available",
           geometryInfo: null,
+          sizeBytes: null,
+          sizeSource: "unknown",
+          renderPath: "client",
         });
         return;
       }
@@ -111,6 +122,9 @@ export function useGeoParquetValidation(
             valid: false,
             error: "No geometry column detected",
             geometryInfo: null,
+            sizeBytes: null,
+            sizeSource: "unknown",
+            renderPath: "client",
           });
           return;
         }
@@ -121,6 +135,9 @@ export function useGeoParquetValidation(
             valid: false,
             error: "Invalid column name",
             geometryInfo: null,
+            sizeBytes: null,
+            sizeSource: "unknown",
+            renderPath: "client",
           });
           return;
         }
@@ -168,6 +185,12 @@ export function useGeoParquetValidation(
           }
         }
 
+        const sz = await detectRemoteSize(fullUrl, activeConn);
+        const renderPath = pickRenderPath({
+          sizeBytes: sz.sizeBytes,
+          featureCount: null,
+        });
+
         setState({
           validating: false,
           valid: true,
@@ -176,6 +199,9 @@ export function useGeoParquetValidation(
             type: geometryType,
             bbox,
           },
+          sizeBytes: sz.sizeBytes,
+          sizeSource: sz.source,
+          renderPath,
         });
       } catch (e) {
         const errorMessage = categorizeError(e);
@@ -184,6 +210,9 @@ export function useGeoParquetValidation(
           valid: false,
           error: errorMessage,
           geometryInfo: null,
+          sizeBytes: null,
+          sizeSource: "unknown",
+          renderPath: "client",
         });
       } finally {
         validatingRef.current = false;

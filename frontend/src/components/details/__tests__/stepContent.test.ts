@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { getStepContent, getStepCount, getPipelineType } from "../stepContent";
-import { getConnectionStepContent } from "../connectionStepContent";
+import {
+  getConnectionStepContent,
+  getConnectionStepCount,
+} from "../connectionStepContent";
 import type { Dataset, Connection } from "../../../types";
 
 const rasterDataset: Partial<Dataset> = {
@@ -231,5 +234,75 @@ describe("getConnectionStepContent (geoparquet)", () => {
     expect(source?.tools?.some((t) => /tippecanoe/i.test(t.name))).toBe(true);
     const display = getConnectionStepContent(conn, 2);
     expect(display?.title?.toLowerCase()).toContain("pmtiles");
+  });
+});
+
+function buildGeoParquetConn(overrides: Partial<Connection> = {}): Connection {
+  return {
+    id: "test-id",
+    name: "test.parquet",
+    url: "https://example.com/test.parquet",
+    connection_type: "geoparquet",
+    bounds: null,
+    min_zoom: null,
+    max_zoom: null,
+    tile_type: null,
+    band_count: null,
+    rescale: null,
+    workspace_id: "ws1",
+    is_categorical: false,
+    categories: null,
+    tile_url: null,
+    render_path: "client",
+    conversion_status: null,
+    conversion_error: null,
+    feature_count: null,
+    file_size: null,
+    created_at: "2026-04-15T00:00:00Z",
+    ...overrides,
+  };
+}
+
+describe("connectionStepContent — geoparquet dispatch", () => {
+  it("returns 3 steps for geoparquet connections", () => {
+    const conn = buildGeoParquetConn();
+    expect(getConnectionStepCount(conn)).toBe(3);
+  });
+
+  it("returns 2 steps for non-geoparquet connections", () => {
+    const conn = buildGeoParquetConn({ connection_type: "cog" });
+    expect(getConnectionStepCount(conn)).toBe(2);
+  });
+
+  it("shows a dispatch step as step 0 for geoparquet connections", () => {
+    const conn = buildGeoParquetConn({
+      render_path: "client",
+      file_size: 5 * 1024 * 1024,
+    });
+    const step = getConnectionStepContent(conn, 0);
+    expect(step.title.toLowerCase()).toContain("browser");
+    expect(step.badge).toBe("IN-BROWSER");
+  });
+
+  it("dispatch step explains server path when render_path=server", () => {
+    const conn = buildGeoParquetConn({
+      render_path: "server",
+      file_size: 480 * 1024 * 1024,
+    });
+    const step = getConnectionStepContent(conn, 0);
+    expect(step.title.toLowerCase()).toContain("server");
+    expect(step.badge).toBe("SERVER");
+  });
+
+  it("geoparquet source step shows Step 2 of 3", () => {
+    const conn = buildGeoParquetConn();
+    const step = getConnectionStepContent(conn, 1);
+    expect(step.badge).toBe("Step 2 of 3");
+  });
+
+  it("geoparquet display step shows Step 3 of 3", () => {
+    const conn = buildGeoParquetConn();
+    const step = getConnectionStepContent(conn, 2);
+    expect(step.badge).toBe("Step 3 of 3");
   });
 });

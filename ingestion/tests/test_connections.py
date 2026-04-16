@@ -358,3 +358,45 @@ def test_connection_conversion_stream_returns_not_found_for_missing_row(client):
         assert r.status_code == 200
         text = "".join(chunk for chunk in r.iter_text())
     assert '"status": "not_found"' in text
+
+
+def test_create_geoparquet_without_render_path_defaults_to_server(client, monkeypatch):
+    from src.routes import connections as connections_route
+
+    async def fake_head(_url):
+        return None
+
+    monkeypatch.setattr(connections_route, "_head_content_length", fake_head)
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "unknown",
+            "url": "https://example.com/unknown.parquet",
+            "connection_type": "geoparquet",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["render_path"] == "server"
+
+
+def test_create_geoparquet_without_render_path_small_size_picks_client(
+    client, monkeypatch
+):
+    from src.routes import connections as connections_route
+
+    async def fake_head(_url):
+        return 5 * 1024 * 1024
+
+    monkeypatch.setattr(connections_route, "_head_content_length", fake_head)
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "small",
+            "url": "https://example.com/small.parquet",
+            "connection_type": "geoparquet",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["render_path"] == "client"

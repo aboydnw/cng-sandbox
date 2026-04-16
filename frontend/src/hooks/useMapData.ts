@@ -150,18 +150,33 @@ export function useMapData(
   }, [id, isConnection]);
 
   const refresh = useCallback(() => {
-    if (!id || !isConnection) return;
-    connectionsApi
-      .get(id)
-      .then((conn) => {
-        setData(connectionToMapItem(conn));
-        setError(null);
-      })
-      .catch((e) => {
-        setError(
-          e instanceof Error ? e.message : "Failed to refresh connection"
-        );
-      });
+    if (!id) return;
+    if (isConnection) {
+      connectionsApi
+        .get(id)
+        .then((conn) => {
+          setData(connectionToMapItem(conn));
+          setError(null);
+        })
+        .catch((e) => {
+          setError(
+            e instanceof Error ? e.message : "Failed to refresh connection"
+          );
+        });
+    } else {
+      workspaceFetch(`/api/datasets/${id}`)
+        .then((resp) => {
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          return resp.json();
+        })
+        .then((ds: Dataset) => {
+          setData(datasetToMapItem(ds));
+          setError(null);
+        })
+        .catch((e) => {
+          setError(e instanceof Error ? e.message : "Failed to refresh dataset");
+        });
+    }
   }, [id, isConnection]);
 
   return { data, isLoading, error, isExpired, refresh };

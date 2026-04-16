@@ -84,6 +84,8 @@ const defaultProps = {
   onColormapReversedChange: vi.fn(),
   datasetMin: null,
   datasetMax: null,
+  canMarkCategorical: false,
+  onMarkCategoricalSuccess: vi.fn(),
 };
 
 function renderWithProviders(ui: React.ReactElement) {

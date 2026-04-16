@@ -603,6 +603,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               onRescaleChange={controls.setRescale}
               colormapReversed={controls.colormapReversed}
               onColormapReversedChange={controls.setColormapReversed}
+              canMarkCategorical={
+                item?.source === "dataset" &&
+                !!item.dataset?.id &&
+                !item.dataset?.is_example &&
+                !item.dataset?.is_categorical
+              }
+              onMarkCategoricalSuccess={refresh}
               shared={shared}
             />
           </Box>

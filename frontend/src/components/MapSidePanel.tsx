@@ -61,6 +61,9 @@ interface MapSidePanelProps {
   onRescaleChange: (min: number | null, max: number | null) => void;
   colormapReversed: boolean;
   onColormapReversedChange: (reversed: boolean) => void;
+  // Mark as categorical
+  canMarkCategorical: boolean;
+  onMarkCategoricalSuccess: () => void;
   // Shared view
   shared?: boolean;
 }
@@ -96,6 +99,8 @@ export function MapSidePanel({
   onRescaleChange,
   colormapReversed,
   onColormapReversedChange,
+  canMarkCategorical,
+  onMarkCategoricalSuccess,
   shared = false,
 }: MapSidePanelProps) {
   const [mode, setMode] = useState<PanelMode>("controls");
@@ -192,6 +197,8 @@ export function MapSidePanel({
           onCategoricalOverride={
             showCategoricalToggle ? onCategoricalOverride : undefined
           }
+          canMarkCategorical={canMarkCategorical}
+          onMarkCategoricalSuccess={onMarkCategoricalSuccess}
           rescaleMin={rescaleMin}
           rescaleMax={rescaleMax}
           datasetMin={datasetMin}

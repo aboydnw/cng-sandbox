@@ -7,7 +7,7 @@ from urllib.parse import unquote, urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +19,10 @@ MAX_RESPONSE_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 def _sanitize_url_for_log(url: str) -> str:
-    """Strip query parameters to avoid logging credentials."""
     return url.split("?")[0]
 
 
 def _is_private_ip(hostname: str) -> bool:
-    """Reject requests to private/loopback/link-local addresses (SSRF mitigation)."""
     try:
         for info in socket.getaddrinfo(hostname, None):
             addr = ipaddress.ip_address(info[4][0])
@@ -90,7 +88,9 @@ async def proxy_resource(url: str, request: Request):
     if content_length:
         response_headers["content-length"] = content_length
 
-    # If Content-Length is missing, buffer chunks with a size limit
+    # When Content-Length is absent we must buffer to enforce the cap before
+    # committing to response headers; raising mid-stream would already have
+    # sent a 200 to the client.
     if not content_length:
         bytes_received = 0
         chunks = []
@@ -98,18 +98,15 @@ async def proxy_resource(url: str, request: Request):
             async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):
                 bytes_received += len(chunk)
                 if bytes_received > MAX_RESPONSE_BYTES:
-                    await resp.aclose()
-                    await client.aclose()
                     raise HTTPException(status_code=413, detail="Response too large")
                 chunks.append(chunk)
         finally:
             await resp.aclose()
             await client.aclose()
-
-        full_content = b"".join(chunks)
-        return StreamingResponse(
-            content=[full_content],
-            status_code=200,
+        status = 206 if "content-range" in response_headers else 200
+        return Response(
+            content=b"".join(chunks),
+            status_code=status,
             headers=response_headers,
         )
 

@@ -95,6 +95,10 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       rescaleMax: controls.rescaleMax,
       colormapReversed: controls.colormapReversed,
       colormapName: controls.colormapName,
+      renderMode:
+        controls.renderMode === "server" && controls.canClientRender
+          ? "server"
+          : undefined,
     });
   }, [
     item?.id,
@@ -102,6 +106,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     controls.rescaleMax,
     controls.colormapReversed,
     controls.colormapName,
+    controls.renderMode,
+    controls.canClientRender,
   ]);
 
   // --- Camera ---

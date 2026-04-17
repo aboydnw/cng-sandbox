@@ -102,7 +102,9 @@ describe("ShareDialog", () => {
   });
 
   it("shows error message when API rejects", async () => {
-    vi.mocked(connectionsApi.share).mockRejectedValue(new Error("Server error"));
+    vi.mocked(connectionsApi.share).mockRejectedValue(
+      new Error("Server error")
+    );
 
     renderWithChakra(
       <ShareDialog {...defaultProps} kind="connection" isShared={false} />
@@ -111,9 +113,7 @@ describe("ShareDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Share$/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/something went wrong/i)
-      ).toBeTruthy();
+      expect(screen.getByText(/something went wrong/i)).toBeTruthy();
     });
   });
 });

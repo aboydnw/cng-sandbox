@@ -2,6 +2,7 @@
 
 import json
 
+import rasterio.errors
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
@@ -250,6 +251,13 @@ def extract_unique_values_from_dataset(row: DatasetRow) -> list[int]:
     meta = json.loads(row.metadata_json) if row.metadata_json else {}
     raster_path = meta.get("cog_path") or meta.get("source_path")
     if not raster_path:
+        cog_url = meta.get("cog_url")
+        if cog_url and cog_url.startswith("/storage/"):
+            key = cog_url[len("/storage/") :].lstrip("/")
+            if key:
+                storage = StorageService()
+                raster_path = f"/vsis3/{storage.bucket}/{key}"
+    if not raster_path:
         raise FileNotFoundError("No raster path stored on dataset")
     return extract_unique_values(raster_path)
 
@@ -293,6 +301,10 @@ async def mark_categorical(dataset_id: str, request: Request):
             raise HTTPException(
                 status_code=400,
                 detail={"error": "too_many_values", "count": exc.count},
+            ) from exc
+        except rasterio.errors.RasterioIOError as exc:
+            raise HTTPException(
+                status_code=400, detail={"error": "raster_unreadable"}
             ) from exc
 
         if not values:

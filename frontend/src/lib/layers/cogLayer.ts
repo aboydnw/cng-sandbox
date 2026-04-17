@@ -256,8 +256,8 @@ export function buildCogLayerContinuous({
       ) => Promise<{
         array: {
           layout: string;
-          bands: Float32Array[];
-          data: Float32Array;
+          bands: ArrayBufferView[];
+          data: ArrayBufferView;
           width: number;
           height: number;
         };
@@ -278,15 +278,17 @@ export function buildCogLayerContinuous({
     const arr = tile.array;
     const { width, height } = arr;
 
+    const raw = arr.layout === "band-separate" ? arr.bands[0] : arr.data;
     let floatData: Float32Array;
-    if (arr.layout === "band-separate") {
-      floatData = arr.bands[0];
+    if (raw instanceof Float32Array) {
+      floatData = raw;
+    } else if (ArrayBuffer.isView(raw) && !(raw instanceof DataView)) {
+      // Integer typed arrays (Uint32Array, Int16Array, etc.) — convert to float32
+      const src = raw as unknown as ArrayLike<number>;
+      floatData = new Float32Array(src.length);
+      for (let i = 0; i < src.length; i++) floatData[i] = src[i];
     } else {
-      floatData = arr.data;
-    }
-
-    if (!floatData || !(floatData instanceof Float32Array)) {
-      console.error("[cogLayer] unexpected data type:", floatData);
+      console.error("[cogLayer] unexpected data type:", raw);
       return { texture: null, width: 0, height: 0 };
     }
 

@@ -102,3 +102,16 @@ def test_anonymous_cannot_open_private_connection_stream(app, db_session):
     anon = TestClient(app)
     resp = anon.get("/api/connections/c1/stream")
     assert resp.status_code == 404
+
+
+def test_anonymous_can_stream_shared_connection(app, db_session):
+    _make_connection(
+        db_session,
+        id="c1",
+        workspace_id="ownerWSAA",
+        is_shared=True,
+        conversion_status="ready",
+    )
+    anon = TestClient(app)
+    with anon.stream("GET", "/api/connections/c1/stream") as resp:
+        assert resp.status_code == 200

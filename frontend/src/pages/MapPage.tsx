@@ -19,6 +19,7 @@ import { ConnectionReportCard } from "../components/ConnectionReportCard";
 import { UnifiedMap } from "../components/UnifiedMap";
 import {
   PixelInspectorTooltip,
+  CategoricalPixelTooltip,
   usePixelInspector,
 } from "../components/PixelInspector";
 import { VectorPopupOverlay, useVectorPopup } from "../components/VectorPopup";
@@ -308,9 +309,14 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   // --- Popups & pixel inspector ---
   const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
   const vectorPopup = useVectorPopup();
+  const inspectorCategories =
+    controls.isCategorical && controls.renderMode === "client"
+      ? (effectiveCategories ?? undefined)
+      : undefined;
   const pixelInspector = usePixelInspector(
     tileCacheRef,
-    item?.bandNames ?? null
+    item?.bandNames ?? null,
+    inspectorCategories
   );
 
   // --- Layers ---
@@ -554,9 +560,16 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 />
               )}
 
-              {pixelInspector.hoverInfo && controls.renderMode === "client" && (
-                <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />
-              )}
+              {pixelInspector.hoverInfo?.kind === "numeric" &&
+                controls.renderMode === "client" && (
+                  <PixelInspectorTooltip hoverInfo={pixelInspector.hoverInfo} />
+                )}
+              {pixelInspector.hoverInfo?.kind === "categorical" &&
+                controls.renderMode === "client" && (
+                  <CategoricalPixelTooltip
+                    hoverInfo={pixelInspector.hoverInfo}
+                  />
+                )}
 
               {vectorPopup.popup &&
                 item?.dataType === "vector" &&

@@ -1,5 +1,6 @@
 """Proxy endpoint for external resources that may not support CORS."""
 
+import asyncio
 import ipaddress
 import logging
 import socket
@@ -26,15 +27,19 @@ def _is_disallowed_ip(addr: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bo
     return addr.is_private or addr.is_loopback or addr.is_link_local
 
 
-def _resolve_to_ip(hostname: str) -> str:
+async def _resolve_to_ip(hostname: str) -> str:
     try:
-        infos = socket.getaddrinfo(hostname, None)
-    except socket.gaierror:
-        raise HTTPException(status_code=502, detail="Could not resolve hostname")
+        infos = await asyncio.get_running_loop().getaddrinfo(hostname, None)
+    except socket.gaierror as err:
+        raise HTTPException(
+            status_code=502, detail="Could not resolve hostname"
+        ) from err
     for info in infos:
         addr = ipaddress.ip_address(info[4][0])
         if _is_disallowed_ip(addr):
-            raise HTTPException(status_code=400, detail="Private addresses are not allowed")
+            raise HTTPException(
+                status_code=400, detail="Private addresses are not allowed"
+            )
     return infos[0][4][0]
 
 
@@ -48,7 +53,7 @@ async def proxy_resource(url: str, request: Request):
     if not parsed.hostname:
         raise HTTPException(status_code=400, detail="Invalid URL")
 
-    resolved_ip = _resolve_to_ip(parsed.hostname)
+    resolved_ip = await _resolve_to_ip(parsed.hostname)
 
     path = decoded.split("?")[0].lower()
     if not any(path.endswith(ext) for ext in ALLOWED_EXTENSIONS):
@@ -63,18 +68,22 @@ async def proxy_resource(url: str, request: Request):
 
     hostname = parsed.hostname or ""
     ip_literal = f"[{resolved_ip}]" if ":" in resolved_ip else resolved_ip
-    port_suffix = f":{parsed.port}" if parsed.port else ""
+    default_port = 443 if parsed.scheme == "https" else 80
+    explicit_port = parsed.port if parsed.port and parsed.port != default_port else None
+    port_suffix = f":{explicit_port}" if explicit_port else ""
     ip_url = decoded.replace(
         f"{parsed.scheme}://{parsed.netloc}",
         f"{parsed.scheme}://{ip_literal}{port_suffix}",
         1,
     )
-    headers["host"] = hostname
+    headers["host"] = f"{hostname}{port_suffix}"
 
     client = httpx.AsyncClient(follow_redirects=False, timeout=30.0)
     try:
         resp = await client.send(
-            httpx.Request("GET", ip_url, headers=headers, extensions={"sni_hostname": hostname}),
+            httpx.Request(
+                "GET", ip_url, headers=headers, extensions={"sni_hostname": hostname}
+            ),
             stream=True,
         )
     except httpx.RequestError as e:
@@ -91,8 +100,12 @@ async def proxy_resource(url: str, request: Request):
     if resp.status_code in range(300, 400):
         await resp.aclose()
         await client.aclose()
-        logger.warning("Upstream returned redirect %d for %s", resp.status_code, safe_url)
-        raise HTTPException(status_code=502, detail="Upstream redirects are not allowed")
+        logger.warning(
+            "Upstream returned redirect %d for %s", resp.status_code, safe_url
+        )
+        raise HTTPException(
+            status_code=502, detail="Upstream redirects are not allowed"
+        )
 
     content_length = resp.headers.get("content-length")
     if content_length and int(content_length) > MAX_RESPONSE_BYTES:

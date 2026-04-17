@@ -1,11 +1,12 @@
 """Security tests for /api/proxy endpoint."""
 
 import socket
+from typing import ClassVar
 
 
 class FakeLargeResponse:
-    status_code = 200
-    headers = {}
+    status_code: ClassVar[int] = 200
+    headers: ClassVar[dict[str, str]] = {}
 
     async def aiter_bytes(self, chunk_size=None):
         chunk = b"x" * (64 * 1024)
@@ -37,8 +38,10 @@ def test_proxy_rejects_when_content_length_exceeds_cap(client, monkeypatch):
     )
 
     class FakeOversizedResponse:
-        status_code = 200
-        headers = {"content-length": str(60 * 1024 * 1024)}  # 60 MB
+        status_code: ClassVar[int] = 200
+        headers: ClassVar[dict[str, str]] = {
+            "content-length": str(60 * 1024 * 1024)
+        }  # 60 MB
 
         async def aiter_bytes(self, chunk_size=None):
             return
@@ -82,8 +85,10 @@ def test_proxy_does_not_follow_redirects(client, monkeypatch):
     )
 
     class FakeRedirectResponse:
-        status_code = 301
-        headers = {"location": "https://169.254.169.254/latest/meta-data/"}
+        status_code: ClassVar[int] = 301
+        headers: ClassVar[dict[str, str]] = {
+            "location": "https://169.254.169.254/latest/meta-data/"
+        }
 
         async def aiter_bytes(self, chunk_size=None):
             return

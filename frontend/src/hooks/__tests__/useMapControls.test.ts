@@ -198,6 +198,73 @@ describe("useMapControls", () => {
     expect(result.current.rescaleMax).toBe(50);
     expect(result.current.colormapReversed).toBe(true);
   });
+
+  it("enables client render for a small COG connection", () => {
+    const conn = makeItem({
+      source: "connection",
+      cogUrl: "https://example.com/file.tif",
+      bounds: [-10, -10, 10, 10],
+      isTemporal: false,
+      connection: {
+        id: "c1",
+        name: "c",
+        url: "https://example.com/file.tif",
+        connection_type: "cog",
+        bounds: [-10, -10, 10, 10],
+        min_zoom: null,
+        max_zoom: null,
+        tile_type: "raster",
+        band_count: 1,
+        rescale: "0,255",
+        workspace_id: null,
+        is_categorical: false,
+        categories: null,
+        tile_url: null,
+        render_path: null,
+        conversion_status: null,
+        conversion_error: null,
+        feature_count: null,
+        file_size: 10 * 1024 * 1024, // 10 MB
+        created_at: "2026-04-17T00:00:00Z",
+      },
+    });
+    const { result } = renderHook(() => useMapControls(conn));
+    expect(result.current.canClientRender).toBe(true);
+  });
+
+  it("disables client render for an oversize COG connection", () => {
+    const conn = makeItem({
+      source: "connection",
+      cogUrl: "https://example.com/file.tif",
+      bounds: [-10, -10, 10, 10],
+      isTemporal: false,
+      connection: {
+        id: "c2",
+        name: "c",
+        url: "https://example.com/file.tif",
+        connection_type: "cog",
+        bounds: [-10, -10, 10, 10],
+        min_zoom: null,
+        max_zoom: null,
+        tile_type: "raster",
+        band_count: 1,
+        rescale: null,
+        workspace_id: null,
+        is_categorical: false,
+        categories: null,
+        tile_url: null,
+        render_path: null,
+        conversion_status: null,
+        conversion_error: null,
+        feature_count: null,
+        file_size: 10 * 1024 * 1024 * 1024, // 10 GB
+        created_at: "2026-04-17T00:00:00Z",
+      },
+    });
+    const { result } = renderHook(() => useMapControls(conn));
+    expect(result.current.canClientRender).toBe(false);
+    expect(result.current.clientRenderDisabledReason).toContain("exceeds");
+  });
 });
 
 describe("client render size caps", () => {

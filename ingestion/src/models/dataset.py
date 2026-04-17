@@ -23,6 +23,7 @@ class DatasetRow(Base):
     workspace_id = Column(String, nullable=True)
     expires_at = Column(DateTime, nullable=True)
     is_example = Column(Boolean, nullable=False, default=False)
+    is_shared = Column(Boolean, nullable=False, default=False)
 
     def to_dict(self) -> dict:
         """Convert to the Dataset API response format."""
@@ -41,6 +42,7 @@ class DatasetRow(Base):
             "workspace_id": self.workspace_id,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "is_example": bool(self.is_example),
+            "is_shared": bool(self.is_shared),
         }
 
 
@@ -56,6 +58,7 @@ _TOP_LEVEL_COLUMNS = frozenset(
         "workspace_id",
         "expires_at",
         "is_example",
+        "is_shared",
     )
 )
 

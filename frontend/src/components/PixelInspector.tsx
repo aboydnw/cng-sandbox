@@ -49,18 +49,31 @@ function formatValue(value: number): string {
   return value.toPrecision(4);
 }
 
-interface HoverInfo {
-  x: number;
-  y: number;
-  lng: number;
-  lat: number;
-  value: number;
-  bandName: string | null;
-}
+type HoverInfo =
+  | {
+      kind: "numeric";
+      x: number;
+      y: number;
+      lng: number;
+      lat: number;
+      value: number;
+      bandName: string | null;
+    }
+  | {
+      kind: "categorical";
+      x: number;
+      y: number;
+      lng: number;
+      lat: number;
+      value: number;
+      label: string;
+      color: string;
+    };
 
 export function usePixelInspector(
   tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
-  bandNames: string[] | null
+  bandNames: string[] | null,
+  categories?: { value: number; color: string; label: string }[]
 ) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const hoverRafRef = useRef<number | null>(null);
@@ -83,7 +96,26 @@ export function usePixelInspector(
           setHoverInfo(null);
           return;
         }
+        if (categories && categories.length > 0) {
+          const match = categories.find((c) => c.value === Math.round(value));
+          if (!match) {
+            setHoverInfo(null);
+            return;
+          }
+          setHoverInfo({
+            kind: "categorical",
+            x: info.x,
+            y: info.y,
+            lng,
+            lat,
+            value: match.value,
+            label: match.label,
+            color: match.color,
+          });
+          return;
+        }
         setHoverInfo({
+          kind: "numeric",
           x: info.x,
           y: info.y,
           lng,
@@ -95,14 +127,14 @@ export function usePixelInspector(
         });
       });
     },
-    [tileCacheRef, bandNames]
+    [tileCacheRef, bandNames, categories]
   );
 
   return { hoverInfo, onHover };
 }
 
 interface PixelInspectorTooltipProps {
-  hoverInfo: HoverInfo;
+  hoverInfo: Extract<HoverInfo, { kind: "numeric" }>;
 }
 
 export function PixelInspectorTooltip({

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useMapSnapshot } from "../useMapSnapshot";
+import type { SnapshotMapRefValue, SnapshotDeckRefValue } from "../useMapSnapshot";
 
 vi.mock("html-to-image", () => ({
   toCanvas: vi.fn(async () => {
@@ -18,6 +19,8 @@ function makeCanvas(width = 800, height = 600): HTMLCanvasElement {
   return c;
 }
 
+const cleanups: Array<() => void> = [];
+
 function makeRefs() {
   const basemapCanvas = makeCanvas();
   const deckCanvas = makeCanvas();
@@ -32,13 +35,13 @@ function makeRefs() {
         triggerRepaint,
       }),
     },
-  } as unknown as React.RefObject<unknown>;
+  } as unknown as React.RefObject<SnapshotMapRefValue | null>;
 
   const deckRef = {
     current: {
       deck: { canvas: deckCanvas, redraw },
     },
-  } as unknown as React.RefObject<unknown>;
+  } as unknown as React.RefObject<SnapshotDeckRefValue | null>;
 
   const containerDiv = document.createElement("div");
   Object.defineProperty(containerDiv, "getBoundingClientRect", {
@@ -48,6 +51,13 @@ function makeRefs() {
   const containerRef = {
     current: containerDiv,
   } as unknown as React.RefObject<HTMLDivElement>;
+
+  const cleanup = () => {
+    if (containerDiv.parentNode === document.body) {
+      document.body.removeChild(containerDiv);
+    }
+  };
+  cleanups.push(cleanup);
 
   return { mapRef, deckRef, containerRef, triggerRepaint, redraw, basemapCanvas, deckCanvas };
 }
@@ -82,6 +92,9 @@ describe("useMapSnapshot", () => {
   });
 
   afterEach(() => {
+    while (cleanups.length) {
+      cleanups.pop()!();
+    }
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });

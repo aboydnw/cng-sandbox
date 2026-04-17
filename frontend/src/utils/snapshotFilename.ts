@@ -16,6 +16,6 @@ export function buildSnapshotFilename({
 }: SnapshotFilenameInput): string {
   const slug = title ? slugify(title) : "";
   const base = slug || "map-snapshot";
-  const date = timestepIso ? timestepIso.slice(0, 10) : null;
+  const date = timestepIso?.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? null;
   return date ? `${base}-${date}.png` : `${base}.png`;
 }

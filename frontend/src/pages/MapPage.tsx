@@ -495,6 +495,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               onClick={onMapClick}
               getTooltip={getTooltip}
               hideBasemapPicker={shared}
+              enableSnapshot={shared}
             >
               {shared && !(isServerGeoParquet && needsConversion) && (
                 <Box position="absolute" top={3} right={3}>

@@ -1,10 +1,26 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as htmlToImage from "html-to-image";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MapRef = React.RefObject<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DeckRef = React.RefObject<any>;
+export interface SnapshotMapInstance {
+  getCanvas?: () => HTMLCanvasElement;
+  triggerRepaint?: () => void;
+}
+
+export interface SnapshotMapRefValue extends SnapshotMapInstance {
+  getMap?: () => SnapshotMapInstance;
+}
+
+export interface SnapshotDeckInstance {
+  canvas?: HTMLCanvasElement;
+  redraw?: (reason?: string) => void;
+}
+
+export interface SnapshotDeckRefValue {
+  deck?: SnapshotDeckInstance;
+}
+
+type MapRef = React.RefObject<SnapshotMapRefValue | null>;
+type DeckRef = React.RefObject<SnapshotDeckRefValue | null>;
 type ContainerRef = React.RefObject<HTMLDivElement | null>;
 
 interface UseMapSnapshotArgs {
@@ -43,6 +59,12 @@ export function useMapSnapshot({
     setError(true);
     if (errorTimeoutRef.current) window.clearTimeout(errorTimeoutRef.current);
     errorTimeoutRef.current = window.setTimeout(() => setError(false), 2000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) window.clearTimeout(errorTimeoutRef.current);
+    };
   }, []);
 
   const snap = useCallback(async () => {

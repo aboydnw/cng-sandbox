@@ -33,7 +33,7 @@ describe("SnapButton", () => {
     expect(screen.getByLabelText(/save map as png/i)).toBeDisabled();
   });
 
-  it("does not call onSnap when error state is set (button click during flash)", () => {
+  it("still calls onSnap when error state is set (error is a visual flash, not a disabled state)", () => {
     const onSnap = vi.fn();
     renderWithChakra(
       <SnapButton onSnap={onSnap} isCapturing={false} error={true} />

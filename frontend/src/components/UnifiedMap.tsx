@@ -27,6 +27,7 @@ interface UnifiedMapProps {
   hideBasemapPicker?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mapRef?: React.Ref<any>;
+  enableSnapshot?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +48,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     onTransitionEnd,
     hideBasemapPicker = false,
     mapRef,
+    enableSnapshot,
   },
   ref
 ) {
@@ -122,7 +124,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
           zoom={camera.zoom}
           bearing={camera.bearing}
           pitch={camera.pitch}
-          preserveDrawingBuffer
+          preserveDrawingBuffer={enableSnapshot ?? false}
         />
       </DeckGL>
 

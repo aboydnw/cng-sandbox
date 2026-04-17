@@ -7,7 +7,10 @@ describe("parseRescaleString", () => {
   });
 
   it("parses negative and decimal values", () => {
-    expect(parseRescaleString("-10.5,42.25")).toEqual({ min: -10.5, max: 42.25 });
+    expect(parseRescaleString("-10.5,42.25")).toEqual({
+      min: -10.5,
+      max: 42.25,
+    });
   });
 
   it("trims whitespace", () => {

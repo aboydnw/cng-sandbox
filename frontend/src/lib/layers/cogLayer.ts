@@ -92,7 +92,7 @@ const MAX_CACHED_TILES = 256;
 
 // --- COG layer builder ---
 
-function resolveCogUrl(cogUrl: string): string {
+export function resolveCogUrl(cogUrl: string): string {
   if (/^https?:\/\//i.test(cogUrl)) return cogUrl;
   return window.location.origin + cogUrl;
 }

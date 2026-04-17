@@ -226,6 +226,7 @@ describe("useMapControls", () => {
         feature_count: null,
         file_size: 10 * 1024 * 1024, // 10 MB
         created_at: "2026-04-17T00:00:00Z",
+        is_shared: false,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -259,6 +260,7 @@ describe("useMapControls", () => {
         feature_count: null,
         file_size: 10 * 1024 * 1024 * 1024, // 10 GB
         created_at: "2026-04-17T00:00:00Z",
+        is_shared: false,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -293,6 +295,7 @@ describe("useMapControls", () => {
         feature_count: null,
         file_size: null,
         created_at: "2026-04-17T00:00:00Z",
+        is_shared: false,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));

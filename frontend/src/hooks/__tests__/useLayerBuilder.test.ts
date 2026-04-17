@@ -253,6 +253,7 @@ function makeConnectionItem(overrides: Partial<MapItem> = {}): MapItem {
     feature_count: null,
     file_size: 10 * 1024 * 1024,
     created_at: "2026-04-17T00:00:00Z",
+    is_shared: false,
   };
   return makeItem({
     source: "connection",

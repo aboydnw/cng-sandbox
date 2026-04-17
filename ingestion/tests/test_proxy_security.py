@@ -21,7 +21,7 @@ class FakeHttpxClient:
     def build_request(self, method, url, headers=None):
         return None
 
-    async def send(self, request, stream=False):
+    async def send(self, request, stream=False, **kwargs):
         return FakeLargeResponse()
 
     async def aclose(self):
@@ -52,7 +52,7 @@ def test_proxy_rejects_when_content_length_exceeds_cap(client, monkeypatch):
         def build_request(self, method, url, headers=None):
             return None
 
-        async def send(self, request, stream=False):
+        async def send(self, request, stream=False, **kwargs):
             return FakeOversizedResponse()
 
         async def aclose(self):
@@ -97,12 +97,23 @@ def test_proxy_does_not_follow_redirects(client, monkeypatch):
         def build_request(self, method, url, headers=None):
             return None
 
-        async def send(self, request, stream=False):
+        async def send(self, request, stream=False, **kwargs):
             return FakeRedirectResponse()
 
         async def aclose(self):
             pass
 
     monkeypatch.setattr("src.routes.proxy.httpx.AsyncClient", FakeRedirectClient)
+    resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
+    assert resp.status_code == 502
+
+
+def test_proxy_returns_502_on_dns_failure(client, monkeypatch):
+    import socket as socket_module
+
+    def raise_gaierror(*a, **kw):
+        raise socket_module.gaierror("Name not resolved")
+
+    monkeypatch.setattr("src.routes.proxy.socket.getaddrinfo", raise_gaierror)
     resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
     assert resp.status_code == 502

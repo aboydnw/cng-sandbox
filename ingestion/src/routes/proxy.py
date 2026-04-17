@@ -22,15 +22,20 @@ def _sanitize_url_for_log(url: str) -> str:
     return url.split("?")[0]
 
 
-def _is_private_ip(hostname: str) -> bool:
+def _is_disallowed_ip(addr: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    return addr.is_private or addr.is_loopback or addr.is_link_local
+
+
+def _resolve_to_ip(hostname: str) -> str:
     try:
-        for info in socket.getaddrinfo(hostname, None):
-            addr = ipaddress.ip_address(info[4][0])
-            if addr.is_private or addr.is_loopback or addr.is_link_local:
-                return True
+        infos = socket.getaddrinfo(hostname, None)
     except socket.gaierror:
-        return True
-    return False
+        raise HTTPException(status_code=502, detail="Could not resolve hostname")
+    for info in infos:
+        addr = ipaddress.ip_address(info[4][0])
+        if _is_disallowed_ip(addr):
+            raise HTTPException(status_code=400, detail="Private addresses are not allowed")
+    return infos[0][4][0]
 
 
 @router.get("/proxy")
@@ -43,8 +48,7 @@ async def proxy_resource(url: str, request: Request):
     if not parsed.hostname:
         raise HTTPException(status_code=400, detail="Invalid URL")
 
-    if _is_private_ip(parsed.hostname):
-        raise HTTPException(status_code=400, detail="Private addresses are not allowed")
+    resolved_ip = _resolve_to_ip(parsed.hostname)
 
     path = decoded.split("?")[0].lower()
     if not any(path.endswith(ext) for ext in ALLOWED_EXTENSIONS):
@@ -57,11 +61,19 @@ async def proxy_resource(url: str, request: Request):
 
     safe_url = _sanitize_url_for_log(decoded)
 
+    parsed_scheme = parsed.scheme
+    parsed_netloc = parsed.netloc
+    hostname = parsed.hostname or ""
+
+    ip_url = decoded.replace(f"{parsed_scheme}://{parsed_netloc}", f"{parsed_scheme}://{resolved_ip}", 1)
+    headers["host"] = hostname
+
     client = httpx.AsyncClient(follow_redirects=False, timeout=30.0)
     try:
         resp = await client.send(
-            client.build_request("GET", decoded, headers=headers),
+            client.build_request("GET", ip_url, headers=headers),
             stream=True,
+            extensions={"sni_hostname": hostname},
         )
     except httpx.RequestError as e:
         await client.aclose()

@@ -256,8 +256,8 @@ export function buildCogLayerContinuous({
       ) => Promise<{
         array: {
           layout: string;
-          bands: Float32Array[];
-          data: Float32Array;
+          bands: ArrayBufferView[];
+          data: ArrayBufferView;
           width: number;
           height: number;
         };

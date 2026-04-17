@@ -252,7 +252,7 @@ def extract_unique_values_from_dataset(row: DatasetRow) -> list[int]:
     if not raster_path:
         cog_url = meta.get("cog_url")
         if cog_url and cog_url.startswith("/storage/"):
-            key = cog_url[len("/storage/"):]
+            key = cog_url[len("/storage/") :]
             raster_path = StorageService().get_s3_uri(key)
     if not raster_path:
         raise FileNotFoundError("No raster path stored on dataset")

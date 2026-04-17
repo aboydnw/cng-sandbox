@@ -1,5 +1,7 @@
 """Security tests for /api/proxy endpoint."""
 
+import socket
+
 
 class FakeLargeResponse:
     status_code = 200
@@ -109,10 +111,8 @@ def test_proxy_does_not_follow_redirects(client, monkeypatch):
 
 
 def test_proxy_returns_502_on_dns_failure(client, monkeypatch):
-    import socket as socket_module
-
     def raise_gaierror(*a, **kw):
-        raise socket_module.gaierror("Name not resolved")
+        raise socket.gaierror("Name not resolved")
 
     monkeypatch.setattr("src.routes.proxy.socket.getaddrinfo", raise_gaierror)
     resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")

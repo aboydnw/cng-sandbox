@@ -61,19 +61,21 @@ async def proxy_resource(url: str, request: Request):
 
     safe_url = _sanitize_url_for_log(decoded)
 
-    parsed_scheme = parsed.scheme
-    parsed_netloc = parsed.netloc
     hostname = parsed.hostname or ""
-
-    ip_url = decoded.replace(f"{parsed_scheme}://{parsed_netloc}", f"{parsed_scheme}://{resolved_ip}", 1)
+    ip_literal = f"[{resolved_ip}]" if ":" in resolved_ip else resolved_ip
+    port_suffix = f":{parsed.port}" if parsed.port else ""
+    ip_url = decoded.replace(
+        f"{parsed.scheme}://{parsed.netloc}",
+        f"{parsed.scheme}://{ip_literal}{port_suffix}",
+        1,
+    )
     headers["host"] = hostname
 
     client = httpx.AsyncClient(follow_redirects=False, timeout=30.0)
     try:
         resp = await client.send(
-            client.build_request("GET", ip_url, headers=headers),
+            httpx.Request("GET", ip_url, headers=headers, extensions={"sni_hostname": hostname}),
             stream=True,
-            extensions={"sni_hostname": hostname},
         )
     except httpx.RequestError as e:
         await client.aclose()

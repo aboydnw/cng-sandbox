@@ -172,6 +172,9 @@ export function useLayerBuilder({
             return buildCogLayerPaletted({
               cogUrl: item.cogUrl,
               opacity,
+              categories: item.categories ?? undefined,
+              tileCacheRef,
+              datasetBounds: item.bounds,
             });
           }
           const parsed = parseRescaleString(item.rescale);
@@ -271,6 +274,9 @@ export function useLayerBuilder({
           return buildCogLayerPaletted({
             cogUrl: item.cogUrl!,
             opacity,
+            categories: isCategorical ? (item.categories ?? undefined) : undefined,
+            tileCacheRef,
+            datasetBounds: item.bounds,
           });
         }
         return buildCogLayerContinuous({

@@ -6,6 +6,7 @@ vi.mock("@developmentseed/deck.gl-geotiff", () => ({
 
 vi.mock("@developmentseed/deck.gl-raster/gpu-modules", () => ({
   CreateTexture: {},
+  Colormap: {},
 }));
 
 import { COGLayer } from "@developmentseed/deck.gl-geotiff";
@@ -44,5 +45,79 @@ describe("buildCogLayerPaletted", () => {
     });
     const props = (layers[0] as { props: Record<string, unknown> }).props;
     expect(props.id).toBe("direct-cog-layer-paletted");
+  });
+});
+
+describe("buildCogLayerPaletted with categories", () => {
+  it("returns a layer with getTileData defined when categories are supplied", () => {
+    const cacheRef = { current: new Map() };
+    const layers = buildCogLayerPaletted({
+      cogUrl: "/cog/example.tif",
+      opacity: 1,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+      tileCacheRef: cacheRef,
+      datasetBounds: [-10, -10, 10, 10],
+    });
+    expect(layers).toHaveLength(1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const layerProps = (layers[0] as any).props;
+    expect(typeof layerProps.getTileData).toBe("function");
+    expect(typeof layerProps.renderTile).toBe("function");
+  });
+
+  it("returns a layer with the default pipeline when categories are omitted", () => {
+    const layers = buildCogLayerPaletted({
+      cogUrl: "/cog/example.tif",
+      opacity: 1,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const layerProps = (layers[0] as any).props;
+    expect(layerProps.getTileData).toBeUndefined();
+    expect(layerProps.renderTile).toBeUndefined();
+  });
+
+  it("caches raw tile values when getTileData runs", async () => {
+    const cacheRef = { current: new Map() };
+    const layers = buildCogLayerPaletted({
+      cogUrl: "/cog/example.tif",
+      opacity: 1,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+      tileCacheRef: cacheRef,
+      datasetBounds: [-10, -10, 10, 10],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getTileData = (layers[0] as any).props.getTileData;
+
+    const fakeTile = {
+      array: {
+        layout: "interleaved",
+        bands: [],
+        data: new Uint8Array([1, 0, 1, 0]),
+        width: 2,
+        height: 2,
+      },
+    };
+    const image = {
+      fetchTile: vi.fn().mockResolvedValue(fakeTile),
+    };
+    const device = {
+      createTexture: vi.fn().mockReturnValue({ mock: "tex" }),
+    };
+
+    await getTileData(image, {
+      device,
+      x: 3,
+      y: 5,
+      signal: new AbortController().signal,
+    });
+
+    expect(cacheRef.current.size).toBe(1);
+    const entry = cacheRef.current.get("3/5");
+    expect(entry).toBeDefined();
+    expect(entry!.width).toBe(2);
+    expect(entry!.height).toBe(2);
+    expect(entry!.bounds).toEqual([-10, -10, 10, 10]);
+    // raw values preserved
+    expect(Array.from(entry!.data)).toEqual([1, 0, 1, 0]);
   });
 });

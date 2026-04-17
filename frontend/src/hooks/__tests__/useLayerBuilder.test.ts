@@ -314,4 +314,76 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(buildCogLayerContinuous).not.toHaveBeenCalled();
     expect(buildCogLayerPaletted).not.toHaveBeenCalled();
   });
+
+  it("passes categories and tileCacheRef to paletted builder for categorical dataset", () => {
+    vi.mocked(buildCogLayerPaletted).mockClear();
+    const item = makeItem({
+      source: "dataset",
+      dataType: "raster",
+      cogUrl: "/cog/cat.tif",
+      bounds: [-10, -10, 10, 10],
+      isCategorical: true,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+      dtype: "uint8",
+      dataset: {} as Dataset,
+    });
+    renderBuilder({
+      item,
+      renderMode: "client",
+      canClientRender: true,
+      isCategorical: true,
+    });
+    expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
+    const opts = vi.mocked(buildCogLayerPaletted).mock.calls[0][0];
+    expect(opts.categories).toEqual([
+      { value: 1, color: "#ff0000", label: "A" },
+    ]);
+    expect(opts.datasetBounds).toEqual([-10, -10, 10, 10]);
+    expect(opts.tileCacheRef).toBeDefined();
+  });
+
+  it("passes categories to paletted builder for categorical COG connection", () => {
+    vi.mocked(buildCogLayerPaletted).mockClear();
+    const item = makeConnectionItem({
+      isCategorical: true,
+      categories: [{ value: 2, color: "#00ff00", label: "B" }],
+    });
+    renderBuilder({
+      item,
+      renderMode: "client",
+      canClientRender: true,
+      isCategorical: true,
+    });
+    expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
+    const opts = vi.mocked(buildCogLayerPaletted).mock.calls[0][0];
+    expect(opts.categories).toEqual([
+      { value: 2, color: "#00ff00", label: "B" },
+    ]);
+  });
+
+  it("prefers effectiveCategories over item.categories when both are set", () => {
+    vi.mocked(buildCogLayerPaletted).mockClear();
+    const item = makeItem({
+      source: "dataset",
+      dataType: "raster",
+      cogUrl: "/cog/cat.tif",
+      bounds: [-10, -10, 10, 10],
+      isCategorical: true,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+      dtype: "uint8",
+      dataset: {} as Dataset,
+    });
+    renderBuilder({
+      item,
+      renderMode: "client",
+      canClientRender: true,
+      isCategorical: true,
+      effectiveCategories: [{ value: 1, color: "#00ff00", label: "A edited" }],
+    });
+    expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
+    const opts = vi.mocked(buildCogLayerPaletted).mock.calls[0][0];
+    expect(opts.categories).toEqual([
+      { value: 1, color: "#00ff00", label: "A edited" },
+    ]);
+  });
 });

@@ -9,18 +9,30 @@ from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
 
 
-def is_dataset_referenced_by_published_story(
-    session: Session, dataset_id: str
-) -> bool:
+def _parse_chapters(raw: str | None) -> list:
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return parsed
+
+
+def is_dataset_referenced_by_published_story(session: Session, dataset_id: str) -> bool:
     """True if any published story references the given dataset."""
     rows = session.query(StoryRow).filter(StoryRow.published.is_(True)).all()
     for row in rows:
         if row.dataset_id == dataset_id:
             return True
-        chapters = json.loads(row.chapters_json) if row.chapters_json else []
+        chapters = _parse_chapters(row.chapters_json)
         for ch in chapters:
+            if not isinstance(ch, dict):
+                continue
             lc = ch.get("layer_config") or {}
-            if lc.get("dataset_id") == dataset_id:
+            if isinstance(lc, dict) and lc.get("dataset_id") == dataset_id:
                 return True
     return False
 
@@ -31,17 +43,17 @@ def is_connection_referenced_by_published_story(
     """True if any published story references the given connection."""
     rows = session.query(StoryRow).filter(StoryRow.published.is_(True)).all()
     for row in rows:
-        chapters = json.loads(row.chapters_json) if row.chapters_json else []
+        chapters = _parse_chapters(row.chapters_json)
         for ch in chapters:
+            if not isinstance(ch, dict):
+                continue
             lc = ch.get("layer_config") or {}
-            if lc.get("connection_id") == connection_id:
+            if isinstance(lc, dict) and lc.get("connection_id") == connection_id:
                 return True
     return False
 
 
-def can_read_dataset(
-    session: Session, row: DatasetRow, workspace_id: str
-) -> bool:
+def can_read_dataset(session: Session, row: DatasetRow, workspace_id: str) -> bool:
     """Apply the public read policy to a dataset row."""
     if row.workspace_id and workspace_id and row.workspace_id == workspace_id:
         return True

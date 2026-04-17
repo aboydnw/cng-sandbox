@@ -98,9 +98,7 @@ async def get_dataset(dataset_id: str, request: Request):
 
 
 @router.patch("/datasets/{dataset_id}/share")
-async def share_dataset(
-    dataset_id: str, body: SharePayload, request: Request
-):
+async def share_dataset(dataset_id: str, body: SharePayload, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
     session = get_session(request)
@@ -116,6 +114,7 @@ async def share_dataset(
             raise HTTPException(status_code=403, detail="Forbidden")
         row.is_shared = body.is_shared
         session.commit()
+        session.refresh(row)
         d = row.to_dict()
         d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
         return d

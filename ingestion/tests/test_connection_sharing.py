@@ -42,9 +42,7 @@ def test_anonymous_can_get_shared_connection(app, db_session):
     assert resp.status_code == 200
 
 
-def test_anonymous_can_get_connection_referenced_by_published_story(
-    app, db_session
-):
+def test_anonymous_can_get_connection_referenced_by_published_story(app, db_session):
     _make_connection(db_session, id="c1", workspace_id="ownerWSAA")
     chapters = [
         {
@@ -82,9 +80,7 @@ def test_owner_can_share_connection(client, db_session):
 
 
 def test_owner_can_unshare_connection(client, db_session):
-    _make_connection(
-        db_session, id="c1", workspace_id="testABCD", is_shared=True
-    )
+    _make_connection(db_session, id="c1", workspace_id="testABCD", is_shared=True)
     resp = client.patch("/api/connections/c1/share", json={"is_shared": False})
     assert resp.status_code == 200
     assert resp.json()["is_shared"] is False

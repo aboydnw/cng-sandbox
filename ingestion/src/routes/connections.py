@@ -188,6 +188,14 @@ async def stream_connection_conversion(connection_id: str, request: Request):
     """SSE stream of connection conversion progress.
 
     Access is gated by the same read policy as GET /connections/{id}.
+
+    Known limitation: browser EventSource cannot send custom headers, so the
+    x-workspace-id header is typically absent on direct browser subscriptions.
+    This means owners of a private (non-shared, non-story-referenced) connection
+    cannot monitor their own server-side GeoParquet conversion via this stream
+    without the connection being shared or referenced by a published story.
+    A cookie-based workspace auth or scoped access token would be more robust;
+    see CLAUDE.md for the broader auth-model tradeoffs.
     """
     workspace_id = request.headers.get("x-workspace-id", "")
     # get_session() binds the session to request lifetime (closed before the generator

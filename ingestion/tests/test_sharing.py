@@ -93,9 +93,7 @@ def test_shared_dataset_readable_by_anyone(db_session):
 
 def test_dataset_referenced_by_published_story_readable(db_session):
     row = _make_dataset(db_session)
-    _make_story(
-        db_session, published=True, chapter_layer_config={"dataset_id": row.id}
-    )
+    _make_story(db_session, published=True, chapter_layer_config={"dataset_id": row.id})
     assert sharing.can_read_dataset(db_session, row, "") is True
 
 
@@ -121,6 +119,11 @@ def test_owner_can_read_connection(db_session):
 def test_non_owner_cannot_read_private_connection(db_session):
     row = _make_connection(db_session)
     assert sharing.can_read_connection(db_session, row, "otherWS") is False
+
+
+def test_anonymous_cannot_read_private_connection(db_session):
+    row = _make_connection(db_session)
+    assert sharing.can_read_connection(db_session, row, "") is False
 
 
 def test_shared_connection_readable_by_anyone(db_session):

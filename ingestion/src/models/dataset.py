@@ -86,6 +86,7 @@ def persist_dataset(db_session_factory, dataset) -> None:
             workspace_id=getattr(dataset, "workspace_id", None),
             expires_at=getattr(dataset, "expires_at", None),
             is_example=getattr(dataset, "is_example", False),
+            is_shared=getattr(dataset, "is_shared", False),
         )
         session.add(row)
         session.commit()

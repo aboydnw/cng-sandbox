@@ -105,3 +105,23 @@ def test_example_dataset_cannot_be_shared_or_unshared(client, db_session):
     )
     resp = client.patch("/api/datasets/d1/share", json={"is_shared": True})
     assert resp.status_code == 403
+    resp = client.patch("/api/datasets/d1/share", json={"is_shared": False})
+    assert resp.status_code == 403
+
+
+def test_anonymous_can_get_dataset_referenced_by_story_dataset_id(app, db_session):
+    _make_dataset(db_session, id="d1", workspace_id="ownerWSAA")
+    db_session.add(
+        StoryRow(
+            id="s1",
+            title="S",
+            dataset_id="d1",
+            chapters_json="[]",
+            published=True,
+            workspace_id="ownerWSAA",
+        )
+    )
+    db_session.commit()
+    anon = TestClient(app)
+    resp = anon.get("/api/datasets/d1")
+    assert resp.status_code == 200

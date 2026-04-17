@@ -90,6 +90,29 @@ async def proxy_resource(url: str, request: Request):
     if content_length:
         response_headers["content-length"] = content_length
 
+    # If Content-Length is missing, buffer chunks with a size limit
+    if not content_length:
+        bytes_received = 0
+        chunks = []
+        try:
+            async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):
+                bytes_received += len(chunk)
+                if bytes_received > MAX_RESPONSE_BYTES:
+                    await resp.aclose()
+                    await client.aclose()
+                    raise HTTPException(status_code=413, detail="Response too large")
+                chunks.append(chunk)
+        finally:
+            await resp.aclose()
+            await client.aclose()
+
+        full_content = b"".join(chunks)
+        return StreamingResponse(
+            content=[full_content],
+            status_code=200,
+            headers=response_headers,
+        )
+
     async def stream_and_close():
         try:
             async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):

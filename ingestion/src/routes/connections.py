@@ -190,6 +190,8 @@ async def stream_connection_conversion(connection_id: str, request: Request):
     Access is gated by the same read policy as GET /connections/{id}.
     """
     workspace_id = request.headers.get("x-workspace-id", "")
+    # get_session() binds the session to request lifetime (closed before the generator
+    # runs); open a short-lived gate session directly to avoid that.
     gate_session = request.app.state.db_session_factory()
     try:
         row = gate_session.get(ConnectionRow, connection_id)

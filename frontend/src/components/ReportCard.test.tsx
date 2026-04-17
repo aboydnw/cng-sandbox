@@ -61,6 +61,7 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     compression: null,
     is_mosaic: false,
     is_zero_copy: false,
+    is_shared: false,
     source_url: null,
     expires_at: null,
     ...overrides,

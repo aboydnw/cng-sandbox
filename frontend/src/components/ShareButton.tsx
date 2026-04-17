@@ -1,87 +1,48 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@chakra-ui/react";
-import { Check, LinkSimple } from "@phosphor-icons/react";
-
-const STYLE = `
-.share-roller {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  height: 1.2em;
-  overflow: hidden;
-  width: 80px;
-}
-.share-roller span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1), opacity 250ms cubic-bezier(0.32, 0.72, 0, 1);
-  white-space: nowrap;
-}
-.share-roller .share-label { transform: translateY(0); opacity: 1; }
-.share-roller .copied-label { position: absolute; inset: 0; transform: translateY(120%); opacity: 0; }
-.share-roller[data-copied="true"] .share-label { transform: translateY(-120%); opacity: 0; }
-.share-roller[data-copied="true"] .copied-label { transform: translateY(0); opacity: 1; }
-`;
-
-function copyToClipboard(text: string): void {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function fallbackCopy(text: string): void {
-  const ta = document.createElement("textarea");
-  ta.value = text;
-  ta.style.position = "fixed";
-  ta.style.opacity = "0";
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand("copy");
-  document.body.removeChild(ta);
-}
+import { ShareNetwork } from "@phosphor-icons/react";
+import { ShareDialog } from "./ShareDialog";
 
 interface ShareButtonProps {
-  shareUrl?: string;
+  kind: "dataset" | "connection";
+  resourceId: string;
+  isShared: boolean;
+  onSharedChange(newValue: boolean): void;
 }
 
-export function ShareButton({ shareUrl }: ShareButtonProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    const url = shareUrl ?? window.location.href;
-    copyToClipboard(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [shareUrl]);
+export function ShareButton({
+  kind,
+  resourceId,
+  isShared,
+  onSharedChange,
+}: ShareButtonProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <>
-      <style>{STYLE}</style>
       <Button
-        bg="brand.orange"
-        color="white"
+        bg={isShared ? "brand.bgSubtle" : "brand.orange"}
+        color={isShared ? "brand.orange" : "white"}
+        borderWidth={isShared ? "1px" : undefined}
+        borderColor={isShared ? "brand.border" : undefined}
         size="sm"
         fontWeight={600}
         borderRadius="4px"
-        _hover={{ bg: "brand.orangeHover" }}
-        onClick={handleCopy}
+        _hover={{ bg: isShared ? "brand.border" : "brand.orangeHover" }}
+        onClick={() => setDialogOpen(true)}
         px={4}
       >
-        <span className="share-roller" data-copied={copied}>
-          <span className="share-label">
-            <LinkSimple size={14} weight="bold" /> Share
-          </span>
-          <span className="copied-label">
-            <Check size={14} weight="bold" /> Copied
-          </span>
-        </span>
+        <ShareNetwork size={14} weight="bold" />
+        {isShared ? "Shared" : "Share"}
       </Button>
+      <ShareDialog
+        kind={kind}
+        resourceId={resourceId}
+        isShared={isShared}
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSharedChange={onSharedChange}
+      />
     </>
   );
 }

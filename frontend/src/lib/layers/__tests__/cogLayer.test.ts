@@ -29,8 +29,14 @@ describe("resolveCogUrl", () => {
     );
   });
 
-  it("prepends window origin for relative paths", () => {
+  it("resolves root-relative paths against window origin", () => {
     expect(resolveCogUrl("/storage/foo.tif")).toBe(
+      `${window.location.origin}/storage/foo.tif`
+    );
+  });
+
+  it("resolves path-relative inputs against window origin", () => {
+    expect(resolveCogUrl("storage/foo.tif")).toBe(
       `${window.location.origin}/storage/foo.tif`
     );
   });

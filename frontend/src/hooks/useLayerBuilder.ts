@@ -178,8 +178,8 @@ export function useLayerBuilder({
           return buildCogLayerContinuous({
             cogUrl: item.cogUrl,
             opacity,
-            rasterMin: parsed?.min ?? 0,
-            rasterMax: parsed?.max ?? 1,
+            rasterMin: parsed?.min ?? item.rasterMin ?? 0,
+            rasterMax: parsed?.max ?? item.rasterMax ?? 1,
             datasetBounds: item.bounds,
             tileCacheRef,
           });

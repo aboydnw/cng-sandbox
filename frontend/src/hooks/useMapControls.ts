@@ -19,6 +19,7 @@ export interface InitialRasterOverrides {
   rescaleMax: number | null;
   colormapReversed: boolean;
   colormapName?: string;
+  renderMode?: RenderMode;
 }
 
 interface UseMapControlsResult {
@@ -46,6 +47,24 @@ interface UseMapControlsResult {
   setRescale: (min: number | null, max: number | null) => void;
   colormapReversed: boolean;
   setColormapReversed: (v: boolean) => void;
+}
+
+function computeCanClientRender(item: MapItem | null): boolean {
+  if (!item || item.isTemporal || !item.cogUrl || !item.bounds) return false;
+  if (Math.abs(item.bounds[1]) >= 85.05 || Math.abs(item.bounds[3]) >= 85.05)
+    return false;
+  const itemFileSize =
+    item.dataset?.converted_file_size ?? item.connection?.file_size ?? null;
+  if (item.source === "connection" && itemFileSize == null) return false;
+  const renderPath = classifyCogRenderPath({
+    dtype: item.dtype,
+    isCategorical: !!item.isCategorical,
+  });
+  const cap =
+    renderPath === "paletted"
+      ? CLIENT_RENDER_MAX_BYTES_PALETTED
+      : CLIENT_RENDER_MAX_BYTES_CONTINUOUS;
+  return (itemFileSize ?? 0) <= cap;
 }
 
 export function useMapControls(
@@ -77,18 +96,36 @@ export function useMapControls(
   useEffect(() => {
     setOpacity(0.8);
     setSelectedBand("rgb");
-    setRenderMode(item?.dataType === "vector" ? "vector-tiles" : "server");
     setCategoricalOverride(null);
     if (initialOverrides && item?.id === initialOverrides.itemId) {
       setColormapName(initialOverrides.colormapName ?? "viridis");
       setRescaleMin(initialOverrides.rescaleMin);
       setRescaleMax(initialOverrides.rescaleMax);
       setColormapReversed(initialOverrides.colormapReversed);
+      if (item?.dataType === "vector") {
+        setRenderMode("vector-tiles");
+      } else if (
+        initialOverrides.renderMode === "client" ||
+        initialOverrides.renderMode === "server"
+      ) {
+        setRenderMode(initialOverrides.renderMode);
+      } else if (computeCanClientRender(item ?? null)) {
+        setRenderMode("client");
+      } else {
+        setRenderMode("server");
+      }
     } else {
       setColormapName("viridis");
       setRescaleMin(null);
       setRescaleMax(null);
       setColormapReversed(false);
+      if (item?.dataType === "vector") {
+        setRenderMode("vector-tiles");
+      } else if (computeCanClientRender(item ?? null)) {
+        setRenderMode("client");
+      } else {
+        setRenderMode("server");
+      }
     }
   }, [item?.id, item?.dataType]);
 

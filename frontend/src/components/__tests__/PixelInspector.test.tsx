@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { render, screen, renderHook, act, waitFor } from "@testing-library/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { useRef } from "react";
-import { usePixelInspector } from "../PixelInspector";
+import { usePixelInspector, CategoricalPixelTooltip } from "../PixelInspector";
+
+function renderWithProvider(ui: React.ReactElement) {
+  return render(<ChakraProvider value={defaultSystem}>{ui}</ChakraProvider>);
+}
 import type { TileCacheEntry } from "../../lib/layers";
 
 function seededCache(): Map<string, TileCacheEntry> {
@@ -63,5 +68,27 @@ describe("usePixelInspector categorical branch", () => {
     await waitFor(() => {
       expect(result.current.hoverInfo).toMatchObject({ kind: "numeric", value: 1 });
     });
+  });
+});
+
+describe("CategoricalPixelTooltip", () => {
+  it("renders the label and a colored swatch", () => {
+    renderWithProvider(
+      <CategoricalPixelTooltip
+        hoverInfo={{
+          kind: "categorical",
+          x: 0,
+          y: 0,
+          lng: 0,
+          lat: 0,
+          value: 1,
+          label: "Forest",
+          color: "#228844",
+        }}
+      />
+    );
+    expect(screen.getByText("Forest")).toBeInTheDocument();
+    const swatch = screen.getByTestId("categorical-swatch");
+    expect(swatch).toHaveStyle({ backgroundColor: "rgb(34, 136, 68)" });
   });
 });

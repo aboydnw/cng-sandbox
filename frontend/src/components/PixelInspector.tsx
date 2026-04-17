@@ -133,6 +133,51 @@ export function usePixelInspector(
   return { hoverInfo, onHover };
 }
 
+interface CategoricalPixelTooltipProps {
+  hoverInfo: Extract<HoverInfo, { kind: "categorical" }>;
+}
+
+export function CategoricalPixelTooltip({
+  hoverInfo,
+}: CategoricalPixelTooltipProps) {
+  return (
+    <Box
+      position="absolute"
+      left={`${hoverInfo.x + 14}px`}
+      top={`${hoverInfo.y - 32}px`}
+      bg="rgba(15, 23, 42, 0.88)"
+      backdropFilter="blur(8px)"
+      borderRadius="6px"
+      border="1px solid rgba(255,255,255,0.08)"
+      shadow="lg"
+      px={2.5}
+      py={1.5}
+      pointerEvents="none"
+      zIndex={10}
+      whiteSpace="nowrap"
+      display="flex"
+      alignItems="center"
+      gap={2}
+    >
+      <Box
+        data-testid="categorical-swatch"
+        width="10px"
+        height="10px"
+        borderRadius="2px"
+        bg={hoverInfo.color}
+      />
+      <Text
+        fontSize="13px"
+        fontWeight={600}
+        color="white"
+        lineHeight="1.2"
+      >
+        {hoverInfo.label}
+      </Text>
+    </Box>
+  );
+}
+
 interface PixelInspectorTooltipProps {
   hoverInfo: Extract<HoverInfo, { kind: "numeric" }>;
 }

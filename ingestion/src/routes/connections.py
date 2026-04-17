@@ -14,7 +14,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
-from src.services import geoparquet_to_pmtiles
+from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
 from src.workspace import validate_workspace_id
 
@@ -187,9 +187,21 @@ async def create_connection(
 async def stream_connection_conversion(connection_id: str, request: Request):
     """SSE stream of connection conversion progress.
 
-    No workspace check — EventSource cannot send custom headers.
-    Connection IDs are UUIDs, which provides sufficient access control.
+    Stream access is UUID-gated by design: browser EventSource cannot send
+    custom headers, so workspace auth is not enforced here. The endpoint only
+    emits conversion status events ({status, tile_url, error, feature_count})
+    and returns 404 when the row does not exist. The full connection row is
+    still protected by GET /api/connections/{id}.
     """
+    # get_session() binds the session to request lifetime (closed before the generator
+    # runs); open a short-lived gate session directly to avoid that.
+    gate_session = request.app.state.db_session_factory()
+    try:
+        row = gate_session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+    finally:
+        gate_session.close()
 
     async def event_generator():
         start = time.monotonic()
@@ -232,7 +244,7 @@ async def get_connection(connection_id: str, request: Request):
         row = session.get(ConnectionRow, connection_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
-        if row.workspace_id and row.workspace_id != workspace_id:
+        if not sharing.can_read_connection(session, row, workspace_id):
             raise HTTPException(status_code=404, detail="Connection not found")
         return row.to_dict()
     finally:
@@ -291,6 +303,33 @@ async def update_connection_category_labels(
         row.categories_json = json.dumps(categories)
         session.commit()
         return categories
+    finally:
+        session.close()
+
+
+class SharePayload(BaseModel):
+    is_shared: bool
+
+
+@router.patch("/connections/{connection_id}/share")
+async def share_connection(
+    connection_id: str,
+    body: SharePayload,
+    request: Request,
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        row.is_shared = body.is_shared
+        session.commit()
+        session.refresh(row)
+        return row.to_dict()
     finally:
         session.close()
 

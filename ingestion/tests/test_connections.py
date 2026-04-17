@@ -355,9 +355,7 @@ def test_connection_conversion_stream_emits_terminal_event_when_ready(
 
 def test_connection_conversion_stream_returns_not_found_for_missing_row(client):
     with client.stream("GET", "/api/connections/does-not-exist/stream") as r:
-        assert r.status_code == 200
-        text = "".join(chunk for chunk in r.iter_text())
-    assert '"status": "not_found"' in text
+        assert r.status_code == 404
 
 
 def test_create_geoparquet_without_render_path_defaults_to_server(client, monkeypatch):

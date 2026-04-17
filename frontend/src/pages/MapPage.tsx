@@ -44,6 +44,9 @@ import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetRender } from "../hooks/useGeoParquetRender";
 import { useConnectionConversion } from "../hooks/useConnectionConversion";
 import { displayName } from "../utils/dataset";
+import { SnapButton } from "../components/SnapButton";
+import { useMapSnapshot } from "../hooks/useMapSnapshot";
+import { buildSnapshotFilename } from "../utils/snapshotFilename";
 import type { Table } from "apache-arrow";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
@@ -196,6 +199,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
 
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;
   const deckRef = useRef(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
   const exportHook = useTemporalExport(
     deckRef,
     ds?.timesteps ?? [],
@@ -371,6 +376,22 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     };
   }, [item?.dataType, controls.renderMode]);
 
+  const activeTimestepIso = ds?.is_temporal
+    ? (ds.timesteps[animation.activeIndex]?.datetime ?? null)
+    : null;
+
+  const snapshotFilename = buildSnapshotFilename({
+    title: item?.dataset ? displayName(item.dataset) : undefined,
+    timestepIso: activeTimestepIso,
+  });
+
+  const snapshot = useMapSnapshot({
+    mapRef,
+    deckRef,
+    containerRef: mapContainerRef,
+    filename: snapshotFilename,
+  });
+
   // --- Render ---
   if (isLoading) {
     return (
@@ -464,6 +485,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
             )}
             <UnifiedMap
               ref={deckRef}
+              mapRef={mapRef}
               camera={camera}
               onCameraChange={setCamera}
               layers={layers}
@@ -473,11 +495,26 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               onClick={onMapClick}
               getTooltip={getTooltip}
               hideBasemapPicker={shared}
+              enableSnapshot={shared}
             >
+              {shared && !(isServerGeoParquet && needsConversion) && (
+                <Box position="absolute" top={3} right={3}>
+                  <SnapButton
+                    onSnap={snapshot.snap}
+                    isCapturing={snapshot.isCapturing}
+                    error={snapshot.error}
+                  />
+                </Box>
+              )}
               {controls.isCategorical &&
                 effectiveCategories &&
                 effectiveCategories.length > 0 && (
-                  <Box position="absolute" bottom={3} left={3}>
+                  <Box
+                    position="absolute"
+                    bottom={3}
+                    left={3}
+                    data-snapshot-overlay
+                  >
                     <MapLegend
                       layers={[
                         {
@@ -497,7 +534,12 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               {!controls.isCategorical &&
                 controls.showingColormap &&
                 controls.renderMode !== "client" && (
-                  <Box position="absolute" bottom={3} left={3}>
+                  <Box
+                    position="absolute"
+                    bottom={3}
+                    left={3}
+                    data-snapshot-overlay
+                  >
                     <MapLegend
                       layers={[
                         {
@@ -513,45 +555,49 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 )}
 
               {ds?.is_temporal && controls.renderMode !== "client" && (
-                <TemporalControls
-                  timesteps={ds.timesteps}
-                  activeIndex={animation.activeIndex}
-                  onIndexChange={(index) => {
-                    animation.setActiveIndex(index);
-                    if (animation.isAnimateMode) animation.exitAnimateMode();
-                  }}
-                  cadence={cadence}
-                  onPrev={() => {
-                    if (animation.activeIndex > 0) {
-                      animation.setActiveIndex(animation.activeIndex - 1);
+                <Box data-snapshot-overlay>
+                  <TemporalControls
+                    timesteps={ds.timesteps}
+                    activeIndex={animation.activeIndex}
+                    onIndexChange={(index) => {
+                      animation.setActiveIndex(index);
                       if (animation.isAnimateMode) animation.exitAnimateMode();
+                    }}
+                    cadence={cadence}
+                    onPrev={() => {
+                      if (animation.activeIndex > 0) {
+                        animation.setActiveIndex(animation.activeIndex - 1);
+                        if (animation.isAnimateMode)
+                          animation.exitAnimateMode();
+                      }
+                    }}
+                    onNext={() => {
+                      if (animation.activeIndex < ds.timesteps.length - 1) {
+                        animation.setActiveIndex(animation.activeIndex + 1);
+                        if (animation.isAnimateMode)
+                          animation.exitAnimateMode();
+                      }
+                    }}
+                    isPlaying={animation.isPlaying}
+                    onTogglePlay={() => {
+                      if (!animation.isAnimateMode && !animation.isPlaying) {
+                        animation.enterAnimateMode();
+                      } else {
+                        animation.togglePlay();
+                      }
+                    }}
+                    speed={animation.speed}
+                    onSpeedChange={animation.setSpeed}
+                    preloadProgress={preloadProgress}
+                    onExportGif={() =>
+                      exportHook.exportGif(animation.setActiveIndex)
                     }
-                  }}
-                  onNext={() => {
-                    if (animation.activeIndex < ds.timesteps.length - 1) {
-                      animation.setActiveIndex(animation.activeIndex + 1);
-                      if (animation.isAnimateMode) animation.exitAnimateMode();
+                    onExportMp4={() =>
+                      exportHook.exportMp4(animation.setActiveIndex)
                     }
-                  }}
-                  isPlaying={animation.isPlaying}
-                  onTogglePlay={() => {
-                    if (!animation.isAnimateMode && !animation.isPlaying) {
-                      animation.enterAnimateMode();
-                    } else {
-                      animation.togglePlay();
-                    }
-                  }}
-                  speed={animation.speed}
-                  onSpeedChange={animation.setSpeed}
-                  preloadProgress={preloadProgress}
-                  onExportGif={() =>
-                    exportHook.exportGif(animation.setActiveIndex)
-                  }
-                  onExportMp4={() =>
-                    exportHook.exportMp4(animation.setActiveIndex)
-                  }
-                  isExporting={exportHook.isExporting}
-                />
+                    isExporting={exportHook.isExporting}
+                  />
+                </Box>
               )}
 
               {pixelInspector.hoverInfo && controls.renderMode === "client" && (

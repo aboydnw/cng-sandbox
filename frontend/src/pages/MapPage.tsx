@@ -216,6 +216,19 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     }
   }, [animation.activeIndex, ds?.is_temporal, setSearchParams]);
 
+  // --- Local is_shared (optimistic update from ShareButton) ---
+  const [localIsShared, setLocalIsShared] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setLocalIsShared(null);
+  }, [item?.id]);
+
+  const isShared =
+    localIsShared ??
+    item?.dataset?.is_shared ??
+    item?.connection?.is_shared ??
+    false;
+
   // --- Local categories (optimistic updates from editable legend) ---
   const [localCategories, setLocalCategories] = useState<
     { value: number; color: string; label: string }[] | null
@@ -358,24 +371,6 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     };
   }, [item?.dataType, controls.renderMode]);
 
-  const shareUrl = useMemo(() => {
-    const base = `${window.location.origin}/map/${isConnectionRoute ? "connection/" : ""}${id}`;
-    const params = new URLSearchParams();
-    if (controls.rescaleMin != null)
-      params.set("rmin", String(controls.rescaleMin));
-    if (controls.rescaleMax != null)
-      params.set("rmax", String(controls.rescaleMax));
-    if (controls.colormapReversed) params.set("flip", "1");
-    const qs = params.toString();
-    return qs ? `${base}?${qs}` : base;
-  }, [
-    id,
-    isConnectionRoute,
-    controls.rescaleMin,
-    controls.rescaleMax,
-    controls.colormapReversed,
-  ]);
-
   // --- Render ---
   if (isLoading) {
     return (
@@ -419,7 +414,18 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
           {item?.connection && (
             <BugReportLink connectionId={item.connection.id} />
           )}
-          <ShareButton shareUrl={shareUrl} />
+          {(item?.dataset ?? item?.connection) && (
+            <ShareButton
+              kind={isConnectionRoute ? "connection" : "dataset"}
+              resourceId={
+                (isConnectionRoute
+                  ? item?.connection?.id
+                  : item?.dataset?.id) ?? ""
+              }
+              isShared={isShared}
+              onSharedChange={setLocalIsShared}
+            />
+          )}
         </Header>
       )}
 

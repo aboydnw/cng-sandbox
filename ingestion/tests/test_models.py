@@ -205,3 +205,36 @@ def test_dataset_is_example_set_true():
         is_example=True,
     )
     assert d.is_example is True
+
+
+def test_dataset_row_has_is_shared_default_false(db_session):
+    from src.models.dataset import DatasetRow
+
+    row = DatasetRow(
+        id="d1",
+        filename="x.tif",
+        dataset_type="raster",
+        format_pair="geotiff_to_cog",
+        tile_url="/raster/x",
+    )
+    db_session.add(row)
+    db_session.commit()
+    fetched = db_session.get(DatasetRow, "d1")
+    assert fetched.is_shared is False
+    assert fetched.to_dict()["is_shared"] is False
+
+
+def test_connection_row_has_is_shared_default_false(db_session):
+    from src.models.connection import ConnectionRow
+
+    row = ConnectionRow(
+        id="c1",
+        name="X",
+        url="https://example.com/x.pmtiles",
+        connection_type="pmtiles",
+    )
+    db_session.add(row)
+    db_session.commit()
+    fetched = db_session.get(ConnectionRow, "c1")
+    assert fetched.is_shared is False
+    assert fetched.to_dict()["is_shared"] is False

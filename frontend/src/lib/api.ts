@@ -75,4 +75,26 @@ export const connectionsApi = {
       return r.json();
     });
   },
+
+  share(id: string, isShared: boolean): Promise<void> {
+    return workspaceFetch(`/api/connections/${id}/share`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_shared: isShared }),
+    }).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    });
+  },
+};
+
+export const datasetsApi = {
+  share(id: string, isShared: boolean): Promise<void> {
+    return workspaceFetch(`/api/datasets/${id}/share`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_shared: isShared }),
+    }).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    });
+  },
 };

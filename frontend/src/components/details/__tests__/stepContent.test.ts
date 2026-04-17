@@ -192,6 +192,7 @@ const geoparquetConnection: Connection = {
   conversion_error: null,
   feature_count: null,
   file_size: null,
+  is_shared: false,
   created_at: "2026-04-15T00:00:00Z",
 };
 
@@ -228,6 +229,7 @@ describe("getConnectionStepContent (geoparquet)", () => {
       workspace_id: null,
       is_categorical: false,
       categories: null,
+      is_shared: false,
       created_at: "2026-04-15T00:00:00Z",
     };
     const source = getConnectionStepContent(conn, 1);
@@ -258,6 +260,7 @@ function buildGeoParquetConn(overrides: Partial<Connection> = {}): Connection {
     conversion_error: null,
     feature_count: null,
     file_size: null,
+    is_shared: false,
     created_at: "2026-04-15T00:00:00Z",
     ...overrides,
   };

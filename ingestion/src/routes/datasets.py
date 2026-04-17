@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from src.dependencies import get_session
 from src.models.dataset import DatasetRow
+from src.services import sharing
 from src.services.categorical import QUALITATIVE_PALETTE
 from src.services.categorical_extract import (
     TooManyValues,
@@ -22,6 +23,10 @@ from src.services.story_utils import (
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
+
+
+class SharePayload(BaseModel):
+    is_shared: bool
 
 
 class CategoryUpdate(BaseModel):
@@ -77,11 +82,39 @@ async def list_datasets(request: Request):
 
 @router.get("/datasets/{dataset_id}")
 async def get_dataset(dataset_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
     session = get_session(request)
     try:
         row = session.get(DatasetRow, dataset_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Dataset not found")
+        if not sharing.can_read_dataset(session, row, workspace_id):
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        d = row.to_dict()
+        d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
+        return d
+    finally:
+        session.close()
+
+
+@router.patch("/datasets/{dataset_id}/share")
+async def share_dataset(dataset_id: str, body: SharePayload, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be shared"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        row.is_shared = body.is_shared
+        session.commit()
+        session.refresh(row)
         d = row.to_dict()
         d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
         return d

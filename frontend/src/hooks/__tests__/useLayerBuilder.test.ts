@@ -169,6 +169,7 @@ describe("client-side COG render dispatch", () => {
       compression: null,
       is_mosaic: false,
       is_zero_copy: false,
+      is_shared: false,
       source_url: null,
       expires_at: null,
       ...overrides,

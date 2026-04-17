@@ -55,6 +55,7 @@ const BASE_DATASET: Dataset = {
   compression: null,
   is_mosaic: false,
   is_zero_copy: false,
+  is_shared: false,
   source_url: null,
   expires_at: null,
 };
@@ -231,6 +232,7 @@ const BASE_CONNECTION: Connection = {
   conversion_error: null,
   feature_count: null,
   file_size: null,
+  is_shared: false,
 };
 
 describe("buildLayersForChapter — connection COG rescale and colormap_reversed", () => {

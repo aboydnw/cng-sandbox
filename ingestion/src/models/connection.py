@@ -36,6 +36,7 @@ class ConnectionRow(Base):
     conversion_error = Column(Text, nullable=True)
     feature_count = Column(Integer, nullable=True)
     file_size = Column(BigInteger, nullable=True)
+    is_shared = Column(Boolean, nullable=False, default=False)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -63,4 +64,5 @@ class ConnectionRow(Base):
             "conversion_error": self.conversion_error,
             "feature_count": self.feature_count,
             "file_size": self.file_size,
+            "is_shared": bool(self.is_shared),
         }

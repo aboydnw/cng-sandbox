@@ -239,8 +239,9 @@ cd ingestion && uv run pytest -v
 
 **Datasets:**
 - `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace)
-- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url` and `is_example`)
+- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`, `is_example`, and `is_shared`); returns 404 if the caller's workspace does not own the dataset and the dataset is not an example, not explicitly shared, and not referenced by a published story
 - `PATCH /api/datasets/{id}` — Update editable dataset metadata (currently just `title`, 1–200 chars; pass `null` to clear); returns 403 if the dataset is an example or belongs to another workspace
+- `PATCH /api/datasets/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the dataset is an example or belongs to another workspace
 - `DELETE /api/datasets/{id}` — Delete a dataset; returns 403 if the dataset is an example (`is_example=True`) or belongs to another workspace
 - `PATCH /api/datasets/{id}/categories` — Update category labels and/or colors for a categorical raster; body is a list of `{"value": int, "label"?: str, "color"?: "#RRGGBB"}` objects (each entry must include at least one of `label` or `color`); the first color override snapshots the prior color into `defaultColor` so the UI can offer a reset; returns 400 if dataset is not categorical or a value doesn't exist, 403 if the dataset is an example
 - `POST /api/datasets/{id}/mark-categorical` — Promote a non-categorical integer raster to categorical by scanning unique values and assigning default colors from the qualitative palette; returns 400 if values can't be extracted (unsupported dtype or too many unique values), 403 if the dataset is an example or belongs to another workspace
@@ -256,7 +257,8 @@ cd ingestion && uv run pytest -v
 - `GET /api/connections` — List connections in the workspace
 - `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections support two render paths via the optional `render_path` field: `"client"` (DuckDB-WASM) or `"server"` (tippecanoe → PMTiles → R2, async background job). When omitted, the server infers the path by issuing a HEAD request for the file size: files over 50 MB → `"server"`, otherwise → `"client"`.
 - `GET /api/connections/{id}/stream` — SSE stream of server-side conversion progress for a GeoParquet connection; emits `event: status` events with `{status, tile_url, error, feature_count}`; no workspace auth on this endpoint (EventSource cannot send custom headers); connection UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
-- `GET /api/connections/{id}` — Get a connection by ID
+- `GET /api/connections/{id}` — Get a connection by ID; returns 404 if the caller's workspace does not own the connection and it is not explicitly shared or referenced by a published story
+- `PATCH /api/connections/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the connection belongs to another workspace
 - `PATCH /api/connections/{id}/categories` — Update category labels and/or colors for a categorical COG connection; body is a list of `{"value": int, "label"?: str, "color"?: "#RRGGBB"}` objects (each entry must include at least one of `label` or `color`); the first color override snapshots the prior color into `defaultColor`; returns 400 if connection is not categorical or a value doesn't exist
 - `DELETE /api/connections/{id}` — Delete a connection
 
@@ -267,7 +269,7 @@ cd ingestion && uv run pytest -v
 
 **Other:**
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
-- `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources)
+- `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources); HTTPS-only, blocks private/loopback IPs, restricts to `.pmtiles`/`.tif`/`.tiff` extensions, rejects redirects, caps responses at 50 MB
 - `GET /api/health` — Health check
 
 ### Example datasets

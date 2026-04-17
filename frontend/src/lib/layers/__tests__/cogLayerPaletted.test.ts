@@ -104,7 +104,12 @@ describe("buildCogLayerPaletted with categories", () => {
       createTexture: vi.fn().mockReturnValue({ mock: "tex" }),
     };
 
-    await getTileData(image, { device, x: 3, y: 5, signal: new AbortController().signal });
+    await getTileData(image, {
+      device,
+      x: 3,
+      y: 5,
+      signal: new AbortController().signal,
+    });
 
     expect(cacheRef.current.size).toBe(1);
     const entry = cacheRef.current.get("3/5");

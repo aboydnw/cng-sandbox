@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, renderHook, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  renderHook,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { useRef } from "react";
 import { usePixelInspector, CategoricalPixelTooltip } from "../PixelInspector";
@@ -66,7 +72,10 @@ describe("usePixelInspector categorical branch", () => {
       result.current.onHover({ coordinate: [-5, 5], x: 0, y: 0 });
     });
     await waitFor(() => {
-      expect(result.current.hoverInfo).toMatchObject({ kind: "numeric", value: 1 });
+      expect(result.current.hoverInfo).toMatchObject({
+        kind: "numeric",
+        value: 1,
+      });
     });
   });
 });

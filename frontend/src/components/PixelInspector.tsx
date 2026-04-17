@@ -166,12 +166,7 @@ export function CategoricalPixelTooltip({
         borderRadius="2px"
         bg={hoverInfo.color}
       />
-      <Text
-        fontSize="13px"
-        fontWeight={600}
-        color="white"
-        lineHeight="1.2"
-      >
+      <Text fontSize="13px" fontWeight={600} color="white" lineHeight="1.2">
         {hoverInfo.label}
       </Text>
     </Box>

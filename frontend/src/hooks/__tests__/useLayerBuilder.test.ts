@@ -335,7 +335,9 @@ describe("useLayerBuilder — COG connection client render", () => {
     });
     expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
     const opts = vi.mocked(buildCogLayerPaletted).mock.calls[0][0];
-    expect(opts.categories).toEqual([{ value: 1, color: "#ff0000", label: "A" }]);
+    expect(opts.categories).toEqual([
+      { value: 1, color: "#ff0000", label: "A" },
+    ]);
     expect(opts.datasetBounds).toEqual([-10, -10, 10, 10]);
     expect(opts.tileCacheRef).toBeDefined();
   });
@@ -354,7 +356,9 @@ describe("useLayerBuilder — COG connection client render", () => {
     });
     expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
     const opts = vi.mocked(buildCogLayerPaletted).mock.calls[0][0];
-    expect(opts.categories).toEqual([{ value: 2, color: "#00ff00", label: "B" }]);
+    expect(opts.categories).toEqual([
+      { value: 2, color: "#00ff00", label: "B" },
+    ]);
   });
 
   it("prefers effectiveCategories over item.categories when both are set", () => {

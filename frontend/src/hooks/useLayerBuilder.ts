@@ -35,7 +35,9 @@ interface UseLayerBuilderOptions {
   rescaleMin: number | null;
   rescaleMax: number | null;
   colormapReversed: boolean;
-  effectiveCategories?: { value: number; color: string; label: string }[] | null;
+  effectiveCategories?:
+    | { value: number; color: string; label: string }[]
+    | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onVectorClick?: (info: any) => void;
 }
@@ -174,7 +176,7 @@ export function useLayerBuilder({
             return buildCogLayerPaletted({
               cogUrl: item.cogUrl,
               opacity,
-              categories: (effectiveCategories ?? item.categories) ?? undefined,
+              categories: effectiveCategories ?? item.categories ?? undefined,
               tileCacheRef,
               datasetBounds: item.bounds,
             });
@@ -277,7 +279,7 @@ export function useLayerBuilder({
             cogUrl: item.cogUrl!,
             opacity,
             categories: isCategorical
-              ? ((effectiveCategories ?? item.categories) ?? undefined)
+              ? (effectiveCategories ?? item.categories ?? undefined)
               : undefined,
             tileCacheRef,
             datasetBounds: item.bounds,

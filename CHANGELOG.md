@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.19.0](https://github.com/aboydnw/cng-sandbox/compare/v1.18.0...v1.19.0) (2026-04-17)
+
+
+### Features
+
+* editable dataset title, categorical mark, per-category colors ([#234](https://github.com/aboydnw/cng-sandbox/issues/234)) ([d74b894](https://github.com/aboydnw/cng-sandbox/commit/d74b89472cded726bc7e1b43c27ed5816fd86911))
+* **frontend:** add client render path for COG connections ([#238](https://github.com/aboydnw/cng-sandbox/issues/238)) ([f8c3e83](https://github.com/aboydnw/cng-sandbox/commit/f8c3e83f288edcc5cabc43ac937dd90352843102))
+* **frontend:** categorical pixel inspector ([#240](https://github.com/aboydnw/cng-sandbox/issues/240)) ([b7a2108](https://github.com/aboydnw/cng-sandbox/commit/b7a210899a375879cdeb58a41366f6e7eda175b3))
+* **frontend:** default to client render mode when available ([#242](https://github.com/aboydnw/cng-sandbox/issues/242)) ([7fd74d7](https://github.com/aboydnw/cng-sandbox/commit/7fd74d712878729315c91d3ae416edebb4e64c4b))
+* **frontend:** scale client-side COG render via dtype-aware dispatch ([#233](https://github.com/aboydnw/cng-sandbox/issues/233)) ([6560442](https://github.com/aboydnw/cng-sandbox/commit/6560442433bd97c39995ee426f78c0da0f8051cb))
+* **frontend:** snap map as PNG on shared view ([#239](https://github.com/aboydnw/cng-sandbox/issues/239)) ([4fdfad9](https://github.com/aboydnw/cng-sandbox/commit/4fdfad98d46a2c59de484dabbcd26a0dce6cee23))
+
+
+### Bug Fixes
+
+* **ingestion:** add GDAL R2 endpoint env vars ([#244](https://github.com/aboydnw/cng-sandbox/issues/244)) ([547c515](https://github.com/aboydnw/cng-sandbox/commit/547c515f262fad1494d7c9dd079878fe20220937))
+* **security:** close public-share blockers from PR [#230](https://github.com/aboydnw/cng-sandbox/issues/230) audit ([#237](https://github.com/aboydnw/cng-sandbox/issues/237)) ([b7532df](https://github.com/aboydnw/cng-sandbox/commit/b7532df9b913cd0f3af65643363e627075922ce4))
+* support uint32 rasters in client render and mark-categorical ([#243](https://github.com/aboydnw/cng-sandbox/issues/243)) ([61608d4](https://github.com/aboydnw/cng-sandbox/commit/61608d445fb2bd2988703f0c6bcb0329abcdb697))
+
 ## [1.18.0](https://github.com/aboydnw/cng-sandbox/compare/v1.17.0...v1.18.0) (2026-04-16)
 
 

@@ -340,6 +340,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     rescaleMin: controls.rescaleMin,
     rescaleMax: controls.rescaleMax,
     colormapReversed: controls.colormapReversed,
+    effectiveCategories,
   });
 
   // --- Color scale for legend ---

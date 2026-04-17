@@ -187,25 +187,18 @@ async def create_connection(
 async def stream_connection_conversion(connection_id: str, request: Request):
     """SSE stream of connection conversion progress.
 
-    Access is gated by the same read policy as GET /connections/{id}.
-
-    Known limitation: browser EventSource cannot send custom headers, so the
-    x-workspace-id header is typically absent on direct browser subscriptions.
-    This means owners of a private (non-shared, non-story-referenced) connection
-    cannot monitor their own server-side GeoParquet conversion via this stream
-    without the connection being shared or referenced by a published story.
-    A cookie-based workspace auth or scoped access token would be more robust;
-    see CLAUDE.md for the broader auth-model tradeoffs.
+    Stream access is UUID-gated by design: browser EventSource cannot send
+    custom headers, so workspace auth is not enforced here. The endpoint only
+    emits conversion status events ({status, tile_url, error, feature_count})
+    and returns 404 when the row does not exist. The full connection row is
+    still protected by GET /api/connections/{id}.
     """
-    workspace_id = request.headers.get("x-workspace-id", "")
     # get_session() binds the session to request lifetime (closed before the generator
     # runs); open a short-lived gate session directly to avoid that.
     gate_session = request.app.state.db_session_factory()
     try:
         row = gate_session.get(ConnectionRow, connection_id)
-        if row is None or not sharing.can_read_connection(
-            gate_session, row, workspace_id
-        ):
+        if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
     finally:
         gate_session.close()

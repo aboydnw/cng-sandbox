@@ -93,11 +93,19 @@ def test_non_owner_cannot_share_connection(app, db_session):
     assert resp.status_code == 403
 
 
-def test_anonymous_cannot_open_private_connection_stream(app, db_session):
-    _make_connection(db_session, id="c1", workspace_id="ownerWSAA")
+def test_stream_accessible_without_workspace_auth(app, db_session):
+    # Browser EventSource can't send custom headers, so /stream is intentionally
+    # UUID-gated only. An anonymous client (no x-workspace-id) must be able to
+    # subscribe to a private connection's conversion status stream.
+    _make_connection(
+        db_session,
+        id="c1",
+        workspace_id="ownerWSAA",
+        conversion_status="ready",
+    )
     anon = TestClient(app)
-    resp = anon.get("/api/connections/c1/stream")
-    assert resp.status_code == 404
+    with anon.stream("GET", "/api/connections/c1/stream") as resp:
+        assert resp.status_code == 200
 
 
 def test_anonymous_can_stream_shared_connection(app, db_session):

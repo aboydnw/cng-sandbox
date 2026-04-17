@@ -57,7 +57,7 @@ async def proxy_resource(url: str, request: Request):
 
     safe_url = _sanitize_url_for_log(decoded)
 
-    client = httpx.AsyncClient(follow_redirects=True, timeout=30.0)
+    client = httpx.AsyncClient(follow_redirects=False, timeout=30.0)
     try:
         resp = await client.send(
             client.build_request("GET", decoded, headers=headers),
@@ -73,6 +73,12 @@ async def proxy_resource(url: str, request: Request):
         await client.aclose()
         logger.error("Upstream returned %d for %s", resp.status_code, safe_url)
         raise HTTPException(status_code=resp.status_code, detail="Upstream error")
+
+    if resp.status_code in range(300, 400):
+        await resp.aclose()
+        await client.aclose()
+        logger.warning("Upstream returned redirect %d for %s", resp.status_code, safe_url)
+        raise HTTPException(status_code=502, detail="Upstream redirects are not allowed")
 
     content_length = resp.headers.get("content-length")
     if content_length and int(content_length) > MAX_RESPONSE_BYTES:

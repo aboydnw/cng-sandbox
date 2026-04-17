@@ -71,3 +71,38 @@ def test_proxy_aborts_when_upstream_exceeds_byte_cap(client, monkeypatch):
     monkeypatch.setattr("src.routes.proxy.httpx.AsyncClient", FakeHttpxClient)
     resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
     assert resp.status_code == 413
+
+
+def test_proxy_does_not_follow_redirects(client, monkeypatch):
+    monkeypatch.setattr(
+        "src.routes.proxy.socket.getaddrinfo",
+        lambda *a, **kw: [(None, None, None, None, ("93.184.216.34", 0))],
+    )
+
+    class FakeRedirectResponse:
+        status_code = 301
+        headers = {"location": "https://169.254.169.254/latest/meta-data/"}
+
+        async def aiter_bytes(self, chunk_size=None):
+            return
+            yield
+
+        async def aclose(self):
+            pass
+
+    class FakeRedirectClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def build_request(self, method, url, headers=None):
+            return None
+
+        async def send(self, request, stream=False):
+            return FakeRedirectResponse()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr("src.routes.proxy.httpx.AsyncClient", FakeRedirectClient)
+    resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
+    assert resp.status_code == 502

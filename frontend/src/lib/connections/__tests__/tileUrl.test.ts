@@ -24,6 +24,7 @@ function makeConnection(overrides: Partial<Connection>): Connection {
     conversion_error: null,
     feature_count: null,
     file_size: null,
+    is_shared: false,
     ...overrides,
   };
 }

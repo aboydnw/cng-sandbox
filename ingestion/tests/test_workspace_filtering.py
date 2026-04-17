@@ -82,10 +82,9 @@ def test_list_datasets_no_header_returns_empty(client, seed_data):
     assert resp.json() == []
 
 
-def test_get_dataset_by_id_ignores_workspace(client, seed_data):
+def test_get_dataset_by_id_hides_private_from_other_workspace(client, seed_data):
     resp = client.get("/api/datasets/ds-b", headers={"X-Workspace-Id": "aaaaaaaa"})
-    assert resp.status_code == 200
-    assert resp.json()["id"] == "ds-b"
+    assert resp.status_code == 404
 
 
 def test_delete_dataset_wrong_workspace_returns_403(client, seed_data):

@@ -92,6 +92,11 @@ const MAX_CACHED_TILES = 256;
 
 // --- COG layer builder ---
 
+export function resolveCogUrl(cogUrl: string): string {
+  if (/^https?:\/\//i.test(cogUrl)) return cogUrl;
+  return new URL(cogUrl, window.location.origin).toString();
+}
+
 interface CogLayerOptions {
   cogUrl: string;
   opacity: number;
@@ -110,7 +115,7 @@ export function buildCogLayerPaletted({
   cogUrl,
   opacity,
 }: CogLayerPalettedOptions) {
-  const url = window.location.origin + cogUrl;
+  const url = resolveCogUrl(cogUrl);
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return [
     new COGLayer({
@@ -130,7 +135,7 @@ export function buildCogLayerContinuous({
   datasetBounds,
   tileCacheRef,
 }: CogLayerOptions) {
-  const url = window.location.origin + cogUrl;
+  const url = resolveCogUrl(cogUrl);
   const range = rasterMax - rasterMin || 1;
 
   const getTileData = async (

@@ -72,6 +72,7 @@ const MOCK_CONNECTION = {
   conversion_error: null,
   feature_count: null,
   file_size: null,
+  is_shared: false,
 };
 
 beforeEach(() => {

@@ -9,7 +9,7 @@ vi.mock("../../lib/layers/cogLayer", () => ({
 import { renderHook } from "@testing-library/react";
 import { useRef } from "react";
 import { useLayerBuilder } from "../useLayerBuilder";
-import type { MapItem, Dataset } from "../../types";
+import type { MapItem, Dataset, Connection } from "../../types";
 import type { TileCacheEntry } from "../../lib/layers";
 import {
   buildCogLayerContinuous,
@@ -169,6 +169,7 @@ describe("client-side COG render dispatch", () => {
       compression: null,
       is_mosaic: false,
       is_zero_copy: false,
+      is_shared: false,
       source_url: null,
       expires_at: null,
       ...overrides,
@@ -226,6 +227,91 @@ describe("client-side COG render dispatch", () => {
     });
 
     expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerPaletted).not.toHaveBeenCalled();
+  });
+});
+
+function makeConnectionItem(overrides: Partial<MapItem> = {}): MapItem {
+  const conn: Connection = {
+    id: "c1",
+    name: "c",
+    url: "https://example.com/file.tif",
+    connection_type: "cog",
+    bounds: [-10, -10, 10, 10],
+    min_zoom: null,
+    max_zoom: null,
+    tile_type: "raster",
+    band_count: 1,
+    rescale: "0,255",
+    workspace_id: null,
+    is_categorical: false,
+    categories: null,
+    tile_url: null,
+    render_path: null,
+    conversion_status: null,
+    conversion_error: null,
+    feature_count: null,
+    file_size: 10 * 1024 * 1024,
+    created_at: "2026-04-17T00:00:00Z",
+    is_shared: false,
+  };
+  return makeItem({
+    source: "connection",
+    dataType: "raster",
+    cogUrl: "https://example.com/file.tif",
+    bounds: [-10, -10, 10, 10],
+    rescale: "0,255",
+    connection: conn,
+    dataset: null,
+    ...overrides,
+  });
+}
+
+describe("useLayerBuilder — COG connection client render", () => {
+  beforeEach(() => {
+    vi.mocked(buildCogLayerContinuous).mockClear();
+    vi.mocked(buildCogLayerPaletted).mockClear();
+  });
+
+  it("dispatches non-categorical COG connection to continuous builder in client mode", () => {
+    renderBuilder({
+      item: makeConnectionItem(),
+      renderMode: "client",
+      canClientRender: true,
+    });
+    expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerPaletted).not.toHaveBeenCalled();
+    const call = vi.mocked(buildCogLayerContinuous).mock.calls[0][0];
+    expect(call.cogUrl).toBe("https://example.com/file.tif");
+    expect(call.rasterMin).toBe(0);
+    expect(call.rasterMax).toBe(255);
+  });
+
+  it("dispatches categorical COG connection to paletted builder in client mode", () => {
+    const item = makeConnectionItem({
+      isCategorical: true,
+      categories: [
+        { value: 1, color: "#ff0000", label: "A" },
+        { value: 2, color: "#00ff00", label: "B" },
+      ],
+    });
+    renderBuilder({
+      item,
+      renderMode: "client",
+      canClientRender: true,
+      isCategorical: true,
+    });
+    expect(buildCogLayerPaletted).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerContinuous).not.toHaveBeenCalled();
+  });
+
+  it("falls back to server tiles when canClientRender is false", () => {
+    renderBuilder({
+      item: makeConnectionItem(),
+      renderMode: "client",
+      canClientRender: false,
+    });
+    expect(buildCogLayerContinuous).not.toHaveBeenCalled();
     expect(buildCogLayerPaletted).not.toHaveBeenCalled();
   });
 });

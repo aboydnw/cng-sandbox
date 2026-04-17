@@ -137,6 +137,12 @@ export function useMapControls(
 
   const clientRenderCapLabel = formatBytes(clientRenderCapBytes);
 
+  const itemFileSize =
+    item?.dataset?.converted_file_size ?? item?.connection?.file_size ?? null;
+
+  const sizeUnknownBlocksClientRender =
+    item?.source === "connection" && itemFileSize == null;
+
   const canClientRender =
     !!item &&
     !item.isTemporal &&
@@ -144,14 +150,16 @@ export function useMapControls(
     !!item.bounds &&
     Math.abs(item.bounds[1]) < 85.05 &&
     Math.abs(item.bounds[3]) < 85.05 &&
-    (item.dataset?.converted_file_size ?? 0) <= clientRenderCapBytes;
+    !sizeUnknownBlocksClientRender &&
+    (itemFileSize ?? 0) <= clientRenderCapBytes;
 
-  const clientRenderDisabledReason =
-    item?.cogUrl &&
-    item?.dataset?.converted_file_size != null &&
-    item.dataset.converted_file_size > clientRenderCapBytes
-      ? `File exceeds ${clientRenderCapLabel} browser limit (${formatBytes(item.dataset.converted_file_size)})`
-      : null;
+  const clientRenderDisabledReason = item?.cogUrl
+    ? sizeUnknownBlocksClientRender
+      ? "File size unavailable; client render can't be enabled safely"
+      : itemFileSize != null && itemFileSize > clientRenderCapBytes
+        ? `File exceeds ${clientRenderCapLabel} browser limit (${formatBytes(itemFileSize)})`
+        : null
+    : null;
 
   return {
     opacity,

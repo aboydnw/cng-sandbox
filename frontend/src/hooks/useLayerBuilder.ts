@@ -14,6 +14,7 @@ import {
   arrowTableToGeoJSON,
 } from "../lib/layers";
 import { classifyCogRenderPath } from "../lib/layers/cogDtype";
+import { parseRescaleString } from "../lib/connections";
 
 interface UseLayerBuilderOptions {
   item: MapItem | null;
@@ -161,6 +162,28 @@ export function useLayerBuilder({
       const connType = item.connection.connection_type;
 
       if (connType === "cog") {
+        if (
+          renderMode === "client" &&
+          canClientRender &&
+          item.cogUrl &&
+          item.bounds
+        ) {
+          if (isCategorical) {
+            return buildCogLayerPaletted({
+              cogUrl: item.cogUrl,
+              opacity,
+            });
+          }
+          const parsed = parseRescaleString(item.rescale);
+          return buildCogLayerContinuous({
+            cogUrl: item.cogUrl,
+            opacity,
+            rasterMin: parsed?.min ?? item.rasterMin ?? 0,
+            rasterMax: parsed?.max ?? item.rasterMax ?? 1,
+            datasetBounds: item.bounds,
+            tileCacheRef,
+          });
+        }
         return buildRasterTileLayers({
           tileUrl,
           opacity,

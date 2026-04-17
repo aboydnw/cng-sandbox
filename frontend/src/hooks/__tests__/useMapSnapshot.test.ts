@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useMapSnapshot } from "../useMapSnapshot";
-import type { SnapshotMapRefValue, SnapshotDeckRefValue } from "../useMapSnapshot";
+import type {
+  SnapshotMapRefValue,
+  SnapshotDeckRefValue,
+} from "../useMapSnapshot";
 
 vi.mock("html-to-image", () => ({
   toCanvas: vi.fn(async () => {
@@ -45,7 +48,14 @@ function makeRefs() {
 
   const containerDiv = document.createElement("div");
   Object.defineProperty(containerDiv, "getBoundingClientRect", {
-    value: () => ({ width: 800, height: 600, left: 0, top: 0, right: 800, bottom: 600 }),
+    value: () => ({
+      width: 800,
+      height: 600,
+      left: 0,
+      top: 0,
+      right: 800,
+      bottom: 600,
+    }),
   });
   document.body.appendChild(containerDiv);
   const containerRef = {
@@ -59,7 +69,15 @@ function makeRefs() {
   };
   cleanups.push(cleanup);
 
-  return { mapRef, deckRef, containerRef, triggerRepaint, redraw, basemapCanvas, deckCanvas };
+  return {
+    mapRef,
+    deckRef,
+    containerRef,
+    triggerRepaint,
+    redraw,
+    basemapCanvas,
+    deckCanvas,
+  };
 }
 
 describe("useMapSnapshot", () => {
@@ -72,8 +90,14 @@ describe("useMapSnapshot", () => {
     createObjectURL = vi.fn(() => "blob:stub");
     revokeObjectURL = vi.fn();
     HTMLAnchorElement.prototype.click = anchorClick;
-    Object.defineProperty(URL, "createObjectURL", { value: createObjectURL, configurable: true });
-    Object.defineProperty(URL, "revokeObjectURL", { value: revokeObjectURL, configurable: true });
+    Object.defineProperty(URL, "createObjectURL", {
+      value: createObjectURL,
+      configurable: true,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      value: revokeObjectURL,
+      configurable: true,
+    });
 
     HTMLCanvasElement.prototype.toBlob = function (cb: BlobCallback) {
       cb(new Blob(["x"], { type: "image/png" }));
@@ -111,7 +135,9 @@ describe("useMapSnapshot", () => {
   it("calls triggerRepaint and deck.redraw before composing canvases", async () => {
     const refs = makeRefs();
     const drawImage = vi.fn();
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ drawImage })) as unknown as HTMLCanvasElement["getContext"];
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+      drawImage,
+    })) as unknown as HTMLCanvasElement["getContext"];
 
     const { result } = renderHook(() =>
       useMapSnapshot({ ...refs, filename: "x.png" })
@@ -177,7 +203,14 @@ describe("useMapSnapshot", () => {
     const overlay = document.createElement("div");
     overlay.setAttribute("data-snapshot-overlay", "true");
     Object.defineProperty(overlay, "getBoundingClientRect", {
-      value: () => ({ width: 100, height: 40, left: 10, top: 10, right: 110, bottom: 50 }),
+      value: () => ({
+        width: 100,
+        height: 40,
+        left: 10,
+        top: 10,
+        right: 110,
+        bottom: 50,
+      }),
     });
     refs.containerRef.current!.appendChild(overlay);
 

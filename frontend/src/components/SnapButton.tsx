@@ -21,7 +21,11 @@ export function SnapButton({ onSnap, isCapturing, error }: SnapButtonProps) {
       onClick={onSnap}
       disabled={isCapturing}
     >
-      {isCapturing ? <Spinner size="sm" /> : <Camera size={18} weight="regular" />}
+      {isCapturing ? (
+        <Spinner size="sm" />
+      ) : (
+        <Camera size={18} weight="regular" />
+      )}
     </IconButton>
   );
 }

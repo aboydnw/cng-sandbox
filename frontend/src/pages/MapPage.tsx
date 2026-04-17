@@ -509,7 +509,12 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               {controls.isCategorical &&
                 effectiveCategories &&
                 effectiveCategories.length > 0 && (
-                  <Box position="absolute" bottom={3} left={3} data-snapshot-overlay>
+                  <Box
+                    position="absolute"
+                    bottom={3}
+                    left={3}
+                    data-snapshot-overlay
+                  >
                     <MapLegend
                       layers={[
                         {
@@ -529,7 +534,12 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               {!controls.isCategorical &&
                 controls.showingColormap &&
                 controls.renderMode !== "client" && (
-                  <Box position="absolute" bottom={3} left={3} data-snapshot-overlay>
+                  <Box
+                    position="absolute"
+                    bottom={3}
+                    left={3}
+                    data-snapshot-overlay
+                  >
                     <MapLegend
                       layers={[
                         {
@@ -557,13 +567,15 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                     onPrev={() => {
                       if (animation.activeIndex > 0) {
                         animation.setActiveIndex(animation.activeIndex - 1);
-                        if (animation.isAnimateMode) animation.exitAnimateMode();
+                        if (animation.isAnimateMode)
+                          animation.exitAnimateMode();
                       }
                     }}
                     onNext={() => {
                       if (animation.activeIndex < ds.timesteps.length - 1) {
                         animation.setActiveIndex(animation.activeIndex + 1);
-                        if (animation.isAnimateMode) animation.exitAnimateMode();
+                        if (animation.isAnimateMode)
+                          animation.exitAnimateMode();
                       }
                     }}
                     isPlaying={animation.isPlaying}

@@ -32,8 +32,8 @@ describe("buildSnapshotFilename", () => {
   });
 
   it("includes timestep date even when title falls back", () => {
-    expect(
-      buildSnapshotFilename({ timestepIso: "2024-03-15T00:00:00Z" })
-    ).toBe("map-snapshot-2024-03-15.png");
+    expect(buildSnapshotFilename({ timestepIso: "2024-03-15T00:00:00Z" })).toBe(
+      "map-snapshot-2024-03-15.png"
+    );
   });
 });

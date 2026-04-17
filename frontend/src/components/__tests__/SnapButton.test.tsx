@@ -4,9 +4,7 @@ import { describe, it, expect, vi } from "vitest";
 import { SnapButton } from "../SnapButton";
 
 function renderWithChakra(ui: React.ReactElement) {
-  return render(
-    <ChakraProvider value={defaultSystem}>{ui}</ChakraProvider>
-  );
+  return render(<ChakraProvider value={defaultSystem}>{ui}</ChakraProvider>);
 }
 
 describe("SnapButton", () => {

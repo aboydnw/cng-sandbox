@@ -25,6 +25,8 @@ interface UnifiedMapProps {
   interactive?: boolean;
   onTransitionEnd?: () => void;
   hideBasemapPicker?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mapRef?: React.Ref<any>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +46,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     interactive = true,
     onTransitionEnd,
     hideBasemapPicker = false,
+    mapRef,
   },
   ref
 ) {
@@ -112,12 +115,14 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         getTooltip={getTooltip}
       >
         <Map
+          ref={mapRef}
           mapStyle={BASEMAPS[basemap]}
           longitude={camera.longitude}
           latitude={camera.latitude}
           zoom={camera.zoom}
           bearing={camera.bearing}
           pitch={camera.pitch}
+          preserveDrawingBuffer
         />
       </DeckGL>
 

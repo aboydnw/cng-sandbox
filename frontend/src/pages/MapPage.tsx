@@ -196,6 +196,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
 
   const speedMs = { 0.5: 1600, 1: 800, 2: 400 }[animation.speed] ?? 800;
   const deckRef = useRef(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
   const exportHook = useTemporalExport(
     deckRef,
     ds?.timesteps ?? [],
@@ -458,6 +460,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
             )}
             <UnifiedMap
               ref={deckRef}
+              mapRef={mapRef}
               camera={camera}
               onCameraChange={setCamera}
               layers={layers}

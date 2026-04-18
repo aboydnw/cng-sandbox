@@ -269,7 +269,7 @@ cd ingestion && uv run pytest -v
 **Remote data discovery:**
 - `POST /api/discover` — Discover geospatial files at a URL or S3 prefix
 - `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset
-- `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ghrsst-mur-v2-2024`, `gebco-2024`, `lg-land-carbon`)
+- `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ghrsst-mur-v2`, `gebco-2024`, `lg-land-carbon`)
 
 **Other:**
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)

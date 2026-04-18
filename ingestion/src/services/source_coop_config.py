@@ -92,6 +92,17 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
         enumerator_args={"filenames": ["deforest_carbon_100m_cog.tif"]},
         is_temporal=False,
     ),
+    "vida/google-microsoft-osm-open-buildings": SourceCoopProduct(
+        slug="vida/google-microsoft-osm-open-buildings",
+        name="Global Buildings (VIDA)",
+        description=(
+            "Combined Google, Microsoft, and OpenStreetMap building "
+            "footprints worldwide, published as a single PMTiles archive."
+        ),
+        listing_url="https://data.source.coop/vida/google-microsoft-osm-open-buildings/",
+        kind="pmtiles",
+        pmtiles_url="https://data.source.coop/vida/google-microsoft-osm-open-buildings/pmtiles/goog_msft_osm.pmtiles",
+    ),
 }
 
 

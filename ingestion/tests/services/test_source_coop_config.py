@@ -7,13 +7,14 @@ from src.services.source_coop_config import (
 )
 
 
-def test_list_products_returns_three_v1_entries():
+def test_list_products_returns_four_v1_entries():
     products = list_products()
     slugs = {p.slug for p in products}
     assert slugs == {
         "ausantarctic/ghrsst-mur-v2",
         "alexgleith/gebco-2024",
         "vizzuality/lg-land-carbon-data",
+        "vida/google-microsoft-osm-open-buildings",
     }
 
 
@@ -109,4 +110,13 @@ def test_pmtiles_product_accepts_valid_shape():
     assert p.kind == "pmtiles"
     assert p.pmtiles_url == "https://data.source.coop/test/good/x.pmtiles"
     assert p.enumerator == ""
+    assert p.is_temporal is False
+
+
+def test_vida_buildings_entry_is_pmtiles():
+    p = get_product("vida/google-microsoft-osm-open-buildings")
+    assert p.kind == "pmtiles"
+    assert p.pmtiles_url
+    assert p.pmtiles_url.startswith("https://data.source.coop/vida/google-microsoft-osm-open-buildings/")
+    assert p.pmtiles_url.endswith(".pmtiles")
     assert p.is_temporal is False

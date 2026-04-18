@@ -89,5 +89,8 @@ async def read_pmtiles_header(url: str) -> PMTilesHeader:
     async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
         resp = await client.get(url, headers=headers)
         resp.raise_for_status()
-        body = resp.content
+        # Truncate defensively in case the server ignored the Range header and
+        # streamed more than the fixed 127-byte header. The parser only reads
+        # the first HEADER_LEN bytes anyway.
+        body = resp.content[:HEADER_LEN]
     return parse_pmtiles_header(body)

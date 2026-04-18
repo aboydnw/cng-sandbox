@@ -171,3 +171,40 @@ def test_missing_example_products_returns_unregistered():
 
     missing_slugs = {p.slug for p in missing_example_products(factory)}
     assert "alexgleith/gebco-2024" not in missing_slugs
+
+
+def test_register_example_datasets_dispatches_pmtiles():
+    _, factory = _make_db()
+
+    from src.services.source_coop_config import SourceCoopProduct
+
+    fake_product = SourceCoopProduct(
+        slug="test/pmt",
+        name="test pmtiles",
+        description="d",
+        listing_url="https://data.source.coop/test/pmt/",
+        kind="pmtiles",
+        pmtiles_url="https://data.source.coop/test/pmt/x.pmtiles",
+    )
+
+    pmtiles_register_mock = AsyncMock(return_value="pmt-id")
+
+    with (
+        patch(
+            "src.services.example_datasets.ordered_products",
+            return_value=[fake_product],
+        ),
+        patch(
+            "src.services.example_datasets.register_pmtiles_example",
+            pmtiles_register_mock,
+        ),
+    ):
+        asyncio.run(
+            register_example_datasets(
+                db_session_factory=factory,
+                only_slugs={"test/pmt"},
+            )
+        )
+
+    pmtiles_register_mock.assert_awaited_once()
+    assert pmtiles_register_mock.await_args.args[0].slug == "test/pmt"

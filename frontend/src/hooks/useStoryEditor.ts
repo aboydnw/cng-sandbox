@@ -9,6 +9,7 @@ import {
   cameraFromBounds,
   buildRasterTileLayers,
   buildVectorLayer,
+  isPMTilesDataset,
 } from "../lib/layers";
 import { buildConnectionTileUrl } from "../lib/connections";
 import {
@@ -502,7 +503,7 @@ export function useStoryEditor() {
     return [
       buildVectorLayer({
         tileUrl: ds.tile_url,
-        isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
+        isPMTiles: isPMTilesDataset(ds),
         opacity: lc.opacity,
         minZoom: ds.min_zoom ?? undefined,
         maxZoom: ds.max_zoom ?? undefined,

@@ -1,4 +1,5 @@
 import type { Dataset } from "../../types";
+import { isPMTilesDataset } from "../../lib/layers/isPMTiles";
 import { formatBytes as formatBytesRaw } from "../../utils/format";
 import type {
   StepContent,
@@ -11,7 +12,7 @@ export type PipelineType = "raster" | "vector-postgis" | "vector-pmtiles";
 
 export function getPipelineType(dataset: Dataset): PipelineType {
   if (dataset.dataset_type === "raster") return "raster";
-  if (dataset.tile_url?.startsWith("/pmtiles/")) return "vector-pmtiles";
+  if (isPMTilesDataset(dataset)) return "vector-pmtiles";
   return "vector-postgis";
 }
 

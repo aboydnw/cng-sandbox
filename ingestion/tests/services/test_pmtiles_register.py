@@ -77,10 +77,13 @@ def test_register_pmtiles_example_persists_dataset_row():
 def test_register_pmtiles_example_raises_when_header_probe_fails():
     factory = _make_db()
 
-    with patch(
-        "src.services.pmtiles_register.read_pmtiles_header",
-        AsyncMock(side_effect=PMTilesHeaderError("bad magic")),
-    ), pytest.raises(PMTilesRegistrationError):
+    with (
+        patch(
+            "src.services.pmtiles_register.read_pmtiles_header",
+            AsyncMock(side_effect=PMTilesHeaderError("bad magic")),
+        ),
+        pytest.raises(PMTilesRegistrationError),
+    ):
         asyncio.run(register_pmtiles_example(_product(), factory))
 
 

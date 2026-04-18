@@ -117,6 +117,8 @@ def test_vida_buildings_entry_is_pmtiles():
     p = get_product("vida/google-microsoft-osm-open-buildings")
     assert p.kind == "pmtiles"
     assert p.pmtiles_url
-    assert p.pmtiles_url.startswith("https://data.source.coop/vida/google-microsoft-osm-open-buildings/")
+    assert p.pmtiles_url.startswith(
+        "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
+    )
     assert p.pmtiles_url.endswith(".pmtiles")
     assert p.is_temporal is False

@@ -37,9 +37,7 @@ class PMTilesHeader:
 
 def parse_pmtiles_header(buf: bytes) -> PMTilesHeader:
     if len(buf) < HEADER_LEN:
-        raise PMTilesHeaderError(
-            f"header length {len(buf)} < required {HEADER_LEN}"
-        )
+        raise PMTilesHeaderError(f"header length {len(buf)} < required {HEADER_LEN}")
     if buf[0:7] != MAGIC:
         raise PMTilesHeaderError("bad magic bytes (not a PMTiles file)")
     version = buf[7]

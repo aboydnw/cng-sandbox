@@ -27,30 +27,20 @@ class SourceCoopProduct:
     def __post_init__(self) -> None:
         if self.kind == "pmtiles":
             if not self.pmtiles_url:
-                raise ValueError(
-                    f"{self.slug}: pmtiles kind requires pmtiles_url"
-                )
+                raise ValueError(f"{self.slug}: pmtiles kind requires pmtiles_url")
             if self.enumerator:
-                raise ValueError(
-                    f"{self.slug}: pmtiles kind must not set enumerator"
-                )
+                raise ValueError(f"{self.slug}: pmtiles kind must not set enumerator")
             if self.enumerator_args:
                 raise ValueError(
                     f"{self.slug}: pmtiles kind must not set enumerator_args"
                 )
             if self.is_temporal:
-                raise ValueError(
-                    f"{self.slug}: pmtiles kind must not set is_temporal"
-                )
+                raise ValueError(f"{self.slug}: pmtiles kind must not set is_temporal")
         elif self.kind == "mosaic":
             if not self.enumerator:
-                raise ValueError(
-                    f"{self.slug}: mosaic kind requires enumerator"
-                )
+                raise ValueError(f"{self.slug}: mosaic kind requires enumerator")
             if self.pmtiles_url:
-                raise ValueError(
-                    f"{self.slug}: mosaic kind must not set pmtiles_url"
-                )
+                raise ValueError(f"{self.slug}: mosaic kind must not set pmtiles_url")
 
 
 _PRODUCTS: dict[str, SourceCoopProduct] = {

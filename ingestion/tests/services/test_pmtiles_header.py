@@ -137,6 +137,7 @@ def test_read_pmtiles_header_issues_range_request():
 
     with patch("src.services.pmtiles_header.httpx.AsyncClient", FakeClient):
         import asyncio
+
         parsed = asyncio.run(read_pmtiles_header("https://example/x.pmtiles"))
 
     assert parsed.tile_type == 1
@@ -159,6 +160,7 @@ def test_read_pmtiles_header_stops_after_header_len_when_server_ignores_range():
 
     with patch("src.services.pmtiles_header.httpx.AsyncClient", FakeClient):
         import asyncio
+
         parsed = asyncio.run(read_pmtiles_header("https://example/x.pmtiles"))
 
     assert parsed.tile_type == 1

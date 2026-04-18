@@ -135,6 +135,7 @@ export function buildCogLayerPaletted({
         id: "direct-cog-layer-paletted",
         geotiff: url,
         opacity,
+        maxError: 0.03,
       } as any),
     ];
     /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -231,6 +232,7 @@ export function buildCogLayerPaletted({
       opacity,
       getTileData,
       renderTile,
+      maxError: 0.03,
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -348,6 +350,7 @@ export function buildCogLayerContinuous({
       opacity,
       getTileData,
       renderTile,
+      maxError: 0.03,
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */

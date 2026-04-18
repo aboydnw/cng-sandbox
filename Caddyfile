@@ -1,4 +1,18 @@
 {$SITE_ADDRESS} {
+	# Baseline security headers applied to every response. HSTS is safe to
+	# enable globally because Caddy auto-redirects HTTP→HTTPS. The CSP is
+	# permissive on connect-src/img-src because the app fetches user-supplied
+	# tile URLs (XYZ, COG, PMTiles, GeoParquet) and basemap styles from
+	# basemaps.cartocdn.com; it locks down script-src/object-src/frame-ancestors
+	# to defend against XSS and clickjacking. wasm-unsafe-eval is required by
+	# DuckDB-WASM (GeoParquet client renderer).
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+	}
+
 	# Data-serving paths: proxy to R2 public URL. Public — range requests
 	# from PMTiles / DuckDB WASM can't carry Basic Auth credentials.
 	handle /storage/* {
@@ -25,23 +39,26 @@
 
 	# Tile endpoints — public. Shared /map and /story views need to fetch
 	# tiles without auth. Write operations aren't exposed here (GET-only).
+	# Tiles are immutable per URL (URL changes when the underlying dataset
+	# changes via STAC item id or query params), so a 1-hour browser cache
+	# is safe and avoids burning Hetzner egress on repeat visits.
 	handle /cog/* {
 		reverse_proxy cog-tiler:80 {
-			header_down Cache-Control "no-store"
+			header_down Cache-Control "public, max-age=3600"
 		}
 	}
 
 	handle /raster/* {
 		uri strip_prefix /raster
 		reverse_proxy raster-tiler:80 {
-			header_down Cache-Control "no-store"
+			header_down Cache-Control "public, max-age=3600"
 		}
 	}
 
 	handle /vector/* {
 		uri strip_prefix /vector
 		reverse_proxy vector-tiler:80 {
-			header_down Cache-Control "no-store"
+			header_down Cache-Control "public, max-age=3600"
 		}
 	}
 

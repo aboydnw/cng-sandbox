@@ -111,6 +111,8 @@ docker compose --profile prod up -d --build
 - `docker compose up` (without `--profile prod`) still runs local dev without Caddy
 - Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
+- Caddy applies baseline security headers to every response (HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`). The CSP allows `'wasm-unsafe-eval'` for DuckDB-WASM and is permissive on `connect-src`/`img-src` to accommodate user-supplied tile URLs and the CARTO basemap
+- Tile responses (`/cog/*`, `/raster/*`, `/vector/*`) are served with `Cache-Control: public, max-age=3600`. Tile URLs are immutable per dataset (a change to the underlying data produces a new STAC item id or query param), so a 1-hour browser cache is safe and reduces Hetzner egress
 
 ## CI/CD
 

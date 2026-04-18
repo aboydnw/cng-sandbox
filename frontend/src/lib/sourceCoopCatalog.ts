@@ -40,6 +40,15 @@ export const sourceCoopCatalog: SourceCoopProduct[] = [
     tags: ["carbon", "deforestation", "climate"],
     isTemporal: false,
   },
+  {
+    slug: "vida/google-microsoft-osm-open-buildings",
+    name: "Global Buildings (VIDA)",
+    description:
+      "Combined Google, Microsoft, and OpenStreetMap building footprints worldwide, served as PMTiles.",
+    thumbnail: "/thumbnails/vida-buildings.jpg",
+    tags: ["buildings", "global", "vector"],
+    isTemporal: false,
+  },
 ];
 
 export function getProduct(slug: string): SourceCoopProduct {

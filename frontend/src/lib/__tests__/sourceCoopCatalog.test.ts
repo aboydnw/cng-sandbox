@@ -2,16 +2,22 @@ import { describe, expect, it } from "vitest";
 import { sourceCoopCatalog, getProduct } from "../sourceCoopCatalog";
 
 describe("sourceCoopCatalog", () => {
-  it("has exactly three v1 entries", () => {
-    expect(sourceCoopCatalog).toHaveLength(3);
+  it("has exactly four v1 entries", () => {
+    expect(sourceCoopCatalog).toHaveLength(4);
     const slugs = sourceCoopCatalog.map((p) => p.slug);
     expect(slugs).toEqual(
       expect.arrayContaining([
         "ausantarctic/ghrsst-mur-v2",
         "alexgleith/gebco-2024",
         "vizzuality/lg-land-carbon-data",
+        "vida/google-microsoft-osm-open-buildings",
       ])
     );
+  });
+
+  it("includes VIDA buildings", () => {
+    const slugs = sourceCoopCatalog.map((p) => p.slug);
+    expect(slugs).toContain("vida/google-microsoft-osm-open-buildings");
   });
 
   it("every product has a name, description, thumbnail, and tags", () => {

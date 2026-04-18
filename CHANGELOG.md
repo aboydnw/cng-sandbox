@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.20.0](https://github.com/aboydnw/cng-sandbox/compare/v1.19.0...v1.20.0) (2026-04-18)
+
+
+### Features
+
+* **frontend:** client rendering in story reader and editor ([#252](https://github.com/aboydnw/cng-sandbox/issues/252)) ([e10badb](https://github.com/aboydnw/cng-sandbox/commit/e10badb6aee48eb848fe86bfe1c438428cab8215))
+* **frontend:** source.coop-styled /discover catalog demo ([#248](https://github.com/aboydnw/cng-sandbox/issues/248)) ([e966506](https://github.com/aboydnw/cng-sandbox/commit/e9665065731b50a50b12553e68c48b50859e782e))
+* register VIDA Global Buildings as pmtiles example dataset ([#202](https://github.com/aboydnw/cng-sandbox/issues/202)) ([#251](https://github.com/aboydnw/cng-sandbox/issues/251)) ([221c009](https://github.com/aboydnw/cng-sandbox/commit/221c0092f062dabbbe9e1c1d79b00f2ad577f0f8))
+
+
+### Bug Fixes
+
+* **caddy:** security headers + cacheable tile responses ([#232](https://github.com/aboydnw/cng-sandbox/issues/232) follow-up) ([#246](https://github.com/aboydnw/cng-sandbox/issues/246)) ([fedacac](https://github.com/aboydnw/cng-sandbox/commit/fedacaca35b15c716cb8ea0e516b0c4b979c04be))
+* **frontend:** tighten COG reprojection mesh at low zoom ([#245](https://github.com/aboydnw/cng-sandbox/issues/245)) ([61aef44](https://github.com/aboydnw/cng-sandbox/commit/61aef445a01cf1c7169e2dfa993b94ffe686ecc7))
+* **ingestion:** register full GHRSST temporal range ([#198](https://github.com/aboydnw/cng-sandbox/issues/198)) ([#249](https://github.com/aboydnw/cng-sandbox/issues/249)) ([8088de8](https://github.com/aboydnw/cng-sandbox/commit/8088de856ff32e4f51837e312a7851aa52e3bd51))
+* **mcp:** correct response unwrap + forward workspace header ([#250](https://github.com/aboydnw/cng-sandbox/issues/250)) ([bdadbe6](https://github.com/aboydnw/cng-sandbox/commit/bdadbe6778e50b435f784180339a729ef16c3751))
+
 ## [1.19.0](https://github.com/aboydnw/cng-sandbox/compare/v1.18.0...v1.19.0) (2026-04-17)
 
 

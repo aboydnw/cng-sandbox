@@ -287,6 +287,20 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(call.rasterMax).toBe(255);
   });
 
+  it("forwards override rescaleMin/Max to continuous builder on client-render path", () => {
+    renderBuilder({
+      item: makeConnectionItem(),
+      renderMode: "client",
+      canClientRender: true,
+      rescaleMin: 10,
+      rescaleMax: 200,
+    });
+    expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
+    const call = vi.mocked(buildCogLayerContinuous).mock.calls[0][0];
+    expect(call.rasterMin).toBe(10);
+    expect(call.rasterMax).toBe(200);
+  });
+
   it("dispatches categorical COG connection to paletted builder in client mode", () => {
     const item = makeConnectionItem({
       dtype: "uint8",

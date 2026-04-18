@@ -84,6 +84,19 @@ def test_pmtiles_product_rejects_enumerator_fields():
         )
 
 
+def test_mosaic_product_rejects_pmtiles_url():
+    with pytest.raises(ValueError):
+        SourceCoopProduct(
+            slug="test/bad",
+            name="bad",
+            description="bad",
+            listing_url="https://data.source.coop/test/bad/",
+            kind="mosaic",
+            enumerator="path_listing",
+            pmtiles_url="https://data.source.coop/test/bad/x.pmtiles",
+        )
+
+
 def test_pmtiles_product_accepts_valid_shape():
     p = SourceCoopProduct(
         slug="test/good",

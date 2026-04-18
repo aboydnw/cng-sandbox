@@ -15,9 +15,12 @@ async def read_story_tool(client: SandboxAPIClient, story_id: str) -> TextConten
     if chapters:
         lines.append("## Chapters\n")
         for i, ch in enumerate(chapters, 1):
+            lc = ch.get("layer_config") or {}
+            layer_ref = lc.get("dataset_id") or lc.get("connection_id") or "unknown"
+            narrative = ch.get("narrative") or ch.get("text") or ""
             lines.append(f"### {i}. {ch.get('title', 'Untitled Chapter')}")
-            lines.append(f"- **Dataset**: {ch.get('dataset_id', 'unknown')}")
-            lines.append(f"- **Text**: {ch.get('text', '')}\n")
+            lines.append(f"- **Layer**: {layer_ref}")
+            lines.append(f"- **Narrative**: {narrative}\n")
     return TextContent(type="text", text="\n".join(lines))
 
 

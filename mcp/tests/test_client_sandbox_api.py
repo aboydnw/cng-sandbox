@@ -14,14 +14,31 @@ def _make_response(json_data):
 
 @pytest.mark.asyncio
 async def test_get_datasets_returns_list(sandbox_api_url, mock_http_client):
-    mock_http_client.get = AsyncMock(return_value=_make_response({
-        "datasets": [{"id": "ds_1", "filename": "data.tif", "dataset_type": "raster", "is_example": False}]
-    }))
-    client = SandboxAPIClient(api_url=sandbox_api_url, http_client=mock_http_client)
+    mock_http_client.get = AsyncMock(return_value=_make_response(
+        [{"id": "ds_1", "filename": "data.tif", "dataset_type": "raster", "is_example": False}]
+    ))
+    client = SandboxAPIClient(
+        api_url=sandbox_api_url, workspace_id="ws12345x", http_client=mock_http_client
+    )
     datasets = await client.get_datasets()
     assert len(datasets) == 1
     assert datasets[0]["id"] == "ds_1"
-    mock_http_client.get.assert_called_once_with("http://localhost:8086/api/datasets")
+    mock_http_client.get.assert_called_once_with(
+        "http://localhost:8086/api/datasets",
+        headers={"X-Workspace-Id": "ws12345x"},
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_datasets_without_workspace_sends_no_header(
+    sandbox_api_url, mock_http_client
+):
+    mock_http_client.get = AsyncMock(return_value=_make_response([]))
+    client = SandboxAPIClient(api_url=sandbox_api_url, http_client=mock_http_client)
+    await client.get_datasets()
+    mock_http_client.get.assert_called_once_with(
+        "http://localhost:8086/api/datasets", headers={}
+    )
 
 
 @pytest.mark.asyncio
@@ -30,7 +47,9 @@ async def test_get_story_by_id(sandbox_api_url, mock_http_client, sample_story):
     client = SandboxAPIClient(api_url=sandbox_api_url, http_client=mock_http_client)
     story = await client.get_story(story_id="story_xyz789")
     assert story["id"] == "story_xyz789"
-    mock_http_client.get.assert_called_once_with("http://localhost:8086/api/stories/story_xyz789")
+    mock_http_client.get.assert_called_once_with(
+        "http://localhost:8086/api/stories/story_xyz789", headers={}
+    )
 
 
 @pytest.mark.asyncio
@@ -52,13 +71,19 @@ async def test_update_story(sandbox_api_url, mock_http_client):
 
 @pytest.mark.asyncio
 async def test_get_connections(sandbox_api_url, mock_http_client):
-    mock_http_client.get = AsyncMock(return_value=_make_response({
-        "connections": [{"id": "conn_1", "name": "Test", "url": "https://ex.com/{z}/{x}/{y}.tif", "connection_type": "cog"}]
-    }))
-    client = SandboxAPIClient(api_url=sandbox_api_url, http_client=mock_http_client)
+    mock_http_client.get = AsyncMock(return_value=_make_response(
+        [{"id": "conn_1", "name": "Test", "url": "https://ex.com/{z}/{x}/{y}.tif", "connection_type": "cog"}]
+    ))
+    client = SandboxAPIClient(
+        api_url=sandbox_api_url, workspace_id="ws87654x", http_client=mock_http_client
+    )
     connections = await client.get_connections()
     assert len(connections) == 1
     assert connections[0]["id"] == "conn_1"
+    mock_http_client.get.assert_called_once_with(
+        "http://localhost:8086/api/connections",
+        headers={"X-Workspace-Id": "ws87654x"},
+    )
 
 
 @pytest.mark.asyncio

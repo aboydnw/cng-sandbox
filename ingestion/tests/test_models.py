@@ -207,6 +207,14 @@ def test_dataset_is_example_set_true():
     assert d.is_example is True
 
 
+def test_format_pair_pmtiles_is_vector():
+    assert FormatPair.PMTILES.dataset_type == DatasetType.VECTOR
+
+
+def test_format_pair_from_extension_pmtiles():
+    assert FormatPair.from_extension(".pmtiles") == FormatPair.PMTILES
+
+
 def test_dataset_row_has_is_shared_default_false(db_session):
     from src.models.dataset import DatasetRow
 

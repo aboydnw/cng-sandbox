@@ -12,6 +12,15 @@ MAGIC = b"PMTiles"
 SUPPORTED_VERSION = 3
 TILE_TYPE_MVT = 1
 
+# PMTiles v3 fixed-header byte offsets (see https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md).
+TILE_TYPE_OFFSET = 99
+MIN_ZOOM_OFFSET = 100
+MAX_ZOOM_OFFSET = 101
+MIN_LON_E7_OFFSET = 102
+MIN_LAT_E7_OFFSET = 106
+MAX_LON_E7_OFFSET = 110
+MAX_LAT_E7_OFFSET = 114
+
 
 class PMTilesHeaderError(Exception):
     pass
@@ -38,22 +47,22 @@ def parse_pmtiles_header(buf: bytes) -> PMTilesHeader:
         raise PMTilesHeaderError(
             f"unsupported PMTiles version {version}; only {SUPPORTED_VERSION} is supported"
         )
-    tile_type = buf[99]
+    tile_type = buf[TILE_TYPE_OFFSET]
     if tile_type != TILE_TYPE_MVT:
         raise PMTilesHeaderError(
             f"tile_type {tile_type} is not MVT (1); "
             "only vector PMTiles are supported as reference datasets"
         )
-    min_zoom = buf[100]
-    max_zoom = buf[101]
+    min_zoom = buf[MIN_ZOOM_OFFSET]
+    max_zoom = buf[MAX_ZOOM_OFFSET]
     if min_zoom > max_zoom:
         raise PMTilesHeaderError(
             f"min_zoom ({min_zoom}) must be <= max_zoom ({max_zoom})"
         )
-    min_lon_e7 = struct.unpack_from("<i", buf, 102)[0]
-    min_lat_e7 = struct.unpack_from("<i", buf, 106)[0]
-    max_lon_e7 = struct.unpack_from("<i", buf, 110)[0]
-    max_lat_e7 = struct.unpack_from("<i", buf, 114)[0]
+    min_lon_e7 = struct.unpack_from("<i", buf, MIN_LON_E7_OFFSET)[0]
+    min_lat_e7 = struct.unpack_from("<i", buf, MIN_LAT_E7_OFFSET)[0]
+    max_lon_e7 = struct.unpack_from("<i", buf, MAX_LON_E7_OFFSET)[0]
+    max_lat_e7 = struct.unpack_from("<i", buf, MAX_LAT_E7_OFFSET)[0]
     bounds = (
         min_lon_e7 / 1e7,
         min_lat_e7 / 1e7,

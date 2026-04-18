@@ -4,6 +4,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from src.services.pmtiles_header import (
+    MAX_LAT_E7_OFFSET,
+    MAX_LON_E7_OFFSET,
+    MAX_ZOOM_OFFSET,
+    MIN_LAT_E7_OFFSET,
+    MIN_LON_E7_OFFSET,
+    MIN_ZOOM_OFFSET,
+    TILE_TYPE_OFFSET,
     PMTilesHeader,
     PMTilesHeaderError,
     parse_pmtiles_header,
@@ -24,13 +31,13 @@ def _make_header(
     buf = bytearray(127)
     buf[0:7] = b"PMTiles"
     buf[7] = version
-    buf[99] = tile_type
-    buf[100] = min_zoom
-    buf[101] = max_zoom
-    struct.pack_into("<i", buf, 102, min_lon_e7)
-    struct.pack_into("<i", buf, 106, min_lat_e7)
-    struct.pack_into("<i", buf, 110, max_lon_e7)
-    struct.pack_into("<i", buf, 114, max_lat_e7)
+    buf[TILE_TYPE_OFFSET] = tile_type
+    buf[MIN_ZOOM_OFFSET] = min_zoom
+    buf[MAX_ZOOM_OFFSET] = max_zoom
+    struct.pack_into("<i", buf, MIN_LON_E7_OFFSET, min_lon_e7)
+    struct.pack_into("<i", buf, MIN_LAT_E7_OFFSET, min_lat_e7)
+    struct.pack_into("<i", buf, MAX_LON_E7_OFFSET, max_lon_e7)
+    struct.pack_into("<i", buf, MAX_LAT_E7_OFFSET, max_lat_e7)
     return bytes(buf)
 
 

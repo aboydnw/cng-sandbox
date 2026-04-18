@@ -27,6 +27,11 @@ async def register_pmtiles_example(
 ) -> str:
     """Register a kind="pmtiles" product as an is_example=True dataset row.
 
+    The dataset is tagged DatasetType.VECTOR because `read_pmtiles_header`
+    rejects any PMTiles file whose tile_type is not MVT (vector). If that
+    guard is ever relaxed to admit raster PMTiles, this assignment must be
+    updated to derive the type from the parsed header.
+
     Returns the new dataset ID. Raises PMTilesRegistrationError on any
     probe/parse/persist failure.
     """

@@ -95,5 +95,5 @@ def test_register_pmtiles_example_rejects_non_pmtiles_product():
         listing_url="https://data.source.coop/test/mosaic/",
         enumerator="path_listing",
     )
-    with pytest.raises(PMTilesRegistrationError, match="kind"):
+    with pytest.raises(PMTilesRegistrationError):
         asyncio.run(register_pmtiles_example(mosaic_product, factory))

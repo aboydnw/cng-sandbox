@@ -16,7 +16,7 @@ def _make_response(json_data):
 
 @pytest.mark.asyncio
 async def test_read_connections_tool(mock_http_client, sample_connection):
-    mock_http_client.get = AsyncMock(return_value=_make_response({"connections": [sample_connection]}))
+    mock_http_client.get = AsyncMock(return_value=_make_response([sample_connection]))
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     result = await read_connections_tool(client)
     assert isinstance(result, TextContent)
@@ -26,7 +26,7 @@ async def test_read_connections_tool(mock_http_client, sample_connection):
 
 @pytest.mark.asyncio
 async def test_read_connections_tool_empty(mock_http_client):
-    mock_http_client.get = AsyncMock(return_value=_make_response({"connections": []}))
+    mock_http_client.get = AsyncMock(return_value=_make_response([]))
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     result = await read_connections_tool(client)
     assert "No external connections" in result.text

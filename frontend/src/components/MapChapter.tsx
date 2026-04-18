@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
 import { CalendarPopover } from "./CalendarPopover";
+import { RenderModeIndicator } from "./RenderModeIndicator";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
+import type { TileCacheEntry } from "../lib/layers";
 import type { Connection, Dataset } from "../types";
-import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
 import { buildLayersForChapter } from "../lib/story/rendering";
-import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
 
@@ -45,51 +45,36 @@ export function MapChapter({
     setCamera(c);
   }, []);
 
-  const layers = useMemo(() => {
-    // Connection path — delegate to shared rendering logic
+  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
+
+  const { layers, renderMetadata } = useMemo(() => {
     if (connection) {
       const connMap = new Map([[connection.id, connection]]);
       return buildLayersForChapter(
         chapter,
         new Map() as Map<string, Dataset | null>,
-        connMap
+        connMap,
+        tileCacheRef
       );
     }
 
-    if (!dataset) return [];
-    const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
+    if (!dataset) return { layers: [] };
 
-    if (dataset.dataset_type === "raster") {
-      const base = dataset.tile_url;
-      const sep = base.includes("?") ? "&" : "?";
-      let tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
-      if (dataset.raster_min != null && dataset.raster_max != null) {
-        tileUrl += `&rescale=${dataset.raster_min},${dataset.raster_max}`;
-      }
-      if (dataset.is_temporal && dataset.timesteps.length > 0) {
-        const clampedIndex = Math.max(
-          0,
-          Math.min(activeTimestepIndex, dataset.timesteps.length - 1)
-        );
-        const ts = dataset.timesteps[clampedIndex];
-        const separator = tileUrl.includes("?") ? "&" : "?";
-        tileUrl = `${tileUrl}${separator}datetime=${encodeURIComponent(ts.datetime)}`;
-      }
-      return buildRasterTileLayers({
-        tileUrl,
-        opacity: lc.opacity,
-        isTemporalActive: false,
-      });
-    }
-    return [
-      buildVectorLayer({
-        tileUrl: dataset.tile_url,
-        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
-        opacity: lc.opacity,
-        minZoom: dataset.min_zoom ?? undefined,
-        maxZoom: dataset.max_zoom ?? undefined,
-      }),
-    ];
+    // Override the chapter timestep with the user's interactive selection
+    const interactiveChapter: Chapter = {
+      ...chapter,
+      layer_config: {
+        ...chapter.layer_config,
+        timestep: activeTimestepIndex,
+      },
+    };
+    const datasetMap = new Map<string, Dataset | null>([[dataset.id, dataset]]);
+    return buildLayersForChapter(
+      interactiveChapter,
+      datasetMap,
+      undefined,
+      tileCacheRef
+    );
   }, [dataset, connection, chapter, activeTimestepIndex]);
 
   return (
@@ -147,6 +132,7 @@ export function MapChapter({
             basemap={basemap}
             onBasemapChange={setBasemap}
           >
+            {renderMetadata && <RenderModeIndicator {...renderMetadata} />}
             {/* Temporal date picker */}
             {isTemporalInteractive && (
               <Box
@@ -170,7 +156,7 @@ export function MapChapter({
             {/* Zoom controls */}
             <Flex
               position="absolute"
-              top={3}
+              top={renderMetadata ? "52px" : 3}
               right={3}
               direction="column"
               gap={1}

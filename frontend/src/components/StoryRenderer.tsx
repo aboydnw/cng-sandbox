@@ -6,7 +6,12 @@ import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
-import { type CameraState, cameraFromBounds } from "../lib/layers";
+import { RenderModeIndicator } from "./RenderModeIndicator";
+import {
+  type CameraState,
+  cameraFromBounds,
+  type TileCacheEntry,
+} from "../lib/layers";
 import {
   groupChaptersIntoBlocks,
   buildLayersForChapter,
@@ -42,6 +47,7 @@ function ScrollytellingBlock({
   const flyToRef = useRef(new FlyToInterpolator());
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
+  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
 
   useEffect(() => {
     if (datasetMap.size === 0) return;
@@ -111,9 +117,14 @@ function ScrollytellingBlock({
     });
   }, [activeIndex, chapters]);
 
-  const layers = useMemo(
+  const { layers, renderMetadata } = useMemo(
     () =>
-      buildLayersForChapter(chapters[activeIndex], datasetMap, connectionMap),
+      buildLayersForChapter(
+        chapters[activeIndex],
+        datasetMap,
+        connectionMap,
+        tileCacheRef
+      ),
     [datasetMap, connectionMap, activeIndex, chapters]
   );
 
@@ -148,6 +159,7 @@ function ScrollytellingBlock({
             interactive={false}
           />
         )}
+        {renderMetadata && <RenderModeIndicator {...renderMetadata} />}
         {activeDataset === null && !hasConnection && (
           <Flex
             position="absolute"

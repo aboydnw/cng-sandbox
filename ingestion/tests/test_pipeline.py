@@ -49,6 +49,17 @@ def test_get_credits_vector_pmtiles():
     assert "tipg" not in names
 
 
+def test_get_credits_pmtiles_reference():
+    credits = get_credits(FormatPair.PMTILES)
+    tools = [c["tool"] for c in credits]
+    assert "PMTiles" in tools
+    assert "MapLibre" in tools
+    assert "tippecanoe" not in tools
+    assert "pgSTAC" not in tools
+    assert "TiTiler" not in tools
+    assert "tipg" not in tools
+
+
 def test_get_credits_vector_tipg_unchanged():
     credits = get_credits(FormatPair.GEOJSON_TO_GEOPARQUET, use_pmtiles=False)
     names = [c["tool"] for c in credits]

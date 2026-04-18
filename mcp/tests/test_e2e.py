@@ -20,7 +20,7 @@ def _make_response(json_data):
 @pytest.mark.asyncio
 async def test_e2e_agent_discover_datasets(mock_http_client, sample_dataset):
     """E2E: Agent discovers available datasets."""
-    mock_http_client.get = AsyncMock(return_value=_make_response({"datasets": [sample_dataset]}))
+    mock_http_client.get = AsyncMock(return_value=_make_response([sample_dataset]))
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     result = await read_datasets_tool(client)
     assert isinstance(result, TextContent)

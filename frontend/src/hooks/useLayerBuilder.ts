@@ -10,6 +10,7 @@ import {
   buildVectorLayer,
   buildGeoJsonLayer,
   arrowTableToGeoJSON,
+  isPMTilesDataset,
 } from "../lib/layers";
 import { resolveRasterLayers } from "../lib/layers/resolveRasterLayers";
 
@@ -289,7 +290,7 @@ export function useLayerBuilder({
     return [
       buildVectorLayer({
         tileUrl: ds.tile_url,
-        isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
+        isPMTiles: isPMTilesDataset(ds),
         opacity,
         minZoom: ds.min_zoom ?? undefined,
         maxZoom: ds.max_zoom ?? undefined,

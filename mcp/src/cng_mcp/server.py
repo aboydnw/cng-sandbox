@@ -114,10 +114,10 @@ RESOURCE_DEFINITIONS = [
 ]
 
 
-def create_server(sandbox_api_url: str) -> Server:
+def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Server:
     """Create and configure MCP server."""
     server: Server = Server("cng-sandbox")
-    client = SandboxAPIClient(api_url=sandbox_api_url)
+    client = SandboxAPIClient(api_url=sandbox_api_url, workspace_id=workspace_id)
 
     @server.list_tools()
     async def handle_list_tools() -> list[Tool]:
@@ -180,6 +180,13 @@ async def main():
         help="Sandbox API URL (default: http://localhost:8086)",
     )
     parser.add_argument(
+        "--workspace-id",
+        default=os.getenv("SANDBOX_WORKSPACE_ID"),
+        help="Workspace ID to scope requests (sent as X-Workspace-Id). "
+        "Defaults to $SANDBOX_WORKSPACE_ID. Without it, workspace-listing "
+        "endpoints will return empty lists.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -191,8 +198,14 @@ async def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    server = create_server(sandbox_api_url=args.api_url)
-    logger.info(f"CNG MCP Server starting (API: {args.api_url})")
+    server = create_server(
+        sandbox_api_url=args.api_url, workspace_id=args.workspace_id
+    )
+    logger.info(
+        "CNG MCP Server starting (API: %s, workspace: %s)",
+        args.api_url,
+        args.workspace_id or "<none>",
+    )
 
     async with stdio_server() as (read_stream, write_stream):
         await server.run(read_stream, write_stream, server.create_initialization_options())

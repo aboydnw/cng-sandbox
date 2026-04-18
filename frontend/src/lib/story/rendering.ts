@@ -1,6 +1,10 @@
 import type { MutableRefObject } from "react";
 import type { Layer } from "@deck.gl/core";
-import { buildRasterPMTilesLayer, buildVectorLayer } from "../layers";
+import {
+  buildRasterPMTilesLayer,
+  buildVectorLayer,
+  isPMTilesDataset,
+} from "../layers";
 import type { TileCacheEntry } from "../layers";
 import { buildConnectionTileUrl } from "../connections";
 import { resolveRasterLayers } from "../layers/resolveRasterLayers";
@@ -214,7 +218,7 @@ export function buildLayersForChapter(
     layers: [
       buildVectorLayer({
         tileUrl: ds.tile_url,
-        isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
+        isPMTiles: isPMTilesDataset(ds),
         opacity: lc.opacity,
         minZoom: ds.min_zoom ?? undefined,
         maxZoom: ds.max_zoom ?? undefined,

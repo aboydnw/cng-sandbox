@@ -8,19 +8,35 @@ import httpx
 class SandboxAPIClient:
     """Async HTTP client for sandbox ingestion API."""
 
-    def __init__(self, api_url: str, http_client: Optional[httpx.AsyncClient] = None):
+    def __init__(
+        self,
+        api_url: str,
+        workspace_id: Optional[str] = None,
+        http_client: Optional[httpx.AsyncClient] = None,
+    ):
         self.api_url = api_url.rstrip("/")
+        self.workspace_id = workspace_id
         self.http_client = http_client or httpx.AsyncClient()
 
+    def _headers(self) -> dict[str, str]:
+        if self.workspace_id:
+            return {"X-Workspace-Id": self.workspace_id}
+        return {}
+
     async def get_datasets(self) -> list[dict[str, Any]]:
-        """Get all datasets in workspace."""
-        response = await self.http_client.get(f"{self.api_url}/api/datasets")
+        """Get all datasets visible to the caller's workspace."""
+        response = await self.http_client.get(
+            f"{self.api_url}/api/datasets", headers=self._headers()
+        )
         response.raise_for_status()
-        return response.json().get("datasets", [])
+        return response.json()
 
     async def get_story(self, story_id: str) -> dict[str, Any]:
         """Get story by ID."""
-        response = await self.http_client.get(f"{self.api_url}/api/stories/{quote(story_id, safe='')}")
+        response = await self.http_client.get(
+            f"{self.api_url}/api/stories/{quote(story_id, safe='')}",
+            headers=self._headers(),
+        )
         response.raise_for_status()
         return response.json()
 
@@ -34,6 +50,7 @@ class SandboxAPIClient:
         response = await self.http_client.post(
             f"{self.api_url}/api/stories",
             json={"title": title, "description": description, "chapters": chapters},
+            headers=self._headers(),
         )
         response.raise_for_status()
         return response.json()
@@ -43,15 +60,18 @@ class SandboxAPIClient:
         response = await self.http_client.patch(
             f"{self.api_url}/api/stories/{quote(story_id, safe='')}",
             json=updates,
+            headers=self._headers(),
         )
         response.raise_for_status()
         return response.json()
 
     async def get_connections(self) -> list[dict[str, Any]]:
-        """Get all external tile source connections."""
-        response = await self.http_client.get(f"{self.api_url}/api/connections")
+        """Get all external tile source connections in the caller's workspace."""
+        response = await self.http_client.get(
+            f"{self.api_url}/api/connections", headers=self._headers()
+        )
         response.raise_for_status()
-        return response.json().get("connections", [])
+        return response.json()
 
     async def validate_layer_config(
         self,
@@ -69,6 +89,7 @@ class SandboxAPIClient:
         response = await self.http_client.post(
             f"{self.api_url}/api/validate-layer-config",
             json=payload,
+            headers=self._headers(),
         )
         response.raise_for_status()
         return response.json()

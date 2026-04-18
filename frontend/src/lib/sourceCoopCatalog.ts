@@ -15,9 +15,9 @@ export interface SourceCoopProduct {
 export const sourceCoopCatalog: SourceCoopProduct[] = [
   {
     slug: "ausantarctic/ghrsst-mur-v2",
-    name: "GHRSST MUR v2 — Daily SST (2024)",
+    name: "GHRSST MUR v2 — Daily Global SST",
     description:
-      "Multi-scale Ultra-high Resolution sea surface temperature analysis, daily global coverage. v1 shows the 2024 subset (366 days).",
+      "Multi-scale Ultra-high Resolution sea surface temperature analysis, daily global coverage across the product's full temporal range.",
     thumbnail: "/thumbnails/ghrsst.jpg",
     tags: ["ocean", "temperature", "temporal"],
     isTemporal: true,
@@ -38,6 +38,15 @@ export const sourceCoopCatalog: SourceCoopProduct[] = [
       "Gross carbon emissions from deforestation at 100 m resolution, produced by the WRI Land & Carbon Lab.",
     thumbnail: "/thumbnails/lg-land-carbon.jpg",
     tags: ["carbon", "deforestation", "climate"],
+    isTemporal: false,
+  },
+  {
+    slug: "vida/google-microsoft-osm-open-buildings",
+    name: "Global Buildings (VIDA)",
+    description:
+      "Combined Google, Microsoft, and OpenStreetMap building footprints worldwide, served as PMTiles.",
+    thumbnail: "/thumbnails/vida-buildings.jpg",
+    tags: ["buildings", "global", "vector"],
     isTemporal: false,
   },
 ];

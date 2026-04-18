@@ -29,6 +29,7 @@ class FormatPair(StrEnum):
     GEOJSON_TO_GEOPARQUET = "geojson-to-geoparquet"
     NETCDF_TO_COG = "netcdf-to-cog"
     HDF5_TO_COG = "hdf5-to-cog"
+    PMTILES = "pmtiles"
 
     @staticmethod
     def from_extension(ext: str) -> "FormatPair":
@@ -44,6 +45,7 @@ class FormatPair(StrEnum):
             ".nc4": FormatPair.NETCDF_TO_COG,
             ".h5": FormatPair.HDF5_TO_COG,
             ".hdf5": FormatPair.HDF5_TO_COG,
+            ".pmtiles": FormatPair.PMTILES,
         }
         if ext not in mapping:
             raise ValueError(f"Unsupported format: {ext}")

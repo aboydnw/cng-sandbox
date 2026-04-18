@@ -270,7 +270,7 @@ cd ingestion && uv run pytest -v
 **Remote data discovery:**
 - `POST /api/discover` — Discover geospatial files at a URL or S3 prefix
 - `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset
-- `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ghrsst-mur-v2-2024`, `gebco-2024`, `lg-land-carbon`)
+- `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ausantarctic/ghrsst-mur-v2`, `alexgleith/gebco-2024`, `vizzuality/lg-land-carbon-data`, `vida/google-microsoft-osm-open-buildings`). Raster products (`kind="mosaic"`) run a STAC/path enumerator and register as pgSTAC mosaics; PMTiles products (`kind="pmtiles"`) read the remote PMTiles v3 header for bounds/zoom and register as a `FormatPair.PMTILES` vector dataset pointing at the source URL.
 
 **Other:**
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
@@ -279,7 +279,7 @@ cd ingestion && uv run pytest -v
 
 ### Example datasets
 
-On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and are surfaced to every workspace's `GET /api/datasets` response so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly.
+On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and are surfaced to every workspace's `GET /api/datasets` response so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly. PMTiles-kind products are registered via `src/services/pmtiles_register.py`, which probes the first 127 bytes of the remote file (`src/services/pmtiles_header.py`) to extract bounds, min/max zoom, and verify the tile type is MVT; mosaic-kind products are enumerated and registered via `register_remote_collection`.
 
 ### Conversion pipeline
 
@@ -337,8 +337,10 @@ cd mcp && uv run pytest -v
 ### Running the server
 
 ```bash
-cng-mcp --api-url http://localhost:8086    # Communicates over stdio
+cng-mcp --api-url http://localhost:8086 --workspace-id <8-char-id>   # Communicates over stdio
 ```
+
+The ingestion API requires an `X-Workspace-Id` header on workspace-listing endpoints (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`). The MCP server forwards this header when started with `--workspace-id` (or `SANDBOX_WORKSPACE_ID` env var). Without it, those listing endpoints will return 400 and the MCP tools will surface empty results.
 
 See `mcp/README.md` for client config examples and `mcp/ARCHITECTURE.md` for design notes.
 

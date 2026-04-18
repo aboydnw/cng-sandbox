@@ -9,7 +9,7 @@ frontend/src/lib/sourceCoopCatalog.ts.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 
 @dataclass(frozen=True)
@@ -18,22 +18,42 @@ class SourceCoopProduct:
     name: str
     description: str
     listing_url: str
-    enumerator: str
+    kind: Literal["mosaic", "pmtiles"] = "mosaic"
+    enumerator: str = ""
     enumerator_args: dict[str, Any] = field(default_factory=dict)
     is_temporal: bool = False
+    pmtiles_url: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind == "pmtiles":
+            if not self.pmtiles_url:
+                raise ValueError(f"{self.slug}: pmtiles kind requires pmtiles_url")
+            if self.enumerator:
+                raise ValueError(f"{self.slug}: pmtiles kind must not set enumerator")
+            if self.enumerator_args:
+                raise ValueError(
+                    f"{self.slug}: pmtiles kind must not set enumerator_args"
+                )
+            if self.is_temporal:
+                raise ValueError(f"{self.slug}: pmtiles kind must not set is_temporal")
+        elif self.kind == "mosaic":
+            if not self.enumerator:
+                raise ValueError(f"{self.slug}: mosaic kind requires enumerator")
+            if self.pmtiles_url:
+                raise ValueError(f"{self.slug}: mosaic kind must not set pmtiles_url")
 
 
 _PRODUCTS: dict[str, SourceCoopProduct] = {
     "ausantarctic/ghrsst-mur-v2": SourceCoopProduct(
         slug="ausantarctic/ghrsst-mur-v2",
-        name="GHRSST MUR v2 — Daily SST (2024)",
+        name="GHRSST MUR v2 — Daily Global SST",
         description=(
             "Multi-scale Ultra-high Resolution sea surface temperature analysis, "
-            "daily global coverage. v1 shows the 2024 subset (366 days)."
+            "daily global coverage across the product's full temporal range."
         ),
         listing_url="https://data.source.coop/ausantarctic/ghrsst-mur-v2/",
         enumerator="stac_sidecars",
-        enumerator_args={"recursive": True, "start_prefix": "2024/"},
+        enumerator_args={"recursive": True},
         is_temporal=True,
     ),
     "alexgleith/gebco-2024": SourceCoopProduct(
@@ -61,6 +81,17 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
         enumerator="path_listing",
         enumerator_args={"filenames": ["deforest_carbon_100m_cog.tif"]},
         is_temporal=False,
+    ),
+    "vida/google-microsoft-osm-open-buildings": SourceCoopProduct(
+        slug="vida/google-microsoft-osm-open-buildings",
+        name="Global Buildings (VIDA)",
+        description=(
+            "Combined Google, Microsoft, and OpenStreetMap building "
+            "footprints worldwide, published as a single PMTiles archive."
+        ),
+        listing_url="https://data.source.coop/vida/google-microsoft-osm-open-buildings/",
+        kind="pmtiles",
+        pmtiles_url="https://data.source.coop/vida/google-microsoft-osm-open-buildings/pmtiles/goog_msft_osm.pmtiles",
     ),
 }
 

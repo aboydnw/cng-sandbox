@@ -60,7 +60,6 @@ export function MapChapter({
 
     if (!dataset) return { layers: [] };
 
-    // Override the chapter timestep with the user's interactive selection
     const interactiveChapter: Chapter = {
       ...chapter,
       layer_config: {

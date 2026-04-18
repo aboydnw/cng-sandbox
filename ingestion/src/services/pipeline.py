@@ -110,6 +110,22 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
                 "role": "Converted by",
             }
         )
+    elif format_pair == FormatPair.PMTILES:
+        credits.append(
+            {
+                "tool": "PMTiles",
+                "url": "https://github.com/protomaps/PMTiles",
+                "role": "Tiles served by",
+            }
+        )
+        credits.append(
+            {
+                "tool": "MapLibre",
+                "url": "https://maplibre.org",
+                "role": "Map rendered by",
+            }
+        )
+        return credits
 
     if format_pair.dataset_type == DatasetType.RASTER:
         credits.append(

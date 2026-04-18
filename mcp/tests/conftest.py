@@ -40,10 +40,25 @@ def sample_story():
         "chapters": [
             {
                 "id": "ch_001",
+                "order": 0,
+                "type": "scrollytelling",
                 "title": "Overview",
-                "text": "Starting with global coverage...",
-                "dataset_id": "dataset_abc123",
-                "map_state": {"center": [0, 0], "zoom": 2},
+                "narrative": "Starting with global coverage...",
+                "transition": "fly-to",
+                "overlay_position": "left",
+                "map_state": {
+                    "center": [0, 0],
+                    "zoom": 2,
+                    "bearing": 0,
+                    "pitch": 0,
+                    "basemap": "dark",
+                },
+                "layer_config": {
+                    "dataset_id": "dataset_abc123",
+                    "colormap": "viridis",
+                    "opacity": 0.8,
+                    "basemap": "dark",
+                },
             }
         ],
         "created_at": "2025-01-01T00:00:00Z",

@@ -7,15 +7,14 @@ import {
   type CameraState,
   DEFAULT_CAMERA,
   cameraFromBounds,
-  buildRasterTileLayers,
-  buildVectorLayer,
 } from "../lib/layers";
-import { buildConnectionTileUrl } from "../lib/connections";
+import type { TileCacheEntry } from "../lib/layers";
 import {
   type Story,
   type Chapter,
   type ChapterType,
   type LayerConfig,
+  type ChapterRenderMetadata,
   DEFAULT_LAYER_CONFIG,
   createStory,
   createChapter,
@@ -23,6 +22,7 @@ import {
   getStoryFromServer,
   saveStoryToServer,
   migrateStory,
+  buildLayersForChapter,
 } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import { config } from "../config";
@@ -51,6 +51,7 @@ export function useStoryEditor() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
   const [allConnections, setAllConnections] = useState<Connection[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -421,94 +422,22 @@ export function useStoryEditor() {
     saveStoryToServer(unpublished);
   }
 
-  // Build layers
-  const layers = useMemo(() => {
-    if (!activeChapter) return [];
-    const lc = activeChapter.layer_config ?? DEFAULT_LAYER_CONFIG;
-
-    // Connection path
-    if (lc.connection_id) {
-      const conn = connectionMap.get(lc.connection_id);
-      if (!conn) return [];
-      const tileUrl = buildConnectionTileUrl(conn);
-
-      if (conn.connection_type === "cog") {
-        let finalTileUrl = tileUrl;
-        if (conn.band_count === 1) {
-          const sep = finalTileUrl.includes("?") ? "&" : "?";
-          finalTileUrl += `${sep}colormap_name=${lc.colormap}`;
-          if (conn.rescale) {
-            finalTileUrl += `&rescale=${conn.rescale}`;
-          }
-        }
-        return buildRasterTileLayers({
-          tileUrl: finalTileUrl,
-          opacity: lc.opacity,
-          isTemporalActive: false,
-        });
-      }
-      if (conn.connection_type === "pmtiles" && conn.tile_type === "vector") {
-        return [
-          buildVectorLayer({
-            tileUrl,
-            isPMTiles: true,
-            opacity: lc.opacity,
-            minZoom: conn.min_zoom ?? undefined,
-            maxZoom: conn.max_zoom ?? undefined,
-          }),
-        ];
-      }
-      if (conn.connection_type === "xyz_vector") {
-        return [
-          buildVectorLayer({
-            tileUrl,
-            isPMTiles: false,
-            opacity: lc.opacity,
-            minZoom: conn.min_zoom ?? undefined,
-            maxZoom: conn.max_zoom ?? undefined,
-          }),
-        ];
-      }
-      return buildRasterTileLayers({
-        tileUrl,
-        opacity: lc.opacity,
-        isTemporalActive: false,
-      });
-    }
-
-    // Dataset path
-    const ds = activeDataset;
-    if (!ds) return [];
-
-    if (ds.dataset_type === "raster") {
-      const base = ds.tile_url;
-      const sep = base.includes("?") ? "&" : "?";
-      let tileUrl = `${base}${sep}colormap_name=${lc.colormap}`;
-      if (ds.raster_min != null && ds.raster_max != null) {
-        tileUrl += `&rescale=${ds.raster_min},${ds.raster_max}`;
-      }
-      if (ds.is_temporal && ds.timesteps.length > 0) {
-        const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;
-        const tsIndex = Math.max(0, Math.min(raw, ds.timesteps.length - 1));
-        const ts = ds.timesteps[tsIndex];
-        tileUrl += `&datetime=${encodeURIComponent(ts.datetime)}`;
-      }
-      return buildRasterTileLayers({
-        tileUrl,
-        opacity: lc.opacity,
-        isTemporalActive: false,
-      });
-    }
-    return [
-      buildVectorLayer({
-        tileUrl: ds.tile_url,
-        isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
-        opacity: lc.opacity,
-        minZoom: ds.min_zoom ?? undefined,
-        maxZoom: ds.max_zoom ?? undefined,
-      }),
-    ];
-  }, [activeDataset, activeChapter, connectionMap]);
+  const { layers, previewRenderMetadata } = useMemo<{
+    layers: ReturnType<typeof buildLayersForChapter>["layers"];
+    previewRenderMetadata: ChapterRenderMetadata | undefined;
+  }>(() => {
+    if (!activeChapter) return { layers: [], previewRenderMetadata: undefined };
+    const result = buildLayersForChapter(
+      activeChapter,
+      datasetMap,
+      connectionMap,
+      tileCacheRef
+    );
+    return {
+      layers: result.layers,
+      previewRenderMetadata: result.renderMetadata,
+    };
+  }, [activeChapter, datasetMap, connectionMap]);
 
   return {
     story,
@@ -529,6 +458,7 @@ export function useStoryEditor() {
     uploadModalOpen,
     saveState,
     layers,
+    previewRenderMetadata,
     workspacePath,
     updateStory,
     selectChapter,

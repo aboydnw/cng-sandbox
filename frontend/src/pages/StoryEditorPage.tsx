@@ -18,6 +18,7 @@ import { ConnectionModal } from "../components/ConnectionModal";
 import { PublishDialog } from "../components/PublishDialog";
 import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
+import { RenderModeIndicator } from "../components/RenderModeIndicator";
 
 function TooltipCard({
   text,
@@ -77,6 +78,7 @@ export default function StoryEditorPage() {
     uploadModalOpen,
     saveState,
     layers,
+    previewRenderMetadata,
     activeDataset,
     workspacePath,
     updateStory,
@@ -343,6 +345,9 @@ export default function StoryEditorPage() {
                 transitionDuration ? flyToRef.current : undefined
               }
             >
+              {previewRenderMetadata && (
+                <RenderModeIndicator {...previewRenderMetadata} />
+              )}
               {viewSavedFlash && (
                 <Flex
                   position="absolute"

@@ -65,7 +65,6 @@ export function buildLayersForChapter(
 ): ChapterLayerResult {
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
-  // Connection path
   if (lc.connection_id && connectionMap) {
     const conn = connectionMap.get(lc.connection_id);
     if (!conn) return { layers: [] };
@@ -149,7 +148,6 @@ export function buildLayersForChapter(
       };
     }
 
-    // Fallback raster (xyz_raster, etc.)
     const item = connectionToMapItem(conn);
     const resolved = resolveRasterLayers({
       item,
@@ -169,7 +167,6 @@ export function buildLayersForChapter(
     };
   }
 
-  // Dataset path
   const ds = datasetMap.get(lc.dataset_id);
   if (!ds) return { layers: [] };
 

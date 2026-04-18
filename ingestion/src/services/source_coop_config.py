@@ -9,7 +9,7 @@ frontend/src/lib/sourceCoopCatalog.ts.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 
 @dataclass(frozen=True)
@@ -18,9 +18,39 @@ class SourceCoopProduct:
     name: str
     description: str
     listing_url: str
-    enumerator: str
+    kind: Literal["mosaic", "pmtiles"] = "mosaic"
+    enumerator: str = ""
     enumerator_args: dict[str, Any] = field(default_factory=dict)
     is_temporal: bool = False
+    pmtiles_url: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind == "pmtiles":
+            if not self.pmtiles_url:
+                raise ValueError(
+                    f"{self.slug}: pmtiles kind requires pmtiles_url"
+                )
+            if self.enumerator:
+                raise ValueError(
+                    f"{self.slug}: pmtiles kind must not set enumerator"
+                )
+            if self.enumerator_args:
+                raise ValueError(
+                    f"{self.slug}: pmtiles kind must not set enumerator_args"
+                )
+            if self.is_temporal:
+                raise ValueError(
+                    f"{self.slug}: pmtiles kind must not set is_temporal"
+                )
+        elif self.kind == "mosaic":
+            if not self.enumerator:
+                raise ValueError(
+                    f"{self.slug}: mosaic kind requires enumerator"
+                )
+            if self.pmtiles_url:
+                raise ValueError(
+                    f"{self.slug}: mosaic kind must not set pmtiles_url"
+                )
 
 
 _PRODUCTS: dict[str, SourceCoopProduct] = {

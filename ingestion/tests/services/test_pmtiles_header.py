@@ -24,13 +24,13 @@ def _make_header(
     buf = bytearray(127)
     buf[0:7] = b"PMTiles"
     buf[7] = version
-    buf[77] = tile_type
-    buf[78] = min_zoom
-    buf[79] = max_zoom
-    struct.pack_into("<i", buf, 82, min_lon_e7)
-    struct.pack_into("<i", buf, 86, min_lat_e7)
-    struct.pack_into("<i", buf, 90, max_lon_e7)
-    struct.pack_into("<i", buf, 94, max_lat_e7)
+    buf[99] = tile_type
+    buf[100] = min_zoom
+    buf[101] = max_zoom
+    struct.pack_into("<i", buf, 102, min_lon_e7)
+    struct.pack_into("<i", buf, 106, min_lat_e7)
+    struct.pack_into("<i", buf, 110, max_lon_e7)
+    struct.pack_into("<i", buf, 114, max_lat_e7)
     return bytes(buf)
 
 

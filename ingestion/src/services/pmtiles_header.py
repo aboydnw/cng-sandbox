@@ -38,22 +38,22 @@ def parse_pmtiles_header(buf: bytes) -> PMTilesHeader:
         raise PMTilesHeaderError(
             f"unsupported PMTiles version {version}; only {SUPPORTED_VERSION} is supported"
         )
-    tile_type = buf[77]
+    tile_type = buf[99]
     if tile_type != TILE_TYPE_MVT:
         raise PMTilesHeaderError(
             f"tile_type {tile_type} is not MVT (1); "
             "only vector PMTiles are supported as reference datasets"
         )
-    min_zoom = buf[78]
-    max_zoom = buf[79]
+    min_zoom = buf[100]
+    max_zoom = buf[101]
     if min_zoom > max_zoom:
         raise PMTilesHeaderError(
             f"min_zoom ({min_zoom}) must be <= max_zoom ({max_zoom})"
         )
-    min_lon_e7 = struct.unpack_from("<i", buf, 82)[0]
-    min_lat_e7 = struct.unpack_from("<i", buf, 86)[0]
-    max_lon_e7 = struct.unpack_from("<i", buf, 90)[0]
-    max_lat_e7 = struct.unpack_from("<i", buf, 94)[0]
+    min_lon_e7 = struct.unpack_from("<i", buf, 102)[0]
+    min_lat_e7 = struct.unpack_from("<i", buf, 106)[0]
+    max_lon_e7 = struct.unpack_from("<i", buf, 110)[0]
+    max_lat_e7 = struct.unpack_from("<i", buf, 114)[0]
     bounds = (
         min_lon_e7 / 1e7,
         min_lat_e7 / 1e7,

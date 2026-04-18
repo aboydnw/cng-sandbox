@@ -1,4 +1,5 @@
 import type { MutableRefObject } from "react";
+import type { Layer } from "@deck.gl/core";
 import { COGLayer } from "@developmentseed/deck.gl-geotiff";
 import {
   CreateTexture,
@@ -124,7 +125,7 @@ export function buildCogLayerPaletted({
   categories,
   tileCacheRef,
   datasetBounds,
-}: CogLayerPalettedOptions) {
+}: CogLayerPalettedOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
 
   // Fallback: no categories → default library pipeline (unchanged behavior).
@@ -245,7 +246,7 @@ export function buildCogLayerContinuous({
   rasterMax,
   datasetBounds,
   tileCacheRef,
-}: CogLayerOptions) {
+}: CogLayerOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
   const range = rasterMax - rasterMin || 1;
 

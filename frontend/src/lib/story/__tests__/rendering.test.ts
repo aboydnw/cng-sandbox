@@ -70,6 +70,10 @@ const TEMPORAL_DATASET: Dataset = {
   ],
 };
 
+function makeRef() {
+  return { current: new Map() };
+}
+
 describe("buildLayersForChapter — temporal timestep wiring", () => {
   it("appends datetime param for timestep index 2", () => {
     const chapter = createChapter({
@@ -85,7 +89,12 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
       ["ds-1", TEMPORAL_DATASET],
     ]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      undefined,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -107,7 +116,12 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
       ["ds-1", TEMPORAL_DATASET],
     ]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      undefined,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -130,7 +144,12 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
       ["ds-1", BASE_DATASET],
     ]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      undefined,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -153,7 +172,12 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     });
     const datasetMap = new Map<string, Dataset | null>([["ds-1", ds]]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      undefined,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -177,7 +201,12 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     });
     const datasetMap = new Map<string, Dataset | null>([["ds-1", ds]]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      undefined,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -200,7 +229,12 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     });
     const datasetMap = new Map<string, Dataset | null>([["ds-1", ds]]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      undefined,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -249,7 +283,12 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const datasetMap = new Map<string, Dataset | null>();
     const connectionMap = new Map([["conn-1", BASE_CONNECTION]]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap, connectionMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      connectionMap,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -274,7 +313,12 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const datasetMap = new Map<string, Dataset | null>();
     const connectionMap = new Map([["conn-1", BASE_CONNECTION]]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap, connectionMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      connectionMap,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -298,12 +342,72 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const datasetMap = new Map<string, Dataset | null>();
     const connectionMap = new Map([["conn-1", BASE_CONNECTION]]);
 
-    const layers = buildLayersForChapter(chapter, datasetMap, connectionMap);
+    const { layers } = buildLayersForChapter(
+      chapter,
+      datasetMap,
+      connectionMap,
+      makeRef()
+    );
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
       layers[0] as unknown as { props: { data: string } }
     ).props.data;
     expect(tileUrl).toContain("colormap_name=plasma_r");
+  });
+});
+
+describe("buildLayersForChapter with raster dataset", () => {
+  it("returns renderMetadata for a raster dataset chapter", () => {
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "ds-1",
+        colormap: "viridis",
+        opacity: 0.8,
+        basemap: "positron",
+      },
+    });
+    const ds: Dataset = {
+      ...BASE_DATASET,
+      id: "ds-1",
+      cog_url: "https://r2.example/ds.tif",
+      bounds: [-10, -10, 10, 10],
+      converted_file_size: 100 * 1024 * 1024,
+      dtype: "float32",
+    };
+    const { layers, renderMetadata } = buildLayersForChapter(
+      chapter,
+      new Map([["ds-1", ds]]),
+      undefined,
+      makeRef()
+    );
+    expect(layers).toBeDefined();
+    expect(renderMetadata).toBeDefined();
+    expect(renderMetadata?.renderMode).toBe("client");
+  });
+
+  it("returns no renderMetadata for a vector dataset chapter", () => {
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "ds-vec",
+        colormap: "viridis",
+        opacity: 0.8,
+        basemap: "positron",
+      },
+    });
+    const ds: Dataset = {
+      ...BASE_DATASET,
+      id: "ds-vec",
+      dataset_type: "vector",
+      tile_url: "/vector/tiles/{z}/{x}/{y}",
+    };
+    const { layers, renderMetadata } = buildLayersForChapter(
+      chapter,
+      new Map([["ds-vec", ds]]),
+      undefined,
+      makeRef()
+    );
+    expect(layers.length).toBeGreaterThan(0);
+    expect(renderMetadata).toBeUndefined();
   });
 });

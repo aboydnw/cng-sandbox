@@ -20,5 +20,9 @@ export {
 } from "./api";
 export { migrateStory } from "./migration";
 export { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "./labels";
-export type { ContentBlock } from "./rendering";
+export type {
+  ContentBlock,
+  ChapterLayerResult,
+  ChapterRenderMetadata,
+} from "./rendering";
 export { groupChaptersIntoBlocks, buildLayersForChapter } from "./rendering";

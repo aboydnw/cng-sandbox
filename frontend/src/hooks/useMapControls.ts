@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import type { MapItem } from "../types";
 import { formatBytes } from "../utils/format";
-import { classifyCogRenderPath } from "../lib/layers/cogDtype";
-
-const CLIENT_RENDER_MAX_BYTES_PALETTED = 2 * 1024 * 1024 * 1024; // 2 GB
-const CLIENT_RENDER_MAX_BYTES_CONTINUOUS = 500 * 1024 * 1024; // 500 MB
+import { evaluateClientRenderEligibility } from "../lib/layers/clientRenderEligibility";
 
 export type RenderMode = "server" | "client" | "vector-tiles" | "geojson";
 
@@ -49,24 +46,6 @@ interface UseMapControlsResult {
   setColormapReversed: (v: boolean) => void;
 }
 
-function computeCanClientRender(item: MapItem | null): boolean {
-  if (!item || item.isTemporal || !item.cogUrl || !item.bounds) return false;
-  if (Math.abs(item.bounds[1]) >= 85.05 || Math.abs(item.bounds[3]) >= 85.05)
-    return false;
-  const itemFileSize =
-    item.dataset?.converted_file_size ?? item.connection?.file_size ?? null;
-  if (item.source === "connection" && itemFileSize == null) return false;
-  const renderPath = classifyCogRenderPath({
-    dtype: item.dtype,
-    isCategorical: !!item.isCategorical,
-  });
-  const cap =
-    renderPath === "paletted"
-      ? CLIENT_RENDER_MAX_BYTES_PALETTED
-      : CLIENT_RENDER_MAX_BYTES_CONTINUOUS;
-  return (itemFileSize ?? 0) <= cap;
-}
-
 export function useMapControls(
   item: MapItem | null,
   initialOverrides?: InitialRasterOverrides
@@ -93,6 +72,11 @@ export function useMapControls(
     seedMatches ? initialOverrides!.colormapReversed : false
   );
 
+  const eligibility = useMemo(
+    () => evaluateClientRenderEligibility(item ?? null),
+    [item]
+  );
+
   useEffect(() => {
     setOpacity(0.8);
     setSelectedBand("rgb");
@@ -109,7 +93,7 @@ export function useMapControls(
         initialOverrides.renderMode === "server"
       ) {
         setRenderMode(initialOverrides.renderMode);
-      } else if (computeCanClientRender(item ?? null)) {
+      } else if (eligibility.canRender) {
         setRenderMode("client");
       } else {
         setRenderMode("server");
@@ -121,7 +105,7 @@ export function useMapControls(
       setColormapReversed(false);
       if (item?.dataType === "vector") {
         setRenderMode("vector-tiles");
-      } else if (computeCanClientRender(item ?? null)) {
+      } else if (eligibility.canRender) {
         setRenderMode("client");
       } else {
         setRenderMode("server");
@@ -159,44 +143,19 @@ export function useMapControls(
     !isCategorical &&
     (isSingleBand || (isMultiBand && effectiveBand !== "rgb"));
 
-  const renderPath =
-    item && item.cogUrl
-      ? classifyCogRenderPath({
-          dtype: item.dtype,
-          isCategorical,
-        })
-      : "continuous";
+  const canClientRender = eligibility.canRender;
 
-  const clientRenderCapBytes =
-    renderPath === "paletted"
-      ? CLIENT_RENDER_MAX_BYTES_PALETTED
-      : CLIENT_RENDER_MAX_BYTES_CONTINUOUS;
-
-  const clientRenderCapLabel = formatBytes(clientRenderCapBytes);
-
-  const itemFileSize =
-    item?.dataset?.converted_file_size ?? item?.connection?.file_size ?? null;
-
-  const sizeUnknownBlocksClientRender =
-    item?.source === "connection" && itemFileSize == null;
-
-  const canClientRender =
-    !!item &&
-    !item.isTemporal &&
-    !!item.cogUrl &&
-    !!item.bounds &&
-    Math.abs(item.bounds[1]) < 85.05 &&
-    Math.abs(item.bounds[3]) < 85.05 &&
-    !sizeUnknownBlocksClientRender &&
-    (itemFileSize ?? 0) <= clientRenderCapBytes;
-
-  const clientRenderDisabledReason = item?.cogUrl
-    ? sizeUnknownBlocksClientRender
-      ? "File size unavailable; client render can't be enabled safely"
-      : itemFileSize != null && itemFileSize > clientRenderCapBytes
-        ? `File exceeds ${clientRenderCapLabel} browser limit (${formatBytes(itemFileSize)})`
-        : null
-    : null;
+  const clientRenderDisabledReason = (() => {
+    if (eligibility.canRender) return null;
+    if (!item?.cogUrl) return null;
+    if (item.source === "connection" && eligibility.sizeBytes == null) {
+      return "File size unavailable; client render can't be enabled safely";
+    }
+    if (eligibility.sizeBytes != null && eligibility.cap != null) {
+      return `File exceeds ${formatBytes(eligibility.cap)} browser limit (${formatBytes(eligibility.sizeBytes)})`;
+    }
+    return null;
+  })();
 
   return {
     opacity,

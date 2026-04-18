@@ -23,7 +23,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     source: "dataset",
     dataType: "raster",
     tileUrl: "/raster/tiles/{z}/{x}/{y}?assets=cog",
-    bounds: null,
+    bounds: [-10, -10, 10, 10],
     minZoom: null,
     maxZoom: null,
     bandCount: 1,
@@ -287,8 +287,23 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(call.rasterMax).toBe(255);
   });
 
+  it("forwards override rescaleMin/Max to continuous builder on client-render path", () => {
+    renderBuilder({
+      item: makeConnectionItem(),
+      renderMode: "client",
+      canClientRender: true,
+      rescaleMin: 10,
+      rescaleMax: 200,
+    });
+    expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
+    const call = vi.mocked(buildCogLayerContinuous).mock.calls[0][0];
+    expect(call.rasterMin).toBe(10);
+    expect(call.rasterMax).toBe(200);
+  });
+
   it("dispatches categorical COG connection to paletted builder in client mode", () => {
     const item = makeConnectionItem({
+      dtype: "uint8",
       isCategorical: true,
       categories: [
         { value: 1, color: "#ff0000", label: "A" },
@@ -345,6 +360,7 @@ describe("useLayerBuilder — COG connection client render", () => {
   it("passes categories to paletted builder for categorical COG connection", () => {
     vi.mocked(buildCogLayerPaletted).mockClear();
     const item = makeConnectionItem({
+      dtype: "uint8",
       isCategorical: true,
       categories: [{ value: 2, color: "#00ff00", label: "B" }],
     });

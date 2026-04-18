@@ -15,9 +15,10 @@ describe("sourceCoopCatalog", () => {
     );
   });
 
-  it("includes VIDA buildings", () => {
-    const slugs = sourceCoopCatalog.map((p) => p.slug);
-    expect(slugs).toContain("vida/google-microsoft-osm-open-buildings");
+  it("VIDA buildings is not temporal and tagged vector", () => {
+    const p = getProduct("vida/google-microsoft-osm-open-buildings");
+    expect(p.isTemporal).toBe(false);
+    expect(p.tags).toContain("vector");
   });
 
   it("every product has a name, description, thumbnail, and tags", () => {

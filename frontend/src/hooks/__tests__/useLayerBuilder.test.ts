@@ -23,7 +23,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     source: "dataset",
     dataType: "raster",
     tileUrl: "/raster/tiles/{z}/{x}/{y}?assets=cog",
-    bounds: null,
+    bounds: [-10, -10, 10, 10],
     minZoom: null,
     maxZoom: null,
     bandCount: 1,
@@ -289,6 +289,7 @@ describe("useLayerBuilder — COG connection client render", () => {
 
   it("dispatches categorical COG connection to paletted builder in client mode", () => {
     const item = makeConnectionItem({
+      dtype: "uint8",
       isCategorical: true,
       categories: [
         { value: 1, color: "#ff0000", label: "A" },
@@ -345,6 +346,7 @@ describe("useLayerBuilder — COG connection client render", () => {
   it("passes categories to paletted builder for categorical COG connection", () => {
     vi.mocked(buildCogLayerPaletted).mockClear();
     const item = makeConnectionItem({
+      dtype: "uint8",
       isCategorical: true,
       categories: [{ value: 2, color: "#00ff00", label: "B" }],
     });

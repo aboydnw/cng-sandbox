@@ -7,14 +7,11 @@ import type { Table } from "apache-arrow";
 import {
   buildRasterTileLayers,
   buildRasterPMTilesLayer,
-  buildCogLayerContinuous,
-  buildCogLayerPaletted,
   buildVectorLayer,
   buildGeoJsonLayer,
   arrowTableToGeoJSON,
 } from "../lib/layers";
-import { classifyCogRenderPath } from "../lib/layers/cogDtype";
-import { parseRescaleString } from "../lib/connections";
+import { resolveRasterLayers } from "../lib/layers/resolveRasterLayers";
 
 interface UseLayerBuilderOptions {
   item: MapItem | null;
@@ -166,30 +163,19 @@ export function useLayerBuilder({
       const connType = item.connection.connection_type;
 
       if (connType === "cog") {
-        if (
-          renderMode === "client" &&
-          canClientRender &&
-          item.cogUrl &&
-          item.bounds
-        ) {
-          if (isCategorical) {
-            return buildCogLayerPaletted({
-              cogUrl: item.cogUrl,
-              opacity,
-              categories: effectiveCategories ?? item.categories ?? undefined,
-              tileCacheRef,
-              datasetBounds: item.bounds,
-            });
-          }
-          const parsed = parseRescaleString(item.rescale);
-          return buildCogLayerContinuous({
-            cogUrl: item.cogUrl,
+        if (renderMode === "client" && canClientRender) {
+          const resolved = resolveRasterLayers({
+            item,
             opacity,
-            rasterMin: parsed?.min ?? item.rasterMin ?? 0,
-            rasterMax: parsed?.max ?? item.rasterMax ?? 1,
-            datasetBounds: item.bounds,
+            rescaleMin,
+            rescaleMax,
             tileCacheRef,
+            serverTileUrl: tileUrl,
+            effectiveCategories: isCategorical
+              ? (effectiveCategories ?? item.categories ?? undefined)
+              : undefined,
           });
+          return resolved.layers;
         }
         return buildRasterTileLayers({
           tileUrl,
@@ -270,29 +256,18 @@ export function useLayerBuilder({
 
     if (item.dataType === "raster") {
       if (renderMode === "client" && canClientRender) {
-        const renderPath = classifyCogRenderPath({
-          dtype: item.dtype,
-          isCategorical,
-        });
-        if (renderPath === "paletted") {
-          return buildCogLayerPaletted({
-            cogUrl: item.cogUrl!,
-            opacity,
-            categories: isCategorical
-              ? (effectiveCategories ?? item.categories ?? undefined)
-              : undefined,
-            tileCacheRef,
-            datasetBounds: item.bounds,
-          });
-        }
-        return buildCogLayerContinuous({
-          cogUrl: item.cogUrl!,
+        const resolved = resolveRasterLayers({
+          item,
           opacity,
-          rasterMin: item.rasterMin ?? 0,
-          rasterMax: item.rasterMax ?? 1,
-          datasetBounds: item.bounds,
+          rescaleMin,
+          rescaleMax,
           tileCacheRef,
+          serverTileUrl: tileUrl,
+          effectiveCategories: isCategorical
+            ? (effectiveCategories ?? item.categories ?? undefined)
+            : undefined,
         });
+        return resolved.layers;
       }
       return buildRasterTileLayers({
         id: `raster-layer-${colormapName}${colormapReversed ? "-r" : ""}-${effectiveBand}-${rescaleMin ?? "d"}-${rescaleMax ?? "d"}`,

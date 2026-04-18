@@ -15,7 +15,7 @@ def _make_response(json_data):
 
 @pytest.mark.asyncio
 async def test_list_datasets_resource_empty(mock_http_client):
-    mock_http_client.get = AsyncMock(return_value=_make_response({"datasets": []}))
+    mock_http_client.get = AsyncMock(return_value=_make_response([]))
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     content = await list_datasets_resource(client)
     assert "No datasets available" in content
@@ -23,7 +23,7 @@ async def test_list_datasets_resource_empty(mock_http_client):
 
 @pytest.mark.asyncio
 async def test_list_datasets_resource_with_data(mock_http_client, sample_dataset):
-    mock_http_client.get = AsyncMock(return_value=_make_response({"datasets": [sample_dataset]}))
+    mock_http_client.get = AsyncMock(return_value=_make_response([sample_dataset]))
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     content = await list_datasets_resource(client)
     assert "Available Datasets" in content

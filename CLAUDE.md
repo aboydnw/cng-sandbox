@@ -336,8 +336,10 @@ cd mcp && uv run pytest -v
 ### Running the server
 
 ```bash
-cng-mcp --api-url http://localhost:8086    # Communicates over stdio
+cng-mcp --api-url http://localhost:8086 --workspace-id <8-char-id>   # Communicates over stdio
 ```
+
+The ingestion API requires an `X-Workspace-Id` header on workspace-listing endpoints (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`). The MCP server forwards this header when started with `--workspace-id` (or `SANDBOX_WORKSPACE_ID` env var). Without it, those listing endpoints will return 400 and the MCP tools will surface empty results.
 
 See `mcp/README.md` for client config examples and `mcp/ARCHITECTURE.md` for design notes.
 

@@ -18,13 +18,15 @@ pip install cng-mcp
 
 ```bash
 # Default API URL (http://localhost:8086)
-cng-mcp
+cng-mcp --workspace-id <8-char-id>
 
 # Custom API URL
-cng-mcp --api-url http://your-sandbox.com
+cng-mcp --api-url http://your-sandbox.com --workspace-id <8-char-id>
 ```
 
 The server communicates over stdio. Connect with any MCP client.
+
+The ingestion API requires an `X-Workspace-Id` header on workspace-listing endpoints (`/api/datasets`, `/api/connections`, `/api/stories`). Pass `--workspace-id` (or set `SANDBOX_WORKSPACE_ID`) so the server can forward it — without it, listing endpoints return 400.
 
 ### 2. Use with Claude Desktop / Code
 
@@ -35,7 +37,7 @@ Add to your MCP client config:
   "mcpServers": {
     "cng-sandbox": {
       "command": "cng-mcp",
-      "args": ["--api-url", "http://localhost:8086"]
+      "args": ["--api-url", "http://localhost:8086", "--workspace-id", "abcd1234"]
     }
   }
 }
@@ -55,7 +57,7 @@ Create a new story.
 **Input**:
 - `title` (string)
 - `description` (string)
-- `chapters` (array): each with `title`, `text`, `dataset_id`, `map_state`, `layer_config`
+- `chapters` (array): each with `title`, `narrative`, `map_state`, and `layer_config` (containing `dataset_id` or `connection_id`)
 
 ### update_story
 Modify an existing story.

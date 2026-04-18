@@ -22,6 +22,10 @@ async def test_read_story_tool(mock_http_client, sample_story):
     assert isinstance(result, TextContent)
     assert "Global Elevation Analysis" in result.text
     assert "Overview" in result.text
+    # Chapter narrative and dataset reference both come from the nested
+    # layer_config / narrative fields, not a flat text/dataset_id.
+    assert "Starting with global coverage" in result.text
+    assert "dataset_abc123" in result.text
 
 
 @pytest.mark.asyncio

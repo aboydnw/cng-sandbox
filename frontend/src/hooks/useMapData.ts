@@ -4,7 +4,7 @@ import { buildConnectionTileUrl } from "../lib/connections";
 import type { Dataset, Connection, MapItem } from "../types";
 import { displayName } from "../utils/dataset";
 
-function datasetToMapItem(ds: Dataset): MapItem {
+export function datasetToMapItem(ds: Dataset): MapItem {
   return {
     id: ds.id,
     name: displayName(ds),
@@ -40,7 +40,7 @@ function getConnectionDataType(conn: Connection): "raster" | "vector" {
   return "raster";
 }
 
-function connectionToMapItem(conn: Connection): MapItem {
+export function connectionToMapItem(conn: Connection): MapItem {
   return {
     id: conn.id,
     name: conn.name,

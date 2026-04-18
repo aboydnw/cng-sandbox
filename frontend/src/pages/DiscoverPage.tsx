@@ -33,16 +33,23 @@ function findSupportedDatasetId(
   return match?.id;
 }
 
+type CatalogState = "loading" | "loaded" | "error";
+
 export default function DiscoverPage() {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [state, setState] = useState<CatalogState>("loading");
 
   useEffect(() => {
     workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) => r.json())
-      .then((data) => setDatasets(Array.isArray(data) ? data : []))
-      .catch(() => setDatasets([]));
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`dataset fetch failed: ${r.status}`);
+        const data = await r.json();
+        setDatasets(Array.isArray(data) ? data : []);
+        setState("loaded");
+      })
+      .catch(() => setState("error"));
   }, []);
 
   const onCardClick = (entry: CatalogEntry) => {
@@ -104,6 +111,22 @@ export default function DiscoverPage() {
           </Text>
         </Flex>
 
+        {state === "error" && (
+          <Box
+            mb={4}
+            px={3}
+            py={2}
+            border="1px solid"
+            borderColor={BORDER}
+            bg="#fdf6f2"
+            color={TEXT}
+            fontSize="13px"
+          >
+            Couldn't load dataset availability from the workspace. Supported
+            products may show as unavailable until the connection recovers.
+          </Box>
+        )}
+
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={5}>
           {discoverCatalog.map((entry) => {
             const datasetId = findSupportedDatasetId(datasets, entry);
@@ -112,6 +135,7 @@ export default function DiscoverPage() {
                 key={entry.slug}
                 entry={entry}
                 ready={Boolean(datasetId)}
+                catalogState={state}
                 onClick={() => onCardClick(entry)}
               />
             );
@@ -139,10 +163,16 @@ export default function DiscoverPage() {
 interface CatalogCardProps {
   entry: CatalogEntry;
   ready: boolean;
+  catalogState: CatalogState;
   onClick: () => void;
 }
 
-function CatalogCard({ entry, ready, onClick }: CatalogCardProps) {
+function CatalogCard({
+  entry,
+  ready,
+  catalogState,
+  onClick,
+}: CatalogCardProps) {
   const [imageBroken, setImageBroken] = useState(false);
   const fallbackLetter = entry.title.charAt(0).toUpperCase();
 
@@ -270,7 +300,11 @@ function CatalogCard({ entry, ready, onClick }: CatalogCardProps) {
               textTransform="uppercase"
               letterSpacing="0.05em"
             >
-              Preparing…
+              {catalogState === "loading"
+                ? "Loading…"
+                : catalogState === "error"
+                  ? "Unavailable"
+                  : "Preparing…"}
             </Text>
           ) : (
             <Text

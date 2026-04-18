@@ -24,16 +24,19 @@ export default function DiscoverDatasetPage() {
   const entry = useMemo(() => getCatalogEntry(slug), [slug]);
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [fetchState, setFetchState] = useState<"loading" | "loaded" | "error">(
+    "loading"
+  );
 
   useEffect(() => {
     workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) => r.json())
-      .then((data) => {
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`dataset fetch failed: ${r.status}`);
+        const data = await r.json();
         setDatasets(Array.isArray(data) ? data : []);
-        setLoading(false);
+        setFetchState("loaded");
       })
-      .catch(() => setLoading(false));
+      .catch(() => setFetchState("error"));
   }, []);
 
   if (!entry) {
@@ -223,34 +226,44 @@ export default function DiscoverDatasetPage() {
               </Text>
 
               {entry.supported ? (
-                <Box
-                  as="button"
-                  onClick={onVisualize}
-                  {...({ disabled: !ready } as object)}
-                  w="100%"
-                  bg={ready ? TEXT : "#d0d0cc"}
-                  color="white"
-                  borderRadius="3px"
-                  py={2.5}
-                  px={3}
-                  fontSize="13px"
-                  fontWeight={600}
-                  cursor={ready ? "pointer" : "not-allowed"}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  gap={2}
-                  mb={2}
-                  transition="background 120ms ease"
-                  _hover={ready ? { bg: ACCENT } : undefined}
-                >
-                  <MapTrifold size={16} weight="bold" />
-                  {loading
-                    ? "Loading…"
-                    : ready
-                      ? "Visualize in sandbox"
-                      : "Preparing…"}
-                </Box>
+                <>
+                  <Box
+                    as="button"
+                    onClick={onVisualize}
+                    {...({ disabled: !ready } as object)}
+                    w="100%"
+                    bg={ready ? TEXT : "#d0d0cc"}
+                    color="white"
+                    borderRadius="3px"
+                    py={2.5}
+                    px={3}
+                    fontSize="13px"
+                    fontWeight={600}
+                    cursor={ready ? "pointer" : "not-allowed"}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    gap={2}
+                    mb={2}
+                    transition="background 120ms ease"
+                    _hover={ready ? { bg: ACCENT } : undefined}
+                  >
+                    <MapTrifold size={16} weight="bold" />
+                    {fetchState === "loading"
+                      ? "Loading…"
+                      : fetchState === "error"
+                        ? "Couldn't load dataset"
+                        : ready
+                          ? "Visualize in sandbox"
+                          : "Preparing…"}
+                  </Box>
+                  {fetchState === "error" && (
+                    <Text fontSize="11px" color={TEXT_MUTED} mb={2}>
+                      Retry by reloading the page, or continue to view the
+                      product on source.coop.
+                    </Text>
+                  )}
+                </>
               ) : (
                 <Box
                   w="100%"

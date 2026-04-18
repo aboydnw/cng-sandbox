@@ -6,7 +6,7 @@ import { CalendarPopover } from "./CalendarPopover";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
-import { buildRasterTileLayers, buildVectorLayer } from "../lib/layers";
+import { buildRasterTileLayers, buildVectorLayer, isPMTilesDataset } from "../lib/layers";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { detectCadence } from "../utils/temporal";
@@ -84,7 +84,7 @@ export function MapChapter({
     return [
       buildVectorLayer({
         tileUrl: dataset.tile_url,
-        isPMTiles: dataset.tile_url.startsWith("/pmtiles/"),
+        isPMTiles: isPMTilesDataset(dataset),
         opacity: lc.opacity,
         minZoom: dataset.min_zoom ?? undefined,
         maxZoom: dataset.max_zoom ?? undefined,

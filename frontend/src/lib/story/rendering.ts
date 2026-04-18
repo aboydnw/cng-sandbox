@@ -2,6 +2,7 @@ import {
   buildRasterTileLayers,
   buildRasterPMTilesLayer,
   buildVectorLayer,
+  isPMTilesDataset,
 } from "../layers";
 import { buildConnectionTileUrl } from "../connections";
 import { DEFAULT_LAYER_CONFIG } from "./types";
@@ -157,7 +158,7 @@ export function buildLayersForChapter(
   return [
     buildVectorLayer({
       tileUrl: ds.tile_url,
-      isPMTiles: ds.tile_url.startsWith("/pmtiles/"),
+      isPMTiles: isPMTilesDataset(ds),
       opacity: lc.opacity,
       minZoom: ds.min_zoom ?? undefined,
       maxZoom: ds.max_zoom ?? undefined,

@@ -24,6 +24,10 @@ from src.models.dataset import DatasetRow
 from src.services.enumerators import RemoteItem
 from src.services.enumerators.path_listing import enumerate_path_listing
 from src.services.enumerators.stac_sidecars import enumerate_stac_sidecars
+from src.services.pmtiles_register import (
+    PMTilesRegistrationError,
+    register_pmtiles_example,
+)
 from src.services.remote_register import (
     RemoteRegistrationError,
     register_remote_collection,
@@ -104,18 +108,21 @@ async def register_example_datasets(
             continue
         logger.info("registering example dataset: %s", product.slug)
         try:
-            items = await run_enumerator(product)
-            job = Job(filename=product.name)
-            job.workspace_id = None
-            await register_remote_collection(
-                job=job,
-                product=product,
-                items=items,
-                db_session_factory=db_session_factory,
-                is_example=True,
-            )
+            if product.kind == "pmtiles":
+                await register_pmtiles_example(product, db_session_factory)
+            else:
+                items = await run_enumerator(product)
+                job = Job(filename=product.name)
+                job.workspace_id = None
+                await register_remote_collection(
+                    job=job,
+                    product=product,
+                    items=items,
+                    db_session_factory=db_session_factory,
+                    is_example=True,
+                )
             logger.info("registered example dataset: %s", product.slug)
-        except RemoteRegistrationError:
+        except (RemoteRegistrationError, PMTilesRegistrationError):
             logger.exception("registration failed for %s", product.slug)
         except Exception:
             logger.exception("enumeration/registration failed for %s", product.slug)

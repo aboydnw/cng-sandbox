@@ -6,7 +6,11 @@ import { CalendarPopover } from "./CalendarPopover";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
-import { buildRasterTileLayers, buildVectorLayer, isPMTilesDataset } from "../lib/layers";
+import {
+  buildRasterTileLayers,
+  buildVectorLayer,
+  isPMTilesDataset,
+} from "../lib/layers";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { detectCadence } from "../utils/temporal";

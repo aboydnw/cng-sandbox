@@ -2,11 +2,10 @@ import asyncio
 import json
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-
-import pytest
 
 from src.models.base import Base
 from src.models.dataset import DatasetRow
@@ -81,9 +80,8 @@ def test_register_pmtiles_example_raises_when_header_probe_fails():
     with patch(
         "src.services.pmtiles_register.read_pmtiles_header",
         AsyncMock(side_effect=PMTilesHeaderError("bad magic")),
-    ):
-        with pytest.raises(PMTilesRegistrationError):
-            asyncio.run(register_pmtiles_example(_product(), factory))
+    ), pytest.raises(PMTilesRegistrationError):
+        asyncio.run(register_pmtiles_example(_product(), factory))
 
 
 def test_register_pmtiles_example_rejects_non_pmtiles_product():

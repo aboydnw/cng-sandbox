@@ -86,20 +86,22 @@ def parse_pmtiles_header(buf: bytes) -> PMTilesHeader:
 
 async def read_pmtiles_header(url: str) -> PMTilesHeader:
     headers = {"Range": f"bytes=0-{HEADER_LEN - 1}"}
-    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-        async with client.stream("GET", url, headers=headers) as resp:
-            resp.raise_for_status()
-            # Stream-read only the bytes we need. If a server or proxy ignores
-            # the Range header, `resp.content` would buffer the entire file
-            # into memory (PMTiles archives can be hundreds of GB). Using
-            # `aiter_bytes` + an early break caps us at HEADER_LEN bytes
-            # regardless of the server's behaviour.
-            body = bytearray()
-            async for chunk in resp.aiter_bytes():
-                remaining = HEADER_LEN - len(body)
-                if remaining <= 0:
-                    break
-                body.extend(chunk[:remaining])
-                if len(body) >= HEADER_LEN:
-                    break
+    async with (
+        httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client,
+        client.stream("GET", url, headers=headers) as resp,
+    ):
+        resp.raise_for_status()
+        # Stream-read only the bytes we need. If a server or proxy ignores
+        # the Range header, `resp.content` would buffer the entire file
+        # into memory (PMTiles archives can be hundreds of GB). Using
+        # `aiter_bytes` + an early break caps us at HEADER_LEN bytes
+        # regardless of the server's behaviour.
+        body = bytearray()
+        async for chunk in resp.aiter_bytes():
+            remaining = HEADER_LEN - len(body)
+            if remaining <= 0:
+                break
+            body.extend(chunk[:remaining])
+            if len(body) >= HEADER_LEN:
+                break
     return parse_pmtiles_header(bytes(body))

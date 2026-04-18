@@ -54,6 +54,19 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
             </Text>
           </Flex>
         </Link>
+        <Link
+          to={workspacePath("/discover")}
+          style={{ textDecoration: "none" }}
+        >
+          <Text
+            fontSize="sm"
+            fontWeight={500}
+            color="gray.600"
+            _hover={{ color: "gray.800" }}
+          >
+            Discover
+          </Text>
+        </Link>
         <Link to={workspacePath("/library")} style={{ textDecoration: "none" }}>
           <Text
             fontSize="sm"

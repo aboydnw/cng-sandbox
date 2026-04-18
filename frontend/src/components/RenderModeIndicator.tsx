@@ -7,21 +7,24 @@ export interface RenderModeIndicatorProps {
   renderMode: "client" | "server";
   reason: string;
   sizeBytes: number | null;
+  forceOpen?: boolean;
 }
 
 export function RenderModeIndicator({
   renderMode,
   reason,
   sizeBytes,
+  forceOpen = false,
 }: RenderModeIndicatorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const showDetails = forceOpen || isOpen;
 
   const modeLabel =
     renderMode === "client" ? "Client (browser)" : "Server tiles";
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || forceOpen) return;
     function handleClickOutside(e: MouseEvent) {
       if (
         containerRef.current &&
@@ -32,7 +35,7 @@ export function RenderModeIndicator({
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  }, [isOpen, forceOpen]);
 
   return (
     <Box
@@ -59,7 +62,7 @@ export function RenderModeIndicator({
         <Info size={16} weight="regular" />
       </IconButton>
 
-      {isOpen && (
+      {showDetails && (
         <Box
           position="absolute"
           top="calc(100% + 6px)"

@@ -1,3 +1,4 @@
+import type { Layer } from "@deck.gl/core";
 import { createCOGLayer } from "../maptool";
 import type { Timestep } from "../../types";
 
@@ -23,7 +24,7 @@ export function buildRasterTileLayers({
   activeTimestepIndex = 0,
   renderIndices,
   getLoadCallback,
-}: RasterTileLayerOptions) {
+}: RasterTileLayerOptions): Layer[] {
   if (!isTemporalActive) {
     return [
       createCOGLayer({

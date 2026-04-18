@@ -77,7 +77,7 @@ export function resolveRasterLayers(
       });
     }
     return {
-      layers: layers as unknown as Layer[],
+      layers,
       renderMode: "client",
       reason: eligibility.reason,
       sizeBytes: eligibility.sizeBytes,
@@ -92,7 +92,7 @@ export function resolveRasterLayers(
     isTemporalActive: false,
   });
   return {
-    layers: layers as unknown as Layer[],
+    layers,
     renderMode: "server",
     reason: eligibility.reason,
     sizeBytes: eligibility.sizeBytes,

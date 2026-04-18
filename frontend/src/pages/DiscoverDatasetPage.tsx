@@ -226,7 +226,7 @@ export default function DiscoverDatasetPage() {
                 <Box
                   as="button"
                   onClick={onVisualize}
-                  disabled={!ready}
+                  {...({ disabled: !ready } as object)}
                   w="100%"
                   bg={ready ? TEXT : "#d0d0cc"}
                   color="white"
@@ -271,9 +271,11 @@ export default function DiscoverDatasetPage() {
 
               <Box
                 as="a"
-                href={entry.externalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                {...({
+                  href: entry.externalUrl,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                } as object)}
                 display="flex"
                 alignItems="center"
                 justifyContent="center"

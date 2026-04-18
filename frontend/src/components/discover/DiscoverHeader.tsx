@@ -33,7 +33,11 @@ export function DiscoverHeader() {
               letterSpacing="-0.02em"
               fontFamily="Georgia, serif"
             >
-              source<Text as="span" color="#c44a2a">.</Text>coop
+              source
+              <Text as="span" color="#c44a2a">
+                .
+              </Text>
+              coop
             </Text>
             <Text
               fontSize="11px"
@@ -58,11 +62,7 @@ export function DiscoverHeader() {
             </Text>
           </Link>
           <Link to={workspacePath("/")} style={{ textDecoration: "none" }}>
-            <Text
-              fontSize="14px"
-              color={TEXT_MUTED}
-              _hover={{ color: TEXT }}
-            >
+            <Text fontSize="14px" color={TEXT_MUTED} _hover={{ color: TEXT }}>
               Contribute
             </Text>
           </Link>
@@ -70,11 +70,7 @@ export function DiscoverHeader() {
             to={workspacePath("/library")}
             style={{ textDecoration: "none" }}
           >
-            <Text
-              fontSize="14px"
-              color={TEXT_MUTED}
-              _hover={{ color: TEXT }}
-            >
+            <Text fontSize="14px" color={TEXT_MUTED} _hover={{ color: TEXT }}>
               Your workspace
             </Text>
           </Link>

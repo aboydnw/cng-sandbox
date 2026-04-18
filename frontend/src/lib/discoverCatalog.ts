@@ -203,8 +203,14 @@ export const discoverCatalog: CatalogEntry[] = [
     supported: false,
     externalUrl: "https://source.coop/nasa/hls",
     files: [
-      { path: "2024/T15TWK/HLS.S30.T15TWK.2024365.v2.0.B04.tif", size: "68 MB" },
-      { path: "2024/T15TWK/HLS.S30.T15TWK.2024365.v2.0.B08.tif", size: "68 MB" },
+      {
+        path: "2024/T15TWK/HLS.S30.T15TWK.2024365.v2.0.B04.tif",
+        size: "68 MB",
+      },
+      {
+        path: "2024/T15TWK/HLS.S30.T15TWK.2024365.v2.0.B08.tif",
+        size: "68 MB",
+      },
       { path: "…", size: "" },
     ],
   },
@@ -224,8 +230,14 @@ export const discoverCatalog: CatalogEntry[] = [
     supported: false,
     externalUrl: "https://source.coop/overturemaps/places",
     files: [
-      { path: "release=2025-03-12/theme=places/type=place/part-00000.parquet", size: "412 MB" },
-      { path: "release=2025-03-12/theme=places/type=place/part-00001.parquet", size: "408 MB" },
+      {
+        path: "release=2025-03-12/theme=places/type=place/part-00000.parquet",
+        size: "412 MB",
+      },
+      {
+        path: "release=2025-03-12/theme=places/type=place/part-00001.parquet",
+        size: "408 MB",
+      },
       { path: "…", size: "" },
     ],
   },

@@ -42,10 +42,7 @@ function WorkspaceRoutes() {
         <Route path="/story/:id/edit" element={<StoryEditorPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
-        <Route
-          path="/discover/:org/:name"
-          element={<DiscoverDatasetPage />}
-        />
+        <Route path="/discover/:org/:name" element={<DiscoverDatasetPage />} />
       </Routes>
     </WorkspaceProvider>
   );

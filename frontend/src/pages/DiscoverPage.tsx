@@ -126,9 +126,9 @@ export default function DiscoverPage() {
               style={{ color: ACCENT, textDecoration: "underline" }}
             >
               Contribute to source.coop
-            </Link>
-            {" "}— upload a GeoTIFF, NetCDF, GeoJSON, Shapefile, or HDF5 and
-            we'll convert it to a cloud-native format ready for publication.
+            </Link>{" "}
+            — upload a GeoTIFF, NetCDF, GeoJSON, Shapefile, or HDF5 and we'll
+            convert it to a cloud-native format ready for publication.
           </Text>
         </Box>
       </Box>

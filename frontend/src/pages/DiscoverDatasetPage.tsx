@@ -130,13 +130,22 @@ export default function DiscoverDatasetPage() {
           color={TEXT_MUTED}
         >
           <Text>
-            org · <Text as="span" color={TEXT}>{entry.org}</Text>
+            org ·{" "}
+            <Text as="span" color={TEXT}>
+              {entry.org}
+            </Text>
           </Text>
           <Text>
-            license · <Text as="span" color={TEXT}>{entry.license}</Text>
+            license ·{" "}
+            <Text as="span" color={TEXT}>
+              {entry.license}
+            </Text>
           </Text>
           <Text>
-            updated · <Text as="span" color={TEXT}>{entry.updated}</Text>
+            updated ·{" "}
+            <Text as="span" color={TEXT}>
+              {entry.updated}
+            </Text>
           </Text>
           <Flex gap={1.5} wrap="wrap">
             {entry.tags.map((t) => (
@@ -311,10 +320,7 @@ export default function DiscoverDatasetPage() {
               <Text fontSize="12px" color={TEXT_MUTED} lineHeight={1.5} mb={2}>
                 Have your own data to combine with this?
               </Text>
-              <Link
-                to={workspacePath("/")}
-                style={{ textDecoration: "none" }}
-              >
+              <Link to={workspacePath("/")} style={{ textDecoration: "none" }}>
                 <Flex
                   align="center"
                   gap={1.5}

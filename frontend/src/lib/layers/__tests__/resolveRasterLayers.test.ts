@@ -67,6 +67,14 @@ describe("resolveRasterLayers", () => {
     expect(result.reason).toMatch(/under/i);
     expect(result.sizeBytes).toBe(100 * 1024 * 1024);
     expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerContinuous).toHaveBeenCalledWith(
+      expect.objectContaining({
+        datasetBounds: [-10, -10, 10, 10],
+        rasterMin: 0,
+        rasterMax: 1,
+        opacity: 0.8,
+      })
+    );
     expect(buildRasterTileLayers).not.toHaveBeenCalled();
     expect(result.layers).toEqual([{ id: "cog-continuous" }]);
   });
@@ -109,7 +117,7 @@ describe("resolveRasterLayers", () => {
     });
 
     expect(result.renderMode).toBe("server");
-    expect(result.reason).toMatch(/cap|exceeds/i);
+    expect(result.reason).toMatch(/exceeds/i);
     expect(buildRasterTileLayers).toHaveBeenCalledTimes(1);
     expect(buildCogLayerContinuous).not.toHaveBeenCalled();
     expect(result.layers).toEqual([{ id: "server-tiles" }]);
@@ -143,5 +151,31 @@ describe("resolveRasterLayers", () => {
 
     expect(result.layers).toEqual([]);
     expect(result.renderMode).toBe("server");
+  });
+
+  it("parses item.rescale when rescaleMin/Max are null for connection COGs", () => {
+    const ref = makeRef();
+    resolveRasterLayers({
+      item: continuousItem({
+        source: "connection",
+        dataset: null,
+        connection: { file_size: 100 * 1024 * 1024 } as never,
+        rescale: "0,100",
+        rasterMin: null,
+        rasterMax: null,
+      }),
+      opacity: 0.8,
+      rescaleMin: null,
+      rescaleMax: null,
+      tileCacheRef: ref,
+    });
+
+    expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerContinuous).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rasterMin: 0,
+        rasterMax: 100,
+      })
+    );
   });
 });

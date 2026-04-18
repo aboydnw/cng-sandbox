@@ -2,12 +2,14 @@ import type { MutableRefObject } from "react";
 import type { Layer } from "@deck.gl/core";
 import type { MapItem } from "../../types";
 import type { TileCacheEntry } from "./cogLayer";
+import type { LutCategory } from "./categoricalLut";
 import {
   evaluateClientRenderEligibility,
   type ClientRenderEligibility,
 } from "./clientRenderEligibility";
 import { buildCogLayerContinuous, buildCogLayerPaletted } from "./cogLayer";
 import { buildRasterTileLayers } from "./rasterTileLayer";
+import { parseRescaleString } from "../connections/rescale";
 
 export interface ResolveRasterLayersInput {
   item: MapItem | null;
@@ -16,7 +18,7 @@ export interface ResolveRasterLayersInput {
   rescaleMax: number | null;
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   serverTileUrl?: string;
-  effectiveCategories?: { value: number; color: string; label: string }[];
+  effectiveCategories?: LutCategory[];
 }
 
 export interface ResolveRasterLayersOutput {
@@ -44,7 +46,7 @@ export function resolveRasterLayers(
     return {
       layers: [],
       renderMode: "server",
-      reason: "No item",
+      reason: evaluateClientRenderEligibility(null).reason,
       sizeBytes: null,
       cap: null,
     };
@@ -54,23 +56,26 @@ export function resolveRasterLayers(
     evaluateClientRenderEligibility(item);
 
   if (eligibility.canRender && item.cogUrl) {
-    const layers =
-      eligibility.renderPath === "paletted"
-        ? buildCogLayerPaletted({
-            cogUrl: item.cogUrl,
-            opacity,
-            categories: effectiveCategories,
-            tileCacheRef,
-            datasetBounds: item.bounds,
-          })
-        : buildCogLayerContinuous({
-            cogUrl: item.cogUrl,
-            opacity,
-            rasterMin: rescaleMin ?? item.rasterMin ?? 0,
-            rasterMax: rescaleMax ?? item.rasterMax ?? 1,
-            datasetBounds: item.bounds,
-            tileCacheRef,
-          });
+    let layers;
+    if (eligibility.renderPath === "paletted") {
+      layers = buildCogLayerPaletted({
+        cogUrl: item.cogUrl,
+        opacity,
+        categories: effectiveCategories,
+        tileCacheRef,
+        datasetBounds: item.bounds,
+      });
+    } else {
+      const parsed = parseRescaleString(item.rescale);
+      layers = buildCogLayerContinuous({
+        cogUrl: item.cogUrl,
+        opacity,
+        rasterMin: rescaleMin ?? parsed?.min ?? item.rasterMin ?? 0,
+        rasterMax: rescaleMax ?? parsed?.max ?? item.rasterMax ?? 1,
+        datasetBounds: item.bounds,
+        tileCacheRef,
+      });
+    }
     return {
       layers: layers as unknown as Layer[],
       renderMode: "client",

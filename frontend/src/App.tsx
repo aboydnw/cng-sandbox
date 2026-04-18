@@ -12,6 +12,8 @@ import StoryReaderPage from "./pages/StoryReaderPage";
 import StoryEditorPage from "./pages/StoryEditorPage";
 import StoryEmbedPage from "./pages/StoryEmbedPage";
 import AboutPage from "./pages/AboutPage";
+import DiscoverPage from "./pages/DiscoverPage";
+import DiscoverDatasetPage from "./pages/DiscoverDatasetPage";
 import { WelcomeToast } from "./components/WelcomeToast";
 
 function StoryReaderRedirect() {
@@ -39,6 +41,11 @@ function WorkspaceRoutes() {
         <Route path="/story/:id" element={<StoryReaderRedirect />} />
         <Route path="/story/:id/edit" element={<StoryEditorPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/discover" element={<DiscoverPage />} />
+        <Route
+          path="/discover/:org/:name"
+          element={<DiscoverDatasetPage />}
+        />
       </Routes>
     </WorkspaceProvider>
   );

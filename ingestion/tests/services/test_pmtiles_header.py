@@ -95,9 +95,12 @@ def test_read_pmtiles_header_issues_range_request():
         def raise_for_status(self):
             return None
 
+    instances: list = []
+
     class FakeClient:
         def __init__(self, *args, **kwargs):
             self.get = AsyncMock(return_value=FakeResponse())
+            instances.append(self)
 
         __aenter__ = fake_aenter
         __aexit__ = fake_aexit
@@ -107,3 +110,8 @@ def test_read_pmtiles_header_issues_range_request():
         parsed = asyncio.run(read_pmtiles_header("https://example/x.pmtiles"))
 
     assert parsed.tile_type == 1
+    assert len(instances) == 1
+    client = instances[0]
+    client.get.assert_awaited_once()
+    call_kwargs = client.get.await_args.kwargs
+    assert call_kwargs["headers"] == {"Range": "bytes=0-126"}

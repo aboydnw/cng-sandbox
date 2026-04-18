@@ -51,6 +51,7 @@ def test_get_credits_vector_pmtiles():
 
 def test_get_credits_pmtiles_reference():
     credits = get_credits(FormatPair.PMTILES)
+    assert len(credits) == 2
     tools = [c["tool"] for c in credits]
     assert "PMTiles" in tools
     assert "MapLibre" in tools

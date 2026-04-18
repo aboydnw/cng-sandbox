@@ -110,8 +110,7 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
                 "role": "Converted by",
             }
         )
-
-    if format_pair == FormatPair.PMTILES:
+    elif format_pair == FormatPair.PMTILES:
         credits.append(
             {
                 "tool": "PMTiles",
@@ -120,7 +119,11 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
             }
         )
         credits.append(
-            {"tool": "MapLibre", "url": "https://maplibre.org", "role": "Map rendered by"}
+            {
+                "tool": "MapLibre",
+                "url": "https://maplibre.org",
+                "role": "Map rendered by",
+            }
         )
         return credits
 

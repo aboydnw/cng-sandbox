@@ -220,6 +220,7 @@ export function MapSidePanel({
           onRescaleChange={onRescaleChange}
           colormapReversed={colormapReversed}
           onColormapReversedChange={onColormapReversedChange}
+          shared={shared}
         />
       )}
 

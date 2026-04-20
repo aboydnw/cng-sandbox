@@ -149,6 +149,18 @@ def _migrate_schema(engine):
             conn.rollback()
             if not _is_duplicate_column(exc):
                 raise
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE stories ADD COLUMN is_example BOOLEAN "
+                    "NOT NULL DEFAULT FALSE"
+                )
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
         for table in ("datasets", "connections"):
             try:
                 conn.execute(

@@ -140,6 +140,17 @@ By default, release-please uses `GITHUB_TOKEN`, which means its PRs won't trigge
    - Add `RELEASE_BOT_ID` as a **variable** (the App ID)
    - Add `RELEASE_BOT_PRIVATE_KEY` as a **secret** (the private key PEM)
 
+### Dependency updates
+
+Dependabot is configured via `.github/dependabot.yml` to open weekly PRs for:
+
+- GitHub Actions (grouped into a single PR)
+- npm dependencies in `frontend/` (minor + patch grouped; majors open separately)
+- uv dependencies in `ingestion/` and `mcp/` (minor + patch grouped; majors open separately)
+- Docker base images in `caddy/`, `frontend/`, and `ingestion/` (grouped into a single PR)
+
+Dependabot PRs go through the same CI checks as any other PR. Review and merge them like normal feature PRs — release-please will fold the resulting `chore(deps):` commits into the next release changelog.
+
 ### Conventional Commits
 
 All commits to `main` must use conventional prefixes:

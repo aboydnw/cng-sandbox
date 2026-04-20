@@ -44,6 +44,7 @@ const mockItem: MapItem = {
   rasterMin: null,
   rasterMax: null,
   cogUrl: null,
+  crs: null,
   rescale: null,
   parquetUrl: null,
   isTemporal: false,

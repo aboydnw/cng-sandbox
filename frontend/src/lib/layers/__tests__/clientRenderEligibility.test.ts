@@ -21,6 +21,7 @@ function rasterDatasetItem(overrides: Partial<MapItem> = {}): MapItem {
     isCategorical: false,
     categories: null,
     cogUrl: "https://r2.example/ds.tif",
+    crs: "EPSG:3857",
     rescale: "0,1",
     parquetUrl: null,
     isTemporal: false,
@@ -104,5 +105,27 @@ describe("evaluateClientRenderEligibility", () => {
     const result = evaluateClientRenderEligibility(null);
     expect(result.canRender).toBe(false);
     expect(result.reason).toMatch(/no item|missing/i);
+  });
+
+  it("returns ineligible when CRS is known and not EPSG:3857", () => {
+    const result = evaluateClientRenderEligibility(
+      rasterDatasetItem({ crs: "EPSG:4326" })
+    );
+    expect(result.canRender).toBe(false);
+    expect(result.reason).toMatch(/CRS|reproject/i);
+  });
+
+  it("stays eligible when CRS is EPSG:3857", () => {
+    const result = evaluateClientRenderEligibility(
+      rasterDatasetItem({ crs: "EPSG:3857" })
+    );
+    expect(result.canRender).toBe(true);
+  });
+
+  it("stays eligible when CRS is unknown (null)", () => {
+    const result = evaluateClientRenderEligibility(
+      rasterDatasetItem({ crs: null })
+    );
+    expect(result.canRender).toBe(true);
   });
 });

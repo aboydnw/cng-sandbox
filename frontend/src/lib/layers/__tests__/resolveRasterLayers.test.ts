@@ -38,6 +38,7 @@ function continuousItem(overrides: Partial<MapItem> = {}): MapItem {
     isCategorical: false,
     categories: null,
     cogUrl: "https://r2.example/ds.tif",
+    crs: "EPSG:3857",
     rescale: "0,1",
     parquetUrl: null,
     isTemporal: false,

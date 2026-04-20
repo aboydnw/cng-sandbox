@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 
 def test_inspect_url_detects_pmtiles(client, monkeypatch):
@@ -73,3 +72,14 @@ def test_inspect_url_unknown_extension_with_failed_head(client, monkeypatch):
 def test_inspect_url_missing_url_returns_422(client):
     resp = client.post("/api/inspect-url", json={})
     assert resp.status_code == 422
+
+
+def test_inspect_url_accepts_206_partial_content(client, monkeypatch):
+    async def fake_head(self, url):
+        return MagicMock(status_code=206, headers={"content-length": "999"}, is_success=True)
+    monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
+    resp = client.post("/api/inspect-url", json={"url": "https://example.com/data.pmtiles"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["has_errors"] is False
+    assert body["size_bytes"] == 999

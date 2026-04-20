@@ -10,6 +10,11 @@ import wktParser from "wkt-parser";
 
 // --- EPSG resolver (offline for common CRSes, network fallback) ---
 
+// proj4 requires projection origin/scale params (long0, lat0, lat_ts, x0, y0,
+// k0) on merc definitions; without them forward() emits NaN x, which NaNs out
+// every reference-point reprojection downstream and crashes the TileLayer's
+// bounding-volume calculation. The axis is "enu" so input is interpreted as
+// [lon, lat], matching the rest of the code.
 const EPSG_DEFS: Record<number, unknown> = {
   4326: {
     projName: "longlat",
@@ -18,7 +23,11 @@ const EPSG_DEFS: Record<number, unknown> = {
     ellps: "WGS 84",
     a: 6378137,
     rf: 298.257223563,
-    axis: "neu",
+    long0: 0,
+    lat0: 0,
+    x0: 0,
+    y0: 0,
+    axis: "enu",
     units: "degree",
   },
   3857: {
@@ -28,6 +37,12 @@ const EPSG_DEFS: Record<number, unknown> = {
     ellps: "WGS 84",
     a: 6378137,
     rf: 298.257223563,
+    long0: 0,
+    lat0: 0,
+    lat_ts: 0,
+    x0: 0,
+    y0: 0,
+    k0: 1,
     axis: "enu",
     units: "metre",
   },

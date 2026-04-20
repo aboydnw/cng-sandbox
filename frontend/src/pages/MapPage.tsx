@@ -513,12 +513,25 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               enableSnapshot={shared}
             >
               {shared && !(isServerGeoParquet && needsConversion) && (
-                <Box position="absolute" top={3} right={3} display="flex" gap={2} alignItems="flex-start">
+                <Box
+                  position="absolute"
+                  top={3}
+                  right={3}
+                  display="flex"
+                  gap={2}
+                  alignItems="flex-start"
+                >
                   {item && item.dataType === "raster" && (
                     <RenderModeIndicator
-                      renderMode={controls.renderMode === "client" ? "client" : "server"}
+                      renderMode={
+                        controls.renderMode === "client" ? "client" : "server"
+                      }
                       reason={evaluateClientRenderEligibility(item).reason}
-                      sizeBytes={item.dataset?.converted_file_size ?? item.connection?.file_size ?? null}
+                      sizeBytes={
+                        item.dataset?.converted_file_size ??
+                        item.connection?.file_size ??
+                        null
+                      }
                     />
                   )}
                   <SnapButton

@@ -134,7 +134,6 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
 
 @router.post("/stories/{story_id}/fork")
 async def fork_story(story_id: str, request: Request):
-    import uuid as _uuid
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
     session = get_session(request)
@@ -145,7 +144,7 @@ async def fork_story(story_id: str, request: Request):
 
         now = datetime.now(UTC)
         forked = StoryRow(
-            id=str(_uuid.uuid4()),
+            id=str(uuid.uuid4()),
             title=source.title,
             description=source.description,
             dataset_id=source.dataset_id,

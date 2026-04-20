@@ -35,6 +35,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     isCategorical: false,
     categories: null,
     cogUrl: null,
+    crs: null,
     rescale: null,
     parquetUrl: null,
     isTemporal: false,

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import proj4 from "proj4";
 
 vi.mock("@developmentseed/deck.gl-geotiff", () => ({
   COGLayer: vi.fn(),
@@ -6,9 +7,59 @@ vi.mock("@developmentseed/deck.gl-geotiff", () => ({
 
 vi.mock("@developmentseed/deck.gl-raster/gpu-modules", () => ({
   CreateTexture: {},
+  Colormap: {},
 }));
 
-import { resolveCogUrl } from "../cogLayer";
+import { resolveCogUrl, localEpsgResolver } from "../cogLayer";
+
+describe("localEpsgResolver (EPSG defs)", () => {
+  // Regression: the local EPSG defs were missing proj4's required origin
+  // params (long0, lat0, lat_ts, x0, y0, k0). proj4 tolerated the missing
+  // source-side fields for longlat but silently produced NaN x values when
+  // the def was used on either end of a merc converter. That NaN fed into
+  // deck.gl-raster's tile traversal and crashed the bounding-volume
+  // calculation, which then looped forever in the animation frame.
+  it("produces finite forward/inverse coordinates between 4326 and 3857", async () => {
+    const def4326 = await localEpsgResolver(4326);
+    const def3857 = await localEpsgResolver(3857);
+
+    const samples: Array<[number, number]> = [
+      [11, 47],
+      [-156, 76],
+      [-156, -76],
+      [0, 0],
+      [179, 84],
+    ];
+
+    const forward = proj4(def4326 as never, def3857 as never);
+    for (const [lon, lat] of samples) {
+      const [x, y] = forward.forward([lon, lat]);
+      expect(Number.isFinite(x)).toBe(true);
+      expect(Number.isFinite(y)).toBe(true);
+    }
+
+    const inverse = proj4(def3857 as never, def4326 as never);
+    for (const [lon, lat] of samples) {
+      const [fx, fy] = forward.forward([lon, lat]);
+      const [ilon, ilat] = inverse.forward([fx, fy]);
+      expect(ilon).toBeCloseTo(lon, 6);
+      expect(ilat).toBeCloseTo(lat, 6);
+    }
+  });
+
+  it("matches canonical Web Mercator (spherical, not ellipsoidal) at the antimeridian", async () => {
+    // Web Mercator / EPSG:3857 is defined on a sphere with a = b = 6378137, so
+    // the half-circumference at lon=180 must be π * 6378137 ≈ 20037508.3428.
+    // An ellipsoidal merc def (ellps: WGS84, rf: 298.25…) would drift y by
+    // tens of km at mid/high latitudes and silently break tile alignment.
+    const def4326 = await localEpsgResolver(4326);
+    const def3857 = await localEpsgResolver(3857);
+    const forward = proj4(def4326 as never, def3857 as never);
+    const [x, y] = forward.forward([180, 0]);
+    expect(x).toBeCloseTo(20037508.3428, 2);
+    expect(y).toBeCloseTo(0, 2);
+  });
+});
 
 describe("resolveCogUrl", () => {
   it("passes https URLs through unchanged", () => {

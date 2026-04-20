@@ -175,6 +175,7 @@ export interface MapItem {
   isCategorical: boolean;
   categories: { value: number; color: string; label: string }[] | null;
   cogUrl: string | null;
+  crs: string | null;
   rescale: string | null;
   parquetUrl: string | null;
   isTemporal: boolean;

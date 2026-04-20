@@ -160,7 +160,9 @@ function ScrollytellingBlock({
           />
         )}
         {renderMetadata && !(activeDataset === null && !hasConnection) && (
-          <RenderModeIndicator {...renderMetadata} />
+          <Box position="absolute" top={3} right={3} zIndex={10}>
+            <RenderModeIndicator {...renderMetadata} />
+          </Box>
         )}
         {activeDataset === null && !hasConnection && (
           <Flex

@@ -346,7 +346,9 @@ export default function StoryEditorPage() {
               }
             >
               {previewRenderMetadata && (
-                <RenderModeIndicator {...previewRenderMetadata} />
+                <Box position="absolute" top={3} right={3} zIndex={10}>
+                  <RenderModeIndicator {...previewRenderMetadata} />
+                </Box>
               )}
               {viewSavedFlash && (
                 <Flex

@@ -40,9 +40,7 @@ export function RenderModeIndicator({
   return (
     <Box
       ref={containerRef}
-      position="absolute"
-      top="12px"
-      right="12px"
+      position="relative"
       zIndex={10}
       data-snapshot-overlay
     >
@@ -66,7 +64,7 @@ export function RenderModeIndicator({
         <Box
           position="absolute"
           top="calc(100% + 6px)"
-          right="0"
+          left="0"
           minW="220px"
           bg="white"
           border="1px solid"

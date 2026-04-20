@@ -46,8 +46,10 @@ import { useGeoParquetRender } from "../hooks/useGeoParquetRender";
 import { useConnectionConversion } from "../hooks/useConnectionConversion";
 import { displayName } from "../utils/dataset";
 import { SnapButton } from "../components/SnapButton";
+import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { useMapSnapshot } from "../hooks/useMapSnapshot";
 import { buildSnapshotFilename } from "../utils/snapshotFilename";
+import { evaluateClientRenderEligibility } from "../lib/layers/clientRenderEligibility";
 import type { Table } from "apache-arrow";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
@@ -511,7 +513,27 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               enableSnapshot={shared}
             >
               {shared && !(isServerGeoParquet && needsConversion) && (
-                <Box position="absolute" top={3} right={3}>
+                <Box
+                  position="absolute"
+                  top={3}
+                  right={3}
+                  display="flex"
+                  gap={2}
+                  alignItems="flex-start"
+                >
+                  {item && item.dataType === "raster" && (
+                    <RenderModeIndicator
+                      renderMode={
+                        controls.renderMode === "client" ? "client" : "server"
+                      }
+                      reason={evaluateClientRenderEligibility(item).reason}
+                      sizeBytes={
+                        item.dataset?.converted_file_size ??
+                        item.connection?.file_size ??
+                        null
+                      }
+                    />
+                  )}
                   <SnapButton
                     onSnap={snapshot.snap}
                     isCapturing={snapshot.isCapturing}

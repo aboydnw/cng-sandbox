@@ -131,7 +131,11 @@ export function MapChapter({
             basemap={basemap}
             onBasemapChange={setBasemap}
           >
-            {renderMetadata && <RenderModeIndicator {...renderMetadata} />}
+            {renderMetadata && (
+              <Box position="absolute" top={3} right={3} zIndex={10}>
+                <RenderModeIndicator {...renderMetadata} />
+              </Box>
+            )}
             {/* Temporal date picker */}
             {isTemporalInteractive && (
               <Box

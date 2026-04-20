@@ -7,8 +7,10 @@ import {
   DialogCloseTrigger,
   DialogContent,
   DialogHeader,
+  DialogPositioner,
   DialogRoot,
   DialogTitle,
+  Portal,
   Text,
 } from "@chakra-ui/react";
 import { FileUploader } from "./FileUploader";
@@ -66,45 +68,49 @@ export function UploadModal({
       onOpenChange={(e) => !e.open && onClose()}
       size="lg"
     >
-      <DialogBackdrop />
-      <DialogContent shadow="lg">
-        <DialogHeader>
-          <DialogTitle>Add a dataset</DialogTitle>
-          <DialogCloseTrigger asChild>
-            <CloseButton size="sm" />
-          </DialogCloseTrigger>
-        </DialogHeader>
-        <DialogBody pb={6}>
-          {state.scanResult ? (
-            <VariablePicker
-              variables={state.scanResult.variables}
-              onSelect={(variable, group) =>
-                confirmVariable(state.scanResult!.scan_id, variable, group)
-              }
-            />
-          ) : isProcessing ? (
-            <ProgressTracker
-              stages={state.stages}
-              filename={fileRef.current.name}
-              fileSize={fileRef.current.size}
-            />
-          ) : (
-            <FileUploader
-              onFileSelected={handleFile}
-              onFilesSelected={startTemporalUpload}
-              onUrlSubmitted={handleUrl}
-              disabled={false}
-            />
-          )}
-          {state.status === "failed" && state.error && (
-            <Box textAlign="center" py={4}>
-              <Text color="red.500" fontSize="14px">
-                {state.error}
-              </Text>
-            </Box>
-          )}
-        </DialogBody>
-      </DialogContent>
+      <Portal>
+        <DialogBackdrop />
+        <DialogPositioner>
+          <DialogContent shadow="lg">
+            <DialogHeader>
+              <DialogTitle>Add a dataset</DialogTitle>
+              <DialogCloseTrigger asChild>
+                <CloseButton size="sm" />
+              </DialogCloseTrigger>
+            </DialogHeader>
+            <DialogBody pb={6}>
+              {state.scanResult ? (
+                <VariablePicker
+                  variables={state.scanResult.variables}
+                  onSelect={(variable, group) =>
+                    confirmVariable(state.scanResult!.scan_id, variable, group)
+                  }
+                />
+              ) : isProcessing ? (
+                <ProgressTracker
+                  stages={state.stages}
+                  filename={fileRef.current.name}
+                  fileSize={fileRef.current.size}
+                />
+              ) : (
+                <FileUploader
+                  onFileSelected={handleFile}
+                  onFilesSelected={startTemporalUpload}
+                  onUrlSubmitted={handleUrl}
+                  disabled={false}
+                />
+              )}
+              {state.status === "failed" && state.error && (
+                <Box textAlign="center" py={4}>
+                  <Text color="red.500" fontSize="14px">
+                    {state.error}
+                  </Text>
+                </Box>
+              )}
+            </DialogBody>
+          </DialogContent>
+        </DialogPositioner>
+      </Portal>
     </DialogRoot>
   );
 }

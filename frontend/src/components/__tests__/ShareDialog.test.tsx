@@ -45,13 +45,79 @@ describe("ShareDialog", () => {
     expect(screen.getByText("Share publicly")).toBeTruthy();
   });
 
-  it("renders Stop sharing heading when isShared is true", () => {
+  it("renders Public link heading when isShared is true", () => {
     renderWithChakra(<ShareDialog {...defaultProps} isShared={true} />);
-    const heading = screen.getByRole("heading", { name: "Stop sharing" });
+    const heading = screen.getByRole("heading", { name: "Public link" });
     expect(heading).toBeTruthy();
   });
 
-  it("clicking Share calls connectionsApi.share(id, true) then onSharedChange(true) then onClose", async () => {
+  it("shows shareable URL and copy button when isShared is true", () => {
+    renderWithChakra(
+      <ShareDialog
+        {...defaultProps}
+        kind="dataset"
+        resourceId="xyz-456"
+        isShared={true}
+      />
+    );
+    const urlInput = screen.getByDisplayValue(
+      `${window.location.origin}/map/xyz-456`
+    );
+    expect(urlInput).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Copy/i })).toBeTruthy();
+  });
+
+  it("uses /map/connection/:id for connection shareable URL", () => {
+    renderWithChakra(
+      <ShareDialog
+        {...defaultProps}
+        kind="connection"
+        resourceId="abc-123"
+        isShared={true}
+      />
+    );
+    expect(
+      screen.getByDisplayValue(
+        `${window.location.origin}/map/connection/abc-123`
+      )
+    ).toBeTruthy();
+  });
+
+  it("clicking Copy writes share URL to clipboard and flips to Copied state", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const originalClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      writable: true,
+    });
+
+    try {
+      renderWithChakra(
+        <ShareDialog
+          {...defaultProps}
+          kind="dataset"
+          resourceId="xyz-456"
+          isShared={true}
+        />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /Copy/i }));
+
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/map/xyz-456`
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Copied/i })).toBeTruthy();
+      });
+    } finally {
+      Object.defineProperty(navigator, "clipboard", {
+        value: originalClipboard,
+        writable: true,
+      });
+    }
+  });
+
+  it("clicking Share calls connectionsApi.share(id, true) then onSharedChange(true) and keeps dialog open", async () => {
     vi.mocked(connectionsApi.share).mockResolvedValue(undefined);
     const onSharedChange = vi.fn();
     const onClose = vi.fn();
@@ -72,8 +138,8 @@ describe("ShareDialog", () => {
     await waitFor(() => {
       expect(connectionsApi.share).toHaveBeenCalledWith("abc-123", true);
       expect(onSharedChange).toHaveBeenCalledWith(true);
-      expect(onClose).toHaveBeenCalled();
     });
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("clicking Stop sharing calls datasetsApi.share(id, false) then onSharedChange(false) then onClose", async () => {
@@ -99,6 +165,15 @@ describe("ShareDialog", () => {
       expect(onSharedChange).toHaveBeenCalledWith(false);
       expect(onClose).toHaveBeenCalled();
     });
+  });
+
+  it("clicking Done in shared view closes the dialog", () => {
+    const onClose = vi.fn();
+    renderWithChakra(
+      <ShareDialog {...defaultProps} isShared={true} onClose={onClose} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+    expect(onClose).toHaveBeenCalled();
   });
 
   it("shows error message when API rejects", async () => {

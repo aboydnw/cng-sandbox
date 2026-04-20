@@ -8,9 +8,11 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogPositioner,
   DialogRoot,
   DialogTitle,
   Heading,
+  Portal,
   Spinner,
   Table,
   Text,
@@ -117,184 +119,192 @@ export function GeoParquetPreviewModal({
       onOpenChange={(e) => !e.open && onCancel()}
       size="xl"
     >
-      <DialogBackdrop />
-      <DialogContent shadow="lg" maxH="80vh" overflowY="auto">
-        <DialogHeader>
-          <DialogTitle>Preview: {filename}</DialogTitle>
-          <DialogCloseTrigger asChild>
-            <CloseButton size="sm" />
-          </DialogCloseTrigger>
-        </DialogHeader>
-        <DialogBody>
-          {validating ? (
-            <Box textAlign="center" py={12}>
-              <Spinner
-                size="lg"
-                color="brand.orange"
-                data-testid="validating-spinner"
-                mb={4}
-              />
-              <Text>Validating...</Text>
-            </Box>
-          ) : error ? (
-            <Box
-              p={4}
-              bg="red.50"
-              borderRadius="md"
-              borderLeft="4px solid"
-              borderColor="red.500"
-            >
-              <Text color="red.700">{error}</Text>
-            </Box>
-          ) : (
-            <Box>
-              <Box
-                mb={4}
-                p={3}
-                bg="brand.bgSubtle"
-                border="1px solid"
-                borderColor="brand.border"
-                borderRadius="md"
-              >
-                <Text fontWeight={600} mb={1}>
-                  {renderPath === "client"
-                    ? "Will render directly in browser"
-                    : "Will convert to tiles (server-side)"}
-                </Text>
-                <Text fontSize="sm" color="brand.textSecondary">
-                  {formatRouteDescription(renderPath, sizeBytes, sizeSource)}
-                </Text>
-              </Box>
-              {geometryInfo && (
-                <Box mb={6}>
-                  <Heading size="sm" mb={3}>
-                    Geometry Information
-                  </Heading>
-                  <Box overflowX="auto">
-                    <Table.Root size="sm">
-                      <Table.Body>
-                        <Table.Row>
-                          <Table.Cell fontWeight="600" w="25%">
-                            Type
-                          </Table.Cell>
-                          <Table.Cell>{geometryInfo.type}</Table.Cell>
-                        </Table.Row>
-                        {geometryInfo.bbox && (
-                          <>
-                            <Table.Row>
-                              <Table.Cell fontWeight="600">
-                                Min Longitude
-                              </Table.Cell>
-                              <Table.Cell>
-                                {geometryInfo.bbox.minLon}
-                              </Table.Cell>
-                            </Table.Row>
-                            <Table.Row>
-                              <Table.Cell fontWeight="600">
-                                Min Latitude
-                              </Table.Cell>
-                              <Table.Cell>
-                                {geometryInfo.bbox.minLat}
-                              </Table.Cell>
-                            </Table.Row>
-                            <Table.Row>
-                              <Table.Cell fontWeight="600">
-                                Max Longitude
-                              </Table.Cell>
-                              <Table.Cell>
-                                {geometryInfo.bbox.maxLon}
-                              </Table.Cell>
-                            </Table.Row>
-                            <Table.Row>
-                              <Table.Cell fontWeight="600">
-                                Max Latitude
-                              </Table.Cell>
-                              <Table.Cell>
-                                {geometryInfo.bbox.maxLat}
-                              </Table.Cell>
-                            </Table.Row>
-                          </>
-                        )}
-                      </Table.Body>
-                    </Table.Root>
-                  </Box>
+      <Portal>
+        <DialogBackdrop />
+        <DialogPositioner>
+          <DialogContent shadow="lg" maxH="80vh" overflowY="auto">
+            <DialogHeader>
+              <DialogTitle>Preview: {filename}</DialogTitle>
+              <DialogCloseTrigger asChild>
+                <CloseButton size="sm" />
+              </DialogCloseTrigger>
+            </DialogHeader>
+            <DialogBody>
+              {validating ? (
+                <Box textAlign="center" py={12}>
+                  <Spinner
+                    size="lg"
+                    color="brand.orange"
+                    data-testid="validating-spinner"
+                    mb={4}
+                  />
+                  <Text>Validating...</Text>
                 </Box>
-              )}
-
-              {schema.length > 0 && (
-                <Box mb={6}>
-                  <Heading size="sm" mb={3}>
-                    Schema
-                  </Heading>
-                  <Box overflowX="auto">
-                    <Table.Root size="sm">
-                      <Table.Header>
-                        <Table.Row bg="brand.bgSubtle">
-                          <Table.ColumnHeader>Column</Table.ColumnHeader>
-                          <Table.ColumnHeader>Type</Table.ColumnHeader>
-                        </Table.Row>
-                      </Table.Header>
-                      <Table.Body>
-                        {schema.map((col) => (
-                          <Table.Row key={col.name}>
-                            <Table.Cell>{col.name}</Table.Cell>
-                            <Table.Cell>{col.type}</Table.Cell>
-                          </Table.Row>
-                        ))}
-                      </Table.Body>
-                    </Table.Root>
-                  </Box>
+              ) : error ? (
+                <Box
+                  p={4}
+                  bg="red.50"
+                  borderRadius="md"
+                  borderLeft="4px solid"
+                  borderColor="red.500"
+                >
+                  <Text color="red.700">{error}</Text>
                 </Box>
-              )}
-
-              {sampleRows.length > 0 && (
-                <Box mb={6}>
-                  <Heading size="sm" mb={3}>
-                    Sample Rows (first {sampleRows.length})
-                  </Heading>
-                  <Box overflowX="auto">
-                    <Table.Root size="sm">
-                      <Table.Header>
-                        <Table.Row bg="brand.bgSubtle">
-                          {sampleColumnNames.map((col) => (
-                            <Table.ColumnHeader key={col}>
-                              {col}
-                            </Table.ColumnHeader>
-                          ))}
-                        </Table.Row>
-                      </Table.Header>
-                      <Table.Body>
-                        {sampleRows.map((row, idx) => (
-                          <Table.Row key={idx}>
-                            {sampleColumnNames.map((col) => (
-                              <Table.Cell key={`${idx}-${col}`}>
-                                {truncateValue(row[col], 100)}
+              ) : (
+                <Box>
+                  <Box
+                    mb={4}
+                    p={3}
+                    bg="brand.bgSubtle"
+                    border="1px solid"
+                    borderColor="brand.border"
+                    borderRadius="md"
+                  >
+                    <Text fontWeight={600} mb={1}>
+                      {renderPath === "client"
+                        ? "Will render directly in browser"
+                        : "Will convert to tiles (server-side)"}
+                    </Text>
+                    <Text fontSize="sm" color="brand.textSecondary">
+                      {formatRouteDescription(
+                        renderPath,
+                        sizeBytes,
+                        sizeSource
+                      )}
+                    </Text>
+                  </Box>
+                  {geometryInfo && (
+                    <Box mb={6}>
+                      <Heading size="sm" mb={3}>
+                        Geometry Information
+                      </Heading>
+                      <Box overflowX="auto">
+                        <Table.Root size="sm">
+                          <Table.Body>
+                            <Table.Row>
+                              <Table.Cell fontWeight="600" w="25%">
+                                Type
                               </Table.Cell>
+                              <Table.Cell>{geometryInfo.type}</Table.Cell>
+                            </Table.Row>
+                            {geometryInfo.bbox && (
+                              <>
+                                <Table.Row>
+                                  <Table.Cell fontWeight="600">
+                                    Min Longitude
+                                  </Table.Cell>
+                                  <Table.Cell>
+                                    {geometryInfo.bbox.minLon}
+                                  </Table.Cell>
+                                </Table.Row>
+                                <Table.Row>
+                                  <Table.Cell fontWeight="600">
+                                    Min Latitude
+                                  </Table.Cell>
+                                  <Table.Cell>
+                                    {geometryInfo.bbox.minLat}
+                                  </Table.Cell>
+                                </Table.Row>
+                                <Table.Row>
+                                  <Table.Cell fontWeight="600">
+                                    Max Longitude
+                                  </Table.Cell>
+                                  <Table.Cell>
+                                    {geometryInfo.bbox.maxLon}
+                                  </Table.Cell>
+                                </Table.Row>
+                                <Table.Row>
+                                  <Table.Cell fontWeight="600">
+                                    Max Latitude
+                                  </Table.Cell>
+                                  <Table.Cell>
+                                    {geometryInfo.bbox.maxLat}
+                                  </Table.Cell>
+                                </Table.Row>
+                              </>
+                            )}
+                          </Table.Body>
+                        </Table.Root>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {schema.length > 0 && (
+                    <Box mb={6}>
+                      <Heading size="sm" mb={3}>
+                        Schema
+                      </Heading>
+                      <Box overflowX="auto">
+                        <Table.Root size="sm">
+                          <Table.Header>
+                            <Table.Row bg="brand.bgSubtle">
+                              <Table.ColumnHeader>Column</Table.ColumnHeader>
+                              <Table.ColumnHeader>Type</Table.ColumnHeader>
+                            </Table.Row>
+                          </Table.Header>
+                          <Table.Body>
+                            {schema.map((col) => (
+                              <Table.Row key={col.name}>
+                                <Table.Cell>{col.name}</Table.Cell>
+                                <Table.Cell>{col.type}</Table.Cell>
+                              </Table.Row>
                             ))}
-                          </Table.Row>
-                        ))}
-                      </Table.Body>
-                    </Table.Root>
-                  </Box>
+                          </Table.Body>
+                        </Table.Root>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {sampleRows.length > 0 && (
+                    <Box mb={6}>
+                      <Heading size="sm" mb={3}>
+                        Sample Rows (first {sampleRows.length})
+                      </Heading>
+                      <Box overflowX="auto">
+                        <Table.Root size="sm">
+                          <Table.Header>
+                            <Table.Row bg="brand.bgSubtle">
+                              {sampleColumnNames.map((col) => (
+                                <Table.ColumnHeader key={col}>
+                                  {col}
+                                </Table.ColumnHeader>
+                              ))}
+                            </Table.Row>
+                          </Table.Header>
+                          <Table.Body>
+                            {sampleRows.map((row, idx) => (
+                              <Table.Row key={idx}>
+                                {sampleColumnNames.map((col) => (
+                                  <Table.Cell key={`${idx}-${col}`}>
+                                    {truncateValue(row[col], 100)}
+                                  </Table.Cell>
+                                ))}
+                              </Table.Row>
+                            ))}
+                          </Table.Body>
+                        </Table.Root>
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
               )}
-            </Box>
-          )}
-        </DialogBody>
-        <DialogFooter gap={2}>
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button
-            bg="brand.orange"
-            color="white"
-            onClick={onConfirm}
-            disabled={isConfirmDisabled}
-          >
-            Confirm & Connect
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+            </DialogBody>
+            <DialogFooter gap={2}>
+              <Button variant="ghost" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button
+                bg="brand.orange"
+                color="white"
+                onClick={onConfirm}
+                disabled={isConfirmDisabled}
+              >
+                Confirm & Connect
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogPositioner>
+      </Portal>
     </DialogRoot>
   );
 }

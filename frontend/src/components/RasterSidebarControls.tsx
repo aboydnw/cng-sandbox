@@ -121,29 +121,33 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         Visualization Controls
       </Text>
 
-      {isCategorical && categories && categories.length > 0 && datasetId && !shared && (
-        <>
-          <EditableCategoryLegend
-            datasetId={datasetId}
-            source={source}
-            categories={categories}
-            onCategoriesChange={onCategoriesChange ?? (() => {})}
-          />
-          {onCategoricalOverride && (
-            <Text
-              fontSize="10px"
-              color="brand.textSecondary"
-              mt={1}
-              mb={3}
-              cursor="pointer"
-              _hover={{ color: "brand.orange" }}
-              onClick={() => onCategoricalOverride(false)}
-            >
-              Show as continuous →
-            </Text>
-          )}
-        </>
-      )}
+      {isCategorical &&
+        categories &&
+        categories.length > 0 &&
+        datasetId &&
+        !shared && (
+          <>
+            <EditableCategoryLegend
+              datasetId={datasetId}
+              source={source}
+              categories={categories}
+              onCategoriesChange={onCategoriesChange ?? (() => {})}
+            />
+            {onCategoricalOverride && (
+              <Text
+                fontSize="10px"
+                color="brand.textSecondary"
+                mt={1}
+                mb={3}
+                cursor="pointer"
+                _hover={{ color: "brand.orange" }}
+                onClick={() => onCategoricalOverride(false)}
+              >
+                Show as continuous →
+              </Text>
+            )}
+          </>
+        )}
 
       {!isCategorical && (
         <>

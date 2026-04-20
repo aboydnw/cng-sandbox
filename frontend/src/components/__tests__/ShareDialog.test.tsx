@@ -85,25 +85,36 @@ describe("ShareDialog", () => {
 
   it("clicking Copy writes share URL to clipboard and flips to Copied state", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
-
-    renderWithChakra(
-      <ShareDialog
-        {...defaultProps}
-        kind="dataset"
-        resourceId="xyz-456"
-        isShared={true}
-      />
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /Copy/i }));
-
-    expect(writeText).toHaveBeenCalledWith(
-      `${window.location.origin}/map/xyz-456`
-    );
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Copied/i })).toBeTruthy();
+    const originalClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      writable: true,
     });
+
+    try {
+      renderWithChakra(
+        <ShareDialog
+          {...defaultProps}
+          kind="dataset"
+          resourceId="xyz-456"
+          isShared={true}
+        />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /Copy/i }));
+
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/map/xyz-456`
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /Copied/i })).toBeTruthy();
+      });
+    } finally {
+      Object.defineProperty(navigator, "clipboard", {
+        value: originalClipboard,
+        writable: true,
+      });
+    }
   });
 
   it("clicking Share calls connectionsApi.share(id, true) then onSharedChange(true) and keeps dialog open", async () => {

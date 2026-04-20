@@ -86,15 +86,25 @@ export function ShareDialog({
     }
   }
 
-  function handleCopy() {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(shareUrl);
-    } else {
-      urlInputRef.current?.select();
-      document.execCommand("copy");
+  async function handleCopy() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        throw new Error("Clipboard API not available");
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      try {
+        urlInputRef.current?.select();
+        document.execCommand("copy");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Both methods failed, don't show copied state
+      }
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   return (

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import * as duckdb from "@duckdb/duckdb-wasm";
 
 interface DuckDBState {
@@ -8,6 +8,11 @@ interface DuckDBState {
   error: string | null;
 }
 
+type DuckDBHandle = {
+  db: duckdb.AsyncDuckDB;
+  conn: duckdb.AsyncDuckDBConnection;
+};
+
 const dbSingleton: {
   db: duckdb.AsyncDuckDB | null;
   conn: duckdb.AsyncDuckDBConnection | null;
@@ -16,6 +21,34 @@ const dbSingleton: {
   conn: null,
 };
 
+let initPromise: Promise<DuckDBHandle> | null = null;
+
+async function createDuckDB(): Promise<DuckDBHandle> {
+  const DUCKDB_BUNDLES = await duckdb.selectBundle(
+    duckdb.getJsDelivrBundles()
+  );
+
+  const workerResponse = await fetch(DUCKDB_BUNDLES.mainWorker!);
+  const workerBlob = new Blob([await workerResponse.text()], {
+    type: "application/javascript",
+  });
+  const workerUrl = URL.createObjectURL(workerBlob);
+  const worker = new Worker(workerUrl);
+  const logger = new duckdb.ConsoleLogger();
+  const db = new duckdb.AsyncDuckDB(logger, worker);
+  await db.instantiate(
+    DUCKDB_BUNDLES.mainModule,
+    DUCKDB_BUNDLES.pthreadWorker
+  );
+
+  const conn = await db.connect();
+  await conn.query("INSTALL spatial; LOAD spatial;");
+
+  dbSingleton.db = db;
+  dbSingleton.conn = conn;
+  return { db, conn };
+}
+
 export function useDuckDB() {
   const [state, setState] = useState<DuckDBState>({
     db: dbSingleton.db,
@@ -23,58 +56,31 @@ export function useDuckDB() {
     loading: false,
     error: null,
   });
-  const initializingRef = useRef(false);
 
-  const initialize = useCallback(async (): Promise<{
-    db: duckdb.AsyncDuckDB;
-    conn: duckdb.AsyncDuckDBConnection;
-  } | null> => {
+  const initialize = useCallback(async (): Promise<DuckDBHandle | null> => {
     if (dbSingleton.db && dbSingleton.conn) {
-      setState({
-        db: dbSingleton.db,
-        conn: dbSingleton.conn,
-        loading: false,
-        error: null,
-      });
-      return { db: dbSingleton.db, conn: dbSingleton.conn };
+      const handle = { db: dbSingleton.db, conn: dbSingleton.conn };
+      setState({ ...handle, loading: false, error: null });
+      return handle;
     }
-    if (initializingRef.current) return null;
-    initializingRef.current = true;
+
     setState((s) => ({ ...s, loading: true, error: null }));
 
-    try {
-      const DUCKDB_BUNDLES = await duckdb.selectBundle(
-        duckdb.getJsDelivrBundles()
-      );
-
-      // Fetch the worker script and create a same-origin blob URL
-      // to avoid cross-origin Worker restrictions
-      const workerResponse = await fetch(DUCKDB_BUNDLES.mainWorker!);
-      const workerBlob = new Blob([await workerResponse.text()], {
-        type: "application/javascript",
+    if (!initPromise) {
+      initPromise = createDuckDB().catch((e) => {
+        initPromise = null;
+        throw e;
       });
-      const workerUrl = URL.createObjectURL(workerBlob);
-      const worker = new Worker(workerUrl);
-      const logger = new duckdb.ConsoleLogger();
-      const db = new duckdb.AsyncDuckDB(logger, worker);
-      await db.instantiate(
-        DUCKDB_BUNDLES.mainModule,
-        DUCKDB_BUNDLES.pthreadWorker
-      );
+    }
 
-      const conn = await db.connect();
-      await conn.query("INSTALL spatial; LOAD spatial;");
-
-      dbSingleton.db = db;
-      dbSingleton.conn = conn;
-      setState({ db, conn, loading: false, error: null });
-      return { db, conn };
+    try {
+      const handle = await initPromise;
+      setState({ ...handle, loading: false, error: null });
+      return handle;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "DuckDB could not be loaded";
       setState({ db: null, conn: null, loading: false, error: msg });
       return null;
-    } finally {
-      initializingRef.current = false;
     }
   }, []);
 

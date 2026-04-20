@@ -187,3 +187,106 @@ def test_dataset_ids_falls_back_to_dataset_id(client):
     )
     data = resp.json()
     assert data["dataset_ids"] == ["ds-only"]
+
+
+def test_fork_example_story_copies_to_callers_workspace(client, db_session):
+    from src.models.story import StoryRow
+    import json
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    original = StoryRow(
+        id="example-1",
+        title="Example",
+        description="Desc",
+        dataset_id="ds-1",
+        chapters_json=json.dumps([{
+            "id": "ch1", "order": 0, "type": "scrollytelling",
+            "title": "C1", "narrative": "n", "map_state": {},
+            "transition": "fly-to", "overlay_position": "left",
+            "layer_config": None,
+        }]),
+        published=True,
+        created_at=now,
+        updated_at=now,
+        workspace_id="system",
+        is_example=True,
+    )
+    db_session.add(original)
+    db_session.commit()
+
+    resp = client.post("/api/stories/example-1/fork")
+    assert resp.status_code == 200
+    forked = resp.json()
+    assert forked["id"] != "example-1"
+    assert forked["title"] == "Example"
+    assert len(forked["chapters"]) == 1
+    assert forked["chapters"][0]["id"] == "ch1"
+
+
+def test_fork_nonexistent_story_returns_404(client):
+    resp = client.post("/api/stories/does-not-exist/fork")
+    assert resp.status_code == 404
+
+
+def test_fork_regular_story_from_other_workspace(client, db_session):
+    from src.models.story import StoryRow
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    original = StoryRow(
+        id="regular-story",
+        title="Regular",
+        chapters_json="[]",
+        published=False,
+        created_at=now,
+        updated_at=now,
+        workspace_id="someone-else",
+        is_example=False,
+    )
+    db_session.add(original)
+    db_session.commit()
+
+    resp = client.post("/api/stories/regular-story/fork")
+    assert resp.status_code == 200
+    forked = resp.json()
+    assert forked["id"] != "regular-story"
+    assert forked["title"] == "Regular"
+
+
+def test_fork_is_deep_copy_not_reference(client, db_session):
+    """Mutating the original after forking must not change the forked copy."""
+    from src.models.story import StoryRow
+    import json
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    original = StoryRow(
+        id="deep-copy-src",
+        title="Original",
+        chapters_json=json.dumps([{"id": "ch1", "order": 0, "title": "T", "narrative": "", "map_state": {}}]),
+        published=False,
+        created_at=now,
+        updated_at=now,
+        workspace_id="other",
+        is_example=False,
+    )
+    db_session.add(original)
+    db_session.commit()
+
+    resp = client.post("/api/stories/deep-copy-src/fork")
+    assert resp.status_code == 200
+    forked_id = resp.json()["id"]
+
+    # Mutate the original
+    original.title = "MUTATED"
+    original.chapters_json = "[]"
+    db_session.commit()
+
+    # Forked copy should be unchanged
+    get_resp = client.get(f"/api/stories/{forked_id}")
+    # A forked copy is not published by default — but the caller IS the owner,
+    # and the GET handler returns owner-owned stories regardless of published.
+    assert get_resp.status_code == 200
+    assert get_resp.json()["title"] == "Original"
+    assert len(get_resp.json()["chapters"]) == 1

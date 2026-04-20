@@ -132,6 +132,38 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         session.close()
 
 
+@router.post("/stories/{story_id}/fork")
+async def fork_story(story_id: str, request: Request):
+    import uuid as _uuid
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        source = session.get(StoryRow, story_id)
+        if not source:
+            raise HTTPException(status_code=404, detail="Story not found")
+
+        now = datetime.now(UTC)
+        forked = StoryRow(
+            id=str(_uuid.uuid4()),
+            title=source.title,
+            description=source.description,
+            dataset_id=source.dataset_id,
+            chapters_json=source.chapters_json,
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id=workspace_id,
+            is_example=False,
+        )
+        session.add(forked)
+        session.commit()
+        session.refresh(forked)
+        return _row_to_response(forked)
+    finally:
+        session.close()
+
+
 @router.delete("/stories/{story_id}", status_code=204)
 async def delete_story(story_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")

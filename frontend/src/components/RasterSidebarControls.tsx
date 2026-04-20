@@ -42,6 +42,7 @@ interface RasterSidebarControlsProps {
   onRescaleChange: (min: number | null, max: number | null) => void;
   colormapReversed: boolean;
   onColormapReversedChange: (reversed: boolean) => void;
+  shared?: boolean;
 }
 
 function parseOrNull(s: string): number | null {
@@ -81,6 +82,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
     onRescaleChange,
     colormapReversed,
     onColormapReversedChange,
+    shared = false,
   } = props;
 
   const [minDraft, setMinDraft] = useState<string>(
@@ -119,7 +121,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         Visualization Controls
       </Text>
 
-      {isCategorical && categories && categories.length > 0 && datasetId && (
+      {isCategorical && categories && categories.length > 0 && datasetId && !shared && (
         <>
           <EditableCategoryLegend
             datasetId={datasetId}

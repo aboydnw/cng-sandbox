@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.21.0](https://github.com/aboydnw/cng-sandbox/compare/v1.20.1...v1.21.0) (2026-04-20)
+
+
+### Features
+
+* **frontend:** surface render mode indicator on shared maps ([#258](https://github.com/aboydnw/cng-sandbox/issues/258)) ([feeea02](https://github.com/aboydnw/cng-sandbox/commit/feeea024c3956855260b4f584fdde4eca0fc60b2))
+
+
+### Bug Fixes
+
+* **frontend:** legend layout + sidebar scroll + shared map category visibility ([#257](https://github.com/aboydnw/cng-sandbox/issues/257)) ([689a42c](https://github.com/aboydnw/cng-sandbox/commit/689a42ca1180d44cb7183292236d3c40935d2b67))
+
 ## [1.20.1](https://github.com/aboydnw/cng-sandbox/compare/v1.20.0...v1.20.1) (2026-04-20)
 
 

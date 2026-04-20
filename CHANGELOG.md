@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.20.1](https://github.com/aboydnw/cng-sandbox/compare/v1.20.0...v1.20.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* **frontend:** complete proj4 defs for client COG renderer ([#253](https://github.com/aboydnw/cng-sandbox/issues/253)) ([d272d3b](https://github.com/aboydnw/cng-sandbox/commit/d272d3b01b12d89b124ec874c4829b2c45b89698))
+* **frontend:** force server render for COGs not in EPSG:3857 ([#254](https://github.com/aboydnw/cng-sandbox/issues/254)) ([e3e9c2d](https://github.com/aboydnw/cng-sandbox/commit/e3e9c2d61d35a98f1427d741c436091c4053d0f3))
+* **frontend:** portal-wrap Chakra dialogs + add copy-URL to Share ([#256](https://github.com/aboydnw/cng-sandbox/issues/256)) ([ba58ef3](https://github.com/aboydnw/cng-sandbox/commit/ba58ef325d250bc0173f1a144ceabc4194fcc98f))
+
 ## [1.20.0](https://github.com/aboydnw/cng-sandbox/compare/v1.19.0...v1.20.0) (2026-04-18)
 
 

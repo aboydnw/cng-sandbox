@@ -24,9 +24,7 @@ const dbSingleton: {
 let initPromise: Promise<DuckDBHandle> | null = null;
 
 async function createDuckDB(): Promise<DuckDBHandle> {
-  const DUCKDB_BUNDLES = await duckdb.selectBundle(
-    duckdb.getJsDelivrBundles()
-  );
+  const DUCKDB_BUNDLES = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
 
   const workerResponse = await fetch(DUCKDB_BUNDLES.mainWorker!);
   const workerBlob = new Blob([await workerResponse.text()], {
@@ -36,10 +34,7 @@ async function createDuckDB(): Promise<DuckDBHandle> {
   const worker = new Worker(workerUrl);
   const logger = new duckdb.ConsoleLogger();
   const db = new duckdb.AsyncDuckDB(logger, worker);
-  await db.instantiate(
-    DUCKDB_BUNDLES.mainModule,
-    DUCKDB_BUNDLES.pthreadWorker
-  );
+  await db.instantiate(DUCKDB_BUNDLES.mainModule, DUCKDB_BUNDLES.pthreadWorker);
 
   const conn = await db.connect();
   await conn.query("INSTALL spatial; LOAD spatial;");

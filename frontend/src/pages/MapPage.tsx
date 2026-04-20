@@ -643,7 +643,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
             bg="brand.bgSubtle"
             borderLeftWidth="1px"
             borderColor="brand.border"
-            overflow="hidden"
+            overflow="auto"
           >
             <MapSidePanel
               item={item}

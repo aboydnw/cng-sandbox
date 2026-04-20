@@ -42,6 +42,7 @@ interface RasterSidebarControlsProps {
   onRescaleChange: (min: number | null, max: number | null) => void;
   colormapReversed: boolean;
   onColormapReversedChange: (reversed: boolean) => void;
+  shared?: boolean;
 }
 
 function parseOrNull(s: string): number | null {
@@ -81,6 +82,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
     onRescaleChange,
     colormapReversed,
     onColormapReversedChange,
+    shared = false,
   } = props;
 
   const [minDraft, setMinDraft] = useState<string>(
@@ -119,29 +121,33 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         Visualization Controls
       </Text>
 
-      {isCategorical && categories && categories.length > 0 && datasetId && (
-        <>
-          <EditableCategoryLegend
-            datasetId={datasetId}
-            source={source}
-            categories={categories}
-            onCategoriesChange={onCategoriesChange ?? (() => {})}
-          />
-          {onCategoricalOverride && (
-            <Text
-              fontSize="10px"
-              color="brand.textSecondary"
-              mt={1}
-              mb={3}
-              cursor="pointer"
-              _hover={{ color: "brand.orange" }}
-              onClick={() => onCategoricalOverride(false)}
-            >
-              Show as continuous →
-            </Text>
-          )}
-        </>
-      )}
+      {isCategorical &&
+        categories &&
+        categories.length > 0 &&
+        datasetId &&
+        !shared && (
+          <>
+            <EditableCategoryLegend
+              datasetId={datasetId}
+              source={source}
+              categories={categories}
+              onCategoriesChange={onCategoriesChange ?? (() => {})}
+            />
+            {onCategoricalOverride && (
+              <Text
+                fontSize="10px"
+                color="brand.textSecondary"
+                mt={1}
+                mb={3}
+                cursor="pointer"
+                _hover={{ color: "brand.orange" }}
+                onClick={() => onCategoricalOverride(false)}
+              >
+                Show as continuous →
+              </Text>
+            )}
+          </>
+        )}
 
       {!isCategorical && (
         <>

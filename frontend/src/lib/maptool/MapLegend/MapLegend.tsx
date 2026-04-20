@@ -48,7 +48,8 @@ export function MapLegend({
       position="absolute"
       {...POSITION_STYLES[position]}
       zIndex={10}
-      maxW="280px"
+      minW="200px"
+      maxW="400px"
       rounded="md"
       borderWidth="1px"
       borderColor="gray.200"

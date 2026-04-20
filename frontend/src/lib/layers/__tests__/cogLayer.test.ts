@@ -46,6 +46,19 @@ describe("localEpsgResolver (EPSG defs)", () => {
       expect(ilat).toBeCloseTo(lat, 6);
     }
   });
+
+  it("matches canonical Web Mercator (spherical, not ellipsoidal) at the antimeridian", async () => {
+    // Web Mercator / EPSG:3857 is defined on a sphere with a = b = 6378137, so
+    // the half-circumference at lon=180 must be π * 6378137 ≈ 20037508.3428.
+    // An ellipsoidal merc def (ellps: WGS84, rf: 298.25…) would drift y by
+    // tens of km at mid/high latitudes and silently break tile alignment.
+    const def4326 = await localEpsgResolver(4326);
+    const def3857 = await localEpsgResolver(3857);
+    const forward = proj4(def4326 as never, def3857 as never);
+    const [x, y] = forward.forward([180, 0]);
+    expect(x).toBeCloseTo(20037508.3428, 2);
+    expect(y).toBeCloseTo(0, 2);
+  });
 });
 
 describe("resolveCogUrl", () => {

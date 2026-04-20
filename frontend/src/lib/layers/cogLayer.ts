@@ -34,9 +34,13 @@ const EPSG_DEFS: Record<number, unknown> = {
     projName: "merc",
     name: "WGS 84 / Pseudo-Mercator",
     srsCode: "WGS 84 / Pseudo-Mercator",
-    ellps: "WGS 84",
+    // Web Mercator is defined on a sphere with a = b = 6378137. Using the
+    // WGS84 ellipsoid (rf ≈ 298.26) here would apply elliptical mercator math
+    // and shift y by tens of km at mid/high latitudes, breaking alignment
+    // with canonical tile-space (rescaleEPSG3857ToCommonSpace assumes
+    // 2π * 6378137 circumference).
     a: 6378137,
-    rf: 298.257223563,
+    b: 6378137,
     long0: 0,
     lat0: 0,
     lat_ts: 0,

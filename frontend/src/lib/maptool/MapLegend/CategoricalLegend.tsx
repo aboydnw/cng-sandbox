@@ -15,8 +15,9 @@ export function CategoricalLegend({ config }: CategoricalLegendProps) {
       m={0}
       p={0}
       display="flex"
-      flexDirection="column"
-      gap={1}
+      flexWrap="wrap"
+      gap={2}
+      style={{ maxWidth: "320px" }}
     >
       {categories.map((cat) => (
         <Flex
@@ -25,6 +26,8 @@ export function CategoricalLegend({ config }: CategoricalLegendProps) {
           alignItems="center"
           gap={2}
           fontSize="12px"
+          minW="120px"
+          flex="1 1 auto"
         >
           <Box
             display="inline-block"

@@ -254,6 +254,77 @@ def test_fork_regular_story_from_other_workspace(client, db_session):
     assert forked["title"] == "Regular"
 
 
+def test_list_stories_includes_example_rows_from_other_workspaces(client, db_session):
+    """Examples from any workspace must appear in the caller's list."""
+    from src.models.story import StoryRow
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    caller_ws = "testABCD"  # matches the client fixture header
+
+    db_session.add(StoryRow(
+        id="system-example",
+        title="Example Story",
+        chapters_json="[]",
+        published=True,
+        created_at=now,
+        updated_at=now,
+        workspace_id="system",
+        is_example=True,
+    ))
+    db_session.add(StoryRow(
+        id="caller-own",
+        title="My Story",
+        chapters_json="[]",
+        published=False,
+        created_at=now,
+        updated_at=now,
+        workspace_id=caller_ws,
+        is_example=False,
+    ))
+    db_session.add(StoryRow(
+        id="other-private",
+        title="Private",
+        chapters_json="[]",
+        published=False,
+        created_at=now,
+        updated_at=now,
+        workspace_id="someone-else",
+        is_example=False,
+    ))
+    db_session.commit()
+
+    resp = client.get("/api/stories")
+    assert resp.status_code == 200
+    ids = {s["id"] for s in resp.json()}
+    assert "system-example" in ids
+    assert "caller-own" in ids
+    assert "other-private" not in ids
+
+
+def test_list_stories_excludes_non_example_cross_workspace_rows(client, db_session):
+    """Non-example stories in other workspaces must not leak into the caller's list."""
+    from src.models.story import StoryRow
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    db_session.add(StoryRow(
+        id="leak-candidate",
+        title="Other",
+        chapters_json="[]",
+        published=True,  # Published but not example — still must not leak into list
+        created_at=now,
+        updated_at=now,
+        workspace_id="someone-else",
+        is_example=False,
+    ))
+    db_session.commit()
+
+    resp = client.get("/api/stories")
+    ids = {s["id"] for s in resp.json()}
+    assert "leak-candidate" not in ids
+
+
 def test_fork_is_deep_copy_not_reference(client, db_session):
     """Mutating the original after forking must not change the forked copy."""
     from src.models.story import StoryRow

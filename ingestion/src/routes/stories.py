@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
+from sqlalchemy import or_
 
 from src.dependencies import get_session
 from src.models.story import (
@@ -79,7 +80,7 @@ async def list_stories(request: Request):
     try:
         rows = (
             session.query(StoryRow)
-            .filter(StoryRow.workspace_id == workspace_id)
+            .filter(or_(StoryRow.workspace_id == workspace_id, StoryRow.is_example.is_(True)))
             .order_by(StoryRow.created_at.desc())
             .all()
         )

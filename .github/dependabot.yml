@@ -4,15 +4,20 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
-        patterns:
-          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       minor-and-patch:
@@ -24,6 +29,8 @@ updates:
     directory: /ingestion
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       minor-and-patch:
@@ -35,6 +42,8 @@ updates:
     directory: /mcp
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       minor-and-patch:
@@ -49,7 +58,10 @@ updates:
       - /ingestion
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       docker:
-        patterns:
-          - "*"
+        update-types:
+          - minor
+          - patch

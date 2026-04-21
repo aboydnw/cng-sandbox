@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
@@ -25,6 +26,65 @@ vi.mock("../../lib/connections", () => ({
   probeCOG: vi.fn().mockResolvedValue({}),
 }));
 
+vi.mock("../../hooks/useUrlDetection", async () => {
+  const actual = await vi.importActual<
+    typeof import("../../hooks/useUrlDetection")
+  >("../../hooks/useUrlDetection");
+  return {
+    ...actual,
+    useUrlDetection: vi.fn().mockReturnValue({
+      detect: vi.fn(async (url: string) => {
+        if (url.endsWith(".parquet")) {
+          return {
+            route: "parquet",
+            url,
+            format: "parquet",
+            isCog: false,
+            sizeBytes: null,
+          };
+        }
+        return {
+          route: "convert-url",
+          url,
+          format: "unknown",
+          isCog: false,
+          sizeBytes: null,
+        };
+      }),
+      detecting: false,
+      error: null,
+    }),
+  };
+});
+
+vi.mock("../../hooks/useDuckDB", () => {
+  const conn = {};
+  return {
+    useDuckDB: vi.fn().mockReturnValue({
+      conn,
+      initialize: vi.fn().mockResolvedValue({ conn }),
+    }),
+  };
+});
+
+vi.mock("../../hooks/useGeoParquetValidation", () => ({
+  useGeoParquetValidation: vi.fn().mockReturnValue({
+    validating: false,
+    valid: false,
+    error: null,
+    geometryInfo: null,
+    sizeBytes: null,
+    sizeSource: "unknown",
+    validate: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+vi.mock("../../hooks/useGeoParquetQuery", () => ({
+  useGeoParquetQuery: vi.fn().mockReturnValue({
+    result: { columnStats: [], totalCount: 0, table: null },
+  }),
+}));
+
 vi.mock("../../hooks/useConversionJob", () => ({
   useConversionJob: vi.fn().mockReturnValue({
     state: {
@@ -47,6 +107,20 @@ vi.mock("../../hooks/useConversionJob", () => ({
   }),
 }));
 
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    })
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 function renderPage() {
   return render(
     <ChakraProvider value={system}>
@@ -66,79 +140,51 @@ function renderPage() {
   );
 }
 
-describe("UploadPage — three card layout", () => {
-  it("renders all three cards in collapsed state", () => {
+describe("UploadPage", () => {
+  it("renders exactly two path cards: Visualize data and Build a story", () => {
     renderPage();
-    expect(screen.getByText("Convert a file")).toBeTruthy();
-    expect(screen.getByText("Connect a source")).toBeTruthy();
+    expect(screen.getByText("Visualize data")).toBeTruthy();
     expect(screen.getByText("Build a story")).toBeTruthy();
   });
 
-  it("renders card descriptions in collapsed state", () => {
+  it("does not render the old three cards", () => {
     renderPage();
+    expect(screen.queryByText("Convert a file")).toBeNull();
+    expect(screen.queryByText("Connect a source")).toBeNull();
+  });
+
+  it("does not render SourceCoopGallery", () => {
+    renderPage();
+    expect(screen.queryByText(/source\.coop/i)).toBeNull();
+    expect(screen.queryByText(/example datasets/i)).toBeNull();
+  });
+
+  it("expanding Visualize data reveals file uploader and URL input", () => {
+    renderPage();
+    fireEvent.click(screen.getByText("Visualize data"));
+    expect(screen.getByRole("textbox", { name: /url/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeTruthy();
+  });
+
+  it("expanding Build a story reveals start from scratch button", () => {
+    renderPage();
+    fireEvent.click(screen.getByText("Build a story"));
     expect(
-      screen.getByText(
-        "Upload a geospatial file and we'll convert it to a shareable web map"
-      )
-    ).toBeTruthy();
-    expect(
-      screen.getByText("Point to data already hosted in the cloud")
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Create a storytelling narrative with your data or from our public library"
-      )
+      screen.getByRole("button", { name: /start from scratch/i })
     ).toBeTruthy();
   });
 
-  it("expands connect card on click and shows form", () => {
+  it("routing a .parquet URL opens the GeoParquet preview modal inline", async () => {
+    const user = userEvent.setup();
     renderPage();
-    fireEvent.click(screen.getByText("Connect a source"));
-    expect(screen.getByText("Add Connection")).toBeTruthy();
-    // Other cards should lose their descriptions (faded state)
+    await user.click(screen.getByText("Visualize data"));
+    await user.type(
+      screen.getByRole("textbox", { name: /url/i }),
+      "https://example.com/data.parquet"
+    );
+    await user.click(screen.getByRole("button", { name: /continue/i }));
     expect(
-      screen.queryByText(
-        "Upload a geospatial file and we'll convert it to a shareable web map"
-      )
-    ).toBeNull();
-  });
-
-  it("expands upload card on click and hides connect description", () => {
-    renderPage();
-    fireEvent.click(screen.getByText("Convert a file"));
-    expect(
-      screen.queryByText("Point to data already hosted in the cloud")
-    ).toBeNull();
-  });
-});
-
-describe("UploadPage — duplicate warning", () => {
-  it("shows duplicate warning when state has duplicate info", async () => {
-    const { useConversionJob } = await import("../../hooks/useConversionJob");
-    vi.mocked(useConversionJob).mockReturnValue({
-      state: {
-        isUploading: false,
-        jobId: null,
-        status: "pending",
-        stages: [],
-        scanResult: null,
-        datasetId: null,
-        error: null,
-        progressCurrent: null,
-        progressTotal: null,
-        duplicate: { datasetId: "abc-123", filename: "elevation.tif" },
-      },
-      startUpload: vi.fn(),
-      startUrlFetch: vi.fn(),
-      startTemporalUpload: vi.fn(),
-      confirmVariable: vi.fn(),
-      resetJob: vi.fn(),
-    });
-
-    renderPage();
-
-    expect(screen.getByText(/already exists in your library/)).toBeTruthy();
-    expect(screen.getByText("Go to Library")).toBeTruthy();
-    expect(screen.getByText("Upload another file")).toBeTruthy();
+      await screen.findByRole("dialog", { name: /preview/i })
+    ).toBeInTheDocument();
   });
 });

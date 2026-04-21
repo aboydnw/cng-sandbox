@@ -109,9 +109,17 @@ export default function UploadPage() {
 
   const handleUrlSubmitted = useCallback(
     (result: UrlDetectionResult) => {
-      handleUrl(result.url);
+      if (result.route === "discover") {
+        navigate(
+          workspacePath("/discover") +
+            "?url=" +
+            encodeURIComponent(result.url)
+        );
+      } else {
+        handleUrl(result.url);
+      }
     },
-    [handleUrl]
+    [handleUrl, navigate, workspacePath]
   );
 
   const handleRetry = useCallback(() => {

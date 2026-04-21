@@ -54,7 +54,7 @@ function pathEndsWith(url: string, ext: string): boolean {
 
 export async function detectUrlRoute(
   url: string,
-  options: DetectOptions = {},
+  options: DetectOptions = {}
 ): Promise<UrlDetectionResult> {
   const inspect = options.inspect ?? defaultInspect;
 
@@ -77,7 +77,13 @@ export async function detectUrlRoute(
 
   // Rule 3: GeoParquet
   if (pathEndsWith(url, ".parquet")) {
-    return { route: "parquet", url, format: "parquet", isCog: false, sizeBytes: null };
+    return {
+      route: "parquet",
+      url,
+      format: "parquet",
+      isCog: false,
+      sizeBytes: null,
+    };
   }
 
   // Rule 4a: .cog extension — definitive, no probe needed
@@ -87,14 +93,17 @@ export async function detectUrlRoute(
 
   // Rule 5: Direct convertible formats (no inspection needed)
   if (pathEndsWith(url, ".geojson")) {
-    return { route: "convert-url", url, format: "geojson", isCog: false, sizeBytes: null };
+    return {
+      route: "convert-url",
+      url,
+      format: "geojson",
+      isCog: false,
+      sizeBytes: null,
+    };
   }
 
   // Rules 4+5 require server probe to distinguish COG from plain TIFF
-  if (
-    pathEndsWith(url, ".tif") ||
-    pathEndsWith(url, ".tiff")
-  ) {
+  if (pathEndsWith(url, ".tif") || pathEndsWith(url, ".tiff")) {
     const probe = await inspect(url);
 
     // Rule 4: COG
@@ -133,18 +142,21 @@ export function useUrlDetection() {
   const [detecting, setDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const detect = useCallback(async (url: string): Promise<UrlDetectionResult | null> => {
-    setDetecting(true);
-    setError(null);
-    try {
-      return await detectUrlRoute(url);
-    } catch (exc) {
-      setError(exc instanceof Error ? exc.message : String(exc));
-      return null;
-    } finally {
-      setDetecting(false);
-    }
-  }, []);
+  const detect = useCallback(
+    async (url: string): Promise<UrlDetectionResult | null> => {
+      setDetecting(true);
+      setError(null);
+      try {
+        return await detectUrlRoute(url);
+      } catch (exc) {
+        setError(exc instanceof Error ? exc.message : String(exc));
+        return null;
+      } finally {
+        setDetecting(false);
+      }
+    },
+    []
+  );
 
   return { detect, detecting, error };
 }

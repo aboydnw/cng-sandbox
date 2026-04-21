@@ -80,9 +80,7 @@ export default function UploadPage() {
   const effectiveRenderPath = pickRenderPath({
     sizeBytes,
     featureCount:
-      parquetQueryResult.totalCount > 0
-        ? parquetQueryResult.totalCount
-        : null,
+      parquetQueryResult.totalCount > 0 ? parquetQueryResult.totalCount : null,
   });
 
   useEffect(() => {
@@ -181,13 +179,7 @@ export default function UploadPage() {
       setConnectionError(`Connection creation failed: ${msg}`);
       setMode("upload-idle");
     }
-  }, [
-    valid,
-    parquetPreviewUrl,
-    effectiveRenderPath,
-    navigate,
-    workspacePath,
-  ]);
+  }, [valid, parquetPreviewUrl, effectiveRenderPath, navigate, workspacePath]);
 
   const handleUrlSubmitted = useCallback(
     async (result: UrlDetectionResult) => {
@@ -305,7 +297,12 @@ export default function UploadPage() {
         <VariablePicker
           variables={state.scanResult.variables}
           onSelect={(variable, group, temporal) =>
-            confirmVariable(state.scanResult!.scan_id, variable, group, temporal)
+            confirmVariable(
+              state.scanResult!.scan_id,
+              variable,
+              group,
+              temporal
+            )
           }
         />
       )}
@@ -316,13 +313,7 @@ export default function UploadPage() {
         />
       )}
       {mode === "xyz-picker" && xyzPickerUrl && (
-        <Box
-          mt={3}
-          p={3}
-          bg="gray.900"
-          color="white"
-          borderRadius="md"
-        >
+        <Box mt={3} p={3} bg="gray.900" color="white" borderRadius="md">
           <InlineConnectionForm
             prefilledUrl={xyzPickerUrl}
             onCancel={() => {
@@ -391,9 +382,7 @@ export default function UploadPage() {
             <VisualizeDataCardContent
               onFileSelected={handleFile}
               onFilesSelected={handleTemporalUpload}
-              onExampleClicked={(id) =>
-                navigate(workspacePath(`/map/${id}`))
-              }
+              onExampleClicked={(id) => navigate(workspacePath(`/map/${id}`))}
               onUrlSubmitted={handleUrlSubmitted}
               inlineContent={inlineContent}
             />
@@ -441,9 +430,7 @@ export default function UploadPage() {
 
       <GeoParquetPreviewModal
         open={parquetPreviewUrl !== null}
-        filename={
-          parquetPreviewUrl?.split("/").pop() || "data.parquet"
-        }
+        filename={parquetPreviewUrl?.split("/").pop() || "data.parquet"}
         validating={validating}
         valid={valid}
         error={validationError || connectionError}

@@ -27,10 +27,9 @@ vi.mock("../../lib/connections", () => ({
 }));
 
 vi.mock("../../hooks/useUrlDetection", async () => {
-  const actual =
-    await vi.importActual<typeof import("../../hooks/useUrlDetection")>(
-      "../../hooks/useUrlDetection"
-    );
+  const actual = await vi.importActual<
+    typeof import("../../hooks/useUrlDetection")
+  >("../../hooks/useUrlDetection");
   return {
     ...actual,
     useUrlDetection: vi.fn().mockReturnValue({
@@ -160,7 +159,9 @@ describe("UploadPage", () => {
   it("expanding Build a story reveals start from scratch button", () => {
     renderPage();
     fireEvent.click(screen.getByText("Build a story"));
-    expect(screen.getByRole("button", { name: /start from scratch/i })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /start from scratch/i })
+    ).toBeTruthy();
   });
 
   it("routing a .parquet URL opens the GeoParquet preview modal inline", async () => {

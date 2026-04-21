@@ -12,11 +12,7 @@ function renderWithProviders(ui: React.ReactElement) {
         <Routes>
           <Route
             path="/w/:workspaceId/*"
-            element={
-              <WorkspaceProvider>
-                {ui}
-              </WorkspaceProvider>
-            }
+            element={<WorkspaceProvider>{ui}</WorkspaceProvider>}
           />
         </Routes>
       </MemoryRouter>
@@ -27,7 +23,9 @@ function renderWithProviders(ui: React.ReactElement) {
 describe("Header", () => {
   it("does not render a Discover nav link", () => {
     renderWithProviders(<Header />);
-    expect(screen.queryByRole("link", { name: /discover/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /discover/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders Library and About nav links", () => {

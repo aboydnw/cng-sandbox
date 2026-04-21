@@ -13,13 +13,11 @@ describe("detectUrlRoute", () => {
   });
 
   it("routes .pmtiles URLs to pmtiles connection (rule 2)", async () => {
-    const inspect = vi
-      .fn()
-      .mockResolvedValue({
-        format: "pmtiles",
-        is_cog: false,
-        size_bytes: null,
-      });
+    const inspect = vi.fn().mockResolvedValue({
+      format: "pmtiles",
+      is_cog: false,
+      size_bytes: null,
+    });
     const result = await detectUrlRoute(
       "https://cdn.example.com/tiles.pmtiles",
       { inspect }
@@ -70,13 +68,11 @@ describe("detectUrlRoute", () => {
   });
 
   it("routes unknown URLs to discover flow (rule 6)", async () => {
-    const inspect = vi
-      .fn()
-      .mockResolvedValue({
-        format: "unknown",
-        is_cog: false,
-        size_bytes: null,
-      });
+    const inspect = vi.fn().mockResolvedValue({
+      format: "unknown",
+      is_cog: false,
+      size_bytes: null,
+    });
     const result = await detectUrlRoute("https://cdn.example.com/prefix/", {
       inspect,
     });

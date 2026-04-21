@@ -11,7 +11,7 @@ interface ReportCardProps {
   dataset: Dataset;
   isOpen: boolean;
   onClose: () => void;
-  renderMode?: string;
+  renderMode?: "client" | "server";
 }
 
 export function getTileUrlPrefix(tileUrl: string): string {
@@ -19,7 +19,12 @@ export function getTileUrlPrefix(tileUrl: string): string {
   return "/" + parts[1] + "/";
 }
 
-export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
+export function ReportCard({
+  dataset,
+  isOpen,
+  onClose,
+  renderMode,
+}: ReportCardProps) {
   const [activeStep, setActiveStep] = useState(1);
   const totalSteps = getStepCount(dataset);
 
@@ -48,9 +53,9 @@ export function ReportCard({ dataset, isOpen, onClose }: ReportCardProps) {
   const allSteps = useMemo(
     () =>
       Array.from({ length: totalSteps }, (_, i) =>
-        getStepContent(dataset, i + 1)
+        getStepContent(dataset, i + 1, renderMode ?? "server")
       ),
-    [dataset, totalSteps]
+    [dataset, totalSteps, renderMode]
   );
 
   if (!isOpen) return null;

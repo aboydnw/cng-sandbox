@@ -12,7 +12,7 @@ requires-python = ">=3.12"
 # (setuptools doesn't support relative path deps in pyproject.toml)
 dependencies = [
     "fastapi>=0.135.3",
-    "uvicorn[standard]>=0.30.0",
+    "uvicorn[standard]>=0.44.0",
     "python-multipart>=0.0.26",
     "sse-starlette>=3.3.4",
     "obstore>=0.5.0",

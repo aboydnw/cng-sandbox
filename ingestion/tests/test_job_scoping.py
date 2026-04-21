@@ -34,11 +34,26 @@ def test_job_without_workspace_accessible(client):
     del jobs[job.id]
 
 
-def test_stream_hidden_from_other_workspace(client, app):
+def test_stream_accessible_without_workspace_header(app):
+    """Stream endpoint intentionally skips workspace scoping so browser
+    EventSource (which can't send custom headers) can connect. Job UUIDs
+    are the access barrier — same tradeoff as /api/connections/{id}/stream.
+    """
+    from starlette.testclient import TestClient
+
+    from src.models import JobStatus
+
     job = Job(filename="test.tif")
     job.workspace_id = "ownerXYZ"
+    # Flip to READY so the SSE generator yields once and exits cleanly.
+    job.status = JobStatus.READY
     jobs[job.id] = job
 
-    resp = client.get(f"/api/jobs/{job.id}/stream")
-    assert resp.status_code == 404
+    # No X-Workspace-Id header — mirrors browser EventSource.
+    anon = TestClient(app, raise_server_exceptions=False)
+    resp = anon.get(f"/api/jobs/{job.id}/stream")
+    assert resp.status_code == 200
+
+    resp_missing = anon.get("/api/jobs/does-not-exist/stream")
+    assert resp_missing.status_code == 404
     del jobs[job.id]

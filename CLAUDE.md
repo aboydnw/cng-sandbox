@@ -254,7 +254,7 @@ cd ingestion && uv run pytest -v
 
 **Jobs:**
 - `GET /api/jobs/{id}` — Get job status
-- `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
+- `GET /api/jobs/{id}/stream` — SSE stream of conversion progress; no workspace auth on this endpoint (EventSource cannot send custom headers); job UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
 
 **Datasets:**
 - `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace)

@@ -23,7 +23,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y libmagic1
+        run: sudo apt-get update && sudo apt-get install -y libmagic1 gdal-bin
 
       - name: Install cng-toolkit
         run: pip install -e "../geo-conversions[all]"

@@ -438,6 +438,22 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = os.path.join(tmpdir, out_filename)
 
+            # Pre-scan categorical on INPUT so the GeoTIFF→COG warp can pick
+            # nearest-neighbor resampling. Bilinear/cubic on integer category
+            # codes blends them into invalid or wrong-category values.
+            input_is_categorical = False
+            if format_pair == FormatPair.GEOTIFF_TO_COG:
+                try:
+                    input_is_categorical = (
+                        await asyncio.to_thread(detect_categories, input_path)
+                    ).is_categorical
+                except Exception as exc:
+                    logger.warning(
+                        "Pre-convert categorical detection failed on %s: %s",
+                        input_path,
+                        exc,
+                    )
+
             await asyncio.to_thread(
                 _import_and_convert,
                 format_pair,
@@ -445,6 +461,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 output_path,
                 variable=job.variable,
                 group=job.group,
+                is_categorical=input_is_categorical,
             )
 
             # Stage 3: Validate
@@ -669,15 +686,27 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
             await asyncio.sleep(1.0)
 
 
-def _convert_geotiff_to_cog(input_path: str, output_path: str) -> None:
-    """Convert GeoTIFF to COG using gdalwarp."""
+def _convert_geotiff_to_cog(
+    input_path: str, output_path: str, is_categorical: bool = False
+) -> None:
+    """Convert GeoTIFF to COG using gdalwarp.
+
+    For categorical rasters, uses nearest-neighbor resampling for both the warp
+    and the COG overviews. Bilinear/cubic on integer category codes blends them
+    into fractional values that truncate to wrong (but valid-looking) category
+    codes, causing bleed/stripe artifacts at low zoom. GDAL's COG driver default
+    is NEAREST for integer dtypes ≤16 bits and CUBIC for anything larger —
+    which silently corrupts categorical uint32 rasters unless we override it.
+    """
+    resampling = "near" if is_categorical else "bilinear"
+    overview_resampling = "NEAREST" if is_categorical else "CUBIC"
     result = subprocess.run(
         [
             "gdalwarp",
             "-t_srs",
             "EPSG:4326",
             "-r",
-            "bilinear",
+            resampling,
             "-of",
             "COG",
             "-multi",
@@ -689,6 +718,8 @@ def _convert_geotiff_to_cog(input_path: str, output_path: str) -> None:
             "BLOCKSIZE=512",
             "-co",
             "NUM_THREADS=ALL_CPUS",
+            "-co",
+            f"OVERVIEW_RESAMPLING={overview_resampling}",
             input_path,
             output_path,
         ],
@@ -753,10 +784,11 @@ def _import_and_convert(
     output_path: str,
     variable: str | None = None,
     group: str | None = None,
+    is_categorical: bool = False,
 ) -> None:
     """Import the appropriate cng-toolkit converter and run it."""
     if format_pair == FormatPair.GEOTIFF_TO_COG:
-        _convert_geotiff_to_cog(input_path, output_path)
+        _convert_geotiff_to_cog(input_path, output_path, is_categorical=is_categorical)
     elif format_pair in (
         FormatPair.SHAPEFILE_TO_GEOPARQUET,
         FormatPair.GEOJSON_TO_GEOPARQUET,

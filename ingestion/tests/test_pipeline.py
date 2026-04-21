@@ -1,3 +1,5 @@
+import shutil
+
 import geopandas as gpd
 import numpy as np
 import pytest
@@ -7,12 +9,18 @@ from shapely.geometry import Point, Polygon
 
 from src.models import DatasetType, FormatPair
 from src.services.pipeline import (
+    _convert_geotiff_to_cog,
     _detect_use_pmtiles,
     _extract_band_metadata,
     _extract_feature_stats,
     _extract_zoom_range_raster,
     get_credits,
     validate_geojson_structure,
+)
+
+requires_gdalwarp = pytest.mark.skipif(
+    shutil.which("gdalwarp") is None,
+    reason="gdalwarp CLI not installed on host",
 )
 
 
@@ -275,6 +283,129 @@ def test_cog_url_built_for_raster():
         else None
     )
     assert cog_url == "/storage/datasets/abc-123/converted/data.tif"
+
+
+@pytest.fixture
+def categorical_uint32_tif(tmp_path):
+    """A uint32 categorical raster with many adjacent category stripes —
+    under non-nearest resampling, boundary blending produces bleed codes
+    between 1, 7 and 13 (e.g. 3, 4, 5, 10, 11). Size + stripe pitch are
+    tuned to force the COG driver to build at least three overview levels.
+    """
+    width, height = 2048, 2048
+    data = np.full((height, width), 255, dtype=np.uint32)
+    for i in range(50, width - 50, 20):
+        data[50 : height - 50, i : i + 20] = [1, 7, 13][(i // 20) % 3]
+    path = str(tmp_path / "categorical.tif")
+    transform = from_bounds(-5.0, 50.0, 5.0, 60.0, width, height)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=width,
+        height=height,
+        count=1,
+        dtype="uint32",
+        crs="EPSG:4326",
+        transform=transform,
+        nodata=255,
+        tiled=True,
+        blockxsize=512,
+        blockysize=512,
+    ) as dst:
+        dst.write(data, 1)
+    return path
+
+
+@requires_gdalwarp
+def test_convert_geotiff_categorical_preserves_codes(categorical_uint32_tif, tmp_path):
+    output_path = str(tmp_path / "out.tif")
+    _convert_geotiff_to_cog(categorical_uint32_tif, output_path, is_categorical=True)
+
+    allowed = {1, 7, 13, 255}
+    with rasterio.open(output_path) as src:
+        overviews = src.overviews(1)
+        assert overviews, "expected overviews to be built by COG driver"
+        for level in overviews:
+            data = src.read(
+                1,
+                out_shape=(
+                    max(1, src.height // level),
+                    max(1, src.width // level),
+                ),
+            )
+            unique = set(int(v) for v in np.unique(data))
+            bleed = unique - allowed
+            assert not bleed, (
+                f"overview x{level} has non-category values {sorted(bleed)} — "
+                "resampling is blending category codes"
+            )
+
+
+@requires_gdalwarp
+def test_convert_geotiff_categorical_flag_changes_resampling(
+    categorical_uint32_tif, tmp_path
+):
+    """Without the flag, the COG driver uses its dtype-based default (CUBIC
+    for uint32) and boundary-adjacent overviews carry bleed codes. With the
+    flag, no bleed. This guards the branching in _convert_geotiff_to_cog."""
+    default_out = str(tmp_path / "out_default.tif")
+    categorical_out = str(tmp_path / "out_categorical.tif")
+    _convert_geotiff_to_cog(categorical_uint32_tif, default_out, is_categorical=False)
+    _convert_geotiff_to_cog(
+        categorical_uint32_tif, categorical_out, is_categorical=True
+    )
+
+    allowed = {1, 7, 13, 255}
+
+    def bleed_across_overviews(path: str) -> set[int]:
+        out: set[int] = set()
+        with rasterio.open(path) as src:
+            for level in src.overviews(1):
+                data = src.read(
+                    1,
+                    out_shape=(
+                        max(1, src.height // level),
+                        max(1, src.width // level),
+                    ),
+                )
+                out |= {int(v) for v in np.unique(data)} - allowed
+        return out
+
+    assert bleed_across_overviews(default_out), (
+        "expected non-categorical path to produce bleed — otherwise this test "
+        "doesn't actually validate the fix"
+    )
+    assert not bleed_across_overviews(categorical_out)
+
+
+@requires_gdalwarp
+def test_convert_geotiff_continuous_uses_bilinear_default(tmp_path):
+    # Smooth float raster — bilinear is appropriate and should not error.
+    width, height = 128, 128
+    data = np.fromfunction(lambda y, x: (x + y).astype("float32"), (height, width))
+    path = str(tmp_path / "continuous.tif")
+    transform = from_bounds(-5.0, 50.0, 5.0, 60.0, width, height)
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=width,
+        height=height,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=transform,
+        tiled=True,
+        blockxsize=64,
+        blockysize=64,
+    ) as dst:
+        dst.write(data, 1)
+    output_path = str(tmp_path / "out.tif")
+    _convert_geotiff_to_cog(path, output_path, is_categorical=False)
+    with rasterio.open(output_path) as src:
+        assert src.count == 1
+        assert "float" in str(src.dtypes[0])
 
 
 def test_cog_url_none_for_vector():

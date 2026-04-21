@@ -255,10 +255,11 @@ cd ingestion && uv run pytest -v
 
 **Stories (shareable map narratives):**
 - `POST /api/stories` — Create a story with chapters linking to datasets
-- `GET /api/stories` — List stories in the workspace
+- `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace)
 - `GET /api/stories/{id}` — Get a story by ID
-- `PATCH /api/stories/{id}` — Update a story
-- `DELETE /api/stories/{id}` — Delete a story
+- `PATCH /api/stories/{id}` — Update a story; returns 403 if the story is an example (`is_example=True`)
+- `POST /api/stories/{id}/fork` — Fork a story (clones chapters/metadata into a new story owned by the caller's workspace with `published=False` and `is_example=False`)
+- `DELETE /api/stories/{id}` — Delete a story; returns 403 if the story is an example
 
 **Connections (external tile sources):**
 - `GET /api/connections` — List connections in the workspace
@@ -276,12 +277,15 @@ cd ingestion && uv run pytest -v
 
 **Other:**
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
+- `POST /api/inspect-url` — Inspect a remote URL before registering it as a connection; body `{"url": "..."}`; returns `{format, is_cog, size_bytes, bounds, has_errors, error_detail}`. Format is detected from the path/template (`xyz`, `pmtiles`, `parquet`, `cog`, `tiff`, `geojson`, or `unknown`). For non-XYZ URLs, runs SSRF validation (`validate_url_safe`) and a HEAD probe for `content-length`
 - `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources); HTTPS-only, blocks private/loopback IPs, restricts to `.pmtiles`/`.tif`/`.tiff` extensions, rejects redirects, caps responses at 50 MB
 - `GET /api/health` — Health check
 
 ### Example datasets
 
 On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and are surfaced to every workspace's `GET /api/datasets` response so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly. PMTiles-kind products are registered via `src/services/pmtiles_register.py`, which probes the first 127 bytes of the remote file (`src/services/pmtiles_header.py`) to extract bounds, min/max zoom, and verify the tile type is MVT; mosaic-kind products are enumerated and registered via `register_remote_collection`.
+
+Stories also support the `is_example` flag (see the `stories` table). Example stories are surfaced to every workspace's `GET /api/stories` response and cannot be modified or deleted via the API — instead, callers can `POST /api/stories/{id}/fork` to clone an example into their workspace.
 
 ### Conversion pipeline
 

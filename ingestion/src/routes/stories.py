@@ -116,7 +116,7 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
         if row.is_example:
-            raise HTTPException(status_code=403, detail="Cannot modify example stories")
+            raise HTTPException(status_code=403, detail="Example stories cannot be modified")
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if body.title is not None:
@@ -176,7 +176,7 @@ async def delete_story(story_id: str, request: Request):
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
         if row.is_example:
-            raise HTTPException(status_code=403, detail="Cannot delete example stories")
+            raise HTTPException(status_code=403, detail="Example stories cannot be deleted")
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         session.delete(row)

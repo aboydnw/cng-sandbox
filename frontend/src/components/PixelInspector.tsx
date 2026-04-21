@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import type { TileCacheEntry } from "../lib/layers/cogLayer";
 
 interface HoverSourceTile {
   index: { x: number; y: number; z?: number };
@@ -38,11 +37,21 @@ function lookupValue(
     number,
     number,
   ];
+  const spanX = east - west;
+  const spanY = north - south;
+  if (spanX <= 0 || spanY <= 0) return null;
   if (lng < west || lng > east || lat < south || lat > north) return null;
 
-  const px = Math.floor(((lng - west) / (east - west)) * width);
-  const py = Math.floor(((north - lat) / (north - south)) * height);
-  if (px < 0 || px >= width || py < 0 || py >= height) return null;
+  // Clamp to [0, dim-1]: coordinates exactly on the east/south edge would
+  // otherwise land at `width`/`height` and drop the tooltip at tile seams.
+  const px = Math.min(
+    width - 1,
+    Math.max(0, Math.floor(((lng - west) / spanX) * width))
+  );
+  const py = Math.min(
+    height - 1,
+    Math.max(0, Math.floor(((north - lat) / spanY) * height))
+  );
 
   const val = raw[py * width + px];
   if (val !== val) return null;
@@ -84,7 +93,6 @@ type HoverInfo =
     };
 
 export function usePixelInspector(
-  _tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
   bandNames: string[] | null,
   categories?: { value: number; color: string; label: string }[]
 ) {

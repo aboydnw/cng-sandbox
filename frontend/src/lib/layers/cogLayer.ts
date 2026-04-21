@@ -1,4 +1,3 @@
-import type { MutableRefObject } from "react";
 import type { Layer } from "@deck.gl/core";
 import { COGLayer } from "@developmentseed/deck.gl-geotiff";
 import {
@@ -103,16 +102,6 @@ const ViridisColorize = {
   },
 };
 
-// --- Tile cache for pixel inspector ---
-
-export interface TileCacheEntry {
-  data: Float32Array;
-  width: number;
-  height: number;
-}
-
-const MAX_CACHED_TILES = 256;
-
 // --- COG layer builder ---
 
 export function resolveCogUrl(cogUrl: string): string {
@@ -125,21 +114,18 @@ interface CogLayerOptions {
   opacity: number;
   rasterMin: number;
   rasterMax: number;
-  tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
 }
 
 interface CogLayerPalettedOptions {
   cogUrl: string;
   opacity: number;
   categories?: LutCategory[];
-  tileCacheRef?: MutableRefObject<Map<string, TileCacheEntry>>;
 }
 
 export function buildCogLayerPaletted({
   cogUrl,
   opacity,
   categories,
-  tileCacheRef,
 }: CogLayerPalettedOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
 
@@ -216,7 +202,6 @@ export function buildCogLayerPaletted({
     // `raw` travels on the tile's data so the pixel inspector can sample it
     // without a separate cache. Keyed by tile identity, not by (x, y), so
     // zoom-level collisions can't return stale values.
-    void tileCacheRef;
     return { texture: valueTex, lutTexture: lutTex, width, height, raw };
   };
 
@@ -245,7 +230,6 @@ export function buildCogLayerContinuous({
   opacity,
   rasterMin,
   rasterMax,
-  tileCacheRef,
 }: CogLayerOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
   const range = rasterMax - rasterMin || 1;
@@ -298,7 +282,6 @@ export function buildCogLayerContinuous({
     // Snapshot raw float data; travels on the tile so the pixel inspector
     // can sample it without a separate cache.
     const rawSnapshot = new Float32Array(floatData);
-    void tileCacheRef;
 
     // Normalize float32 to uint8 [0, 255]
     const pixelCount = width * height;

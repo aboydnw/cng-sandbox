@@ -50,12 +50,10 @@ describe("buildCogLayerPaletted", () => {
 
 describe("buildCogLayerPaletted with categories", () => {
   it("returns a layer with getTileData defined when categories are supplied", () => {
-    const cacheRef = { current: new Map() };
     const layers = buildCogLayerPaletted({
       cogUrl: "/cog/example.tif",
       opacity: 1,
       categories: [{ value: 1, color: "#ff0000", label: "A" }],
-      tileCacheRef: cacheRef,
     });
     expect(layers).toHaveLength(1);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,12 +75,10 @@ describe("buildCogLayerPaletted with categories", () => {
   });
 
   it("attaches raw tile values to getTileData's return for the pixel inspector", async () => {
-    const cacheRef = { current: new Map() };
     const layers = buildCogLayerPaletted({
       cogUrl: "/cog/example.tif",
       opacity: 1,
       categories: [{ value: 1, color: "#ff0000", label: "A" }],
-      tileCacheRef: cacheRef,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getTileData = (layers[0] as any).props.getTileData;

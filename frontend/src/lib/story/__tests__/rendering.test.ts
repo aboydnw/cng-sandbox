@@ -70,9 +70,6 @@ const TEMPORAL_DATASET: Dataset = {
   ],
 };
 
-function makeRef() {
-  return { current: new Map() };
-}
 
 describe("buildLayersForChapter — temporal timestep wiring", () => {
   it("appends datetime param for timestep index 2", () => {
@@ -92,8 +89,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      undefined,
-      makeRef()
+      undefined
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -119,8 +115,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      undefined,
-      makeRef()
+      undefined
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -147,8 +142,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      undefined,
-      makeRef()
+      undefined
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -175,8 +169,7 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      undefined,
-      makeRef()
+      undefined
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -204,8 +197,7 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      undefined,
-      makeRef()
+      undefined
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -232,8 +224,7 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      undefined,
-      makeRef()
+      undefined
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -286,8 +277,7 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      connectionMap,
-      makeRef()
+      connectionMap
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -316,8 +306,7 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      connectionMap,
-      makeRef()
+      connectionMap
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -345,8 +334,7 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
     const { layers } = buildLayersForChapter(
       chapter,
       datasetMap,
-      connectionMap,
-      makeRef()
+      connectionMap
     );
 
     expect(layers.length).toBeGreaterThan(0);
@@ -378,8 +366,7 @@ describe("buildLayersForChapter with raster dataset", () => {
     const { layers, renderMetadata } = buildLayersForChapter(
       chapter,
       new Map([["ds-1", ds]]),
-      undefined,
-      makeRef()
+      undefined
     );
     expect(layers).toBeDefined();
     expect(renderMetadata).toBeDefined();
@@ -404,8 +391,7 @@ describe("buildLayersForChapter with raster dataset", () => {
     const { layers, renderMetadata } = buildLayersForChapter(
       chapter,
       new Map([["ds-vec", ds]]),
-      undefined,
-      makeRef()
+      undefined
     );
     expect(layers.length).toBeGreaterThan(0);
     expect(renderMetadata).toBeUndefined();

@@ -7,16 +7,10 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
-import { useRef } from "react";
 import { usePixelInspector, CategoricalPixelTooltip } from "../PixelInspector";
 
 function renderWithProvider(ui: React.ReactElement) {
   return render(<ChakraProvider value={defaultSystem}>{ui}</ChakraProvider>);
-}
-import type { TileCacheEntry } from "../../lib/layers";
-
-function emptyCache(): Map<string, TileCacheEntry> {
-  return new Map();
 }
 
 function hoverInfo(opts: {
@@ -59,10 +53,7 @@ describe("usePixelInspector categorical branch", () => {
       { value: 1, color: "#ff0000", label: "A" },
       { value: 2, color: "#00ff00", label: "B" },
     ];
-    const { result } = renderHook(() => {
-      const ref = useRef(emptyCache());
-      return usePixelInspector(ref, null, cats);
-    });
+    const { result } = renderHook(() => usePixelInspector(null, cats));
     act(() => {
       result.current.onHover(hoverInfo({ coordinate: [-5, 5], x: 10, y: 20 }));
     });
@@ -79,10 +70,7 @@ describe("usePixelInspector categorical branch", () => {
 
   it("returns null when hovered value has no matching category", async () => {
     const cats = [{ value: 99, color: "#ff0000", label: "X" }];
-    const { result } = renderHook(() => {
-      const ref = useRef(emptyCache());
-      return usePixelInspector(ref, null, cats);
-    });
+    const { result } = renderHook(() => usePixelInspector(null, cats));
     act(() => {
       result.current.onHover(hoverInfo({ coordinate: [-5, 5], x: 0, y: 0 }));
     });
@@ -91,10 +79,7 @@ describe("usePixelInspector categorical branch", () => {
   });
 
   it("keeps numeric behavior when categories is undefined", async () => {
-    const { result } = renderHook(() => {
-      const ref = useRef(emptyCache());
-      return usePixelInspector(ref, null);
-    });
+    const { result } = renderHook(() => usePixelInspector(null));
     act(() => {
       result.current.onHover(hoverInfo({ coordinate: [-5, 5], x: 0, y: 0 }));
     });
@@ -107,10 +92,7 @@ describe("usePixelInspector categorical branch", () => {
   });
 
   it("returns null when sourceTile is missing (hover off COG layer)", async () => {
-    const { result } = renderHook(() => {
-      const ref = useRef(emptyCache());
-      return usePixelInspector(ref, null);
-    });
+    const { result } = renderHook(() => usePixelInspector(null));
     act(() => {
       result.current.onHover({ coordinate: [-5, 5], x: 0, y: 0 });
     });
@@ -123,10 +105,7 @@ describe("usePixelInspector categorical branch", () => {
       { value: 1, color: "#f00", label: "One" },
       { value: 2, color: "#0f0", label: "Two" },
     ];
-    const { result } = renderHook(() => {
-      const ref = useRef(emptyCache());
-      return usePixelInspector(ref, null, cats);
-    });
+    const { result } = renderHook(() => usePixelInspector(null, cats));
     // Tile 1/0 has data that is entirely value 2 — inspector must read it,
     // not a stale entry keyed by a neighbouring tile.
     act(() => {
@@ -146,6 +125,32 @@ describe("usePixelInspector categorical branch", () => {
       expect(result.current.hoverInfo).toMatchObject({
         kind: "categorical",
         label: "Two",
+      });
+    });
+  });
+
+  it("clamps coordinates exactly on the east edge to the last pixel", async () => {
+    const cats = [
+      { value: 1, color: "#f00", label: "One" },
+      { value: 9, color: "#0f0", label: "Nine" },
+    ];
+    const { result } = renderHook(() => usePixelInspector(null, cats));
+    act(() => {
+      // lng=10 (exactly east), lat=-10 (exactly south) → would compute px=2,
+      // py=2 (out of bounds in a 2x2 tile) unless clamped. Raw[3] = 9 → Nine.
+      result.current.onHover(
+        hoverInfo({
+          coordinate: [10, -10],
+          x: 0,
+          y: 0,
+          raw: new Float32Array([1, 1, 1, 9]),
+        })
+      );
+    });
+    await waitFor(() => {
+      expect(result.current.hoverInfo).toMatchObject({
+        kind: "categorical",
+        label: "Nine",
       });
     });
   });

@@ -7,11 +7,7 @@ import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
 import { RenderModeIndicator } from "./RenderModeIndicator";
-import {
-  type CameraState,
-  cameraFromBounds,
-  type TileCacheEntry,
-} from "../lib/layers";
+import { type CameraState, cameraFromBounds } from "../lib/layers";
 import {
   groupChaptersIntoBlocks,
   buildLayersForChapter,
@@ -47,7 +43,6 @@ function ScrollytellingBlock({
   const flyToRef = useRef(new FlyToInterpolator());
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
-  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
 
   useEffect(() => {
     if (datasetMap.size === 0) return;
@@ -122,8 +117,7 @@ function ScrollytellingBlock({
       buildLayersForChapter(
         chapters[activeIndex],
         datasetMap,
-        connectionMap,
-        tileCacheRef
+        connectionMap
       ),
     [datasetMap, connectionMap, activeIndex, chapters]
   );

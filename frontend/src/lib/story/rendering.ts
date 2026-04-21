@@ -1,11 +1,9 @@
-import type { MutableRefObject } from "react";
 import type { Layer } from "@deck.gl/core";
 import {
   buildRasterPMTilesLayer,
   buildVectorLayer,
   isPMTilesDataset,
 } from "../layers";
-import type { TileCacheEntry } from "../layers";
 import { buildConnectionTileUrl } from "../connections";
 import { resolveRasterLayers } from "../layers/resolveRasterLayers";
 import { datasetToMapItem, connectionToMapItem } from "../../hooks/useMapData";
@@ -64,8 +62,7 @@ export interface ChapterLayerResult {
 export function buildLayersForChapter(
   chapter: Chapter,
   datasetMap: Map<string, Dataset | null>,
-  connectionMap: Map<string, Connection> | undefined,
-  tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>
+  connectionMap?: Map<string, Connection>
 ): ChapterLayerResult {
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
@@ -95,7 +92,6 @@ export function buildLayersForChapter(
         opacity: lc.opacity,
         rescaleMin,
         rescaleMax,
-        tileCacheRef,
         serverTileUrl,
         effectiveCategories: conn.categories ?? undefined,
       });
@@ -158,7 +154,6 @@ export function buildLayersForChapter(
       opacity: lc.opacity,
       rescaleMin: null,
       rescaleMax: null,
-      tileCacheRef,
       serverTileUrl: tileUrl,
     });
     return {
@@ -200,7 +195,6 @@ export function buildLayersForChapter(
       opacity: lc.opacity,
       rescaleMin,
       rescaleMax,
-      tileCacheRef,
       serverTileUrl,
       effectiveCategories: ds.categories ?? undefined,
     });

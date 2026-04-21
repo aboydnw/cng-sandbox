@@ -3,7 +3,7 @@ import { Box, Text } from "@chakra-ui/react";
 
 interface HoverSourceTile {
   index: { x: number; y: number; z?: number };
-  bounds: [number, number, number, number] | number[];
+  bounds?: [number, number, number, number] | number[];
   content?: {
     data?: {
       raw?: ArrayLike<number>;
@@ -31,6 +31,10 @@ function lookupValue(
   const height = data?.height;
   if (!raw || !width || !height) return null;
 
+  // deck.gl's picking info.sourceTile does not always carry bounds — e.g. a
+  // tile still loading, or a sub-layer whose parent tile exposes bbox under a
+  // different shape. Bail rather than let the destructure throw.
+  if (!sourceTile.bounds || sourceTile.bounds.length < 4) return null;
   const [west, south, east, north] = sourceTile.bounds as [
     number,
     number,

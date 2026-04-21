@@ -40,6 +40,16 @@ def _create_pre_ticket_b_schema(engine) -> None:
                 """
             )
         )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE stories (
+                    id TEXT PRIMARY KEY,
+                    title TEXT
+                )
+                """
+            )
+        )
         conn.commit()
 
 

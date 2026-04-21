@@ -2,36 +2,41 @@ import { useState, useCallback, useRef } from "react";
 import { Box, Text } from "@chakra-ui/react";
 import type { TileCacheEntry } from "../lib/layers/cogLayer";
 
+interface HoverSourceTile {
+  index: { x: number; y: number; z?: number };
+  bounds: [number, number, number, number] | number[];
+}
+
+interface DeckHoverInfo {
+  x: number;
+  y: number;
+  coordinate?: [number, number];
+  sourceTile?: HoverSourceTile;
+}
+
 function lookupValue(
   cache: Map<string, TileCacheEntry>,
+  sourceTile: HoverSourceTile,
   lng: number,
   lat: number
 ): number | null {
-  let bestEntry: TileCacheEntry | null = null;
-  let bestRes = Infinity;
+  const key = `${sourceTile.index.x}/${sourceTile.index.y}`;
+  const entry = cache.get(key);
+  if (!entry) return null;
 
-  for (const [, entry] of cache) {
-    const [west, south, east, north] = entry.bounds;
-    if (lng >= west && lng <= east && lat >= south && lat <= north) {
-      const res = (east - west) / entry.width;
-      if (res < bestRes) {
-        bestRes = res;
-        bestEntry = entry;
-      }
-    }
-  }
+  const [west, south, east, north] = sourceTile.bounds as [
+    number,
+    number,
+    number,
+    number,
+  ];
+  if (lng < west || lng > east || lat < south || lat > north) return null;
 
-  if (!bestEntry) return null;
+  const px = Math.floor(((lng - west) / (east - west)) * entry.width);
+  const py = Math.floor(((north - lat) / (north - south)) * entry.height);
+  if (px < 0 || px >= entry.width || py < 0 || py >= entry.height) return null;
 
-  const [west, south, east, north] = bestEntry.bounds;
-  const px = Math.floor(((lng - west) / (east - west)) * bestEntry.width);
-  const py = Math.floor(((north - lat) / (north - south)) * bestEntry.height);
-
-  if (px < 0 || px >= bestEntry.width || py < 0 || py >= bestEntry.height) {
-    return null;
-  }
-
-  const val = bestEntry.data[py * bestEntry.width + px];
+  const val = entry.data[py * entry.width + px];
   if (val !== val) return null;
   return val;
 }
@@ -79,19 +84,20 @@ export function usePixelInspector(
   const hoverRafRef = useRef<number | null>(null);
 
   const onHover = useCallback(
-    (info: { coordinate?: [number, number]; x: number; y: number }) => {
+    (info: DeckHoverInfo) => {
       if (hoverRafRef.current !== null) {
         cancelAnimationFrame(hoverRafRef.current);
       }
-      if (!info.coordinate) {
+      if (!info.coordinate || !info.sourceTile) {
         hoverRafRef.current = null;
         setHoverInfo(null);
         return;
       }
+      const sourceTile = info.sourceTile;
       hoverRafRef.current = requestAnimationFrame(() => {
         hoverRafRef.current = null;
         const [lng, lat] = info.coordinate!;
-        const value = lookupValue(tileCacheRef.current, lng, lat);
+        const value = lookupValue(tileCacheRef.current, sourceTile, lng, lat);
         if (value === null) {
           setHoverInfo(null);
           return;

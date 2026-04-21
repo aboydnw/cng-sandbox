@@ -149,6 +149,18 @@ def _migrate_schema(engine):
             conn.rollback()
             if not _is_duplicate_column(exc):
                 raise
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE stories ADD COLUMN is_example BOOLEAN "
+                    "NOT NULL DEFAULT FALSE"
+                )
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
         for table in ("datasets", "connections"):
             try:
                 conn.execute(
@@ -211,6 +223,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.connect_source_coop import router as connect_source_coop_router
     from src.routes.connections import router as connections_router
     from src.routes.datasets import router as datasets_router
+    from src.routes.inspect import router as inspect_router
     from src.routes.jobs import router as jobs_router
     from src.routes.proxy import router as proxy_router
     from src.routes.stories import router as stories_router
@@ -225,6 +238,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(proxy_router)
     app.include_router(connect_remote_router)
     app.include_router(connect_source_coop_router)
+    app.include_router(inspect_router)
 
     return app
 

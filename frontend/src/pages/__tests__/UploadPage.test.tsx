@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
@@ -23,6 +24,63 @@ vi.mock("../../lib/connections", () => ({
   extractNameFromUrl: vi.fn().mockReturnValue(""),
   probePMTiles: vi.fn().mockResolvedValue({}),
   probeCOG: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock("../../hooks/useUrlDetection", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../hooks/useUrlDetection")>(
+      "../../hooks/useUrlDetection"
+    );
+  return {
+    ...actual,
+    useUrlDetection: vi.fn().mockReturnValue({
+      detect: vi.fn(async (url: string) => {
+        if (url.endsWith(".parquet")) {
+          return {
+            route: "parquet",
+            url,
+            format: "parquet",
+            isCog: false,
+            sizeBytes: null,
+          };
+        }
+        return {
+          route: "convert-url",
+          url,
+          format: "unknown",
+          isCog: false,
+          sizeBytes: null,
+        };
+      }),
+      detecting: false,
+      error: null,
+    }),
+  };
+});
+
+vi.mock("../../hooks/useDuckDB", () => ({
+  useDuckDB: vi.fn().mockReturnValue({
+    conn: null,
+    initialize: vi.fn().mockResolvedValue({ conn: null }),
+  }),
+}));
+
+vi.mock("../../hooks/useGeoParquetValidation", () => ({
+  useGeoParquetValidation: vi.fn().mockReturnValue({
+    validating: false,
+    valid: false,
+    error: null,
+    geometryInfo: null,
+    sizeBytes: null,
+    sizeSource: "unknown",
+    validate: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+vi.mock("../../hooks/useGeoParquetQuery", () => ({
+  useGeoParquetQuery: vi.fn().mockReturnValue({
+    result: { columnStats: [], totalCount: 0, table: null },
+  }),
 }));
 
 vi.mock("../../hooks/useConversionJob", () => ({
@@ -103,5 +161,19 @@ describe("UploadPage", () => {
     renderPage();
     fireEvent.click(screen.getByText("Build a story"));
     expect(screen.getByRole("button", { name: /start from scratch/i })).toBeTruthy();
+  });
+
+  it("routing a .parquet URL opens the GeoParquet preview modal inline", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText("Visualize data"));
+    await user.type(
+      screen.getByRole("textbox", { name: /url/i }),
+      "https://example.com/data.parquet"
+    );
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+    expect(
+      await screen.findByRole("dialog", { name: /preview/i })
+    ).toBeInTheDocument();
   });
 });

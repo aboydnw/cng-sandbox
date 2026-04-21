@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
@@ -11,11 +11,22 @@ import { DuplicateWarning } from "../components/DuplicateWarning";
 import { BugReportModal } from "../components/BugReportModal";
 import { VisualizeDataCardContent } from "../components/VisualizeDataCardContent";
 import { BuildStoryCardContent } from "../components/BuildStoryCardContent";
+import { InlineConnectionForm } from "../components/InlineConnectionForm";
+import { GeoParquetPreviewModal } from "../components/GeoParquetPreviewModal";
 import { FolderOpen, GlobeHemisphereWest } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { useDuckDB } from "../hooks/useDuckDB";
+import { useGeoParquetValidation } from "../hooks/useGeoParquetValidation";
+import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { formatBytes } from "../utils/format";
+import { workspaceFetch } from "../lib/api";
+import {
+  registerPMTilesConnection,
+  registerCogConnection,
+} from "../lib/connections";
+import { pickRenderPath } from "../lib/geoparquet/pickRenderPath";
 import type { UrlDetectionResult } from "../hooks/useUrlDetection";
+import type { Connection } from "../types";
 
 type PageMode =
   | "initial"
@@ -23,7 +34,9 @@ type PageMode =
   | "uploading"
   | "error"
   | "variable-picker"
-  | "duplicate";
+  | "duplicate"
+  | "xyz-picker"
+  | "registering";
 
 export default function UploadPage() {
   const navigate = useNavigate();
@@ -45,7 +58,32 @@ export default function UploadPage() {
     "none"
   );
   const [reportOpen, setReportOpen] = useState(false);
-  const { initialize: initializeDuckDB } = useDuckDB();
+  const [xyzPickerUrl, setXyzPickerUrl] = useState<string | null>(null);
+  const [parquetPreviewUrl, setParquetPreviewUrl] = useState<string | null>(
+    null
+  );
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
+  const {
+    validating,
+    valid,
+    error: validationError,
+    geometryInfo,
+    sizeBytes,
+    sizeSource,
+    validate: validateGeoParquet,
+  } = useGeoParquetValidation(duckConn, parquetPreviewUrl ?? "");
+  const { result: parquetQueryResult } = useGeoParquetQuery(
+    duckConn,
+    parquetPreviewUrl ?? ""
+  );
+  const effectiveRenderPath = pickRenderPath({
+    sizeBytes,
+    featureCount:
+      parquetQueryResult.totalCount > 0
+        ? parquetQueryResult.totalCount
+        : null,
+  });
 
   useEffect(() => {
     initializeDuckDB().catch((err) => {
@@ -107,19 +145,116 @@ export default function UploadPage() {
     [startTemporalUpload]
   );
 
+  const handleConnectionCreated = useCallback(
+    (conn: Connection) => {
+      navigate(workspacePath(`/map/connection/${conn.id}`));
+    },
+    [navigate, workspacePath]
+  );
+
+  const handleParquetConfirm = useCallback(async () => {
+    if (!valid || !parquetPreviewUrl) return;
+    setMode("registering");
+    setConnectionError(null);
+    try {
+      const response = await workspaceFetch("/api/connections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: parquetPreviewUrl,
+          connection_type: "geoparquet",
+          name: parquetPreviewUrl.split("/").pop() || "Untitled",
+          render_path: effectiveRenderPath,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create connection");
+      }
+      const data = await response.json();
+      if (!data.id) {
+        throw new Error("No connection ID returned");
+      }
+      setParquetPreviewUrl(null);
+      navigate(workspacePath(`/map/connection/${data.id}`));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setConnectionError(`Connection creation failed: ${msg}`);
+      setMode("upload-idle");
+    }
+  }, [
+    valid,
+    parquetPreviewUrl,
+    effectiveRenderPath,
+    navigate,
+    workspacePath,
+  ]);
+
   const handleUrlSubmitted = useCallback(
-    (result: UrlDetectionResult) => {
-      if (result.route === "discover") {
-        navigate(
-          workspacePath("/discover") +
-            "?url=" +
-            encodeURIComponent(result.url)
-        );
-      } else {
-        handleUrl(result.url);
+    async (result: UrlDetectionResult) => {
+      setConnectionError(null);
+      switch (result.route) {
+        case "discover":
+          navigate(
+            workspacePath("/discover") +
+              "?url=" +
+              encodeURIComponent(result.url)
+          );
+          return;
+        case "convert-url":
+          handleUrl(result.url);
+          return;
+        case "xyz":
+          setXyzPickerUrl(result.url);
+          setMode("xyz-picker");
+          return;
+        case "parquet": {
+          setParquetPreviewUrl(result.url);
+          let activeConn = duckConn;
+          if (!activeConn) {
+            try {
+              const dbResult = await initializeDuckDB();
+              activeConn = dbResult?.conn ?? null;
+            } catch (err) {
+              console.error("DuckDB initialization failed:", err);
+              return;
+            }
+          }
+          await validateGeoParquet(activeConn, result.url);
+          return;
+        }
+        case "pmtiles":
+          setMode("registering");
+          try {
+            const conn = await registerPMTilesConnection(result.url);
+            handleConnectionCreated(conn);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setConnectionError(`Failed to register PMTiles: ${msg}`);
+            setMode("upload-idle");
+          }
+          return;
+        case "cog":
+          setMode("registering");
+          try {
+            const conn = await registerCogConnection(result.url);
+            handleConnectionCreated(conn);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setConnectionError(`Failed to register COG: ${msg}`);
+            setMode("upload-idle");
+          }
+          return;
       }
     },
-    [handleUrl, navigate, workspacePath]
+    [
+      handleUrl,
+      navigate,
+      workspacePath,
+      handleConnectionCreated,
+      duckConn,
+      initializeDuckDB,
+      validateGeoParquet,
+    ]
   );
 
   const handleRetry = useCallback(() => {
@@ -179,6 +314,34 @@ export default function UploadPage() {
           filename={state.duplicate.filename}
           onUploadAnother={handleUploadAnother}
         />
+      )}
+      {mode === "xyz-picker" && xyzPickerUrl && (
+        <Box
+          mt={3}
+          p={3}
+          bg="gray.900"
+          color="white"
+          borderRadius="md"
+        >
+          <InlineConnectionForm
+            prefilledUrl={xyzPickerUrl}
+            onCancel={() => {
+              setXyzPickerUrl(null);
+              setMode("upload-idle");
+            }}
+            onCreated={handleConnectionCreated}
+          />
+        </Box>
+      )}
+      {mode === "registering" && (
+        <Text fontSize="sm" color="brand.textSecondary" mt={3}>
+          Registering connection…
+        </Text>
+      )}
+      {connectionError && (
+        <Text fontSize="sm" color="red.500" mt={3}>
+          {connectionError}
+        </Text>
       )}
     </>
   );
@@ -274,6 +437,27 @@ export default function UploadPage() {
         onClose={() => setReportOpen(false)}
         jobId={state.jobId ?? undefined}
         errorMessage={state.error ?? undefined}
+      />
+
+      <GeoParquetPreviewModal
+        open={parquetPreviewUrl !== null}
+        filename={
+          parquetPreviewUrl?.split("/").pop() || "data.parquet"
+        }
+        validating={validating}
+        valid={valid}
+        error={validationError || connectionError}
+        geometryInfo={geometryInfo}
+        schema={parquetQueryResult.columnStats}
+        samples={parquetQueryResult.table}
+        sizeBytes={sizeBytes}
+        sizeSource={sizeSource}
+        renderPath={effectiveRenderPath}
+        onConfirm={handleParquetConfirm}
+        onCancel={() => {
+          setParquetPreviewUrl(null);
+          setConnectionError(null);
+        }}
       />
     </Flex>
   );

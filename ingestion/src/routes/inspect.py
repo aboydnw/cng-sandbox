@@ -4,6 +4,8 @@ import httpx
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from src.services.url_validation import SSRFError, validate_url_safe
+
 router = APIRouter(prefix="/api", tags=["inspection"])
 
 
@@ -58,6 +60,17 @@ async def inspect_url(request: InspectUrlRequest) -> InspectUrlResponse:
     error_detail: str | None = None
     has_errors = False
     if format_detected != "xyz":
+        try:
+            validate_url_safe(request.url)
+        except SSRFError as exc:
+            return InspectUrlResponse(
+                format=format_detected,
+                is_cog=is_cog,
+                size_bytes=None,
+                bounds=None,
+                has_errors=True,
+                error_detail=str(exc),
+            )
         size_bytes, error_detail = await _probe_size(request.url)
         has_errors = error_detail is not None
     return InspectUrlResponse(

@@ -83,3 +83,32 @@ def test_inspect_url_accepts_206_partial_content(client, monkeypatch):
     body = resp.json()
     assert body["has_errors"] is False
     assert body["size_bytes"] == 999
+
+
+def test_inspect_url_rejects_private_ip(client):
+    resp = client.post("/api/inspect-url", json={"url": "http://127.0.0.1/tiles.pmtiles"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["format"] == "pmtiles"
+    assert body["size_bytes"] is None
+    assert body["has_errors"] is True
+    assert "private" in body["error_detail"].lower() or "loopback" in body["error_detail"].lower()
+
+
+def test_inspect_url_rejects_non_http_scheme(client):
+    resp = client.post("/api/inspect-url", json={"url": "ftp://example.com/data.tif"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["has_errors"] is True
+    assert "http" in body["error_detail"].lower()
+
+
+def test_inspect_url_xyz_template_is_not_ssrf_checked(client):
+    resp = client.post(
+        "/api/inspect-url",
+        json={"url": "http://127.0.0.1:8080/{z}/{x}/{y}.png"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["format"] == "xyz"
+    assert body["has_errors"] is False

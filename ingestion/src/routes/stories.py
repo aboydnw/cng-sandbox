@@ -115,6 +115,8 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
+        if row.is_example:
+            raise HTTPException(status_code=403, detail="Cannot modify example stories")
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if body.title is not None:
@@ -173,6 +175,8 @@ async def delete_story(story_id: str, request: Request):
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
+        if row.is_example:
+            raise HTTPException(status_code=403, detail="Cannot delete example stories")
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         session.delete(row)

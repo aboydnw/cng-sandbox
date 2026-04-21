@@ -323,6 +323,48 @@ def test_list_stories_excludes_non_example_cross_workspace_rows(client, db_sessi
     assert "leak-candidate" not in ids
 
 
+def test_patch_example_story_returns_403(client, db_session):
+    from src.models.story import StoryRow
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    db_session.add(StoryRow(
+        id="example-patch",
+        title="Example",
+        chapters_json="[]",
+        published=False,
+        created_at=now,
+        updated_at=now,
+        workspace_id="testABCD",  # same as caller — so not a workspace 403
+        is_example=True,
+    ))
+    db_session.commit()
+
+    resp = client.patch("/api/stories/example-patch", json={"title": "Modified"})
+    assert resp.status_code == 403
+
+
+def test_delete_example_story_returns_403(client, db_session):
+    from src.models.story import StoryRow
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    db_session.add(StoryRow(
+        id="example-delete",
+        title="Example",
+        chapters_json="[]",
+        published=False,
+        created_at=now,
+        updated_at=now,
+        workspace_id="testABCD",
+        is_example=True,
+    ))
+    db_session.commit()
+
+    resp = client.delete("/api/stories/example-delete")
+    assert resp.status_code == 403
+
+
 def test_fork_is_deep_copy_not_reference(client, db_session):
     """Mutating the original after forking must not change the forked copy."""
     from src.models.story import StoryRow

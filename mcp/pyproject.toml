@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "mcp>=1.27.0",
     "httpx>=0.24.0",
-    "pydantic>=2.0",
+    "pydantic>=2.13.0",
 ]
 
 [project.optional-dependencies]

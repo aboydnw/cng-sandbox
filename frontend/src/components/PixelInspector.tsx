@@ -1,10 +1,16 @@
 import { useState, useCallback, useRef } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import type { TileCacheEntry } from "../lib/layers/cogLayer";
 
 interface HoverSourceTile {
   index: { x: number; y: number; z?: number };
   bounds: [number, number, number, number] | number[];
+  content?: {
+    data?: {
+      raw?: ArrayLike<number>;
+      width?: number;
+      height?: number;
+    };
+  };
 }
 
 interface DeckHoverInfo {
@@ -15,14 +21,15 @@ interface DeckHoverInfo {
 }
 
 function lookupValue(
-  cache: Map<string, TileCacheEntry>,
   sourceTile: HoverSourceTile,
   lng: number,
   lat: number
 ): number | null {
-  const key = `${sourceTile.index.x}/${sourceTile.index.y}`;
-  const entry = cache.get(key);
-  if (!entry) return null;
+  const data = sourceTile.content?.data;
+  const raw = data?.raw;
+  const width = data?.width;
+  const height = data?.height;
+  if (!raw || !width || !height) return null;
 
   const [west, south, east, north] = sourceTile.bounds as [
     number,
@@ -30,13 +37,23 @@ function lookupValue(
     number,
     number,
   ];
+  const spanX = east - west;
+  const spanY = north - south;
+  if (spanX <= 0 || spanY <= 0) return null;
   if (lng < west || lng > east || lat < south || lat > north) return null;
 
-  const px = Math.floor(((lng - west) / (east - west)) * entry.width);
-  const py = Math.floor(((north - lat) / (north - south)) * entry.height);
-  if (px < 0 || px >= entry.width || py < 0 || py >= entry.height) return null;
+  // Clamp to [0, dim-1]: coordinates exactly on the east/south edge would
+  // otherwise land at `width`/`height` and drop the tooltip at tile seams.
+  const px = Math.min(
+    width - 1,
+    Math.max(0, Math.floor(((lng - west) / spanX) * width))
+  );
+  const py = Math.min(
+    height - 1,
+    Math.max(0, Math.floor(((north - lat) / spanY) * height))
+  );
 
-  const val = entry.data[py * entry.width + px];
+  const val = raw[py * width + px];
   if (val !== val) return null;
   return val;
 }
@@ -76,7 +93,6 @@ type HoverInfo =
     };
 
 export function usePixelInspector(
-  tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
   bandNames: string[] | null,
   categories?: { value: number; color: string; label: string }[]
 ) {
@@ -97,7 +113,7 @@ export function usePixelInspector(
       hoverRafRef.current = requestAnimationFrame(() => {
         hoverRafRef.current = null;
         const [lng, lat] = info.coordinate!;
-        const value = lookupValue(tileCacheRef.current, sourceTile, lng, lat);
+        const value = lookupValue(sourceTile, lng, lat);
         if (value === null) {
           setHoverInfo(null);
           return;
@@ -133,7 +149,7 @@ export function usePixelInspector(
         });
       });
     },
-    [tileCacheRef, bandNames, categories]
+    [bandNames, categories]
   );
 
   return { hoverInfo, onHover };

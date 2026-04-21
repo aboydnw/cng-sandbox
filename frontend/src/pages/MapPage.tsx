@@ -25,7 +25,6 @@ import {
 import { VectorPopupOverlay, useVectorPopup } from "../components/VectorPopup";
 import {
   type CameraState,
-  type TileCacheEntry,
   DEFAULT_CAMERA,
   cameraFromBounds,
 } from "../lib/layers";
@@ -320,14 +319,12 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   }, [isClientGeoParquet, geoParquetTable]);
 
   // --- Popups & pixel inspector ---
-  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
   const vectorPopup = useVectorPopup();
   const inspectorCategories =
     controls.isCategorical && controls.renderMode === "client"
       ? (effectiveCategories ?? undefined)
       : undefined;
   const pixelInspector = usePixelInspector(
-    tileCacheRef,
     item?.bandNames ?? null,
     inspectorCategories
   );
@@ -347,7 +344,6 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     renderIndices,
     isAnimateMode: animation.isAnimateMode,
     getLoadCallback,
-    tileCacheRef,
     arrowTable,
     onVectorClick: vectorPopup.onClick,
     rescaleMin: controls.rescaleMin,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
@@ -6,7 +6,6 @@ import { CalendarPopover } from "./CalendarPopover";
 import { RenderModeIndicator } from "./RenderModeIndicator";
 import type { Chapter } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
-import type { TileCacheEntry } from "../lib/layers";
 import type { Connection, Dataset } from "../types";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { detectCadence } from "../utils/temporal";
@@ -45,16 +44,13 @@ export function MapChapter({
     setCamera(c);
   }, []);
 
-  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
-
   const { layers, renderMetadata } = useMemo(() => {
     if (connection) {
       const connMap = new Map([[connection.id, connection]]);
       return buildLayersForChapter(
         chapter,
         new Map() as Map<string, Dataset | null>,
-        connMap,
-        tileCacheRef
+        connMap
       );
     }
 
@@ -68,12 +64,7 @@ export function MapChapter({
       },
     };
     const datasetMap = new Map<string, Dataset | null>([[dataset.id, dataset]]);
-    return buildLayersForChapter(
-      interactiveChapter,
-      datasetMap,
-      undefined,
-      tileCacheRef
-    );
+    return buildLayersForChapter(interactiveChapter, datasetMap, undefined);
   }, [dataset, connection, chapter, activeTimestepIndex]);
 
   return (

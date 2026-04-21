@@ -8,7 +8,6 @@ import {
   DEFAULT_CAMERA,
   cameraFromBounds,
 } from "../lib/layers";
-import type { TileCacheEntry } from "../lib/layers";
 import {
   type Story,
   type Chapter,
@@ -51,7 +50,6 @@ export function useStoryEditor() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const tileCacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
   const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
   const [allConnections, setAllConnections] = useState<Connection[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -430,8 +428,7 @@ export function useStoryEditor() {
     const result = buildLayersForChapter(
       activeChapter,
       datasetMap,
-      connectionMap,
-      tileCacheRef
+      connectionMap
     );
     return {
       layers: result.layers,

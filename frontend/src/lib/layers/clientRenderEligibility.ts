@@ -6,19 +6,6 @@ export const CLIENT_RENDER_MAX_BYTES_CONTINUOUS = 500 * 1024 * 1024; // 500 MB
 
 export type CogRenderPath = "paletted" | "continuous";
 
-// The client COG renderer builds a mesh in the COG's native CRS and relies on
-// deck.gl's Mercator viewport to warp it. Only EPSG:3857 sources warp without
-// visible error at zoom-out; geographic or projected CRSes produce a mesh too
-// coarse to track Mercator's non-linear latitude scaling.
-function isWebMercator(crs: string): boolean {
-  const normalized = crs.trim().toUpperCase().replace(/\s+/g, "");
-  return (
-    normalized === "EPSG:3857" ||
-    normalized === "EPSG:900913" ||
-    normalized === "EPSG:3785"
-  );
-}
-
 export interface ClientRenderEligibility {
   canRender: boolean;
   renderPath: CogRenderPath | null;
@@ -77,16 +64,6 @@ export function evaluateClientRenderEligibility(
       sizeBytes: null,
       cap: null,
       reason: "Bounds exceed supported latitude range (\u00B185.05\u00B0)",
-    };
-  }
-
-  if (item.crs && !isWebMercator(item.crs)) {
-    return {
-      canRender: false,
-      renderPath: null,
-      sizeBytes: null,
-      cap: null,
-      reason: `CRS ${item.crs} requires server-side reprojection`,
     };
   }
 

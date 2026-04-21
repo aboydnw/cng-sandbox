@@ -107,12 +107,11 @@ describe("evaluateClientRenderEligibility", () => {
     expect(result.reason).toMatch(/no item|missing/i);
   });
 
-  it("returns ineligible when CRS is known and not EPSG:3857", () => {
+  it("stays eligible for non-Mercator CRSes (deck.gl-geotiff reprojects internally)", () => {
     const result = evaluateClientRenderEligibility(
       rasterDatasetItem({ crs: "EPSG:4326" })
     );
-    expect(result.canRender).toBe(false);
-    expect(result.reason).toMatch(/CRS|reproject/i);
+    expect(result.canRender).toBe(true);
   });
 
   it("stays eligible when CRS is EPSG:3857", () => {

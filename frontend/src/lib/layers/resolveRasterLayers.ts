@@ -29,8 +29,14 @@ export interface ResolveRasterLayersOutput {
 export function resolveRasterLayers(
   input: ResolveRasterLayersInput
 ): ResolveRasterLayersOutput {
-  const { item, opacity, rescaleMin, rescaleMax, serverTileUrl, effectiveCategories } =
-    input;
+  const {
+    item,
+    opacity,
+    rescaleMin,
+    rescaleMax,
+    serverTileUrl,
+    effectiveCategories,
+  } = input;
 
   if (!item) {
     return {

@@ -114,11 +114,7 @@ function ScrollytellingBlock({
 
   const { layers, renderMetadata } = useMemo(
     () =>
-      buildLayersForChapter(
-        chapters[activeIndex],
-        datasetMap,
-        connectionMap
-      ),
+      buildLayersForChapter(chapters[activeIndex], datasetMap, connectionMap),
     [datasetMap, connectionMap, activeIndex, chapters]
   );
 

@@ -70,7 +70,6 @@ const TEMPORAL_DATASET: Dataset = {
   ],
 };
 
-
 describe("buildLayersForChapter — temporal timestep wiring", () => {
   it("appends datetime param for timestep index 2", () => {
     const chapter = createChapter({
@@ -86,11 +85,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
       ["ds-1", TEMPORAL_DATASET],
     ]);
 
-    const { layers } = buildLayersForChapter(
-      chapter,
-      datasetMap,
-      undefined
-    );
+    const { layers } = buildLayersForChapter(chapter, datasetMap, undefined);
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -112,11 +107,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
       ["ds-1", TEMPORAL_DATASET],
     ]);
 
-    const { layers } = buildLayersForChapter(
-      chapter,
-      datasetMap,
-      undefined
-    );
+    const { layers } = buildLayersForChapter(chapter, datasetMap, undefined);
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -139,11 +130,7 @@ describe("buildLayersForChapter — temporal timestep wiring", () => {
       ["ds-1", BASE_DATASET],
     ]);
 
-    const { layers } = buildLayersForChapter(
-      chapter,
-      datasetMap,
-      undefined
-    );
+    const { layers } = buildLayersForChapter(chapter, datasetMap, undefined);
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -166,11 +153,7 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     });
     const datasetMap = new Map<string, Dataset | null>([["ds-1", ds]]);
 
-    const { layers } = buildLayersForChapter(
-      chapter,
-      datasetMap,
-      undefined
-    );
+    const { layers } = buildLayersForChapter(chapter, datasetMap, undefined);
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -194,11 +177,7 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     });
     const datasetMap = new Map<string, Dataset | null>([["ds-1", ds]]);
 
-    const { layers } = buildLayersForChapter(
-      chapter,
-      datasetMap,
-      undefined
-    );
+    const { layers } = buildLayersForChapter(chapter, datasetMap, undefined);
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (
@@ -221,11 +200,7 @@ describe("buildLayersForChapter — rescale and colormap_reversed overrides", ()
     });
     const datasetMap = new Map<string, Dataset | null>([["ds-1", ds]]);
 
-    const { layers } = buildLayersForChapter(
-      chapter,
-      datasetMap,
-      undefined
-    );
+    const { layers } = buildLayersForChapter(chapter, datasetMap, undefined);
 
     expect(layers.length).toBeGreaterThan(0);
     const tileUrl: string = (

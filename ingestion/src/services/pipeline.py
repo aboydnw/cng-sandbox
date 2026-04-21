@@ -423,8 +423,13 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                         )
                         return
 
-        # Upload raw file to S3
-        storage.upload_raw(input_path, job.dataset_id, job.filename)
+        # Upload raw file to S3 off the event loop. obstore.put is blocking,
+        # and on large files it stalls the SSE ping coroutine long enough for
+        # intermediate proxies (Cloudflare ~100s) to drop the job stream —
+        # surfacing as "Connection lost" even though the pipeline completes.
+        await asyncio.to_thread(
+            storage.upload_raw, input_path, job.dataset_id, job.filename
+        )
 
         # Stage 2: Convert
         job.status = JobStatus.CONVERTING

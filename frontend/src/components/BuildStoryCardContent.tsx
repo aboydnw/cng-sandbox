@@ -17,12 +17,14 @@ export function BuildStoryCardContent() {
   const [examples, setExamples] = useState<ExampleStory[]>([]);
 
   useEffect(() => {
-    workspaceFetch("/api/stories")
+    const controller = new AbortController();
+    workspaceFetch("/api/stories", { signal: controller.signal })
       .then((r) => r.json())
       .then((data: ExampleStory[]) => {
         setExamples(data.filter((s) => s.is_example));
       })
       .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const handleStartFromScratch = () => {

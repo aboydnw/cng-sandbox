@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { workspaceFetch } from "../lib/api";
 
 export type UrlRoute =
   | "xyz"
@@ -27,7 +28,7 @@ interface DetectOptions {
 }
 
 async function defaultInspect(url: string): Promise<InspectUrlResponse> {
-  const response = await fetch("/api/inspect-url", {
+  const response = await workspaceFetch("/api/inspect-url", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),

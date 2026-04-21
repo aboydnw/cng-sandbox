@@ -31,12 +31,14 @@ export function VisualizeDataCardContent({
   const [examples, setExamples] = useState<ExampleDataset[]>([]);
 
   useEffect(() => {
-    workspaceFetch("/api/datasets")
+    const controller = new AbortController();
+    workspaceFetch("/api/datasets", { signal: controller.signal })
       .then((r) => r.json())
       .then((data: ExampleDataset[]) => {
         setExamples(data.filter((ds) => ds.is_example).slice(0, 5));
       })
       .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const handleContinue = async () => {
@@ -50,7 +52,7 @@ export function VisualizeDataCardContent({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      handleContinue();
+      handleContinue().catch(() => {});
     }
   };
 

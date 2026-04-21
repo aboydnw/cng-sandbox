@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -57,12 +57,15 @@ vi.mock("../../hooks/useUrlDetection", async () => {
   };
 });
 
-vi.mock("../../hooks/useDuckDB", () => ({
-  useDuckDB: vi.fn().mockReturnValue({
-    conn: null,
-    initialize: vi.fn().mockResolvedValue({ conn: null }),
-  }),
-}));
+vi.mock("../../hooks/useDuckDB", () => {
+  const conn = {};
+  return {
+    useDuckDB: vi.fn().mockReturnValue({
+      conn,
+      initialize: vi.fn().mockResolvedValue({ conn }),
+    }),
+  };
+});
 
 vi.mock("../../hooks/useGeoParquetValidation", () => ({
   useGeoParquetValidation: vi.fn().mockReturnValue({
@@ -105,10 +108,17 @@ vi.mock("../../hooks/useConversionJob", () => ({
 }));
 
 beforeEach(() => {
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve([]),
-  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    })
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 function renderPage() {

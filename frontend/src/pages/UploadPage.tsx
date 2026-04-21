@@ -21,6 +21,7 @@ import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
 import { formatBytes } from "../utils/format";
 import { workspaceFetch } from "../lib/api";
 import {
+  extractNameFromUrl,
   registerPMTilesConnection,
   registerCogConnection,
 } from "../lib/connections";
@@ -161,7 +162,7 @@ export default function UploadPage() {
         body: JSON.stringify({
           url: parquetPreviewUrl,
           connection_type: "geoparquet",
-          name: parquetPreviewUrl.split("/").pop() || "Untitled",
+          name: extractNameFromUrl(parquetPreviewUrl) || "Untitled",
           render_path: effectiveRenderPath,
         }),
       });
@@ -434,7 +435,10 @@ export default function UploadPage() {
 
       <GeoParquetPreviewModal
         open={parquetPreviewUrl !== null}
-        filename={parquetPreviewUrl?.split("/").pop() || "data.parquet"}
+        filename={
+          (parquetPreviewUrl && extractNameFromUrl(parquetPreviewUrl)) ||
+          "data.parquet"
+        }
         validating={validating}
         valid={valid}
         error={validationError || connectionError}

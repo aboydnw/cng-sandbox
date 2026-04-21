@@ -28,6 +28,6 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@797cf5c0a210b8b257f62fe1fbf9a46b4fc201bf # v2
+      - uses: astral-sh/setup-uv@6dfebec6ddbcd197e02256fbdf54deb334fb7f06 # v2
       - run: cd mcp && uv sync --extra dev
       - run: cd mcp && uv run pytest tests/ -v --cov=src/cng_mcp

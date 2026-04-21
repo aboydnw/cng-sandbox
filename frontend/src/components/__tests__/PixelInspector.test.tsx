@@ -100,6 +100,25 @@ describe("usePixelInspector categorical branch", () => {
     expect(result.current.hoverInfo).toBeNull();
   });
 
+  it("returns null without throwing when sourceTile has no bounds", async () => {
+    const { result } = renderHook(() => usePixelInspector(null));
+    act(() => {
+      result.current.onHover({
+        coordinate: [-5, 5],
+        x: 0,
+        y: 0,
+        sourceTile: {
+          index: { x: 0, y: 0, z: 0 },
+          content: {
+            data: { raw: new Float32Array([1, 2, 3, 4]), width: 2, height: 2 },
+          },
+        },
+      });
+    });
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    expect(result.current.hoverInfo).toBeNull();
+  });
+
   it("samples from the hovered tile's own data, not a shared cache", async () => {
     const cats = [
       { value: 1, color: "#f00", label: "One" },

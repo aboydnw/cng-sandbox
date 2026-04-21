@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.22.0](https://github.com/aboydnw/cng-sandbox/compare/v1.21.0...v1.22.0) (2026-04-21)
+
+
+### Features
+
+* **backend:** homepage redesign backend — examples, inspect-url, fork ([#284](https://github.com/aboydnw/cng-sandbox/issues/284)) ([8f85d6a](https://github.com/aboydnw/cng-sandbox/commit/8f85d6af291e9fa331259ab68b3a14e319d05cb4))
+* **frontend:** client COG rendering for non-Mercator CRSes via deck.gl-geotiff 0.4 ([#263](https://github.com/aboydnw/cng-sandbox/issues/263)) ([9129771](https://github.com/aboydnw/cng-sandbox/commit/9129771ba62fd742646dd7d63991728eee643384))
+* **frontend:** redesign homepage to two-card layout with unified URL auto-detection ([#291](https://github.com/aboydnw/cng-sandbox/issues/291)) ([7a2a86e](https://github.com/aboydnw/cng-sandbox/commit/7a2a86eadd321e280620cac58a8c7b5d5265ad43))
+
+
+### Bug Fixes
+
+* **frontend:** correct technical details panel for categorical + client-rendered rasters ([#292](https://github.com/aboydnw/cng-sandbox/issues/292)) ([1acb91c](https://github.com/aboydnw/cng-sandbox/commit/1acb91c8e5b1c93b992f7ff12a874e27913239a2))
+
 ## [1.21.0](https://github.com/aboydnw/cng-sandbox/compare/v1.20.1...v1.21.0) (2026-04-20)
 
 

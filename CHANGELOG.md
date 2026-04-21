@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.2](https://github.com/aboydnw/cng-sandbox/compare/v1.22.1...v1.22.2) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** read pixel values off the hovered tile, drop shared cache ([#296](https://github.com/aboydnw/cng-sandbox/issues/296)) ([d4de663](https://github.com/aboydnw/cng-sandbox/commit/d4de66395b74702a91bc89b9645cc48194b80729))
+* **ingestion:** use nearest resampling for categorical GeoTIFF→COG ([#297](https://github.com/aboydnw/cng-sandbox/issues/297)) ([5be81b7](https://github.com/aboydnw/cng-sandbox/commit/5be81b783bacc9635a000bac5748bad9554068e0))
+
 ## [1.22.1](https://github.com/aboydnw/cng-sandbox/compare/v1.22.0...v1.22.1) (2026-04-21)
 
 

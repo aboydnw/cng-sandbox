@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
+from sqlalchemy import or_
 
 from src.dependencies import get_session
 from src.models.story import (
@@ -79,7 +80,11 @@ async def list_stories(request: Request):
     try:
         rows = (
             session.query(StoryRow)
-            .filter(StoryRow.workspace_id == workspace_id)
+            .filter(
+                or_(
+                    StoryRow.workspace_id == workspace_id, StoryRow.is_example.is_(True)
+                )
+            )
             .order_by(StoryRow.created_at.desc())
             .all()
         )
@@ -114,6 +119,10 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example stories cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if body.title is not None:
@@ -132,6 +141,37 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         session.close()
 
 
+@router.post("/stories/{story_id}/fork")
+async def fork_story(story_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        source = session.get(StoryRow, story_id)
+        if not source:
+            raise HTTPException(status_code=404, detail="Story not found")
+
+        now = datetime.now(UTC)
+        forked = StoryRow(
+            id=str(uuid.uuid4()),
+            title=source.title,
+            description=source.description,
+            dataset_id=source.dataset_id,
+            chapters_json=source.chapters_json,
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id=workspace_id,
+            is_example=False,
+        )
+        session.add(forked)
+        session.commit()
+        session.refresh(forked)
+        return _row_to_response(forked)
+    finally:
+        session.close()
+
+
 @router.delete("/stories/{story_id}", status_code=204)
 async def delete_story(story_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")
@@ -141,6 +181,10 @@ async def delete_story(story_id: str, request: Request):
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example stories cannot be deleted"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         session.delete(row)

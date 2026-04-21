@@ -15,14 +15,8 @@ function renderWithProvider(ui: React.ReactElement) {
 }
 import type { TileCacheEntry } from "../../lib/layers";
 
-function seededCache(): Map<string, TileCacheEntry> {
-  const m = new Map<string, TileCacheEntry>();
-  m.set("0/0", {
-    data: new Float32Array([1, 2, 3, 4]),
-    width: 2,
-    height: 2,
-  });
-  return m;
+function emptyCache(): Map<string, TileCacheEntry> {
+  return new Map();
 }
 
 function hoverInfo(opts: {
@@ -32,6 +26,9 @@ function hoverInfo(opts: {
   tileX?: number;
   tileY?: number;
   tileBounds?: [number, number, number, number];
+  raw?: ArrayLike<number>;
+  width?: number;
+  height?: number;
 }) {
   const {
     coordinate,
@@ -40,6 +37,9 @@ function hoverInfo(opts: {
     tileX = 0,
     tileY = 0,
     tileBounds = [-10, -10, 10, 10],
+    raw = new Float32Array([1, 2, 3, 4]),
+    width = 2,
+    height = 2,
   } = opts;
   return {
     coordinate,
@@ -48,6 +48,7 @@ function hoverInfo(opts: {
     sourceTile: {
       index: { x: tileX, y: tileY, z: 0 },
       bounds: tileBounds,
+      content: { data: { raw, width, height } },
     },
   };
 }
@@ -59,7 +60,7 @@ describe("usePixelInspector categorical branch", () => {
       { value: 2, color: "#00ff00", label: "B" },
     ];
     const { result } = renderHook(() => {
-      const ref = useRef(seededCache());
+      const ref = useRef(emptyCache());
       return usePixelInspector(ref, null, cats);
     });
     act(() => {
@@ -79,7 +80,7 @@ describe("usePixelInspector categorical branch", () => {
   it("returns null when hovered value has no matching category", async () => {
     const cats = [{ value: 99, color: "#ff0000", label: "X" }];
     const { result } = renderHook(() => {
-      const ref = useRef(seededCache());
+      const ref = useRef(emptyCache());
       return usePixelInspector(ref, null, cats);
     });
     act(() => {
@@ -91,7 +92,7 @@ describe("usePixelInspector categorical branch", () => {
 
   it("keeps numeric behavior when categories is undefined", async () => {
     const { result } = renderHook(() => {
-      const ref = useRef(seededCache());
+      const ref = useRef(emptyCache());
       return usePixelInspector(ref, null);
     });
     act(() => {
@@ -107,7 +108,7 @@ describe("usePixelInspector categorical branch", () => {
 
   it("returns null when sourceTile is missing (hover off COG layer)", async () => {
     const { result } = renderHook(() => {
-      const ref = useRef(seededCache());
+      const ref = useRef(emptyCache());
       return usePixelInspector(ref, null);
     });
     act(() => {
@@ -117,27 +118,17 @@ describe("usePixelInspector categorical branch", () => {
     expect(result.current.hoverInfo).toBeNull();
   });
 
-  it("samples the right pixel from the right tile when multiple tiles are cached", async () => {
-    const cache = new Map<string, TileCacheEntry>();
-    cache.set("0/0", {
-      data: new Float32Array([1, 1, 1, 1]),
-      width: 2,
-      height: 2,
-    });
-    cache.set("1/0", {
-      data: new Float32Array([2, 2, 2, 2]),
-      width: 2,
-      height: 2,
-    });
+  it("samples from the hovered tile's own data, not a shared cache", async () => {
     const cats = [
       { value: 1, color: "#f00", label: "One" },
       { value: 2, color: "#0f0", label: "Two" },
     ];
     const { result } = renderHook(() => {
-      const ref = useRef(cache);
+      const ref = useRef(emptyCache());
       return usePixelInspector(ref, null, cats);
     });
-    // Hover the second tile; inspector must look it up by index, not bounds.
+    // Tile 1/0 has data that is entirely value 2 — inspector must read it,
+    // not a stale entry keyed by a neighbouring tile.
     act(() => {
       result.current.onHover(
         hoverInfo({
@@ -147,6 +138,7 @@ describe("usePixelInspector categorical branch", () => {
           tileX: 1,
           tileY: 0,
           tileBounds: [10, -10, 30, 10],
+          raw: new Float32Array([2, 2, 2, 2]),
         })
       );
     });

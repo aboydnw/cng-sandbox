@@ -197,24 +197,6 @@ export function buildCogLayerPaletted({
       raw[i] = source[i] & 0xff;
     }
 
-    if (tileCacheRef) {
-      const cacheKey = `${x}/${y}`;
-      const cache = tileCacheRef.current;
-      // Widen to Float32Array to satisfy existing TileCacheEntry typing;
-      // round-trips exactly for 0..255 integer values.
-      const cached = new Float32Array(raw.length);
-      for (let i = 0; i < raw.length; i++) cached[i] = raw[i];
-      cache.set(cacheKey, {
-        data: cached,
-        width,
-        height,
-      });
-      while (cache.size > MAX_CACHED_TILES) {
-        const firstKey = cache.keys().next().value;
-        if (firstKey !== undefined) cache.delete(firstKey);
-      }
-    }
-
     const valueTex = device.createTexture({
       data: padToAlignment(raw, width, height),
       format: "r8unorm",
@@ -231,7 +213,11 @@ export function buildCogLayerPaletted({
       sampler: { minFilter: "nearest", magFilter: "nearest" },
     });
 
-    return { texture: valueTex, lutTexture: lutTex, width, height };
+    // `raw` travels on the tile's data so the pixel inspector can sample it
+    // without a separate cache. Keyed by tile identity, not by (x, y), so
+    // zoom-level collisions can't return stale values.
+    void tileCacheRef;
+    return { texture: valueTex, lutTexture: lutTex, width, height, raw };
   };
 
   const renderTile = (data: { texture: unknown; lutTexture: unknown }) => [
@@ -309,20 +295,10 @@ export function buildCogLayerContinuous({
       return { texture: null, width: 0, height: 0 };
     }
 
-    // Cache raw float data for pixel inspector
-    {
-      const cacheKey = `${x}/${y}`;
-      const cache = tileCacheRef.current;
-      cache.set(cacheKey, {
-        data: new Float32Array(floatData),
-        width,
-        height,
-      });
-      while (cache.size > MAX_CACHED_TILES) {
-        const firstKey = cache.keys().next().value;
-        if (firstKey !== undefined) cache.delete(firstKey);
-      }
-    }
+    // Snapshot raw float data; travels on the tile so the pixel inspector
+    // can sample it without a separate cache.
+    const rawSnapshot = new Float32Array(floatData);
+    void tileCacheRef;
 
     // Normalize float32 to uint8 [0, 255]
     const pixelCount = width * height;
@@ -348,7 +324,7 @@ export function buildCogLayerContinuous({
       sampler: { minFilter: "nearest", magFilter: "nearest" },
     });
 
-    return { texture, width, height };
+    return { texture, width, height, raw: rawSnapshot };
   };
 
   const renderTile = (data: { texture: unknown }) => [

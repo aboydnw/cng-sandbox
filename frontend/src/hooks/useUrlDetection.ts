@@ -39,7 +39,7 @@ async function defaultInspect(url: string): Promise<InspectUrlResponse> {
 }
 
 function hasXyzTemplate(url: string): boolean {
-  return /\{z\}.*\{x\}.*\{y\}|\{x\}.*\{y\}.*\{z\}/.test(url);
+  return url.includes("{z}") && url.includes("{x}") && url.includes("{y}");
 }
 
 function pathEndsWith(url: string, ext: string): boolean {
@@ -79,6 +79,11 @@ export async function detectUrlRoute(
     return { route: "parquet", url, format: "parquet", isCog: false, sizeBytes: null };
   }
 
+  // Rule 4a: .cog extension — definitive, no probe needed
+  if (pathEndsWith(url, ".cog")) {
+    return { route: "cog", url, format: "cog", isCog: true, sizeBytes: null };
+  }
+
   // Rule 5: Direct convertible formats (no inspection needed)
   if (pathEndsWith(url, ".geojson")) {
     return { route: "convert-url", url, format: "geojson", isCog: false, sizeBytes: null };
@@ -86,14 +91,13 @@ export async function detectUrlRoute(
 
   // Rules 4+5 require server probe to distinguish COG from plain TIFF
   if (
-    pathEndsWith(url, ".cog") ||
     pathEndsWith(url, ".tif") ||
     pathEndsWith(url, ".tiff")
   ) {
     const probe = await inspect(url);
 
     // Rule 4: COG
-    if (probe.is_cog || pathEndsWith(url, ".cog")) {
+    if (probe.is_cog) {
       return {
         route: "cog",
         url,

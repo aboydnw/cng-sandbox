@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Button, Flex, Input, Spinner, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { FileUploader } from "./FileUploader";
 import { useUrlDetection } from "../hooks/useUrlDetection";
 import { workspaceFetch } from "../lib/api";
@@ -7,7 +7,8 @@ import type { UrlDetectionResult } from "../hooks/useUrlDetection";
 
 interface ExampleDataset {
   id: string;
-  title: string;
+  title: string | null;
+  filename: string | null;
   is_example?: boolean;
 }
 
@@ -69,11 +70,15 @@ export function VisualizeDataCardContent({
                 key={ds.id}
                 size="xs"
                 variant="outline"
-                colorPalette="orange"
+                bg="white"
+                color="brand.brown"
+                borderColor="brand.border"
                 flexShrink={0}
+                fontWeight={500}
+                _hover={{ borderColor: "brand.orange", color: "brand.orange" }}
                 onClick={() => onExampleClicked(ds.id)}
               >
-                {ds.title}
+                {ds.title || ds.filename || "Untitled"}
               </Button>
             ))}
           </Flex>
@@ -86,27 +91,45 @@ export function VisualizeDataCardContent({
         onUrlSubmitted={() => {}}
         disabled={false}
         embedded
+        hideUrlInput
       />
+
+      <Flex align="center" gap={4} w="100%" mt={3}>
+        <Box flex={1} h="1px" bg="brand.border" />
+        <Text
+          color="brand.textSecondary"
+          fontSize="12px"
+          textTransform="uppercase"
+          letterSpacing="1px"
+        >
+          or
+        </Text>
+        <Box flex={1} h="1px" bg="brand.border" />
+      </Flex>
 
       <Flex gap={2} mt={3} align="center">
         <Input
           aria-label="URL"
-          placeholder="Paste a URL to a COG, PMTiles, GeoJSON…"
+          placeholder="Paste a URL — we'll detect tile sources vs. files to convert"
           value={urlInput}
           onChange={(e) => setUrlInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          size="sm"
+          size="md"
+          borderColor="brand.border"
           flex={1}
         />
         <Button
-          size="sm"
-          colorPalette="orange"
+          bg="brand.orange"
+          color="white"
+          size="md"
+          fontWeight={600}
+          borderRadius="4px"
+          _hover={{ bg: "brand.orangeHover" }}
           onClick={handleContinue}
           disabled={detecting || !urlInput.trim()}
         >
           {detecting ? "Detecting…" : "Continue"}
         </Button>
-        {detecting && <Spinner size="sm" />}
       </Flex>
 
       {error && (

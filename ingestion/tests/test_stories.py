@@ -255,7 +255,6 @@ def test_fork_regular_story_from_other_workspace(client, db_session):
 
 
 def test_list_stories_includes_example_rows_from_other_workspaces(client, db_session):
-    """Examples from any workspace must appear in the caller's list."""
     from src.models.story import StoryRow
     from datetime import UTC, datetime
 
@@ -303,7 +302,6 @@ def test_list_stories_includes_example_rows_from_other_workspaces(client, db_ses
 
 
 def test_list_stories_excludes_non_example_cross_workspace_rows(client, db_session):
-    """Non-example stories in other workspaces must not leak into the caller's list."""
     from src.models.story import StoryRow
     from datetime import UTC, datetime
 

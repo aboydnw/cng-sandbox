@@ -201,12 +201,21 @@ def test_fork_example_story_copies_to_callers_workspace(client, db_session):
         title="Example",
         description="Desc",
         dataset_id="ds-1",
-        chapters_json=json.dumps([{
-            "id": "ch1", "order": 0, "type": "scrollytelling",
-            "title": "C1", "narrative": "n", "map_state": {},
-            "transition": "fly-to", "overlay_position": "left",
-            "layer_config": None,
-        }]),
+        chapters_json=json.dumps(
+            [
+                {
+                    "id": "ch1",
+                    "order": 0,
+                    "type": "scrollytelling",
+                    "title": "C1",
+                    "narrative": "n",
+                    "map_state": {},
+                    "transition": "fly-to",
+                    "overlay_position": "left",
+                    "layer_config": None,
+                }
+            ]
+        ),
         published=True,
         created_at=now,
         updated_at=now,
@@ -256,36 +265,42 @@ def test_list_stories_includes_example_rows_from_other_workspaces(client, db_ses
     now = datetime.now(UTC)
     caller_ws = "testABCD"  # matches the client fixture header
 
-    db_session.add(StoryRow(
-        id="system-example",
-        title="Example Story",
-        chapters_json="[]",
-        published=True,
-        created_at=now,
-        updated_at=now,
-        workspace_id="system",
-        is_example=True,
-    ))
-    db_session.add(StoryRow(
-        id="caller-own",
-        title="My Story",
-        chapters_json="[]",
-        published=False,
-        created_at=now,
-        updated_at=now,
-        workspace_id=caller_ws,
-        is_example=False,
-    ))
-    db_session.add(StoryRow(
-        id="other-private",
-        title="Private",
-        chapters_json="[]",
-        published=False,
-        created_at=now,
-        updated_at=now,
-        workspace_id="someone-else",
-        is_example=False,
-    ))
+    db_session.add(
+        StoryRow(
+            id="system-example",
+            title="Example Story",
+            chapters_json="[]",
+            published=True,
+            created_at=now,
+            updated_at=now,
+            workspace_id="system",
+            is_example=True,
+        )
+    )
+    db_session.add(
+        StoryRow(
+            id="caller-own",
+            title="My Story",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id=caller_ws,
+            is_example=False,
+        )
+    )
+    db_session.add(
+        StoryRow(
+            id="other-private",
+            title="Private",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id="someone-else",
+            is_example=False,
+        )
+    )
     db_session.commit()
 
     resp = client.get("/api/stories")
@@ -298,35 +313,40 @@ def test_list_stories_includes_example_rows_from_other_workspaces(client, db_ses
 
 def test_list_stories_excludes_non_example_cross_workspace_rows(client, db_session):
     now = datetime.now(UTC)
-    db_session.add(StoryRow(
-        id="leak-candidate",
-        title="Other",
-        chapters_json="[]",
-        published=True,  # Published but not example — still must not leak into list
-        created_at=now,
-        updated_at=now,
-        workspace_id="someone-else",
-        is_example=False,
-    ))
+    db_session.add(
+        StoryRow(
+            id="leak-candidate",
+            title="Other",
+            chapters_json="[]",
+            published=True,  # Published but not example — still must not leak into list
+            created_at=now,
+            updated_at=now,
+            workspace_id="someone-else",
+            is_example=False,
+        )
+    )
     db_session.commit()
 
     resp = client.get("/api/stories")
+    assert resp.status_code == 200
     ids = {s["id"] for s in resp.json()}
     assert "leak-candidate" not in ids
 
 
 def test_patch_example_story_returns_403(client, db_session):
     now = datetime.now(UTC)
-    db_session.add(StoryRow(
-        id="example-patch",
-        title="Example",
-        chapters_json="[]",
-        published=False,
-        created_at=now,
-        updated_at=now,
-        workspace_id="testABCD",  # same as caller — so not a workspace 403
-        is_example=True,
-    ))
+    db_session.add(
+        StoryRow(
+            id="example-patch",
+            title="Example",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id="testABCD",  # same as caller — so not a workspace 403
+            is_example=True,
+        )
+    )
     db_session.commit()
 
     resp = client.patch("/api/stories/example-patch", json={"title": "Modified"})
@@ -335,16 +355,18 @@ def test_patch_example_story_returns_403(client, db_session):
 
 def test_delete_example_story_returns_403(client, db_session):
     now = datetime.now(UTC)
-    db_session.add(StoryRow(
-        id="example-delete",
-        title="Example",
-        chapters_json="[]",
-        published=False,
-        created_at=now,
-        updated_at=now,
-        workspace_id="testABCD",
-        is_example=True,
-    ))
+    db_session.add(
+        StoryRow(
+            id="example-delete",
+            title="Example",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id="testABCD",
+            is_example=True,
+        )
+    )
     db_session.commit()
 
     resp = client.delete("/api/stories/example-delete")
@@ -357,7 +379,9 @@ def test_fork_is_deep_copy_not_reference(client, db_session):
     original = StoryRow(
         id="deep-copy-src",
         title="Original",
-        chapters_json=json.dumps([{"id": "ch1", "order": 0, "title": "T", "narrative": "", "map_state": {}}]),
+        chapters_json=json.dumps(
+            [{"id": "ch1", "order": 0, "title": "T", "narrative": "", "map_state": {}}]
+        ),
         published=False,
         created_at=now,
         updated_at=now,

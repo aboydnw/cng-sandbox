@@ -3,11 +3,15 @@ from unittest.mock import MagicMock
 
 def test_inspect_url_detects_pmtiles(client, monkeypatch):
     fake_resp = MagicMock(status_code=200, headers={"content-length": "1234"})
+
     async def fake_head(self, url):
         return fake_resp
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
 
-    resp = client.post("/api/inspect-url", json={"url": "https://example.com/tiles.pmtiles"})
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/tiles.pmtiles"}
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["format"] == "pmtiles"
@@ -18,10 +22,14 @@ def test_inspect_url_detects_pmtiles(client, monkeypatch):
 
 def test_inspect_url_detects_parquet(client, monkeypatch):
     fake_resp = MagicMock(status_code=200, headers={"content-length": "42"})
+
     async def fake_head(self, url):
         return fake_resp
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
-    resp = client.post("/api/inspect-url", json={"url": "https://example.com/data.parquet"})
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/data.parquet"}
+    )
     assert resp.status_code == 200
     assert resp.json()["format"] == "parquet"
 
@@ -29,8 +37,11 @@ def test_inspect_url_detects_parquet(client, monkeypatch):
 def test_inspect_url_detects_cog(client, monkeypatch):
     async def fake_head(self, url):
         return MagicMock(status_code=200, headers={"content-length": "1"})
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
-    resp = client.post("/api/inspect-url", json={"url": "https://example.com/raster.cog"})
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/raster.cog"}
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["format"] == "cog"
@@ -40,8 +51,11 @@ def test_inspect_url_detects_cog(client, monkeypatch):
 def test_inspect_url_detects_tiff(client, monkeypatch):
     async def fake_head(self, url):
         return MagicMock(status_code=200, headers={"content-length": "1"})
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
-    resp = client.post("/api/inspect-url", json={"url": "https://example.com/raster.tif"})
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/raster.tif"}
+    )
     assert resp.json()["format"] == "tiff"
 
 
@@ -60,6 +74,7 @@ def test_inspect_url_detects_xyz_template_without_head(client):
 def test_inspect_url_unknown_extension_with_failed_head(client, monkeypatch):
     async def fake_head(self, url):
         raise RuntimeError("network down")
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
     resp = client.post("/api/inspect-url", json={"url": "https://example.com/data/"})
     assert resp.status_code == 200
@@ -76,9 +91,14 @@ def test_inspect_url_missing_url_returns_422(client):
 
 def test_inspect_url_accepts_206_partial_content(client, monkeypatch):
     async def fake_head(self, url):
-        return MagicMock(status_code=206, headers={"content-length": "999"}, is_success=True)
+        return MagicMock(
+            status_code=206, headers={"content-length": "999"}, is_success=True
+        )
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
-    resp = client.post("/api/inspect-url", json={"url": "https://example.com/data.pmtiles"})
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/data.pmtiles"}
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["has_errors"] is False
@@ -86,13 +106,18 @@ def test_inspect_url_accepts_206_partial_content(client, monkeypatch):
 
 
 def test_inspect_url_rejects_private_ip(client):
-    resp = client.post("/api/inspect-url", json={"url": "http://127.0.0.1/tiles.pmtiles"})
+    resp = client.post(
+        "/api/inspect-url", json={"url": "http://127.0.0.1/tiles.pmtiles"}
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["format"] == "pmtiles"
     assert body["size_bytes"] is None
     assert body["has_errors"] is True
-    assert "private" in body["error_detail"].lower() or "loopback" in body["error_detail"].lower()
+    assert (
+        "private" in body["error_detail"].lower()
+        or "loopback" in body["error_detail"].lower()
+    )
 
 
 def test_inspect_url_rejects_non_http_scheme(client):

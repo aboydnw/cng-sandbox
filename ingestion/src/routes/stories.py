@@ -80,7 +80,11 @@ async def list_stories(request: Request):
     try:
         rows = (
             session.query(StoryRow)
-            .filter(or_(StoryRow.workspace_id == workspace_id, StoryRow.is_example.is_(True)))
+            .filter(
+                or_(
+                    StoryRow.workspace_id == workspace_id, StoryRow.is_example.is_(True)
+                )
+            )
             .order_by(StoryRow.created_at.desc())
             .all()
         )
@@ -116,7 +120,9 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
         if row.is_example:
-            raise HTTPException(status_code=403, detail="Example stories cannot be modified")
+            raise HTTPException(
+                status_code=403, detail="Example stories cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if body.title is not None:
@@ -176,7 +182,9 @@ async def delete_story(story_id: str, request: Request):
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
         if row.is_example:
-            raise HTTPException(status_code=403, detail="Example stories cannot be deleted")
+            raise HTTPException(
+                status_code=403, detail="Example stories cannot be deleted"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         session.delete(row)

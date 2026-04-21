@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.3](https://github.com/aboydnw/cng-sandbox/compare/v1.22.2...v1.22.3) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** guard pixel inspector against missing sourceTile.bounds ([#302](https://github.com/aboydnw/cng-sandbox/issues/302)) ([2ef06bf](https://github.com/aboydnw/cng-sandbox/commit/2ef06bf64891393ea1603615576522e0d64463ed))
+* **ingestion:** upload raw file off event loop ([#300](https://github.com/aboydnw/cng-sandbox/issues/300)) ([389c3ff](https://github.com/aboydnw/cng-sandbox/commit/389c3ff1cee4ac61fe99869cb7523ac19dbf741c))
+
 ## [1.22.2](https://github.com/aboydnw/cng-sandbox/compare/v1.22.1...v1.22.2) (2026-04-21)
 
 

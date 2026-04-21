@@ -555,15 +555,98 @@ function getStoreStep(dataset: Dataset, pipeline: PipelineType): StepContent {
   };
 }
 
-function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
+const MAPLIBRE_TOOL: ToolCardData = {
+  name: "MapLibre GL JS",
+  url: "https://maplibre.org/",
+  description:
+    "Open source map rendering library that draws the Carto Positron basemap as GPU-accelerated vector geometry beneath the raster overlay.",
+};
+
+function rasterColormapValue(dataset: Dataset): string {
+  if (dataset.is_categorical) {
+    const count = dataset.categories?.length ?? null;
+    return count != null
+      ? `Categorical palette (${count} classes)`
+      : "Categorical palette";
+  }
+  if (dataset.band_count === 1) return "viridis (dynamic)";
+  return "RGB composite";
+}
+
+function getDisplayStep(
+  dataset: Dataset,
+  pipeline: PipelineType,
+  renderMode: "client" | "server"
+): StepContent {
   if (pipeline === "raster") {
+    const zoomRange =
+      dataset.min_zoom != null && dataset.max_zoom != null
+        ? `${dataset.min_zoom} – ${dataset.max_zoom}`
+        : "—";
+    const colormapTile: MetadataTileData = {
+      label: "Colormap",
+      value: rasterColormapValue(dataset),
+    };
+    const basemapTile: MetadataTileData = {
+      label: "Basemap",
+      value: "Carto Positron",
+      subValue: "OpenStreetMap data (MapLibre GL)",
+    };
+
+    if (renderMode === "client") {
+      const metadata: MetadataTileData[] = [
+        {
+          label: "Rendering",
+          value: "Client-side (browser)",
+          subValue: "COG read via HTTP range requests",
+        },
+        {
+          label: "Renderer",
+          value: "WebGL (deck.gl CogLayer)",
+        },
+        basemapTile,
+        {
+          label: "Data Fetch",
+          value: "Direct COG bytes from R2",
+          subValue: "No tile server in the loop",
+        },
+        {
+          label: "Zoom Range",
+          value: zoomRange,
+        },
+        colormapTile,
+      ];
+
+      const tools: ToolCardData[] = [
+        {
+          name: "deck.gl CogLayer",
+          url: "https://deck.gl/",
+          description:
+            "Reads COG overview levels and tile blocks directly in the browser, decodes them on the GPU, and applies rescaling or categorical LUT shading — no tile server required.",
+        },
+        MAPLIBRE_TOOL,
+      ];
+
+      return {
+        label: "Display",
+        subtitle: "browser render",
+        badge: "Step 4 of 4",
+        title: "Rendered client-side from the COG",
+        explanation: [
+          "The browser reads the COG directly from R2 using <strong>HTTP range requests</strong>, fetching only the overview levels and tile blocks needed for the current view.",
+          "Pixels are decoded and colorized on the GPU by <strong>deck.gl's CogLayer</strong>, composited over a <strong>MapLibre GL JS</strong> basemap. No server-side tile renderer is involved.",
+        ],
+        beforeAfter: undefined,
+        metadata,
+        tools,
+        toolSectionTitle: "Open source tools used",
+      };
+    }
+
     const metadata: MetadataTileData[] = [
       {
         label: "Zoom Range",
-        value:
-          dataset.min_zoom != null && dataset.max_zoom != null
-            ? `${dataset.min_zoom} – ${dataset.max_zoom}`
-            : "—",
+        value: zoomRange,
       },
       {
         label: "Tile Format",
@@ -573,19 +656,12 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         label: "Tile Size",
         value: "256 × 256 px",
       },
-      {
-        label: "Basemap",
-        value: "Carto Positron",
-        subValue: "OpenStreetMap data",
-      },
+      basemapTile,
       {
         label: "Renderer",
-        value: "WebGL (deck.gl)",
+        value: "WebGL (deck.gl TileLayer)",
       },
-      {
-        label: "Colormap",
-        value: dataset.band_count === 1 ? "viridis (dynamic)" : "RGB composite",
-      },
+      colormapTile,
     ];
 
     const tools: ToolCardData[] = [
@@ -601,6 +677,7 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         description:
           "WebGL-powered visualization framework for large-scale geospatial data, rendering raster tiles as GPU-accelerated layers in the browser.",
       },
+      MAPLIBRE_TOOL,
     ];
 
     return {
@@ -610,7 +687,7 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
       title: "Served as dynamic raster map tiles",
       explanation: [
         "When you pan or zoom the map, <strong>titiler-pgstac</strong> generates tiles on demand by reading only the necessary bytes from the COG in R2 — the full file is never downloaded.",
-        "The tiler applies rescaling and colormap rendering server-side, returning ready-to-display PNG tiles. <strong>deck.gl</strong> composites them as a WebGL layer over the basemap.",
+        "The tiler applies rescaling and colormap rendering server-side, returning ready-to-display PNG tiles. <strong>deck.gl</strong> composites them over a <strong>MapLibre GL JS</strong> basemap.",
       ],
       beforeAfter: undefined,
       metadata,
@@ -739,7 +816,11 @@ function getDisplayStep(dataset: Dataset, pipeline: PipelineType): StepContent {
   };
 }
 
-export function getStepContent(dataset: Dataset, step: number): StepContent {
+export function getStepContent(
+  dataset: Dataset,
+  step: number,
+  renderMode: "client" | "server" = "server"
+): StepContent {
   const pipeline = getPipelineType(dataset);
 
   switch (step) {
@@ -750,7 +831,7 @@ export function getStepContent(dataset: Dataset, step: number): StepContent {
     case 3:
       return getStoreStep(dataset, pipeline);
     case 4:
-      return getDisplayStep(dataset, pipeline);
+      return getDisplayStep(dataset, pipeline, renderMode);
     default:
       throw new Error(`Invalid step: ${step}`);
   }

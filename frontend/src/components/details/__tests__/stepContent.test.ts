@@ -170,6 +170,66 @@ describe("getStepContent", () => {
     expect(content.title).toContain("cloud");
     expect(content.title).not.toContain("PostGIS");
   });
+
+  describe("raster Display step", () => {
+    const categoricalDataset: Partial<Dataset> = {
+      ...rasterDataset,
+      is_categorical: true,
+      dtype: "uint32",
+      categories: [
+        { value: 1, label: "A", color: "#ff0000" },
+        { value: 2, label: "B", color: "#00ff00" },
+        { value: 3, label: "C", color: "#0000ff" },
+      ],
+    };
+
+    it("server mode keeps viridis for continuous single-band raster", () => {
+      const content = getStepContent(rasterDataset as Dataset, 4, "server");
+      const colormap = content.metadata.find((m) => m.label === "Colormap");
+      expect(colormap?.value).toBe("viridis (dynamic)");
+    });
+
+    it("labels colormap as categorical when dataset is categorical", () => {
+      const server = getStepContent(categoricalDataset as Dataset, 4, "server");
+      const serverColormap = server.metadata.find(
+        (m) => m.label === "Colormap"
+      );
+      expect(serverColormap?.value).toContain("Categorical");
+      expect(serverColormap?.value).toContain("3 classes");
+
+      const client = getStepContent(categoricalDataset as Dataset, 4, "client");
+      const clientColormap = client.metadata.find(
+        (m) => m.label === "Colormap"
+      );
+      expect(clientColormap?.value).toContain("Categorical");
+      expect(clientColormap?.value).not.toBe("viridis (dynamic)");
+    });
+
+    it("client mode omits server-tile fields and explains browser rendering", () => {
+      const content = getStepContent(rasterDataset as Dataset, 4, "client");
+      expect(content.subtitle).toBe("browser render");
+      expect(content.title.toLowerCase()).toContain("client-side");
+      expect(content.metadata.some((m) => m.label === "Tile Format")).toBe(
+        false
+      );
+      expect(content.metadata.some((m) => m.label === "Tile Size")).toBe(false);
+      expect(
+        content.metadata.some(
+          (m) => m.label === "Renderer" && m.value.includes("CogLayer")
+        )
+      ).toBe(true);
+      expect(
+        content.tools.some((t) => /titiler-pgstac/i.test(t.name))
+      ).toBe(false);
+    });
+
+    it("includes MapLibre in tools for both render modes", () => {
+      const server = getStepContent(rasterDataset as Dataset, 4, "server");
+      expect(server.tools.some((t) => /MapLibre/i.test(t.name))).toBe(true);
+      const client = getStepContent(rasterDataset as Dataset, 4, "client");
+      expect(client.tools.some((t) => /MapLibre/i.test(t.name))).toBe(true);
+    });
+  });
 });
 
 const geoparquetConnection: Connection = {

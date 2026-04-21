@@ -716,6 +716,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
           dataset={item.dataset}
           isOpen={reportCardOpen}
           onClose={() => setReportCardOpen(false)}
+          renderMode={controls.renderMode === "client" ? "client" : "server"}
         />
       )}
       {item?.connection && (

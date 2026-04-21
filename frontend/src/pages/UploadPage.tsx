@@ -5,25 +5,17 @@ import { Box, Flex } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
-import { FileUploader } from "../components/FileUploader";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
 import { DuplicateWarning } from "../components/DuplicateWarning";
 import { BugReportModal } from "../components/BugReportModal";
-import { InlineConnectionForm } from "../components/InlineConnectionForm";
-import { RemoteConnectFlow } from "../components/RemoteConnectFlow";
-import { SourceCoopGallery } from "../components/SourceCoopGallery";
-import {
-  FolderOpen,
-  GlobeHemisphereWest,
-  LinkSimple,
-} from "@phosphor-icons/react";
+import { VisualizeDataCardContent } from "../components/VisualizeDataCardContent";
+import { BuildStoryCardContent } from "../components/BuildStoryCardContent";
+import { FolderOpen, GlobeHemisphereWest } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { useDuckDB } from "../hooks/useDuckDB";
-import { workspaceFetch } from "../lib/api";
-import { config } from "../config";
 import { formatBytes } from "../utils/format";
-import type { Connection, Dataset } from "../types";
+import type { UrlDetectionResult } from "../hooks/useUrlDetection";
 
 type PageMode =
   | "initial"
@@ -31,13 +23,11 @@ type PageMode =
   | "uploading"
   | "error"
   | "variable-picker"
-  | "connect-idle"
   | "duplicate";
 
 export default function UploadPage() {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
   const {
     state,
     startUpload,
@@ -51,9 +41,9 @@ export default function UploadPage() {
     size: "",
   });
   const [mode, setMode] = useState<PageMode>("initial");
-  const [activeCard, setActiveCard] = useState<
-    "none" | "upload" | "connect" | "story"
-  >("none");
+  const [activeCard, setActiveCard] = useState<"none" | "visualize" | "story">(
+    "none"
+  );
   const [reportOpen, setReportOpen] = useState(false);
   const { initialize: initializeDuckDB } = useDuckDB();
 
@@ -86,13 +76,6 @@ export default function UploadPage() {
     }
   }, [state.status, state.datasetId, navigate, workspacePath]);
 
-  useEffect(() => {
-    workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) => r.json())
-      .then((data) => setDatasets(Array.isArray(data) ? data : []))
-      .catch(() => setDatasets([]));
-  }, []);
-
   const handleFile = useCallback(
     (file: File) => {
       fileRef.current = { name: file.name, size: formatBytes(file.size) };
@@ -124,6 +107,13 @@ export default function UploadPage() {
     [startTemporalUpload]
   );
 
+  const handleUrlSubmitted = useCallback(
+    (result: UrlDetectionResult) => {
+      handleUrl(result.url);
+    },
+    [handleUrl]
+  );
+
   const handleRetry = useCallback(() => {
     setMode("upload-idle");
   }, []);
@@ -137,18 +127,13 @@ export default function UploadPage() {
     setReportOpen(true);
   }, []);
 
-  const uploadCardExpanded = mode !== "initial" && mode !== "connect-idle";
-  const connectCardExpanded = mode === "connect-idle";
+  const visualizeCardExpanded =
+    activeCard === "visualize" && mode !== "initial";
   const storyExpanded = activeCard === "story" && mode === "initial";
 
-  const handleUploadCardClick = useCallback(() => {
-    setActiveCard("upload");
+  const handleVisualizeCardClick = useCallback(() => {
+    setActiveCard("visualize");
     setMode("upload-idle");
-  }, []);
-
-  const handleConnectCardClick = useCallback(() => {
-    setActiveCard("connect");
-    setMode("connect-idle");
   }, []);
 
   const handleStoryCardClick = useCallback(() => {
@@ -161,11 +146,33 @@ export default function UploadPage() {
     setMode("initial");
   }, []);
 
-  const handleConnectionCreated = useCallback(
-    (conn: Connection) => {
-      navigate(workspacePath(`/map/connection/${conn.id}`));
-    },
-    [navigate, workspacePath]
+  const inlineContent = (
+    <>
+      {(mode === "uploading" || mode === "error") && (
+        <ProgressTracker
+          stages={state.stages}
+          filename={fileRef.current.name}
+          fileSize={fileRef.current.size}
+          onRetry={mode === "error" ? handleRetry : undefined}
+          onReport={mode === "error" ? handleReport : undefined}
+          embedded
+        />
+      )}
+      {mode === "variable-picker" && state.scanResult && (
+        <VariablePicker
+          variables={state.scanResult.variables}
+          onSelect={(variable, group, temporal) =>
+            confirmVariable(state.scanResult!.scan_id, variable, group, temporal)
+          }
+        />
+      )}
+      {mode === "duplicate" && state.duplicate && (
+        <DuplicateWarning
+          filename={state.duplicate.filename}
+          onUploadAnother={handleUploadAnother}
+        />
+      )}
+    </>
   );
 
   return (
@@ -184,15 +191,15 @@ export default function UploadPage() {
         align={{ base: "stretch", md: "flex-start" }}
         direction={{ base: "column", md: "row" }}
       >
-        {/* Left card: Convert a file */}
+        {/* Left card: Visualize data */}
         <PathCard
           icon={<FolderOpen size={36} />}
-          title="Convert a file"
-          description="Upload a geospatial file and we'll convert it to a shareable web map"
-          ctaLabel="Browse files"
-          onClick={handleUploadCardClick}
-          expanded={uploadCardExpanded}
-          faded={!uploadCardExpanded && (connectCardExpanded || storyExpanded)}
+          title="Visualize data"
+          description="Upload a file or connect to a cloud source"
+          ctaLabel="Explore data"
+          onClick={handleVisualizeCardClick}
+          expanded={visualizeCardExpanded}
+          faded={!visualizeCardExpanded && storyExpanded}
           onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
         >
           <Box
@@ -204,107 +211,22 @@ export default function UploadPage() {
             lineHeight={1.8}
             listStyleType="disc"
           >
-            <li>
-              Automatically converts your file to a cloud-optimized format
-            </li>
+            <li>Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5</li>
+            <li>Connect a COG, PMTiles, or XYZ tile source</li>
             <li>Data is private to your workspace</li>
-            <li>Files up to 15 GB accepted</li>
-            <li>Hosted for 30 days, then automatically removed</li>
+            <li>Files hosted for 30 days</li>
           </Box>
-          {mode === "upload-idle" && (
-            <FileUploader
+          {visualizeCardExpanded && (
+            <VisualizeDataCardContent
               onFileSelected={handleFile}
               onFilesSelected={handleTemporalUpload}
-              onUrlSubmitted={handleUrl}
-              disabled={false}
-              embedded
-            />
-          )}
-          {(mode === "uploading" || mode === "error") && (
-            <ProgressTracker
-              stages={state.stages}
-              filename={fileRef.current.name}
-              fileSize={fileRef.current.size}
-              onRetry={mode === "error" ? handleRetry : undefined}
-              onReport={mode === "error" ? handleReport : undefined}
-              embedded
-            />
-          )}
-          {mode === "variable-picker" && state.scanResult && (
-            <VariablePicker
-              variables={state.scanResult.variables}
-              onSelect={(variable, group, temporal) =>
-                confirmVariable(
-                  state.scanResult!.scan_id,
-                  variable,
-                  group,
-                  temporal
-                )
+              onExampleClicked={(id) =>
+                navigate(workspacePath(`/map/${id}`))
               }
+              onUrlSubmitted={handleUrlSubmitted}
+              inlineContent={inlineContent}
             />
           )}
-          {mode === "duplicate" && state.duplicate && (
-            <DuplicateWarning
-              filename={state.duplicate.filename}
-              onUploadAnother={handleUploadAnother}
-            />
-          )}
-        </PathCard>
-
-        {/* Middle card: Connect a source */}
-        <PathCard
-          icon={<LinkSimple size={36} />}
-          title="Connect a source"
-          description="Point to data already hosted in the cloud"
-          ctaLabel="Add a URL"
-          onClick={handleConnectCardClick}
-          expanded={connectCardExpanded}
-          faded={!connectCardExpanded && (uploadCardExpanded || storyExpanded)}
-          onCollapse={connectCardExpanded ? handleCollapse : undefined}
-        >
-          <Box
-            as="ul"
-            mb={4}
-            pl={4}
-            fontSize="13px"
-            color="brand.textSecondary"
-            lineHeight={1.8}
-            listStyleType="disc"
-          >
-            <li>COGs, PMTiles, XYZ tiles, or a page of files</li>
-            <li>Auto-detects format from your URL</li>
-            <li>Cloud-optimized files served directly — no upload needed</li>
-          </Box>
-          <RemoteConnectFlow
-            onDatasetReady={(id) => navigate(workspacePath(`/map/${id}`))}
-          />
-          <Box
-            my={4}
-            borderTop="1px solid"
-            borderColor="brand.border"
-            position="relative"
-          >
-            <Box
-              position="absolute"
-              top="-10px"
-              left="50%"
-              transform="translateX(-50%)"
-              bg="white"
-              px={2}
-              fontSize="11px"
-              color="brand.textSecondary"
-              whiteSpace="nowrap"
-            >
-              Or connect a single tile source:
-            </Box>
-          </Box>
-          <InlineConnectionForm
-            onCancel={() => {
-              setActiveCard("none");
-              setMode("initial");
-            }}
-            onCreated={handleConnectionCreated}
-          />
         </PathCard>
 
         {/* Right card: Build a story */}
@@ -315,7 +237,7 @@ export default function UploadPage() {
           ctaLabel="Start building"
           onClick={handleStoryCardClick}
           expanded={storyExpanded}
-          faded={!storyExpanded && (uploadCardExpanded || connectCardExpanded)}
+          faded={!storyExpanded && visualizeCardExpanded}
           onCollapse={storyExpanded ? handleCollapse : undefined}
         >
           <Box
@@ -335,26 +257,9 @@ export default function UploadPage() {
               that, but the story URL stays accessible
             </li>
           </Box>
-          <Box
-            as="button"
-            onClick={() => navigate(workspacePath("/story/new"))}
-            bg="brand.orange"
-            color="white"
-            px={5}
-            py={2.5}
-            borderRadius="10px"
-            fontSize="14px"
-            fontWeight={600}
-            cursor="pointer"
-            _hover={{ bg: "brand.orangeHover" }}
-            transition="background 150ms ease"
-          >
-            Start building
-          </Box>
+          <BuildStoryCardContent />
         </PathCard>
       </Flex>
-
-      <SourceCoopGallery datasets={datasets} />
 
       <BugReportModal
         open={reportOpen}

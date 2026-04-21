@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
@@ -47,6 +47,13 @@ vi.mock("../../hooks/useConversionJob", () => ({
   }),
 }));
 
+beforeEach(() => {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve([]),
+  });
+});
+
 function renderPage() {
   return render(
     <ChakraProvider value={system}>
@@ -66,79 +73,35 @@ function renderPage() {
   );
 }
 
-describe("UploadPage — three card layout", () => {
-  it("renders all three cards in collapsed state", () => {
+describe("UploadPage", () => {
+  it("renders exactly two path cards: Visualize data and Build a story", () => {
     renderPage();
-    expect(screen.getByText("Convert a file")).toBeTruthy();
-    expect(screen.getByText("Connect a source")).toBeTruthy();
+    expect(screen.getByText("Visualize data")).toBeTruthy();
     expect(screen.getByText("Build a story")).toBeTruthy();
   });
 
-  it("renders card descriptions in collapsed state", () => {
+  it("does not render the old three cards", () => {
     renderPage();
-    expect(
-      screen.getByText(
-        "Upload a geospatial file and we'll convert it to a shareable web map"
-      )
-    ).toBeTruthy();
-    expect(
-      screen.getByText("Point to data already hosted in the cloud")
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Create a storytelling narrative with your data or from our public library"
-      )
-    ).toBeTruthy();
+    expect(screen.queryByText("Convert a file")).toBeNull();
+    expect(screen.queryByText("Connect a source")).toBeNull();
   });
 
-  it("expands connect card on click and shows form", () => {
+  it("does not render SourceCoopGallery", () => {
     renderPage();
-    fireEvent.click(screen.getByText("Connect a source"));
-    expect(screen.getByText("Add Connection")).toBeTruthy();
-    // Other cards should lose their descriptions (faded state)
-    expect(
-      screen.queryByText(
-        "Upload a geospatial file and we'll convert it to a shareable web map"
-      )
-    ).toBeNull();
+    expect(screen.queryByText(/source\.coop/i)).toBeNull();
+    expect(screen.queryByText(/example datasets/i)).toBeNull();
   });
 
-  it("expands upload card on click and hides connect description", () => {
+  it("expanding Visualize data reveals file uploader and URL input", () => {
     renderPage();
-    fireEvent.click(screen.getByText("Convert a file"));
-    expect(
-      screen.queryByText("Point to data already hosted in the cloud")
-    ).toBeNull();
+    fireEvent.click(screen.getByText("Visualize data"));
+    expect(screen.getByRole("textbox", { name: /url/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /continue/i })).toBeTruthy();
   });
-});
 
-describe("UploadPage — duplicate warning", () => {
-  it("shows duplicate warning when state has duplicate info", async () => {
-    const { useConversionJob } = await import("../../hooks/useConversionJob");
-    vi.mocked(useConversionJob).mockReturnValue({
-      state: {
-        isUploading: false,
-        jobId: null,
-        status: "pending",
-        stages: [],
-        scanResult: null,
-        datasetId: null,
-        error: null,
-        progressCurrent: null,
-        progressTotal: null,
-        duplicate: { datasetId: "abc-123", filename: "elevation.tif" },
-      },
-      startUpload: vi.fn(),
-      startUrlFetch: vi.fn(),
-      startTemporalUpload: vi.fn(),
-      confirmVariable: vi.fn(),
-      resetJob: vi.fn(),
-    });
-
+  it("expanding Build a story reveals start from scratch button", () => {
     renderPage();
-
-    expect(screen.getByText(/already exists in your library/)).toBeTruthy();
-    expect(screen.getByText("Go to Library")).toBeTruthy();
-    expect(screen.getByText("Upload another file")).toBeTruthy();
+    fireEvent.click(screen.getByText("Build a story"));
+    expect(screen.getByRole("button", { name: /start from scratch/i })).toBeTruthy();
   });
 });

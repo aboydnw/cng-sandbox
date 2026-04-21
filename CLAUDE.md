@@ -277,7 +277,7 @@ cd ingestion && uv run pytest -v
 
 **Other:**
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
-- `POST /api/inspect-url` — Inspect a remote URL before registering it as a connection; body `{"url": "..."}`; returns `{format, is_cog, size_bytes, bounds, has_errors, error_detail}`. Format is detected from the path/template (`xyz`, `pmtiles`, `parquet`, `cog`, `tiff`, `geojson`, or `unknown`). For non-XYZ URLs, runs SSRF validation (`validate_url_safe`) and a HEAD probe for `content-length`
+- `POST /api/inspect-url` — Inspect a remote URL before registering it as a connection; body `{"url": "..."}`; returns `{format, is_cog, size_bytes, bounds, has_errors, error_detail}` (`bounds` is reserved for future use and always `null` currently). Format is detected from the path/template (`xyz`, `pmtiles`, `parquet`, `cog`, `tiff`, `geojson`, or `unknown`). For non-XYZ URLs, runs SSRF validation (`validate_url_safe`) and a HEAD probe for `content-length`
 - `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources); HTTPS-only, blocks private/loopback IPs, restricts to `.pmtiles`/`.tif`/`.tiff` extensions, rejects redirects, caps responses at 50 MB
 - `GET /api/health` — Health check
 

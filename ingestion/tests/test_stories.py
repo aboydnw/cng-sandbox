@@ -1,6 +1,11 @@
+import json
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
+
+from src.models.story import StoryRow
 
 
 @pytest.fixture
@@ -190,10 +195,6 @@ def test_dataset_ids_falls_back_to_dataset_id(client):
 
 
 def test_fork_example_story_copies_to_callers_workspace(client, db_session):
-    from src.models.story import StoryRow
-    import json
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     original = StoryRow(
         id="example-1",
@@ -230,9 +231,6 @@ def test_fork_nonexistent_story_returns_404(client):
 
 
 def test_fork_regular_story_from_other_workspace(client, db_session):
-    from src.models.story import StoryRow
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     original = StoryRow(
         id="regular-story",
@@ -255,9 +253,6 @@ def test_fork_regular_story_from_other_workspace(client, db_session):
 
 
 def test_list_stories_includes_example_rows_from_other_workspaces(client, db_session):
-    from src.models.story import StoryRow
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     caller_ws = "testABCD"  # matches the client fixture header
 
@@ -302,9 +297,6 @@ def test_list_stories_includes_example_rows_from_other_workspaces(client, db_ses
 
 
 def test_list_stories_excludes_non_example_cross_workspace_rows(client, db_session):
-    from src.models.story import StoryRow
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     db_session.add(StoryRow(
         id="leak-candidate",
@@ -324,9 +316,6 @@ def test_list_stories_excludes_non_example_cross_workspace_rows(client, db_sessi
 
 
 def test_patch_example_story_returns_403(client, db_session):
-    from src.models.story import StoryRow
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     db_session.add(StoryRow(
         id="example-patch",
@@ -345,9 +334,6 @@ def test_patch_example_story_returns_403(client, db_session):
 
 
 def test_delete_example_story_returns_403(client, db_session):
-    from src.models.story import StoryRow
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     db_session.add(StoryRow(
         id="example-delete",
@@ -367,10 +353,6 @@ def test_delete_example_story_returns_403(client, db_session):
 
 def test_fork_is_deep_copy_not_reference(client, db_session):
     """Mutating the original after forking must not change the forked copy."""
-    from src.models.story import StoryRow
-    import json
-    from datetime import UTC, datetime
-
     now = datetime.now(UTC)
     original = StoryRow(
         id="deep-copy-src",

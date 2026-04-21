@@ -6,8 +6,8 @@ import { probeCOG, probePMTiles } from "./probe";
 /**
  * Probe a PMTiles URL for its header metadata and register it as a connection.
  * Mirrors the logic in `InlineConnectionForm.handleSave` for pmtiles; if
- * probing fails the connection is still created with null metadata, and the
- * probe error is surfaced on the returned promise.
+ * probing fails the connection is still created with null metadata (probe
+ * errors are swallowed, not propagated).
  */
 export async function registerPMTilesConnection(
   url: string

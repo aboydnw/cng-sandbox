@@ -200,17 +200,21 @@ export default function UploadPage() {
           setMode("xyz-picker");
           return;
         case "parquet": {
-          setParquetPreviewUrl(result.url);
           let activeConn = duckConn;
           if (!activeConn) {
             try {
               const dbResult = await initializeDuckDB();
               activeConn = dbResult?.conn ?? null;
             } catch (err) {
-              console.error("DuckDB initialization failed:", err);
+              const msg = err instanceof Error ? err.message : String(err);
+              setConnectionError(
+                `Failed to initialize database for parquet preview: ${msg}`
+              );
+              setMode("upload-idle");
               return;
             }
           }
+          setParquetPreviewUrl(result.url);
           await validateGeoParquet(activeConn, result.url);
           return;
         }

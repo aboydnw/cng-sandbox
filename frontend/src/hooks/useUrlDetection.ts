@@ -21,6 +21,8 @@ interface InspectUrlResponse {
   format: string;
   is_cog: boolean;
   size_bytes: number | null;
+  has_errors?: boolean;
+  error_detail?: string | null;
 }
 
 interface DetectOptions {
@@ -34,9 +36,13 @@ async function defaultInspect(url: string): Promise<InspectUrlResponse> {
     body: JSON.stringify({ url }),
   });
   if (!response.ok) {
-    return { format: "unknown", is_cog: false, size_bytes: null };
+    throw new Error(`Inspection failed: HTTP ${response.status}`);
   }
-  return response.json();
+  const data: InspectUrlResponse = await response.json();
+  if (data.has_errors) {
+    throw new Error(data.error_detail || "URL inspection failed");
+  }
+  return data;
 }
 
 function hasXyzTemplate(url: string): boolean {

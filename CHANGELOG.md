@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.1](https://github.com/aboydnw/cng-sandbox/compare/v1.22.0...v1.22.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** look up pixel values by hovered tile, not dataset bounds ([#295](https://github.com/aboydnw/cng-sandbox/issues/295)) ([0a47259](https://github.com/aboydnw/cng-sandbox/commit/0a47259a74c28e60637cf260f3ab1a7ed1d943a7))
+* **frontend:** unify URL input and fix empty featured dataset buttons ([#293](https://github.com/aboydnw/cng-sandbox/issues/293)) ([56752c7](https://github.com/aboydnw/cng-sandbox/commit/56752c7ecfbc53dadaf13eb7350ab435d0ecbb24))
+
 ## [1.22.0](https://github.com/aboydnw/cng-sandbox/compare/v1.21.0...v1.22.0) (2026-04-21)
 
 

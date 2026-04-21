@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { Header } from "../Header";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
@@ -9,9 +9,16 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <ChakraProvider value={system}>
       <MemoryRouter initialEntries={["/w/test-workspace"]}>
-        <WorkspaceProvider>
-          {ui}
-        </WorkspaceProvider>
+        <Routes>
+          <Route
+            path="/w/:workspaceId/*"
+            element={
+              <WorkspaceProvider>
+                {ui}
+              </WorkspaceProvider>
+            }
+          />
+        </Routes>
       </MemoryRouter>
     </ChakraProvider>
   );

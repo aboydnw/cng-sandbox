@@ -349,8 +349,8 @@ def test_convert_geotiff_categorical_flag_changes_resampling(
     """Without the flag, the COG driver uses its dtype-based default (CUBIC
     for uint32) and boundary-adjacent overviews carry bleed codes. With the
     flag, no bleed. This guards the branching in _convert_geotiff_to_cog."""
-    default_out = str(tmp_path / "default.tif")
-    categorical_out = str(tmp_path / "categorical.tif")
+    default_out = str(tmp_path / "out_default.tif")
+    categorical_out = str(tmp_path / "out_categorical.tif")
     _convert_geotiff_to_cog(categorical_uint32_tif, default_out, is_categorical=False)
     _convert_geotiff_to_cog(
         categorical_uint32_tif, categorical_out, is_categorical=True

@@ -56,13 +56,13 @@ describe("buildCogLayerPaletted with categories", () => {
       opacity: 1,
       categories: [{ value: 1, color: "#ff0000", label: "A" }],
       tileCacheRef: cacheRef,
-      datasetBounds: [-10, -10, 10, 10],
     });
     expect(layers).toHaveLength(1);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layerProps = (layers[0] as any).props;
     expect(typeof layerProps.getTileData).toBe("function");
     expect(typeof layerProps.renderTile).toBe("function");
+    expect(layerProps.pickable).toBe(true);
   });
 
   it("returns a layer with the default pipeline when categories are omitted", () => {
@@ -83,7 +83,6 @@ describe("buildCogLayerPaletted with categories", () => {
       opacity: 1,
       categories: [{ value: 1, color: "#ff0000", label: "A" }],
       tileCacheRef: cacheRef,
-      datasetBounds: [-10, -10, 10, 10],
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getTileData = (layers[0] as any).props.getTileData;
@@ -116,7 +115,6 @@ describe("buildCogLayerPaletted with categories", () => {
     expect(entry).toBeDefined();
     expect(entry!.width).toBe(2);
     expect(entry!.height).toBe(2);
-    expect(entry!.bounds).toEqual([-10, -10, 10, 10]);
     // raw values preserved
     expect(Array.from(entry!.data)).toEqual([1, 0, 1, 0]);
   });

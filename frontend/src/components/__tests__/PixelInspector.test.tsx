@@ -21,9 +21,35 @@ function seededCache(): Map<string, TileCacheEntry> {
     data: new Float32Array([1, 2, 3, 4]),
     width: 2,
     height: 2,
-    bounds: [-10, -10, 10, 10],
   });
   return m;
+}
+
+function hoverInfo(opts: {
+  coordinate: [number, number];
+  x: number;
+  y: number;
+  tileX?: number;
+  tileY?: number;
+  tileBounds?: [number, number, number, number];
+}) {
+  const {
+    coordinate,
+    x,
+    y,
+    tileX = 0,
+    tileY = 0,
+    tileBounds = [-10, -10, 10, 10],
+  } = opts;
+  return {
+    coordinate,
+    x,
+    y,
+    sourceTile: {
+      index: { x: tileX, y: tileY, z: 0 },
+      bounds: tileBounds,
+    },
+  };
 }
 
 describe("usePixelInspector categorical branch", () => {
@@ -37,7 +63,7 @@ describe("usePixelInspector categorical branch", () => {
       return usePixelInspector(ref, null, cats);
     });
     act(() => {
-      result.current.onHover({ coordinate: [-5, 5], x: 10, y: 20 });
+      result.current.onHover(hoverInfo({ coordinate: [-5, 5], x: 10, y: 20 }));
     });
     await waitFor(() => {
       expect(result.current.hoverInfo).toMatchObject({
@@ -57,7 +83,7 @@ describe("usePixelInspector categorical branch", () => {
       return usePixelInspector(ref, null, cats);
     });
     act(() => {
-      result.current.onHover({ coordinate: [-5, 5], x: 0, y: 0 });
+      result.current.onHover(hoverInfo({ coordinate: [-5, 5], x: 0, y: 0 }));
     });
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     expect(result.current.hoverInfo).toBeNull();
@@ -69,12 +95,65 @@ describe("usePixelInspector categorical branch", () => {
       return usePixelInspector(ref, null);
     });
     act(() => {
-      result.current.onHover({ coordinate: [-5, 5], x: 0, y: 0 });
+      result.current.onHover(hoverInfo({ coordinate: [-5, 5], x: 0, y: 0 }));
     });
     await waitFor(() => {
       expect(result.current.hoverInfo).toMatchObject({
         kind: "numeric",
         value: 1,
+      });
+    });
+  });
+
+  it("returns null when sourceTile is missing (hover off COG layer)", async () => {
+    const { result } = renderHook(() => {
+      const ref = useRef(seededCache());
+      return usePixelInspector(ref, null);
+    });
+    act(() => {
+      result.current.onHover({ coordinate: [-5, 5], x: 0, y: 0 });
+    });
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    expect(result.current.hoverInfo).toBeNull();
+  });
+
+  it("samples the right pixel from the right tile when multiple tiles are cached", async () => {
+    const cache = new Map<string, TileCacheEntry>();
+    cache.set("0/0", {
+      data: new Float32Array([1, 1, 1, 1]),
+      width: 2,
+      height: 2,
+    });
+    cache.set("1/0", {
+      data: new Float32Array([2, 2, 2, 2]),
+      width: 2,
+      height: 2,
+    });
+    const cats = [
+      { value: 1, color: "#f00", label: "One" },
+      { value: 2, color: "#0f0", label: "Two" },
+    ];
+    const { result } = renderHook(() => {
+      const ref = useRef(cache);
+      return usePixelInspector(ref, null, cats);
+    });
+    // Hover the second tile; inspector must look it up by index, not bounds.
+    act(() => {
+      result.current.onHover(
+        hoverInfo({
+          coordinate: [15, 5],
+          x: 0,
+          y: 0,
+          tileX: 1,
+          tileY: 0,
+          tileBounds: [10, -10, 30, 10],
+        })
+      );
+    });
+    await waitFor(() => {
+      expect(result.current.hoverInfo).toMatchObject({
+        kind: "categorical",
+        label: "Two",
       });
     });
   });

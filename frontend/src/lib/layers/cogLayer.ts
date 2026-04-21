@@ -109,7 +109,6 @@ export interface TileCacheEntry {
   data: Float32Array;
   width: number;
   height: number;
-  bounds: [number, number, number, number];
 }
 
 const MAX_CACHED_TILES = 256;
@@ -126,7 +125,6 @@ interface CogLayerOptions {
   opacity: number;
   rasterMin: number;
   rasterMax: number;
-  datasetBounds: [number, number, number, number] | null;
   tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
 }
 
@@ -135,7 +133,6 @@ interface CogLayerPalettedOptions {
   opacity: number;
   categories?: LutCategory[];
   tileCacheRef?: MutableRefObject<Map<string, TileCacheEntry>>;
-  datasetBounds?: [number, number, number, number] | null;
 }
 
 export function buildCogLayerPaletted({
@@ -143,7 +140,6 @@ export function buildCogLayerPaletted({
   opacity,
   categories,
   tileCacheRef,
-  datasetBounds,
 }: CogLayerPalettedOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
 
@@ -201,7 +197,7 @@ export function buildCogLayerPaletted({
       raw[i] = source[i] & 0xff;
     }
 
-    if (tileCacheRef && datasetBounds) {
+    if (tileCacheRef) {
       const cacheKey = `${x}/${y}`;
       const cache = tileCacheRef.current;
       // Widen to Float32Array to satisfy existing TileCacheEntry typing;
@@ -212,7 +208,6 @@ export function buildCogLayerPaletted({
         data: cached,
         width,
         height,
-        bounds: datasetBounds,
       });
       while (cache.size > MAX_CACHED_TILES) {
         const firstKey = cache.keys().next().value;
@@ -253,6 +248,7 @@ export function buildCogLayerPaletted({
       getTileData,
       renderTile,
       maxError: 0.03,
+      pickable: true,
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -263,7 +259,6 @@ export function buildCogLayerContinuous({
   opacity,
   rasterMin,
   rasterMax,
-  datasetBounds,
   tileCacheRef,
 }: CogLayerOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
@@ -315,14 +310,13 @@ export function buildCogLayerContinuous({
     }
 
     // Cache raw float data for pixel inspector
-    if (datasetBounds) {
+    {
       const cacheKey = `${x}/${y}`;
       const cache = tileCacheRef.current;
       cache.set(cacheKey, {
         data: new Float32Array(floatData),
         width,
         height,
-        bounds: datasetBounds,
       });
       while (cache.size > MAX_CACHED_TILES) {
         const firstKey = cache.keys().next().value;
@@ -371,6 +365,7 @@ export function buildCogLayerContinuous({
       getTileData,
       renderTile,
       maxError: 0.03,
+      pickable: true,
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */

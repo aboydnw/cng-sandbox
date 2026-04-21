@@ -63,7 +63,6 @@ export function resolveRasterLayers(
         opacity,
         categories: effectiveCategories,
         tileCacheRef,
-        datasetBounds: item.bounds,
       });
     } else {
       const parsed = parseRescaleString(item.rescale);
@@ -72,7 +71,6 @@ export function resolveRasterLayers(
         opacity,
         rasterMin: rescaleMin ?? parsed?.min ?? item.rasterMin ?? 0,
         rasterMax: rescaleMax ?? parsed?.max ?? item.rasterMax ?? 1,
-        datasetBounds: item.bounds,
         tileCacheRef,
       });
     }

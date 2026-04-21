@@ -70,7 +70,6 @@ describe("resolveRasterLayers", () => {
     expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
     expect(buildCogLayerContinuous).toHaveBeenCalledWith(
       expect.objectContaining({
-        datasetBounds: [-10, -10, 10, 10],
         rasterMin: 0,
         rasterMax: 1,
         opacity: 0.8,

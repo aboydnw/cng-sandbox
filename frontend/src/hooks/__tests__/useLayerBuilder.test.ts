@@ -354,7 +354,6 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(opts.categories).toEqual([
       { value: 1, color: "#ff0000", label: "A" },
     ]);
-    expect(opts.datasetBounds).toEqual([-10, -10, 10, 10]);
     expect(opts.tileCacheRef).toBeDefined();
   });
 

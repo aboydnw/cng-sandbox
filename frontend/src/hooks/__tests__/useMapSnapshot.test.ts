@@ -89,7 +89,7 @@ describe("useMapSnapshot", () => {
     anchorClick = vi.fn();
     createObjectURL = vi.fn(() => "blob:stub");
     revokeObjectURL = vi.fn();
-    HTMLAnchorElement.prototype.click = anchorClick;
+    HTMLAnchorElement.prototype.click = anchorClick as () => void;
     Object.defineProperty(URL, "createObjectURL", {
       value: createObjectURL,
       configurable: true,

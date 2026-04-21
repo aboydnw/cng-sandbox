@@ -97,7 +97,7 @@ export function VisualizeDataCardContent({
       <Flex align="center" gap={4} w="100%" mt={3}>
         <Box flex={1} h="1px" bg="brand.border" />
         <Text
-          color="#aaa"
+          color="brand.textSecondary"
           fontSize="12px"
           textTransform="uppercase"
           letterSpacing="1px"
@@ -115,7 +115,7 @@ export function VisualizeDataCardContent({
           onChange={(e) => setUrlInput(e.target.value)}
           onKeyDown={handleKeyDown}
           size="md"
-          borderColor="#ddd"
+          borderColor="brand.border"
           flex={1}
         />
         <Button

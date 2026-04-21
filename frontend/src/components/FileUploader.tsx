@@ -182,7 +182,7 @@ export function FileUploader({
           </Button>
         )}
         {!embedded && (
-          <Text color="#aaa" fontSize="12px" mt={4}>
+          <Text color="brand.textSecondary" fontSize="12px" mt={4}>
             Up to 15 GB
           </Text>
         )}
@@ -226,7 +226,7 @@ export function FileUploader({
           >
             <Box flex={1} h="1px" bg="brand.border" />
             <Text
-              color="#aaa"
+              color="brand.textSecondary"
               fontSize="12px"
               textTransform="uppercase"
               letterSpacing="1px"
@@ -249,7 +249,7 @@ export function FileUploader({
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
               size="md"
-              borderColor="#ddd"
+              borderColor="brand.border"
               disabled={disabled}
             />
             <Button

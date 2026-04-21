@@ -5,6 +5,13 @@ import type { TileCacheEntry } from "../lib/layers/cogLayer";
 interface HoverSourceTile {
   index: { x: number; y: number; z?: number };
   bounds: [number, number, number, number] | number[];
+  content?: {
+    data?: {
+      raw?: ArrayLike<number>;
+      width?: number;
+      height?: number;
+    };
+  };
 }
 
 interface DeckHoverInfo {
@@ -15,14 +22,15 @@ interface DeckHoverInfo {
 }
 
 function lookupValue(
-  cache: Map<string, TileCacheEntry>,
   sourceTile: HoverSourceTile,
   lng: number,
   lat: number
 ): number | null {
-  const key = `${sourceTile.index.x}/${sourceTile.index.y}`;
-  const entry = cache.get(key);
-  if (!entry) return null;
+  const data = sourceTile.content?.data;
+  const raw = data?.raw;
+  const width = data?.width;
+  const height = data?.height;
+  if (!raw || !width || !height) return null;
 
   const [west, south, east, north] = sourceTile.bounds as [
     number,
@@ -32,11 +40,11 @@ function lookupValue(
   ];
   if (lng < west || lng > east || lat < south || lat > north) return null;
 
-  const px = Math.floor(((lng - west) / (east - west)) * entry.width);
-  const py = Math.floor(((north - lat) / (north - south)) * entry.height);
-  if (px < 0 || px >= entry.width || py < 0 || py >= entry.height) return null;
+  const px = Math.floor(((lng - west) / (east - west)) * width);
+  const py = Math.floor(((north - lat) / (north - south)) * height);
+  if (px < 0 || px >= width || py < 0 || py >= height) return null;
 
-  const val = entry.data[py * entry.width + px];
+  const val = raw[py * width + px];
   if (val !== val) return null;
   return val;
 }
@@ -76,7 +84,7 @@ type HoverInfo =
     };
 
 export function usePixelInspector(
-  tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
+  _tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
   bandNames: string[] | null,
   categories?: { value: number; color: string; label: string }[]
 ) {
@@ -97,7 +105,7 @@ export function usePixelInspector(
       hoverRafRef.current = requestAnimationFrame(() => {
         hoverRafRef.current = null;
         const [lng, lat] = info.coordinate!;
-        const value = lookupValue(tileCacheRef.current, sourceTile, lng, lat);
+        const value = lookupValue(sourceTile, lng, lat);
         if (value === null) {
           setHoverInfo(null);
           return;
@@ -133,7 +141,7 @@ export function usePixelInspector(
         });
       });
     },
-    [tileCacheRef, bandNames, categories]
+    [bandNames, categories]
   );
 
   return { hoverInfo, onHover };

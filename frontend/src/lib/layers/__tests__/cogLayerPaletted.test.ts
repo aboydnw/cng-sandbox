@@ -76,7 +76,7 @@ describe("buildCogLayerPaletted with categories", () => {
     expect(layerProps.renderTile).toBeUndefined();
   });
 
-  it("caches raw tile values when getTileData runs", async () => {
+  it("attaches raw tile values to getTileData's return for the pixel inspector", async () => {
     const cacheRef = { current: new Map() };
     const layers = buildCogLayerPaletted({
       cogUrl: "/cog/example.tif",
@@ -103,19 +103,17 @@ describe("buildCogLayerPaletted with categories", () => {
       createTexture: vi.fn().mockReturnValue({ mock: "tex" }),
     };
 
-    await getTileData(image, {
+    const result = await getTileData(image, {
       device,
       x: 3,
       y: 5,
       signal: new AbortController().signal,
     });
 
-    expect(cacheRef.current.size).toBe(1);
-    const entry = cacheRef.current.get("3/5");
-    expect(entry).toBeDefined();
-    expect(entry!.width).toBe(2);
-    expect(entry!.height).toBe(2);
-    // raw values preserved
-    expect(Array.from(entry!.data)).toEqual([1, 0, 1, 0]);
+    expect(result.width).toBe(2);
+    expect(result.height).toBe(2);
+    // raw values preserved on the returned data — deck.gl parks this on the
+    // tile, so the pixel inspector reads the specific tile it picked.
+    expect(Array.from(result.raw)).toEqual([1, 0, 1, 0]);
   });
 });

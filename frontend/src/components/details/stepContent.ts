@@ -687,7 +687,7 @@ function getDisplayStep(
       title: "Served as dynamic raster map tiles",
       explanation: [
         "When you pan or zoom the map, <strong>titiler-pgstac</strong> generates tiles on demand by reading only the necessary bytes from the COG in R2 — the full file is never downloaded.",
-        "The tiler applies rescaling and colormap rendering server-side, returning ready-to-display PNG tiles. <strong>deck.gl</strong> composites them over a <strong>MapLibre GL JS</strong> basemap.",
+        "The tiler applies rescaling and colormap rendering server-side, returning ready-to-display PNG/WebP tiles. <strong>deck.gl</strong> composites them over a <strong>MapLibre GL JS</strong> basemap.",
       ],
       beforeAfter: undefined,
       metadata,

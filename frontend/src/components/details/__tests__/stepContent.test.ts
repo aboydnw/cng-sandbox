@@ -218,9 +218,9 @@ describe("getStepContent", () => {
           (m) => m.label === "Renderer" && m.value.includes("CogLayer")
         )
       ).toBe(true);
-      expect(
-        content.tools.some((t) => /titiler-pgstac/i.test(t.name))
-      ).toBe(false);
+      expect(content.tools.some((t) => /titiler-pgstac/i.test(t.name))).toBe(
+        false
+      );
     });
 
     it("includes MapLibre in tools for both render modes", () => {

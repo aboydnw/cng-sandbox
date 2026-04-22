@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.23.2](https://github.com/aboydnw/cng-sandbox/compare/v1.23.1...v1.23.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* **frontend:** default stories to server-side raster rendering ([#319](https://github.com/aboydnw/cng-sandbox/issues/319)) ([2090a37](https://github.com/aboydnw/cng-sandbox/commit/2090a3796977fbb12aa15f4820b85177ba3e5079))
+* **frontend:** link homepage example stories to edit view ([#317](https://github.com/aboydnw/cng-sandbox/issues/317)) ([be7f378](https://github.com/aboydnw/cng-sandbox/commit/be7f37874101a456723539eb7dc64a4954f4cab4))
+
 ## [1.23.1](https://github.com/aboydnw/cng-sandbox/compare/v1.23.0...v1.23.1) (2026-04-22)
 
 

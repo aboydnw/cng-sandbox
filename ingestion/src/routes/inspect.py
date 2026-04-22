@@ -1,12 +1,19 @@
+import asyncio
+import logging
 from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from src.services.cog_checker import check_remote_is_cog
 from src.services.url_validation import SSRFError, validate_url_safe
 
 router = APIRouter(prefix="/api", tags=["inspection"])
+
+logger = logging.getLogger(__name__)
+
+COG_PROBE_TIMEOUT_SECONDS = 10.0
 
 
 class InspectUrlRequest(BaseModel):
@@ -53,6 +60,18 @@ async def _probe_size(url: str) -> tuple[int | None, str | None]:
         return None, str(exc)
 
 
+async def _probe_is_cog(url: str) -> bool:
+    try:
+        result = await asyncio.wait_for(
+            check_remote_is_cog(url), timeout=COG_PROBE_TIMEOUT_SECONDS
+        )
+        return result.is_cog
+    except Exception as exc:
+        safe_url = urlparse(url)._replace(query="", fragment="").geturl()
+        logger.info("COG probe failed for %s: %s", safe_url, exc)
+        return False
+
+
 @router.post("/inspect-url", response_model=InspectUrlResponse)
 async def inspect_url(request: InspectUrlRequest) -> InspectUrlResponse:
     format_detected, is_cog = _detect_format(request.url)
@@ -73,6 +92,8 @@ async def inspect_url(request: InspectUrlRequest) -> InspectUrlResponse:
             )
         size_bytes, error_detail = await _probe_size(request.url)
         has_errors = error_detail is not None
+        if format_detected == "tiff" and not has_errors:
+            is_cog = await _probe_is_cog(request.url)
     return InspectUrlResponse(
         format=format_detected,
         is_cog=is_cog,

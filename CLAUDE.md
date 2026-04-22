@@ -73,8 +73,8 @@ The sandbox can be deployed to a public URL with HTTPS using the `prod` Docker C
 
 Caddy applies basic auth selectively (see `Caddyfile`):
 
-- **Public (no auth):** frontend SPA, `/storage/*` (R2 proxy), `/cog/*`, `/raster/*`, `/vector/*`, individual resource reads like `GET /api/datasets/{id}`, `GET /api/connections/{id}`, `GET /api/stories/{id}`, `/api/proxy`, `/api/health`. This lets shared map/story URLs load for anyone without a password prompt, and lets PMTiles / DuckDB-WASM range requests succeed (they can't send basic auth).
-- **Auth required:** all non-GET/HEAD requests to `/api/*` (uploads, creates, updates, deletes) and workspace-listing reads (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`).
+- **Public (no auth):** `/assets/*` (hashed SPA bundle), shared SPA views (`/map/*` including `/map/connection/*`, `/story/:id`, `/story/:id/embed`), `/storage/*` (R2 proxy), `/cog/*`, `/raster/*`, `/vector/*`, individual resource reads like `GET /api/datasets/{id}`, `GET /api/connections/{id}`, `GET /api/stories/{id}`, `/api/proxy`, `/api/health`. This lets shared map/story URLs load for anyone without a password prompt, and lets PMTiles / DuckDB-WASM range requests succeed (they can't send basic auth).
+- **Auth required:** all other SPA paths (root `/`, `/library`, `/discover`, `/about`, `/story/new`, `/story/:id/edit`, `/w/:workspaceId/*`) so the password prompt appears up front instead of surprising the user mid-flow; plus all non-GET/HEAD requests to `/api/*` (uploads, creates, updates, deletes) and workspace-listing reads (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`). API auth remains as defense-in-depth — the SPA gate alone doesn't stop someone from hitting the API directly.
 
 ### Prerequisites
 
@@ -102,9 +102,9 @@ docker compose --profile prod up -d --build
 
 ### Verify
 
-- Visit `https://cngsandbox.org` — the SPA should load without a password prompt
-- Attempt an authenticated action (e.g. opening the dataset library or uploading a file) — should prompt for username/password
-- Upload a file to verify CORS works end-to-end
+- Visit `https://cngsandbox.org` — should prompt for username/password immediately (root is gated)
+- After authing, verify the SPA loads and uploads work end-to-end
+- Open a shared map URL (e.g. `https://cngsandbox.org/map/<dataset-id>`) in an incognito window — should load without any prompt
 
 ### Notes
 

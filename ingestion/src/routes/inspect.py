@@ -67,7 +67,8 @@ async def _probe_is_cog(url: str) -> bool:
         )
         return result.is_cog
     except Exception as exc:
-        logger.info("COG probe failed for %s: %s", url, exc)
+        safe_url = urlparse(url)._replace(query="", fragment="").geturl()
+        logger.info("COG probe failed for %s: %s", safe_url, exc)
         return False
 
 

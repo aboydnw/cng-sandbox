@@ -1,9 +1,20 @@
 import { useState, useCallback, useRef } from "react";
 import { Box, Text } from "@chakra-ui/react";
 
+type TileBbox =
+  | { west: number; south: number; east: number; north: number }
+  | { left: number; top: number; right: number; bottom: number };
+
 interface HoverSourceTile {
   index: { x: number; y: number; z?: number };
-  bounds?: [number, number, number, number] | number[];
+  /**
+   * deck.gl v9 Tile2DHeader.boundingBox: `[[minX, minY], [maxX, maxY]]`.
+   * This is the non-deprecated extent accessor and is always populated by
+   * the tileset at construction time.
+   */
+  boundingBox?: [number[], number[]];
+  /** Legacy/alternate shape returned by some tileset implementations. */
+  bbox?: TileBbox;
   content?: {
     data?: {
       raw?: ArrayLike<number>;
@@ -11,6 +22,30 @@ interface HoverSourceTile {
       height?: number;
     };
   };
+}
+
+function resolveTileExtent(
+  sourceTile: HoverSourceTile
+): [number, number, number, number] | null {
+  const bb = sourceTile.boundingBox;
+  if (bb && bb[0]?.length >= 2 && bb[1]?.length >= 2) {
+    const [[minX, minY], [maxX, maxY]] = bb;
+    if ([minX, minY, maxX, maxY].every((v) => typeof v === "number")) {
+      return [minX, minY, maxX, maxY];
+    }
+  }
+  const bbox = sourceTile.bbox;
+  if (bbox) {
+    if ("west" in bbox) return [bbox.west, bbox.south, bbox.east, bbox.north];
+    if ("left" in bbox)
+      return [
+        bbox.left,
+        Math.min(bbox.top, bbox.bottom),
+        bbox.right,
+        Math.max(bbox.top, bbox.bottom),
+      ];
+  }
+  return null;
 }
 
 interface DeckHoverInfo {
@@ -31,16 +66,9 @@ function lookupValue(
   const height = data?.height;
   if (!raw || !width || !height) return null;
 
-  // deck.gl's picking info.sourceTile does not always carry bounds — e.g. a
-  // tile still loading, or a sub-layer whose parent tile exposes bbox under a
-  // different shape. Bail rather than let the destructure throw.
-  if (!sourceTile.bounds || sourceTile.bounds.length < 4) return null;
-  const [west, south, east, north] = sourceTile.bounds as [
-    number,
-    number,
-    number,
-    number,
-  ];
+  const extent = resolveTileExtent(sourceTile);
+  if (!extent) return null;
+  const [west, south, east, north] = extent;
   const spanX = east - west;
   const spanY = north - south;
   if (spanX <= 0 || spanY <= 0) return null;

@@ -124,6 +124,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
           zoom={camera.zoom}
           bearing={camera.bearing}
           pitch={camera.pitch}
+          // @ts-expect-error preserveDrawingBuffer removed from MapOptions types in maplibre-gl v5
           preserveDrawingBuffer={enableSnapshot ?? false}
         />
       </DeckGL>

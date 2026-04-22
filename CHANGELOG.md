@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.23.1](https://github.com/aboydnw/cng-sandbox/compare/v1.23.0...v1.23.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **frontend:** update renderTile return type for deck.gl-raster 0.5.0 ([#314](https://github.com/aboydnw/cng-sandbox/issues/314)) ([14df568](https://github.com/aboydnw/cng-sandbox/commit/14df568d36af52201cc16dbe8b6211dbb9d62af6))
+* **frontend:** view example stories from homepage instead of forking ([#316](https://github.com/aboydnw/cng-sandbox/issues/316)) ([f84e5fc](https://github.com/aboydnw/cng-sandbox/commit/f84e5fcb7aa5e119d6266f7dc6f7e50904e81ee4))
+
 ## [1.23.0](https://github.com/aboydnw/cng-sandbox/compare/v1.22.4...v1.23.0) (2026-04-22)
 
 

@@ -16,6 +16,7 @@ export interface ResolveRasterLayersInput {
   rescaleMax: number | null;
   serverTileUrl?: string;
   effectiveCategories?: LutCategory[];
+  forceServer?: boolean;
 }
 
 export interface ResolveRasterLayersOutput {
@@ -36,6 +37,7 @@ export function resolveRasterLayers(
     rescaleMax,
     serverTileUrl,
     effectiveCategories,
+    forceServer,
   } = input;
 
   if (!item) {
@@ -51,7 +53,7 @@ export function resolveRasterLayers(
   const eligibility: ClientRenderEligibility =
     evaluateClientRenderEligibility(item);
 
-  if (eligibility.canRender && item.cogUrl) {
+  if (!forceServer && eligibility.canRender && item.cogUrl) {
     let layers;
     if (eligibility.renderPath === "paletted") {
       layers = buildCogLayerPaletted({
@@ -83,10 +85,14 @@ export function resolveRasterLayers(
     opacity,
     isTemporalActive: false,
   });
+  const reason =
+    forceServer && eligibility.canRender
+      ? "Server-side tiling selected"
+      : eligibility.reason;
   return {
     layers,
     renderMode: "server",
-    reason: eligibility.reason,
+    reason,
     sizeBytes: eligibility.sizeBytes,
     cap: eligibility.cap,
   };

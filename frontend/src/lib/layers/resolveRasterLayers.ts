@@ -1,7 +1,5 @@
-import type { MutableRefObject } from "react";
 import type { Layer } from "@deck.gl/core";
 import type { MapItem } from "../../types";
-import type { TileCacheEntry } from "./cogLayer";
 import type { LutCategory } from "./categoricalLut";
 import {
   evaluateClientRenderEligibility,
@@ -16,7 +14,6 @@ export interface ResolveRasterLayersInput {
   opacity: number;
   rescaleMin: number | null;
   rescaleMax: number | null;
-  tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   serverTileUrl?: string;
   effectiveCategories?: LutCategory[];
 }
@@ -37,7 +34,6 @@ export function resolveRasterLayers(
     opacity,
     rescaleMin,
     rescaleMax,
-    tileCacheRef,
     serverTileUrl,
     effectiveCategories,
   } = input;
@@ -62,8 +58,6 @@ export function resolveRasterLayers(
         cogUrl: item.cogUrl,
         opacity,
         categories: effectiveCategories,
-        tileCacheRef,
-        datasetBounds: item.bounds,
       });
     } else {
       const parsed = parseRescaleString(item.rescale);
@@ -72,8 +66,6 @@ export function resolveRasterLayers(
         opacity,
         rasterMin: rescaleMin ?? parsed?.min ?? item.rasterMin ?? 0,
         rasterMax: rescaleMax ?? parsed?.max ?? item.rasterMax ?? 1,
-        datasetBounds: item.bounds,
-        tileCacheRef,
       });
     }
     return {

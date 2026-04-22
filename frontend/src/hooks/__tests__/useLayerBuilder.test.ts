@@ -7,10 +7,8 @@ vi.mock("../../lib/layers/cogLayer", () => ({
 }));
 
 import { renderHook } from "@testing-library/react";
-import { useRef } from "react";
 import { useLayerBuilder } from "../useLayerBuilder";
 import type { MapItem, Dataset, Connection } from "../../types";
-import type { TileCacheEntry } from "../../lib/layers";
 import {
   buildCogLayerContinuous,
   buildCogLayerPaletted,
@@ -49,9 +47,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
 function renderBuilder(
   opts: Partial<Parameters<typeof useLayerBuilder>[0]> = {}
 ) {
-  return renderHook(() => {
-    const cacheRef = useRef<Map<string, TileCacheEntry>>(new Map());
-    return useLayerBuilder({
+  return renderHook(() =>
+    useLayerBuilder({
       item: opts.item ?? makeItem(),
       renderMode: "server",
       canClientRender: false,
@@ -63,14 +60,13 @@ function renderBuilder(
       isCategorical: false,
       activeTimestepIndex: 0,
       getLoadCallback: () => () => {},
-      tileCacheRef: cacheRef,
       arrowTable: null,
       rescaleMin: null,
       rescaleMax: null,
       colormapReversed: false,
       ...opts,
-    });
-  });
+    })
+  );
 }
 
 describe("useLayerBuilder rescale + colormapReversed", () => {
@@ -331,7 +327,7 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(buildCogLayerPaletted).not.toHaveBeenCalled();
   });
 
-  it("passes categories and tileCacheRef to paletted builder for categorical dataset", () => {
+  it("passes categories to paletted builder for categorical dataset", () => {
     vi.mocked(buildCogLayerPaletted).mockClear();
     const item = makeItem({
       source: "dataset",
@@ -354,8 +350,6 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(opts.categories).toEqual([
       { value: 1, color: "#ff0000", label: "A" },
     ]);
-    expect(opts.datasetBounds).toEqual([-10, -10, 10, 10]);
-    expect(opts.tileCacheRef).toBeDefined();
   });
 
   it("passes categories to paletted builder for categorical COG connection", () => {

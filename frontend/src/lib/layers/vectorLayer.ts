@@ -44,6 +44,10 @@ export function buildVectorLayer({
     opacity,
     ...(minZoom !== undefined && { minZoom }),
     ...(maxZoom !== undefined && { maxZoom }),
+    // Parse MVT on the main thread. loaders.gl's default worker imports
+    // its script from unpkg.com, which our Content-Security-Policy
+    // script-src blocks — so workers fail and no tiles render in prod.
+    loadOptions: { worker: false },
     pickable: true,
     autoHighlight: true,
     highlightColor: [255, 255, 255, 60] as [number, number, number, number],
@@ -81,6 +85,7 @@ export function buildVectorLayer({
           // Parse through loaders.gl so MVTLayer gets properly structured data
           return load(tile.data, MVTLoader, {
             ...context.loadOptions,
+            worker: false,
             mimeType: "application/x-protobuf",
           });
         } catch {

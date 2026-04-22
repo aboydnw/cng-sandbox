@@ -1,37 +1,91 @@
 import { useState, useCallback, useRef } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import type { TileCacheEntry } from "../lib/layers/cogLayer";
+
+type TileBbox =
+  | { west: number; south: number; east: number; north: number }
+  | { left: number; top: number; right: number; bottom: number };
+
+interface HoverSourceTile {
+  index: { x: number; y: number; z?: number };
+  /**
+   * deck.gl v9 Tile2DHeader.boundingBox: `[[minX, minY], [maxX, maxY]]`.
+   * This is the non-deprecated extent accessor and is always populated by
+   * the tileset at construction time.
+   */
+  boundingBox?: [number[], number[]];
+  /** Legacy/alternate shape returned by some tileset implementations. */
+  bbox?: TileBbox;
+  content?: {
+    data?: {
+      raw?: ArrayLike<number>;
+      width?: number;
+      height?: number;
+    };
+  };
+}
+
+function resolveTileExtent(
+  sourceTile: HoverSourceTile
+): [number, number, number, number] | null {
+  const bb = sourceTile.boundingBox;
+  if (bb && bb[0]?.length >= 2 && bb[1]?.length >= 2) {
+    const [[minX, minY], [maxX, maxY]] = bb;
+    if ([minX, minY, maxX, maxY].every((v) => typeof v === "number")) {
+      return [minX, minY, maxX, maxY];
+    }
+  }
+  const bbox = sourceTile.bbox;
+  if (bbox) {
+    if ("west" in bbox) return [bbox.west, bbox.south, bbox.east, bbox.north];
+    if ("left" in bbox)
+      return [
+        bbox.left,
+        Math.min(bbox.top, bbox.bottom),
+        bbox.right,
+        Math.max(bbox.top, bbox.bottom),
+      ];
+  }
+  return null;
+}
+
+interface DeckHoverInfo {
+  x: number;
+  y: number;
+  coordinate?: [number, number];
+  sourceTile?: HoverSourceTile;
+}
 
 function lookupValue(
-  cache: Map<string, TileCacheEntry>,
+  sourceTile: HoverSourceTile,
   lng: number,
   lat: number
 ): number | null {
-  let bestEntry: TileCacheEntry | null = null;
-  let bestRes = Infinity;
+  const data = sourceTile.content?.data;
+  const raw = data?.raw;
+  const width = data?.width;
+  const height = data?.height;
+  if (!raw || !width || !height) return null;
 
-  for (const [, entry] of cache) {
-    const [west, south, east, north] = entry.bounds;
-    if (lng >= west && lng <= east && lat >= south && lat <= north) {
-      const res = (east - west) / entry.width;
-      if (res < bestRes) {
-        bestRes = res;
-        bestEntry = entry;
-      }
-    }
-  }
+  const extent = resolveTileExtent(sourceTile);
+  if (!extent) return null;
+  const [west, south, east, north] = extent;
+  const spanX = east - west;
+  const spanY = north - south;
+  if (spanX <= 0 || spanY <= 0) return null;
+  if (lng < west || lng > east || lat < south || lat > north) return null;
 
-  if (!bestEntry) return null;
+  // Clamp to [0, dim-1]: coordinates exactly on the east/south edge would
+  // otherwise land at `width`/`height` and drop the tooltip at tile seams.
+  const px = Math.min(
+    width - 1,
+    Math.max(0, Math.floor(((lng - west) / spanX) * width))
+  );
+  const py = Math.min(
+    height - 1,
+    Math.max(0, Math.floor(((north - lat) / spanY) * height))
+  );
 
-  const [west, south, east, north] = bestEntry.bounds;
-  const px = Math.floor(((lng - west) / (east - west)) * bestEntry.width);
-  const py = Math.floor(((north - lat) / (north - south)) * bestEntry.height);
-
-  if (px < 0 || px >= bestEntry.width || py < 0 || py >= bestEntry.height) {
-    return null;
-  }
-
-  const val = bestEntry.data[py * bestEntry.width + px];
+  const val = raw[py * width + px];
   if (val !== val) return null;
   return val;
 }
@@ -71,7 +125,6 @@ type HoverInfo =
     };
 
 export function usePixelInspector(
-  tileCacheRef: React.MutableRefObject<Map<string, TileCacheEntry>>,
   bandNames: string[] | null,
   categories?: { value: number; color: string; label: string }[]
 ) {
@@ -79,19 +132,20 @@ export function usePixelInspector(
   const hoverRafRef = useRef<number | null>(null);
 
   const onHover = useCallback(
-    (info: { coordinate?: [number, number]; x: number; y: number }) => {
+    (info: DeckHoverInfo) => {
       if (hoverRafRef.current !== null) {
         cancelAnimationFrame(hoverRafRef.current);
       }
-      if (!info.coordinate) {
+      if (!info.coordinate || !info.sourceTile) {
         hoverRafRef.current = null;
         setHoverInfo(null);
         return;
       }
+      const sourceTile = info.sourceTile;
       hoverRafRef.current = requestAnimationFrame(() => {
         hoverRafRef.current = null;
         const [lng, lat] = info.coordinate!;
-        const value = lookupValue(tileCacheRef.current, lng, lat);
+        const value = lookupValue(sourceTile, lng, lat);
         if (value === null) {
           setHoverInfo(null);
           return;
@@ -127,7 +181,7 @@ export function usePixelInspector(
         });
       });
     },
-    [tileCacheRef, bandNames, categories]
+    [bandNames, categories]
   );
 
   return { hoverInfo, onHover };

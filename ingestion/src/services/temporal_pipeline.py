@@ -198,8 +198,12 @@ async def run_infile_temporal_pipeline(
     uploaded_keys: list[str] = []
 
     try:
-        # Upload raw file
-        raw_key = storage.upload_raw(input_path, job.dataset_id, job.filename)
+        # Upload raw file off the event loop. obstore.put blocks, and on large
+        # files it stalls the SSE ping coroutine long enough for intermediate
+        # proxies to drop the job stream.
+        raw_key = await asyncio.to_thread(
+            storage.upload_raw, input_path, job.dataset_id, job.filename
+        )
         uploaded_keys.append(raw_key)
         original_file_size = os.path.getsize(input_path)
 
@@ -366,8 +370,11 @@ async def run_temporal_pipeline(
 
                 original_file_size += os.path.getsize(input_path)
 
-                # Upload raw
-                raw_key = storage.upload_raw(input_path, job.dataset_id, entry.filename)
+                # Upload raw off the event loop (see note on upload_raw in
+                # run_pipeline).
+                raw_key = await asyncio.to_thread(
+                    storage.upload_raw, input_path, job.dataset_id, entry.filename
+                )
                 uploaded_keys.append(raw_key)
 
                 # Convert

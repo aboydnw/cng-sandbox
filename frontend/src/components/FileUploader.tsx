@@ -21,6 +21,7 @@ interface FileUploaderProps {
   onUrlSubmitted: (url: string) => void;
   disabled?: boolean;
   embedded?: boolean;
+  hideUrlInput?: boolean;
 }
 
 const extractFilesFromEntry = async (
@@ -52,6 +53,7 @@ export function FileUploader({
   onUrlSubmitted,
   disabled,
   embedded,
+  hideUrlInput,
 }: FileUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +182,7 @@ export function FileUploader({
           </Button>
         )}
         {!embedded && (
-          <Text color="#aaa" fontSize="12px" mt={4}>
+          <Text color="brand.textSecondary" fontSize="12px" mt={4}>
             Up to 15 GB
           </Text>
         )}
@@ -213,53 +215,57 @@ export function FileUploader({
         </Text>
       )}
 
-      <Flex
-        align="center"
-        gap={4}
-        w="100%"
-        maxW={embedded ? "100%" : "480px"}
-        mt={embedded ? 3 : 6}
-      >
-        <Box flex={1} h="1px" bg="brand.border" />
-        <Text
-          color="#aaa"
-          fontSize="12px"
-          textTransform="uppercase"
-          letterSpacing="1px"
-        >
-          or
-        </Text>
-        <Box flex={1} h="1px" bg="brand.border" />
-      </Flex>
+      {!hideUrlInput && (
+        <>
+          <Flex
+            align="center"
+            gap={4}
+            w="100%"
+            maxW={embedded ? "100%" : "480px"}
+            mt={embedded ? 3 : 6}
+          >
+            <Box flex={1} h="1px" bg="brand.border" />
+            <Text
+              color="brand.textSecondary"
+              fontSize="12px"
+              textTransform="uppercase"
+              letterSpacing="1px"
+            >
+              or
+            </Text>
+            <Box flex={1} h="1px" bg="brand.border" />
+          </Flex>
 
-      <Flex
-        gap={2}
-        mt={embedded ? 3 : 5}
-        w="100%"
-        maxW={embedded ? "100%" : "480px"}
-      >
-        <Input
-          flex={1}
-          placeholder="Paste an S3, GCS, or HTTP URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
-          size="md"
-          borderColor="#ddd"
-          disabled={disabled}
-        />
-        <Button
-          bg="brand.brown"
-          color="white"
-          size="md"
-          fontWeight={600}
-          borderRadius="4px"
-          onClick={handleUrlSubmit}
-          disabled={disabled || !url.trim()}
-        >
-          Fetch
-        </Button>
-      </Flex>
+          <Flex
+            gap={2}
+            mt={embedded ? 3 : 5}
+            w="100%"
+            maxW={embedded ? "100%" : "480px"}
+          >
+            <Input
+              flex={1}
+              placeholder="Paste an S3, GCS, or HTTP URL"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleUrlSubmit()}
+              size="md"
+              borderColor="brand.border"
+              disabled={disabled}
+            />
+            <Button
+              bg="brand.brown"
+              color="white"
+              size="md"
+              fontWeight={600}
+              borderRadius="4px"
+              onClick={handleUrlSubmit}
+              disabled={disabled || !url.trim()}
+            >
+              Fetch
+            </Button>
+          </Flex>
+        </>
+      )}
     </Flex>
   );
 }

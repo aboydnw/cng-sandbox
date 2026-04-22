@@ -73,6 +73,39 @@ async def _register_examples(app):
     )
 
 
+async def _seed_stories(app):
+    """Seed example stories independently from dataset registration.
+
+    Poll on a fixed cadence so that stories whose datasets are ready can
+    seed without waiting for slower products (e.g. GHRSST temporal
+    enumeration). `seed_example_stories` is idempotent, so repeated
+    polling is safe.
+    """
+    from src.models.story import StoryRow
+    from src.services.example_stories import ALL_STORIES, seed_example_stories
+
+    target = len(ALL_STORIES)
+    max_attempts = 60  # ~30 minutes at 30s intervals
+    for _ in range(max_attempts):
+        try:
+            seed_example_stories(app.state.db_session_factory)
+            session = app.state.db_session_factory()
+            try:
+                count = (
+                    session.query(StoryRow)
+                    .filter(StoryRow.is_example.is_(True))
+                    .count()
+                )
+            finally:
+                session.close()
+            if count >= target:
+                return
+        except Exception:
+            logger.exception("Example story seeding attempt failed")
+        await asyncio.sleep(30)
+    logger.warning("Gave up seeding example stories after %d attempts", max_attempts)
+
+
 async def _cleanup_expired(app):
     while True:
         await asyncio.sleep(6 * 3600)
@@ -183,10 +216,12 @@ async def _default_lifespan(app: FastAPI):
     cleanup_task = asyncio.create_task(_cleanup_scans())
     expired_task = asyncio.create_task(_cleanup_expired(app))
     examples_task = asyncio.create_task(_register_examples(app))
+    stories_task = asyncio.create_task(_seed_stories(app))
     yield
     cleanup_task.cancel()
     expired_task.cancel()
     examples_task.cancel()
+    stories_task.cancel()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

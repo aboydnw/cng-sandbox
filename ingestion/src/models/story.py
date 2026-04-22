@@ -65,5 +65,6 @@ class StoryResponse(BaseModel):
     dataset_ids: list[str]
     chapters: list[ChapterPayload]
     published: bool
+    is_example: bool = False
     created_at: str
     updated_at: str

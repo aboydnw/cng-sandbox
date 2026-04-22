@@ -207,6 +207,20 @@ def _migrate_schema(engine):
                 conn.rollback()
                 if not _is_duplicate_column(exc):
                     raise
+        # Partial unique index so concurrent startups cannot insert
+        # duplicate is_example=True story titles. PostgreSQL and SQLite
+        # both support `CREATE UNIQUE INDEX ... WHERE ...`.
+        try:
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
+                    "ON stories (title) WHERE is_example"
+                )
+            )
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
 
 
 @asynccontextmanager

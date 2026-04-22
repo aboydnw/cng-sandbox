@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from src.models.dataset import DatasetRow
@@ -29,9 +30,7 @@ ChapterType = Literal["scrollytelling", "prose", "map"]
 GEBCO_URL = "https://data.source.coop/alexgleith/gebco-2024/"
 GHRSST_URL = "https://data.source.coop/ausantarctic/ghrsst-mur-v2/"
 CARBON_URL = "https://data.source.coop/vizzuality/lg-land-carbon-data/"
-BUILDINGS_URL = (
-    "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
-)
+BUILDINGS_URL = "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
 
 
 @dataclass(frozen=True)
@@ -480,9 +479,7 @@ def _load_example_dataset_map(
     """Return {source_url: dataset_id} for rows tagged is_example=True."""
     session = db_session_factory()
     try:
-        rows = (
-            session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
-        )
+        rows = session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
         mapping: dict[str, str] = {}
         for row in rows:
             meta = json.loads(row.metadata_json) if row.metadata_json else {}
@@ -499,9 +496,7 @@ def _existing_example_story_titles(
 ) -> set[str]:
     session = db_session_factory()
     try:
-        rows = (
-            session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
-        )
+        rows = session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
         return {r.title for r in rows}
     finally:
         session.close()
@@ -550,56 +545,57 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
     """Insert any example stories whose datasets are registered and whose
     titles are not already present.
 
-    Idempotent: safe to call on every startup or lifespan retry tick.
+    Idempotent within a single process and safe under concurrent startups:
+    a partial unique index on `(title) WHERE is_example = TRUE` (see
+    `_migrate_schema`) prevents duplicate example rows, and
+    `IntegrityError` is caught per-story so a racing insert is treated as
+    a no-op.
     """
     dataset_map = _load_example_dataset_map(db_session_factory)
     existing_titles = _existing_example_story_titles(db_session_factory)
 
-    session = db_session_factory()
-    try:
-        inserted = 0
-        for story in ALL_STORIES:
-            if story.title in existing_titles:
-                logger.debug("example story already present: %s", story.title)
-                continue
+    for story in ALL_STORIES:
+        if story.title in existing_titles:
+            logger.debug("example story already present: %s", story.title)
+            continue
 
-            required_urls = {
-                ch.dataset_source_url
+        required_urls = {
+            ch.dataset_source_url for ch in story.chapters if ch.dataset_source_url
+        }
+        missing = required_urls - dataset_map.keys()
+        if missing:
+            logger.warning(
+                "skipping example story %r — datasets not yet registered: %s",
+                story.title,
+                sorted(missing),
+            )
+            continue
+
+        chapters_json = [
+            _build_chapter_dict(
+                ch,
+                order=idx,
+                dataset_id=(
+                    dataset_map.get(ch.dataset_source_url)
+                    if ch.dataset_source_url
+                    else None
+                ),
+            )
+            for idx, ch in enumerate(story.chapters)
+        ]
+
+        primary_dataset_id = next(
+            (
+                dataset_map[ch.dataset_source_url]
                 for ch in story.chapters
                 if ch.dataset_source_url
-            }
-            missing = required_urls - dataset_map.keys()
-            if missing:
-                logger.warning(
-                    "skipping example story %r — datasets not yet registered: %s",
-                    story.title,
-                    sorted(missing),
-                )
-                continue
+            ),
+            None,
+        )
 
-            chapters_json = [
-                _build_chapter_dict(
-                    ch,
-                    order=idx,
-                    dataset_id=(
-                        dataset_map.get(ch.dataset_source_url)
-                        if ch.dataset_source_url
-                        else None
-                    ),
-                )
-                for idx, ch in enumerate(story.chapters)
-            ]
-
-            primary_dataset_id = next(
-                (
-                    dataset_map[ch.dataset_source_url]
-                    for ch in story.chapters
-                    if ch.dataset_source_url
-                ),
-                None,
-            )
-
-            now = datetime.now(UTC)
+        now = datetime.now(UTC)
+        session = db_session_factory()
+        try:
             session.add(
                 StoryRow(
                     id=str(uuid.uuid4()),
@@ -614,10 +610,13 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
                     updated_at=now,
                 )
             )
-            inserted += 1
-            logger.info("seeded example story: %s", story.title)
-
-        if inserted:
             session.commit()
-    finally:
-        session.close()
+            logger.info("seeded example story: %s", story.title)
+        except IntegrityError:
+            session.rollback()
+            logger.info(
+                "example story %r already inserted by a concurrent process",
+                story.title,
+            )
+        finally:
+            session.close()

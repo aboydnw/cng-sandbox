@@ -30,6 +30,18 @@ def _make_db():
         poolclass=StaticPool,
     )
     Base.metadata.create_all(engine)
+    # Match the partial unique index installed by _migrate_schema so tests
+    # cover the concurrent-insert guard too.
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
+                "ON stories (title) WHERE is_example"
+            )
+        )
+        conn.commit()
     return engine, sessionmaker(bind=engine)
 
 
@@ -101,9 +113,7 @@ def test_seed_is_idempotent_on_repeat_call():
 
     session = factory()
     try:
-        count = (
-            session.query(StoryRow).filter(StoryRow.is_example.is_(True)).count()
-        )
+        count = session.query(StoryRow).filter(StoryRow.is_example.is_(True)).count()
     finally:
         session.close()
 
@@ -128,9 +138,7 @@ def test_seed_skips_story_when_dataset_missing():
     try:
         titles = {
             r.title
-            for r in session.query(StoryRow)
-            .filter(StoryRow.is_example.is_(True))
-            .all()
+            for r in session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
         }
     finally:
         session.close()
@@ -185,9 +193,9 @@ def test_each_story_covers_all_three_chapter_types():
     required = {"scrollytelling", "prose", "map"}
     for story in ALL_STORIES:
         types = {ch.type for ch in story.chapters}
-        assert required.issubset(
-            types
-        ), f"story {story.title!r} missing chapter types: {required - types}"
+        assert required.issubset(types), (
+            f"story {story.title!r} missing chapter types: {required - types}"
+        )
 
 
 def test_each_story_has_between_six_and_ten_chapters():
@@ -195,3 +203,48 @@ def test_each_story_has_between_six_and_ten_chapters():
         assert 6 <= len(story.chapters) <= 10, (
             f"story {story.title!r} has {len(story.chapters)} chapters"
         )
+
+
+def test_concurrent_insert_of_same_title_is_no_op():
+    """A second seeder that races past the title-check still can't duplicate."""
+    _, factory = _make_db()
+    _seed_all_example_datasets(factory)
+
+    seed_example_stories(factory)
+
+    # Simulate a racing second process by directly attempting a duplicate
+    # insert bypassing the title cache — the partial unique index should
+    # reject it, and seed_example_stories should then catch IntegrityError.
+    session = factory()
+    try:
+        session.add(
+            StoryRow(
+                id="dup",
+                title=OCEAN_FLOOR_STORY.title,
+                chapters_json="[]",
+                published=True,
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        )
+        raised = False
+        try:
+            session.commit()
+        except Exception:
+            session.rollback()
+            raised = True
+    finally:
+        session.close()
+
+    assert raised, "partial unique index must reject duplicate example title"
+
+    # And a repeat seed still lands at exactly the expected story count.
+    seed_example_stories(factory)
+    session = factory()
+    try:
+        count = session.query(StoryRow).filter(StoryRow.is_example.is_(True)).count()
+    finally:
+        session.close()
+    assert count == len(ALL_STORIES)

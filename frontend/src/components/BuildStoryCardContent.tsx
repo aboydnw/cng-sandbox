@@ -31,7 +31,7 @@ export function BuildStoryCardContent() {
   };
 
   const handleView = (storyId: string) => {
-    navigate(workspacePath(`/story/${storyId}`));
+    navigate(workspacePath(`/story/${storyId}/edit`));
   };
 
   return (

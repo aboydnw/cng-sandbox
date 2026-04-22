@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.1](https://github.com/aboydnw/cng-sandbox/compare/v1.24.0...v1.24.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* allow public static assets through basic auth gate ([#327](https://github.com/aboydnw/cng-sandbox/issues/327)) ([98c4905](https://github.com/aboydnw/cng-sandbox/commit/98c49050cc7109559334779d4df250c74da4f20f))
+
 ## [1.24.0](https://github.com/aboydnw/cng-sandbox/compare/v1.23.3...v1.24.0) (2026-04-22)
 
 

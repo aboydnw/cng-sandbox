@@ -73,7 +73,7 @@ async def _register_examples(app):
     )
 
 
-async def _seed_stories(app):
+async def _seed_stories(app: FastAPI) -> None:
     """Seed example stories independently from dataset registration.
 
     Poll on a fixed cadence so that stories whose datasets are ready can
@@ -85,8 +85,9 @@ async def _seed_stories(app):
     from src.services.example_stories import ALL_STORIES, seed_example_stories
 
     canonical_titles = {s.title for s in ALL_STORIES}
-    max_attempts = 60  # ~30 minutes at 30s intervals
-    for _ in range(max_attempts):
+    attempts = 0
+    while True:
+        attempts += 1
         try:
             seed_example_stories(app.state.db_session_factory)
             session = app.state.db_session_factory()
@@ -104,7 +105,10 @@ async def _seed_stories(app):
         except Exception:
             logger.exception("Example story seeding attempt failed")
         await asyncio.sleep(30)
-    logger.warning("Gave up seeding example stories after %d attempts", max_attempts)
+        if attempts % 60 == 0:
+            logger.warning(
+                "Example story seeding still incomplete after %d attempts", attempts
+            )
 
 
 async def _cleanup_expired(app):
@@ -208,6 +212,21 @@ def _migrate_schema(engine):
                 conn.rollback()
                 if not _is_duplicate_column(exc):
                     raise
+        # Remove duplicate is_example rows before creating the unique index so
+        # that deployments upgrading from a version without the index don't
+        # fail. Keep the row with the lowest id for each duplicate title.
+        try:
+            conn.execute(
+                text(
+                    "DELETE FROM stories WHERE is_example AND id NOT IN ("
+                    "  SELECT MIN(id) FROM stories WHERE is_example GROUP BY title"
+                    ")"
+                )
+            )
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
         # Partial unique index so concurrent startups cannot insert
         # duplicate is_example=True story titles. PostgreSQL and SQLite
         # both support `CREATE UNIQUE INDEX ... WHERE ...`.

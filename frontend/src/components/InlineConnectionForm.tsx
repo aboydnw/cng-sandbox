@@ -143,8 +143,8 @@ export function InlineConnectionForm({
           onClick={onCancel}
           align="center"
           gap={1}
-          color="whiteAlpha.600"
-          _hover={{ color: "white" }}
+          color="brand.textSecondary"
+          _hover={{ color: "brand.brown" }}
           cursor="pointer"
           {...transition}
         >
@@ -153,13 +153,13 @@ export function InlineConnectionForm({
         </Flex>
       </Flex>
 
-      <Text fontSize="md" fontWeight={600} mb={3}>
+      <Text fontSize="md" fontWeight={600} mb={3} color="brand.brown">
         Add Connection
       </Text>
 
       {/* URL input */}
       <Box mb={3}>
-        <Text fontSize="xs" color="whiteAlpha.600" mb={1}>
+        <Text fontSize="xs" color="brand.textSecondary" mb={1}>
           URL
         </Text>
         <Flex align="center" gap={2}>
@@ -170,13 +170,14 @@ export function InlineConnectionForm({
             onChange={(e) => setUrl(e.target.value)}
             onBlur={handleUrlBlur}
             placeholder="https://example.com/tiles.pmtiles"
+            borderColor="brand.border"
           />
         </Flex>
       </Box>
 
       {/* Name input */}
       <Box mb={3}>
-        <Text fontSize="xs" color="whiteAlpha.600" mb={1}>
+        <Text fontSize="xs" color="brand.textSecondary" mb={1}>
           Name
         </Text>
         <Input
@@ -184,43 +185,58 @@ export function InlineConnectionForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Layer name"
+          borderColor="brand.border"
         />
       </Box>
 
       {/* Type selector */}
       <Box mb={3}>
-        <Text fontSize="xs" color="whiteAlpha.600" mb={1}>
+        <Text fontSize="xs" color="brand.textSecondary" mb={1}>
           Type{autoDetected ? " (auto-detected)" : ""}
         </Text>
         <Flex gap={1} flexWrap="wrap">
-          {ALL_TYPES.map((t) => (
-            <Button
-              key={t}
-              size="xs"
-              variant={connectionType === t ? "solid" : "outline"}
-              colorPalette={connectionType === t ? "orange" : "gray"}
-              onClick={() => {
-                setConnectionType(t);
-                setAutoDetected(false);
-                setProbeMetadata(null);
-              }}
-            >
-              {TYPE_LABELS[t]}
-            </Button>
-          ))}
+          {ALL_TYPES.map((t) => {
+            const active = connectionType === t;
+            return (
+              <Button
+                key={t}
+                size="xs"
+                variant="outline"
+                bg={active ? "brand.orange" : "white"}
+                color={active ? "white" : "brand.brown"}
+                borderColor={active ? "brand.orange" : "brand.border"}
+                fontWeight={500}
+                _hover={
+                  active
+                    ? {
+                        bg: "brand.orangeHover",
+                        borderColor: "brand.orangeHover",
+                      }
+                    : { borderColor: "brand.orange", color: "brand.orange" }
+                }
+                onClick={() => {
+                  setConnectionType(t);
+                  setAutoDetected(false);
+                  setProbeMetadata(null);
+                }}
+              >
+                {TYPE_LABELS[t]}
+              </Button>
+            );
+          })}
         </Flex>
       </Box>
 
       {/* Probe status */}
       {probing && (
-        <Flex align="center" gap={2} mb={3} color="whiteAlpha.600">
+        <Flex align="center" gap={2} mb={3} color="brand.textSecondary">
           <SpinnerGap size={14} className="animate-spin" />
           <Text fontSize="xs">Detecting metadata...</Text>
         </Flex>
       )}
 
       {probeMetadata && !probing && (
-        <Box mb={3} fontSize="xs" color="whiteAlpha.500">
+        <Box mb={3} fontSize="xs" color="brand.textSecondary">
           {probeMetadata.bounds && <Text>Bounds detected</Text>}
           {probeMetadata.bandCount && (
             <Text>{probeMetadata.bandCount} band(s)</Text>
@@ -235,14 +251,14 @@ export function InlineConnectionForm({
 
       {/* Probe warning */}
       {probeWarning && !probing && (
-        <Text fontSize="xs" color="yellow.400" mb={3}>
+        <Text fontSize="xs" color="orange.600" mb={3}>
           {probeWarning}
         </Text>
       )}
 
       {/* Error */}
       {error && (
-        <Text fontSize="xs" color="red.400" mb={3}>
+        <Text fontSize="xs" color="red.500" mb={3}>
           {error}
         </Text>
       )}
@@ -250,7 +266,11 @@ export function InlineConnectionForm({
       {/* Save button */}
       <Button
         size="sm"
-        colorPalette="orange"
+        bg="brand.orange"
+        color="white"
+        fontWeight={600}
+        borderRadius="4px"
+        _hover={{ bg: "brand.orangeHover" }}
         onClick={handleSave}
         disabled={!canSave}
         w="100%"

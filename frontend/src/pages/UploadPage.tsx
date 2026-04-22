@@ -317,18 +317,6 @@ export default function UploadPage() {
           onUploadAnother={handleUploadAnother}
         />
       )}
-      {mode === "xyz-picker" && xyzPickerUrl && (
-        <Box mt={3} p={3} bg="gray.900" color="white" borderRadius="md">
-          <InlineConnectionForm
-            prefilledUrl={xyzPickerUrl}
-            onCancel={() => {
-              setXyzPickerUrl(null);
-              setMode("upload-idle");
-            }}
-            onCreated={handleConnectionCreated}
-          />
-        </Box>
-      )}
       {mode === "registering" && (
         <Text fontSize="sm" color="brand.textSecondary" mt={3}>
           Registering connection…
@@ -384,13 +372,29 @@ export default function UploadPage() {
             <li>Files hosted for 30 days</li>
           </Box>
           {visualizeCardExpanded && (
-            <VisualizeDataCardContent
-              onFileSelected={handleFile}
-              onFilesSelected={handleTemporalUpload}
-              onExampleClicked={(id) => navigate(workspacePath(`/map/${id}`))}
-              onUrlSubmitted={handleUrlSubmitted}
-              inlineContent={inlineContent}
-            />
+            <>
+              <Box display={mode === "xyz-picker" ? "none" : "block"}>
+                <VisualizeDataCardContent
+                  onFileSelected={handleFile}
+                  onFilesSelected={handleTemporalUpload}
+                  onExampleClicked={(id) =>
+                    navigate(workspacePath(`/map/${id}`))
+                  }
+                  onUrlSubmitted={handleUrlSubmitted}
+                  inlineContent={inlineContent}
+                />
+              </Box>
+              {mode === "xyz-picker" && xyzPickerUrl && (
+                <InlineConnectionForm
+                  prefilledUrl={xyzPickerUrl}
+                  onCancel={() => {
+                    setXyzPickerUrl(null);
+                    setMode("upload-idle");
+                  }}
+                  onCreated={handleConnectionCreated}
+                />
+              )}
+            </>
           )}
         </PathCard>
 

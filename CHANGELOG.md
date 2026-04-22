@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/aboydnw/cng-sandbox/compare/v1.23.3...v1.24.0) (2026-04-22)
+
+
+### Features
+
+* gate SPA behind basic auth with carve-out for shared views ([#325](https://github.com/aboydnw/cng-sandbox/issues/325)) ([c7b7f67](https://github.com/aboydnw/cng-sandbox/commit/c7b7f676febe19308341bd9c890b2bfb4a04b8ea))
+
 ## [1.23.3](https://github.com/aboydnw/cng-sandbox/compare/v1.23.2...v1.23.3) (2026-04-22)
 
 

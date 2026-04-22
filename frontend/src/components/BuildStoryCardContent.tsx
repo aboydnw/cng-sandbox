@@ -13,7 +13,6 @@ interface ExampleStory {
 export function BuildStoryCardContent() {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
-  const [error, setError] = useState<string | null>(null);
   const [examples, setExamples] = useState<ExampleStory[]>([]);
 
   useEffect(() => {
@@ -28,22 +27,11 @@ export function BuildStoryCardContent() {
   }, []);
 
   const handleStartFromScratch = () => {
-    setError(null);
     navigate(workspacePath("/story/new"));
   };
 
-  const handleFork = async (storyId: string) => {
-    setError(null);
-    try {
-      const r = await workspaceFetch(`/api/stories/${storyId}/fork`, {
-        method: "POST",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const forked = await r.json();
-      navigate(workspacePath(`/story/${forked.id}/edit`));
-    } catch {
-      setError("Failed to fork story. Please try again.");
-    }
+  const handleView = (storyId: string) => {
+    navigate(workspacePath(`/story/${storyId}`));
   };
 
   return (
@@ -51,7 +39,7 @@ export function BuildStoryCardContent() {
       {examples.length > 0 && (
         <Box mb={3}>
           <Text fontSize="xs" color="brand.textSecondary" mb={1.5}>
-            Start from a template
+            Explore an example
           </Text>
           <Flex gap={2} overflowX="auto" pb={1}>
             {examples.map((story) => (
@@ -61,7 +49,7 @@ export function BuildStoryCardContent() {
                 variant="outline"
                 colorPalette="orange"
                 flexShrink={0}
-                onClick={() => handleFork(story.id)}
+                onClick={() => handleView(story.id)}
               >
                 {story.title}
               </Button>
@@ -86,12 +74,6 @@ export function BuildStoryCardContent() {
       >
         Start from scratch
       </Button>
-
-      {error && (
-        <Text fontSize="xs" color="red.400" mt={2}>
-          {error}
-        </Text>
-      )}
     </Box>
   );
 }

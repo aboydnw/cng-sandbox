@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.23.3](https://github.com/aboydnw/cng-sandbox/compare/v1.23.2...v1.23.3) (2026-04-22)
+
+
+### Bug Fixes
+
+* **frontend:** register MVTLoader for XYZ vector tile parsing ([#323](https://github.com/aboydnw/cng-sandbox/issues/323)) ([ad66757](https://github.com/aboydnw/cng-sandbox/commit/ad667577d22f69349358bf364643a4f2eccb9a2f))
+* **frontend:** restyle inline connection form and make it replace upload flow ([#322](https://github.com/aboydnw/cng-sandbox/issues/322)) ([1a9f101](https://github.com/aboydnw/cng-sandbox/commit/1a9f1014c602d3081633f73465f350791f339f17))
+* **ingestion:** probe .tif URLs for COG structure in /api/inspect-url ([#321](https://github.com/aboydnw/cng-sandbox/issues/321)) ([edb46fd](https://github.com/aboydnw/cng-sandbox/commit/edb46fde34cbc0ef72ed97310cd56934ef31226f))
+
 ## [1.23.2](https://github.com/aboydnw/cng-sandbox/compare/v1.23.1...v1.23.2) (2026-04-22)
 
 

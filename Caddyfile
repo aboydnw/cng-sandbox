@@ -125,8 +125,18 @@
 		# to /index.html before basic_auth evaluates its matcher — which
 		# would make every SPA fallback look like /index.html and break
 		# the public-path carve-out. route preserves written order.
+		# Public static files in the frontend's public/ dir must be listed
+		# here so they don't trigger a basic-auth prompt when a shared /map
+		# or /story page references them. Browsers also auto-request
+		# /favicon.ico — if that returns 401 the dialog pops up even
+		# though the SPA shell loaded fine.
 		@spaNeedsAuth {
 			not path /assets/*
+			not path /favicon.ico
+			not path /logo.svg
+			not path /gif.worker.js
+			not path /fonts/*
+			not path /thumbnails/*
 			not path_regexp ^/(map/.+|story/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/embed)?/?)$
 		}
 		route {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { ArrowLeft, Link as LinkIcon, SpinnerGap } from "@phosphor-icons/react";
 import {
@@ -30,13 +30,15 @@ const ALL_TYPES: ConnectionType[] = [
 interface InlineConnectionFormProps {
   onCancel: () => void;
   onCreated: (connection: Connection) => void;
+  prefilledUrl?: string;
 }
 
 export function InlineConnectionForm({
   onCancel,
   onCreated,
+  prefilledUrl,
 }: InlineConnectionFormProps) {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(prefilledUrl ?? "");
   const [name, setName] = useState("");
   const [connectionType, setConnectionType] = useState<ConnectionType | null>(
     null
@@ -87,6 +89,13 @@ export function InlineConnectionForm({
       }
     }
   }, [url, name]);
+
+  const autoProbedRef = useRef(false);
+  useEffect(() => {
+    if (!prefilledUrl || autoProbedRef.current) return;
+    autoProbedRef.current = true;
+    handleUrlBlur().catch(() => {});
+  }, [prefilledUrl, handleUrlBlur]);
 
   const handleSave = useCallback(async () => {
     if (!url.trim() || !connectionType) return;

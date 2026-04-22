@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.22.4](https://github.com/aboydnw/cng-sandbox/compare/v1.22.3...v1.22.4) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** disable loaders.gl MVT worker so CSP allows vector tiles ([#304](https://github.com/aboydnw/cng-sandbox/issues/304)) ([145a4bd](https://github.com/aboydnw/cng-sandbox/commit/145a4bd1e4a90f95af9d0075dd523e085b746340))
+* **frontend:** read tile extent from boundingBox/bbox, not non-existent bounds ([#307](https://github.com/aboydnw/cng-sandbox/issues/307)) ([a004bbe](https://github.com/aboydnw/cng-sandbox/commit/a004bbee4e921424292e23866e128b5b75f25125))
+* **ingestion:** drop workspace auth from jobs SSE stream ([#305](https://github.com/aboydnw/cng-sandbox/issues/305)) ([58193e0](https://github.com/aboydnw/cng-sandbox/commit/58193e00572654f3ae757de84e27ef5b06cf3ab7))
+
+## [1.22.3](https://github.com/aboydnw/cng-sandbox/compare/v1.22.2...v1.22.3) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** guard pixel inspector against missing sourceTile.bounds ([#302](https://github.com/aboydnw/cng-sandbox/issues/302)) ([2ef06bf](https://github.com/aboydnw/cng-sandbox/commit/2ef06bf64891393ea1603615576522e0d64463ed))
+* **ingestion:** upload raw file off event loop ([#300](https://github.com/aboydnw/cng-sandbox/issues/300)) ([389c3ff](https://github.com/aboydnw/cng-sandbox/commit/389c3ff1cee4ac61fe99869cb7523ac19dbf741c))
+
+## [1.22.2](https://github.com/aboydnw/cng-sandbox/compare/v1.22.1...v1.22.2) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** read pixel values off the hovered tile, drop shared cache ([#296](https://github.com/aboydnw/cng-sandbox/issues/296)) ([d4de663](https://github.com/aboydnw/cng-sandbox/commit/d4de66395b74702a91bc89b9645cc48194b80729))
+* **ingestion:** use nearest resampling for categorical GeoTIFF→COG ([#297](https://github.com/aboydnw/cng-sandbox/issues/297)) ([5be81b7](https://github.com/aboydnw/cng-sandbox/commit/5be81b783bacc9635a000bac5748bad9554068e0))
+
+## [1.22.1](https://github.com/aboydnw/cng-sandbox/compare/v1.22.0...v1.22.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** look up pixel values by hovered tile, not dataset bounds ([#295](https://github.com/aboydnw/cng-sandbox/issues/295)) ([0a47259](https://github.com/aboydnw/cng-sandbox/commit/0a47259a74c28e60637cf260f3ab1a7ed1d943a7))
+* **frontend:** unify URL input and fix empty featured dataset buttons ([#293](https://github.com/aboydnw/cng-sandbox/issues/293)) ([56752c7](https://github.com/aboydnw/cng-sandbox/commit/56752c7ecfbc53dadaf13eb7350ab435d0ecbb24))
+
+## [1.22.0](https://github.com/aboydnw/cng-sandbox/compare/v1.21.0...v1.22.0) (2026-04-21)
+
+
+### Features
+
+* **backend:** homepage redesign backend — examples, inspect-url, fork ([#284](https://github.com/aboydnw/cng-sandbox/issues/284)) ([8f85d6a](https://github.com/aboydnw/cng-sandbox/commit/8f85d6af291e9fa331259ab68b3a14e319d05cb4))
+* **frontend:** client COG rendering for non-Mercator CRSes via deck.gl-geotiff 0.4 ([#263](https://github.com/aboydnw/cng-sandbox/issues/263)) ([9129771](https://github.com/aboydnw/cng-sandbox/commit/9129771ba62fd742646dd7d63991728eee643384))
+* **frontend:** redesign homepage to two-card layout with unified URL auto-detection ([#291](https://github.com/aboydnw/cng-sandbox/issues/291)) ([7a2a86e](https://github.com/aboydnw/cng-sandbox/commit/7a2a86eadd321e280620cac58a8c7b5d5265ad43))
+
+
+### Bug Fixes
+
+* **frontend:** correct technical details panel for categorical + client-rendered rasters ([#292](https://github.com/aboydnw/cng-sandbox/issues/292)) ([1acb91c](https://github.com/aboydnw/cng-sandbox/commit/1acb91c8e5b1c93b992f7ff12a874e27913239a2))
+
 ## [1.21.0](https://github.com/aboydnw/cng-sandbox/compare/v1.20.1...v1.21.0) (2026-04-20)
 
 

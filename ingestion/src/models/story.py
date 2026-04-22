@@ -19,6 +19,7 @@ class StoryRow(Base):
     dataset_id = Column(String, nullable=True)
     chapters_json = Column(Text, nullable=False, default="[]")
     published = Column(Boolean, nullable=False, default=False)
+    is_example = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     updated_at = Column(
         DateTime,

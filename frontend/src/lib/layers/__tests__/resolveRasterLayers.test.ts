@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { MutableRefObject } from "react";
 import { resolveRasterLayers } from "../resolveRasterLayers";
 import type { MapItem } from "../../../types";
-import type { TileCacheEntry } from "../cogLayer";
 
 vi.mock("../cogLayer", () => ({
   buildCogLayerContinuous: vi.fn(() => [{ id: "cog-continuous" }]),
@@ -14,10 +12,6 @@ vi.mock("../rasterTileLayer", () => ({
 
 import { buildCogLayerContinuous, buildCogLayerPaletted } from "../cogLayer";
 import { buildRasterTileLayers } from "../rasterTileLayer";
-
-function makeRef(): MutableRefObject<Map<string, TileCacheEntry>> {
-  return { current: new Map() };
-}
 
 function continuousItem(overrides: Partial<MapItem> = {}): MapItem {
   return {
@@ -55,13 +49,11 @@ describe("resolveRasterLayers", () => {
   });
 
   it("dispatches to continuous COG builder when eligible", () => {
-    const ref = makeRef();
     const result = resolveRasterLayers({
       item: continuousItem(),
       opacity: 0.8,
       rescaleMin: 0,
       rescaleMax: 1,
-      tileCacheRef: ref,
     });
 
     expect(result.renderMode).toBe("client");
@@ -70,7 +62,6 @@ describe("resolveRasterLayers", () => {
     expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);
     expect(buildCogLayerContinuous).toHaveBeenCalledWith(
       expect.objectContaining({
-        datasetBounds: [-10, -10, 10, 10],
         rasterMin: 0,
         rasterMax: 1,
         opacity: 0.8,
@@ -81,7 +72,6 @@ describe("resolveRasterLayers", () => {
   });
 
   it("dispatches to paletted COG builder for categorical items", () => {
-    const ref = makeRef();
     const categories = [
       { value: 1, color: "#ff0000", label: "A" },
       { value: 2, color: "#00ff00", label: "B" },
@@ -95,7 +85,6 @@ describe("resolveRasterLayers", () => {
       opacity: 0.8,
       rescaleMin: null,
       rescaleMax: null,
-      tileCacheRef: ref,
       effectiveCategories: categories,
     });
 
@@ -105,7 +94,6 @@ describe("resolveRasterLayers", () => {
   });
 
   it("falls back to server tiles when over the client-render cap", () => {
-    const ref = makeRef();
     const result = resolveRasterLayers({
       item: continuousItem({
         dataset: { converted_file_size: 900 * 1024 * 1024 } as never,
@@ -114,7 +102,6 @@ describe("resolveRasterLayers", () => {
       serverTileUrl: "/raster/server/tile/x/y/z",
       rescaleMin: 0,
       rescaleMax: 1,
-      tileCacheRef: ref,
     });
 
     expect(result.renderMode).toBe("server");
@@ -125,14 +112,12 @@ describe("resolveRasterLayers", () => {
   });
 
   it("falls back to server tiles for temporal items", () => {
-    const ref = makeRef();
     const result = resolveRasterLayers({
       item: continuousItem({ isTemporal: true }),
       opacity: 0.8,
       serverTileUrl: "/raster/server/tile/x/y/z",
       rescaleMin: 0,
       rescaleMax: 1,
-      tileCacheRef: ref,
     });
 
     expect(result.renderMode).toBe("server");
@@ -141,13 +126,11 @@ describe("resolveRasterLayers", () => {
   });
 
   it("returns empty layers when item is null", () => {
-    const ref = makeRef();
     const result = resolveRasterLayers({
       item: null,
       opacity: 0.8,
       rescaleMin: null,
       rescaleMax: null,
-      tileCacheRef: ref,
     });
 
     expect(result.layers).toEqual([]);
@@ -155,7 +138,6 @@ describe("resolveRasterLayers", () => {
   });
 
   it("parses item.rescale when rescaleMin/Max are null for connection COGs", () => {
-    const ref = makeRef();
     resolveRasterLayers({
       item: continuousItem({
         source: "connection",
@@ -168,7 +150,6 @@ describe("resolveRasterLayers", () => {
       opacity: 0.8,
       rescaleMin: null,
       rescaleMax: null,
-      tileCacheRef: ref,
     });
 
     expect(buildCogLayerContinuous).toHaveBeenCalledTimes(1);

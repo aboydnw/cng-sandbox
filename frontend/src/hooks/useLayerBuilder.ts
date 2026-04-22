@@ -1,8 +1,6 @@
 import { useMemo } from "react";
-import type { MutableRefObject } from "react";
 import type { MapItem } from "../types";
 import type { RenderMode } from "./useMapControls";
-import type { TileCacheEntry } from "../lib/layers";
 import type { Table } from "apache-arrow";
 import {
   buildRasterTileLayers,
@@ -28,7 +26,6 @@ interface UseLayerBuilderOptions {
   renderIndices?: Set<number>;
   isAnimateMode?: boolean;
   getLoadCallback: (index: number) => () => void;
-  tileCacheRef: MutableRefObject<Map<string, TileCacheEntry>>;
   arrowTable: Table | null;
   rescaleMin: number | null;
   rescaleMax: number | null;
@@ -73,7 +70,6 @@ export function useLayerBuilder({
   renderIndices,
   isAnimateMode,
   getLoadCallback,
-  tileCacheRef,
   arrowTable,
   rescaleMin,
   rescaleMax,
@@ -170,7 +166,6 @@ export function useLayerBuilder({
             opacity,
             rescaleMin,
             rescaleMax,
-            tileCacheRef,
             serverTileUrl: tileUrl,
             effectiveCategories: isCategorical
               ? (effectiveCategories ?? item.categories ?? undefined)
@@ -262,7 +257,6 @@ export function useLayerBuilder({
           opacity,
           rescaleMin,
           rescaleMax,
-          tileCacheRef,
           serverTileUrl: tileUrl,
           effectiveCategories: isCategorical
             ? (effectiveCategories ?? item.categories ?? undefined)
@@ -314,7 +308,6 @@ export function useLayerBuilder({
     geojson,
     onVectorClick,
     getLoadCallback,
-    tileCacheRef,
     isCategorical,
     effectiveCategories,
   ]);

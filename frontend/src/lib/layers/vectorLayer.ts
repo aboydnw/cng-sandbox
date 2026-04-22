@@ -44,9 +44,12 @@ export function buildVectorLayer({
     opacity,
     ...(minZoom !== undefined && { minZoom }),
     ...(maxZoom !== undefined && { maxZoom }),
-    // Parse MVT on the main thread. loaders.gl's default worker imports
-    // its script from unpkg.com, which our Content-Security-Policy
-    // script-src blocks — so workers fail and no tiles render in prod.
+    // MVTLayer's default loader is `MVTWorkerLoader` (worker-only, no
+    // main-thread parser). loaders.gl's worker fetches its script from
+    // unpkg.com which our CSP `script-src` blocks, so we disable the
+    // worker — but then the worker loader has no parser. Override with
+    // the full `MVTLoader` which bundles `parseSync`.
+    loaders: [MVTLoader],
     loadOptions: { worker: false },
     pickable: true,
     autoHighlight: true,

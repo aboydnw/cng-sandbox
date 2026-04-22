@@ -208,7 +208,10 @@ export function InlineConnectionForm({
                 fontWeight={500}
                 _hover={
                   active
-                    ? { bg: "brand.orangeHover", borderColor: "brand.orangeHover" }
+                    ? {
+                        bg: "brand.orangeHover",
+                        borderColor: "brand.orangeHover",
+                      }
                     : { borderColor: "brand.orange", color: "brand.orange" }
                 }
                 onClick={() => {

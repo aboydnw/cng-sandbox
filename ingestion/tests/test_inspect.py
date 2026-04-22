@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+from src.services.cog_checker import CogCheckResult
+
 
 def test_inspect_url_detects_pmtiles(client, monkeypatch):
     fake_resp = MagicMock(status_code=200, headers={"content-length": "1234"})
@@ -48,15 +50,83 @@ def test_inspect_url_detects_cog(client, monkeypatch):
     assert body["is_cog"] is True
 
 
-def test_inspect_url_detects_tiff(client, monkeypatch):
+def test_inspect_url_tiff_probed_as_cog(client, monkeypatch):
     async def fake_head(self, url):
         return MagicMock(status_code=200, headers={"content-length": "1"})
 
+    async def fake_probe(url):
+        return CogCheckResult(is_cog=True, has_tiling=True, has_overviews=True)
+
     monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
+    monkeypatch.setattr("src.routes.inspect.check_remote_is_cog", fake_probe)
+
     resp = client.post(
         "/api/inspect-url", json={"url": "https://example.com/raster.tif"}
     )
-    assert resp.json()["format"] == "tiff"
+    body = resp.json()
+    assert body["format"] == "tiff"
+    assert body["is_cog"] is True
+
+
+def test_inspect_url_tiff_probed_as_non_cog(client, monkeypatch):
+    async def fake_head(self, url):
+        return MagicMock(status_code=200, headers={"content-length": "1"})
+
+    async def fake_probe(url):
+        return CogCheckResult(is_cog=False, has_tiling=False, has_overviews=False)
+
+    monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
+    monkeypatch.setattr("src.routes.inspect.check_remote_is_cog", fake_probe)
+
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/raster.tif"}
+    )
+    body = resp.json()
+    assert body["format"] == "tiff"
+    assert body["is_cog"] is False
+
+
+def test_inspect_url_tiff_cog_probe_failure_falls_back(client, monkeypatch):
+    async def fake_head(self, url):
+        return MagicMock(status_code=200, headers={"content-length": "1"})
+
+    async def fake_probe(url):
+        raise RuntimeError("vsicurl connection refused")
+
+    monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
+    monkeypatch.setattr("src.routes.inspect.check_remote_is_cog", fake_probe)
+
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/raster.tif"}
+    )
+    body = resp.json()
+    assert resp.status_code == 200
+    assert body["format"] == "tiff"
+    assert body["is_cog"] is False
+    assert body["has_errors"] is False
+
+
+def test_inspect_url_tiff_skips_cog_probe_when_head_fails(client, monkeypatch):
+    async def fake_head(self, url):
+        raise RuntimeError("network down")
+
+    probe_called = {"value": False}
+
+    async def fake_probe(url):
+        probe_called["value"] = True
+        return CogCheckResult(is_cog=True, has_tiling=True, has_overviews=True)
+
+    monkeypatch.setattr("httpx.AsyncClient.head", fake_head)
+    monkeypatch.setattr("src.routes.inspect.check_remote_is_cog", fake_probe)
+
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/raster.tif"}
+    )
+    body = resp.json()
+    assert body["format"] == "tiff"
+    assert body["is_cog"] is False
+    assert body["has_errors"] is True
+    assert probe_called["value"] is False
 
 
 def test_inspect_url_detects_xyz_template_without_head(client):

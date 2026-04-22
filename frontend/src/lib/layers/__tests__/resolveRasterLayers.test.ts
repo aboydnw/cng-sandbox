@@ -137,6 +137,23 @@ describe("resolveRasterLayers", () => {
     expect(result.renderMode).toBe("server");
   });
 
+  it("forceServer short-circuits client rendering even when eligible", () => {
+    const result = resolveRasterLayers({
+      item: continuousItem(),
+      opacity: 0.8,
+      rescaleMin: 0,
+      rescaleMax: 1,
+      serverTileUrl: "/raster/server/tile/x/y/z",
+      forceServer: true,
+    });
+
+    expect(result.renderMode).toBe("server");
+    expect(result.reason).toMatch(/server-side/i);
+    expect(buildRasterTileLayers).toHaveBeenCalledTimes(1);
+    expect(buildCogLayerContinuous).not.toHaveBeenCalled();
+    expect(buildCogLayerPaletted).not.toHaveBeenCalled();
+  });
+
   it("parses item.rescale when rescaleMin/Max are null for connection COGs", () => {
     resolveRasterLayers({
       item: continuousItem({

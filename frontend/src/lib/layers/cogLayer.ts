@@ -205,10 +205,12 @@ export function buildCogLayerPaletted({
     return { texture: valueTex, lutTexture: lutTex, width, height, raw };
   };
 
-  const renderTile = (data: { texture: unknown; lutTexture: unknown }) => [
-    { module: CreateTexture, props: { textureName: data.texture } },
-    { module: Colormap, props: { colormapTexture: data.lutTexture } },
-  ];
+  const renderTile = (data: { texture: unknown; lutTexture: unknown }) => ({
+    renderPipeline: [
+      { module: CreateTexture, props: { textureName: data.texture } },
+      { module: Colormap, props: { colormapTexture: data.lutTexture } },
+    ],
+  });
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return [
@@ -310,10 +312,12 @@ export function buildCogLayerContinuous({
     return { texture, width, height, raw: rawSnapshot };
   };
 
-  const renderTile = (data: { texture: unknown }) => [
-    { module: CreateTexture, props: { textureName: data.texture } },
-    { module: ViridisColorize },
-  ];
+  const renderTile = (data: { texture: unknown }) => ({
+    renderPipeline: [
+      { module: CreateTexture, props: { textureName: data.texture } },
+      { module: ViridisColorize },
+    ],
+  });
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return [

@@ -73,6 +73,44 @@ async def _register_examples(app):
     )
 
 
+async def _seed_stories(app: FastAPI) -> None:
+    """Seed example stories independently from dataset registration.
+
+    Poll on a fixed cadence so that stories whose datasets are ready can
+    seed without waiting for slower products (e.g. GHRSST temporal
+    enumeration). `seed_example_stories` is idempotent, so repeated
+    polling is safe.
+    """
+    from src.models.story import StoryRow
+    from src.services.example_stories import ALL_STORIES, seed_example_stories
+
+    canonical_titles = {s.title for s in ALL_STORIES}
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            seed_example_stories(app.state.db_session_factory)
+            session = app.state.db_session_factory()
+            try:
+                seeded = {
+                    row.title
+                    for row in session.query(StoryRow)
+                    .filter(StoryRow.is_example.is_(True))
+                    .all()
+                }
+            finally:
+                session.close()
+            if canonical_titles.issubset(seeded):
+                return
+        except Exception:
+            logger.exception("Example story seeding attempt failed")
+        await asyncio.sleep(30)
+        if attempts % 60 == 0:
+            logger.warning(
+                "Example story seeding still incomplete after %d attempts", attempts
+            )
+
+
 async def _cleanup_expired(app):
     while True:
         await asyncio.sleep(6 * 3600)
@@ -174,6 +212,35 @@ def _migrate_schema(engine):
                 conn.rollback()
                 if not _is_duplicate_column(exc):
                     raise
+        # Remove duplicate is_example rows before creating the unique index so
+        # that deployments upgrading from a version without the index don't
+        # fail. Keep the row with the lowest id for each duplicate title.
+        try:
+            conn.execute(
+                text(
+                    "DELETE FROM stories WHERE is_example AND id NOT IN ("
+                    "  SELECT MIN(id) FROM stories WHERE is_example GROUP BY title"
+                    ")"
+                )
+            )
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
+        # Partial unique index so concurrent startups cannot insert
+        # duplicate is_example=True story titles. PostgreSQL and SQLite
+        # both support `CREATE UNIQUE INDEX ... WHERE ...`.
+        try:
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
+                    "ON stories (title) WHERE is_example"
+                )
+            )
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
 
 
 @asynccontextmanager
@@ -183,10 +250,12 @@ async def _default_lifespan(app: FastAPI):
     cleanup_task = asyncio.create_task(_cleanup_scans())
     expired_task = asyncio.create_task(_cleanup_expired(app))
     examples_task = asyncio.create_task(_register_examples(app))
+    stories_task = asyncio.create_task(_seed_stories(app))
     yield
     cleanup_task.cancel()
     expired_task.cancel()
     examples_task.cancel()
+    stories_task.cancel()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

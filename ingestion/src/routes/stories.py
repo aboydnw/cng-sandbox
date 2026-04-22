@@ -41,6 +41,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         dataset_ids=dataset_ids,
         chapters=[ChapterPayload(**ch) for ch in chapters],
         published=row.published,
+        is_example=bool(row.is_example),
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
     )

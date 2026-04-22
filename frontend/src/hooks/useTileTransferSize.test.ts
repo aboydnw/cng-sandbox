@@ -24,7 +24,9 @@ describe("useTileTransferSize", () => {
     mockDisconnect = vi.fn();
     vi.stubGlobal(
       "PerformanceObserver",
-      vi.fn().mockImplementation((cb: PerformanceObserverCallback) => {
+      vi.fn().mockImplementation(function MockPerformanceObserver(
+        cb: PerformanceObserverCallback
+      ) {
         observerCallback = cb;
         return { observe: vi.fn(), disconnect: mockDisconnect };
       })

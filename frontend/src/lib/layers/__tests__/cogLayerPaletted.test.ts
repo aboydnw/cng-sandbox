@@ -1,7 +1,9 @@
 import { beforeEach, describe, it, expect, vi } from "vitest";
 
 vi.mock("@developmentseed/deck.gl-geotiff", () => ({
-  COGLayer: vi.fn().mockImplementation((props) => ({ props })),
+  COGLayer: vi.fn().mockImplementation(function MockCOGLayer(props) {
+    return { props };
+  }),
 }));
 
 vi.mock("@developmentseed/deck.gl-raster/gpu-modules", () => ({

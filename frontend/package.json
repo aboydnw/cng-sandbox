@@ -37,7 +37,7 @@
     "gif.js": "^0.2.0",
     "html-to-image": "^1.11.13",
     "lerc": "^4.0.4",
-    "maplibre-gl": "^4.0.0",
+    "maplibre-gl": "^5.23.0",
     "mp4-muxer": "^5.2.2",
     "pmtiles": "^4.4.1",
     "react": "^19.2.5",

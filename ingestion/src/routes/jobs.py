@@ -33,8 +33,17 @@ async def get_job(job_id: str, request: Request):
 
 @router.get("/jobs/{job_id}/stream")
 async def stream_job(job_id: str, request: Request):
-    """SSE stream of job status updates."""
-    job = _get_job_for_workspace(job_id, request)
+    """SSE stream of job status updates.
+
+    No workspace auth on this endpoint: browser EventSource cannot send
+    custom headers, so requiring X-Workspace-Id would 404 every client.
+    Job UUIDs are the only access barrier — same tradeoff as
+    /api/connections/{id}/stream. A scoped auth token or cookie-based
+    workspace auth would be more robust for production.
+    """
+    job = jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
 
     async def event_generator():
         last_status = (None, None)

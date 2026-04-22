@@ -230,6 +230,7 @@ cd frontend && npx vitest run
 - **GeoParquet connections support two render paths**: `render_path: "client"` loads the file into DuckDB-WASM via `useGeoParquetRender`, returns an Arrow `Table`, and renders via deck.gl (500k feature cap). `render_path: "server"` triggers a background conversion (tippecanoe → PMTiles → R2); the frontend `useConnectionConversion` hook subscribes via EventSource (SSE) to `GET /api/connections/{id}/stream` and shows a conversion overlay on `MapPage` until the job finishes and a `tile_url` is available. When `render_path` is omitted, the server infers it: files over 50 MB default to `"server"`, smaller files default to `"client"`. The frontend also runs `pickRenderPath` (size + 500k feature threshold) to pre-select the path before submitting the connection.
 - **DuckDB-WASM is preloaded on app mount**: `App.tsx` fires a background `initialize()` call from `useDuckDB` inside a `useEffect` so the WASM bundle and worker are warm by the time a user opens a client-rendered GeoParquet connection. The call is fire-and-forget — errors are logged as warnings and don't block the app. `useDuckDB` internally deduplicates concurrent/subsequent `initialize()` calls so `useGeoParquetRender` reuses the preloaded instance.
 - **Chakra v3 dialogs need Portal + DialogPositioner**: `Dialog.Content` must be wrapped in `<Portal><Dialog.Positioner>...</Dialog.Positioner></Portal>` to render as a fixed-position centered modal. Without them, content renders inline at its JSX-tree location (e.g. squished inside a flex header). See `ShareDialog.tsx`, `PublishDialog.tsx`, `UploadModal.tsx`, `GeoParquetPreviewModal.tsx` for the canonical pattern.
+- **Vector tiles must parse on the main thread**: `buildVectorLayer` (`src/lib/layers/vectorLayer.ts`) passes `loadOptions: { worker: false }` to `MVTLayer` (and to the inner `load(..., MVTLoader)` call used for PMTiles). loaders.gl's default MVT worker fetches its script from `unpkg.com`, which the Caddy CSP `script-src` blocks in prod — leaving the worker broken and no vector tiles visible. Keep `worker: false` unless we start self-hosting the loaders.gl worker bundle and widen the CSP accordingly.
 
 ## Ingestion Service
 
@@ -253,7 +254,7 @@ cd ingestion && uv run pytest -v
 
 **Jobs:**
 - `GET /api/jobs/{id}` — Get job status
-- `GET /api/jobs/{id}/stream` — SSE stream of conversion progress
+- `GET /api/jobs/{id}/stream` — SSE stream of conversion progress; no workspace auth on this endpoint (EventSource cannot send custom headers); job UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
 
 **Datasets:**
 - `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace)

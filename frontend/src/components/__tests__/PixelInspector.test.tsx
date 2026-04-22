@@ -35,13 +35,17 @@ function hoverInfo(opts: {
     width = 2,
     height = 2,
   } = opts;
+  const [minX, minY, maxX, maxY] = tileBounds;
   return {
     coordinate,
     x,
     y,
     sourceTile: {
       index: { x: tileX, y: tileY, z: 0 },
-      bounds: tileBounds,
+      boundingBox: [
+        [minX, minY],
+        [maxX, maxY],
+      ] as [number[], number[]],
       content: { data: { raw, width, height } },
     },
   };
@@ -117,6 +121,31 @@ describe("usePixelInspector categorical branch", () => {
     });
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     expect(result.current.hoverInfo).toBeNull();
+  });
+
+  it("reads extent from legacy bbox object when boundingBox is absent", async () => {
+    const cats = [{ value: 1, color: "#f00", label: "One" }];
+    const { result } = renderHook(() => usePixelInspector(null, cats));
+    act(() => {
+      result.current.onHover({
+        coordinate: [-5, 5],
+        x: 10,
+        y: 20,
+        sourceTile: {
+          index: { x: 0, y: 0, z: 0 },
+          bbox: { west: -10, south: -10, east: 10, north: 10 },
+          content: {
+            data: { raw: new Float32Array([1, 1, 1, 1]), width: 2, height: 2 },
+          },
+        },
+      });
+    });
+    await waitFor(() => {
+      expect(result.current.hoverInfo).toMatchObject({
+        kind: "categorical",
+        label: "One",
+      });
+    });
   });
 
   it("samples from the hovered tile's own data, not a shared cache", async () => {

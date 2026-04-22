@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.0](https://github.com/aboydnw/cng-sandbox/compare/v1.22.4...v1.23.0) (2026-04-22)
+
+
+### Features
+
+* **ingestion:** seed three example stories at startup ([#312](https://github.com/aboydnw/cng-sandbox/issues/312)) ([1525661](https://github.com/aboydnw/cng-sandbox/commit/1525661b0b41fa281c1ea6729cc56edf1f6ad651))
+
 ## [1.22.4](https://github.com/aboydnw/cng-sandbox/compare/v1.22.3...v1.22.4) (2026-04-21)
 
 

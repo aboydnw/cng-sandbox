@@ -303,7 +303,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cogeotiff/core@npm:^9.4.0":
+"@cogeotiff/core@npm:^9.5.0":
   version: 9.5.0
   resolution: "@cogeotiff/core@npm:9.5.0"
   checksum: 10c0/54580f4e9277039418b3ce6e00761b9c9724be7cff210e62aa19f715a811fd37f88e034480b2a3c14f4e387b438e85798dc81598397fc0c6595e49b645d1e1c4
@@ -511,73 +511,75 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@developmentseed/affine@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/affine@npm:0.4.0"
-  checksum: 10c0/e4f8a1744788c9595eaf0ea9b2fa9fbcfa1cc78ccd31b62c2120afe44bfc4745856efce5f5c8ef321a4f502d5e52fd7bdb976a9771011e9601d8509541c2813d
+"@developmentseed/affine@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/affine@npm:0.5.0"
+  checksum: 10c0/7b1188022b5ec10271520ed57c4908272301d5609e732944a0d77aec326b850a59d0ee1f901fcdcac24a798fbba8ed43380c2238478f7ea628c3d1fe9ed064ec
   languageName: node
   linkType: hard
 
-"@developmentseed/deck.gl-geotiff@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/deck.gl-geotiff@npm:0.4.0"
+"@developmentseed/deck.gl-geotiff@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/deck.gl-geotiff@npm:0.5.0"
   dependencies:
-    "@cogeotiff/core": "npm:^9.4.0"
-    "@developmentseed/affine": "npm:^0.4.0"
-    "@developmentseed/deck.gl-raster": "npm:^0.4.0"
-    "@developmentseed/geotiff": "npm:^0.4.0"
-    "@developmentseed/morecantile": "npm:^0.4.0"
-    "@developmentseed/raster-reproject": "npm:^0.4.0"
+    "@cogeotiff/core": "npm:^9.5.0"
+    "@developmentseed/affine": "npm:^0.5.0"
+    "@developmentseed/deck.gl-raster": "npm:^0.5.0"
+    "@developmentseed/geotiff": "npm:^0.5.0"
+    "@developmentseed/morecantile": "npm:^0.5.0"
+    "@developmentseed/proj": "npm:^0.5.0"
+    "@developmentseed/raster-reproject": "npm:^0.5.0"
     flatbush: "npm:^4.5.0"
     proj4: "npm:^2.20.4"
-    wkt-parser: "npm:^1.5.3"
   peerDependencies:
-    "@deck.gl/core": ^9.2.7
-    "@deck.gl/geo-layers": ^9.2.7
-    "@deck.gl/layers": ^9.2.7
-    "@deck.gl/mesh-layers": ^9.2.7
-    "@luma.gl/core": ^9.2.6
-  checksum: 10c0/9190c7ff7718897af5512ab11d5e65926549fd1068f0b6e66d5feed03dc73131c95c909b8d5d8c4b0474170c6dad86efcd8118990597f3730c26086764096008
+    "@deck.gl/core": ^9.3.0
+    "@deck.gl/geo-layers": ^9.3.0
+    "@deck.gl/layers": ^9.3.0
+    "@deck.gl/mesh-layers": ^9.3.0
+    "@luma.gl/core": ^9.3.2
+  checksum: 10c0/b02eb6d8d14c6192aa3fe68524ef23f34364707ee959490610afab15158e3e305c437addb01a3a2dea03b143cb12ea22860dfb9197debc10142e93a9e18ac46e
   languageName: node
   linkType: hard
 
-"@developmentseed/deck.gl-raster@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/deck.gl-raster@npm:0.4.0"
+"@developmentseed/deck.gl-raster@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/deck.gl-raster@npm:0.5.0"
   dependencies:
-    "@developmentseed/affine": "npm:^0.4.0"
-    "@developmentseed/morecantile": "npm:^0.4.0"
-    "@developmentseed/proj": "npm:^0.4.0"
-    "@developmentseed/raster-reproject": "npm:^0.4.0"
+    "@developmentseed/affine": "npm:^0.5.0"
+    "@developmentseed/proj": "npm:^0.5.0"
+    "@developmentseed/raster-reproject": "npm:^0.5.0"
     "@math.gl/core": "npm:^4.1.0"
     "@math.gl/culling": "npm:^4.1.0"
     "@math.gl/web-mercator": "npm:^4.1.0"
   peerDependencies:
-    "@deck.gl/core": ^9.2.7
-    "@deck.gl/geo-layers": ^9.2.7
-    "@deck.gl/layers": ^9.2.7
-    "@deck.gl/mesh-layers": ^9.2.7
-    "@luma.gl/core": ^9.2.6
-    "@luma.gl/shadertools": ^9.2.6
-  checksum: 10c0/8de98a04078708727e6f3a5b91721976e7b16125e2f5c1956e8ae0c444a9b00144b8510303517852f85f69e26bb38fe4cb62083af5d2e7b48a4c4baeca690903
+    "@deck.gl/core": ^9.3.0
+    "@deck.gl/geo-layers": ^9.3.0
+    "@deck.gl/layers": ^9.3.0
+    "@deck.gl/mesh-layers": ^9.3.0
+    "@developmentseed/morecantile": ^0.5.0
+    "@luma.gl/core": ^9.3.2
+    "@luma.gl/shadertools": ^9.3.2
+  checksum: 10c0/794fa683f23fe6b1a3ac61e1c10f07b44627ac3fffb70f51417b8527d0bd3f32857d069e15b8e471ef1009c2a26f9712ee4993360cddb100cc15a5d3b891a17a
   languageName: node
   linkType: hard
 
-"@developmentseed/geotiff@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/geotiff@npm:0.4.0"
+"@developmentseed/geotiff@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/geotiff@npm:0.5.0"
   dependencies:
     "@chunkd/middleware": "npm:^11.2.0"
     "@chunkd/source": "npm:^11.2.0"
     "@chunkd/source-http": "npm:^11.2.0"
     "@chunkd/source-memory": "npm:^11.0.3"
-    "@cogeotiff/core": "npm:^9.4.0"
-    "@developmentseed/affine": "npm:^0.4.0"
+    "@cogeotiff/core": "npm:^9.5.0"
+    "@developmentseed/affine": "npm:^0.5.0"
     "@developmentseed/lzw-tiff-decoder": "npm:^0.2.2"
-    "@developmentseed/morecantile": "npm:^0.4.0"
+    "@developmentseed/morecantile": "npm:^0.5.0"
+    "@developmentseed/proj": "npm:^0.5.0"
     fzstd: "npm:^0.1.1"
+    lerc: "npm:^4.1.1"
     uuid: "npm:^13.0.0"
-  checksum: 10c0/6e7fd73f2e3f5ebf8d34be9bac63134c4294de04812ecf6d8840725dbba340ea0a6096ae6570745d05da0d13ce0c264e405d639b6874ccaa850685fd6678267f
+  checksum: 10c0/3aaffe4aae14612bae23d0b3039722ade4225e6ab5a0845874d9cf0d7912993853ddbe627395b99f0d36fd8efe0df32a947f140c450ca103be6c10ee0f87d8d6
   languageName: node
   linkType: hard
 
@@ -588,26 +590,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@developmentseed/morecantile@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/morecantile@npm:0.4.0"
+"@developmentseed/morecantile@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/morecantile@npm:0.5.0"
   dependencies:
-    "@developmentseed/affine": "npm:^0.4.0"
-  checksum: 10c0/5e52035e437f0106ebdf83890da8088254b154726aff33b8735362fe03835edf9f4134d30e9bf9c367116e4dc0bd008642da9800527199e016ee3047902e6056
+    "@developmentseed/affine": "npm:^0.5.0"
+  checksum: 10c0/479c841ae2c5d4798f98c68d732f022135f5da1852e845968acf5d10131f7c6bb1406746df4b6387b94b04ff51ae4419087299c05852494c1c493017d4387f43
   languageName: node
   linkType: hard
 
-"@developmentseed/proj@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/proj@npm:0.4.0"
-  checksum: 10c0/342c45ff796da0ef1f80d8e5da7b905adcc31e9827bc5cf35ba53dadce9614884078b8a61ce884d17308a706296ca571f836f96304bc9d1376fd098a34ee89d5
+"@developmentseed/proj@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/proj@npm:0.5.0"
+  dependencies:
+    wkt-parser: "npm:1.5.5"
+  checksum: 10c0/ed7988ef5c18f26cd30f6b4c4a7fbcc51f688c4c637ba28adf1b2f3a24083ba32f2d7d2e74d612e92911fe6c7ffcc27e9892fe11330d1f3b23ac5486dcd716a0
   languageName: node
   linkType: hard
 
-"@developmentseed/raster-reproject@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@developmentseed/raster-reproject@npm:0.4.0"
-  checksum: 10c0/21e527650132a077f449c3014e70943a6aca7d79a8d94f7661a081c42aac70f58288447c6087fdb1da9625278dad3e1f505c0ff081d83cdd4872155b12a5da22
+"@developmentseed/raster-reproject@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@developmentseed/raster-reproject@npm:0.5.0"
+  checksum: 10c0/5510a5352daf318bcc48eac2d5e535b198680fdec34f49904287f8b735f834554e8c85a6761ee4cef78fefd6b7eeca6825e8cf66d4af4c5bf6b7a04d4179a461
   languageName: node
   linkType: hard
 
@@ -4087,7 +4091,8 @@ __metadata:
     "@deck.gl/mesh-layers": "npm:^9.3.0"
     "@deck.gl/react": "npm:^9.3.0"
     "@deck.gl/widgets": "npm:^9.3.0"
-    "@developmentseed/deck.gl-geotiff": "npm:^0.4.0"
+    "@developmentseed/deck.gl-geotiff": "npm:^0.5.0"
+    "@developmentseed/deck.gl-raster": "npm:^0.5.0"
     "@duckdb/duckdb-wasm": "npm:^1.29.0"
     "@emotion/react": "npm:^11.0.0"
     "@eslint/js": "npm:^10.0.1"
@@ -6191,7 +6196,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lerc@npm:^4.0.4":
+"lerc@npm:^4.0.4, lerc@npm:^4.1.1":
   version: 4.1.1
   resolution: "lerc@npm:4.1.1"
   checksum: 10c0/1f0637919dfb3ae8794f54748b6f8f8476c5ab4b19aa2bf0dee5be2c7ab8dff02c7babbad576da45d1a32ea28364dcb761d9ecb304adce8b1e193d3d59a5e0f9
@@ -9196,7 +9201,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wkt-parser@npm:^1.5.3, wkt-parser@npm:^1.5.5":
+"wkt-parser@npm:1.5.5, wkt-parser@npm:^1.5.5":
   version: 1.5.5
   resolution: "wkt-parser@npm:1.5.5"
   checksum: 10c0/4ed71c407a7f13b2ea49441f3e9607eb421fac513c384b71a52a33abbeafeeb67ab32ffce327894a2b276fadaa352f204c21d0a02e34183644fe41d3282fd735

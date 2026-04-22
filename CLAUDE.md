@@ -67,7 +67,7 @@ Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tile
 
 ## Production Deployment (Hetzner)
 
-The sandbox can be deployed to a public URL with HTTPS using the `prod` Docker Compose profile. The frontend and shared `/map` / `/story` views are public; write operations and workspace listings are gated behind HTTP basic auth via Caddy.
+The sandbox can be deployed to a public URL with HTTPS using the `prod` Docker Compose profile. Shared `/map` / `/story` views are public; the rest of the SPA, write operations, and workspace listings are gated behind HTTP basic auth via Caddy.
 
 ### Auth model
 

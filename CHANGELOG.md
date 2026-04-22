@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.22.4](https://github.com/aboydnw/cng-sandbox/compare/v1.22.3...v1.22.4) (2026-04-21)
+
+
+### Bug Fixes
+
+* **frontend:** disable loaders.gl MVT worker so CSP allows vector tiles ([#304](https://github.com/aboydnw/cng-sandbox/issues/304)) ([145a4bd](https://github.com/aboydnw/cng-sandbox/commit/145a4bd1e4a90f95af9d0075dd523e085b746340))
+* **frontend:** read tile extent from boundingBox/bbox, not non-existent bounds ([#307](https://github.com/aboydnw/cng-sandbox/issues/307)) ([a004bbe](https://github.com/aboydnw/cng-sandbox/commit/a004bbee4e921424292e23866e128b5b75f25125))
+* **ingestion:** drop workspace auth from jobs SSE stream ([#305](https://github.com/aboydnw/cng-sandbox/issues/305)) ([58193e0](https://github.com/aboydnw/cng-sandbox/commit/58193e00572654f3ae757de84e27ef5b06cf3ab7))
+
 ## [1.22.3](https://github.com/aboydnw/cng-sandbox/compare/v1.22.2...v1.22.3) (2026-04-21)
 
 

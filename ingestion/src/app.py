@@ -84,21 +84,22 @@ async def _seed_stories(app):
     from src.models.story import StoryRow
     from src.services.example_stories import ALL_STORIES, seed_example_stories
 
-    target = len(ALL_STORIES)
+    canonical_titles = {s.title for s in ALL_STORIES}
     max_attempts = 60  # ~30 minutes at 30s intervals
     for _ in range(max_attempts):
         try:
             seed_example_stories(app.state.db_session_factory)
             session = app.state.db_session_factory()
             try:
-                count = (
-                    session.query(StoryRow)
+                seeded = {
+                    row.title
+                    for row in session.query(StoryRow)
                     .filter(StoryRow.is_example.is_(True))
-                    .count()
-                )
+                    .all()
+                }
             finally:
                 session.close()
-            if count >= target:
+            if canonical_titles.issubset(seeded):
                 return
         except Exception:
             logger.exception("Example story seeding attempt failed")

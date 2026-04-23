@@ -162,3 +162,21 @@ def test_connection_client_rejected_when_paletted_too_big():
         created_at=datetime.now(UTC),
     )
     assert "cap" in check_render_mode_allowed(row, "client")
+
+
+def test_client_mode_rejected_when_bounds_malformed():
+    meta = {"cog_url": "https://example/a.tif"}
+    row = _dataset(
+        metadata_json=json.dumps(meta),
+        bounds_json=json.dumps([-10.0, "not-a-number", 10.0, 10.0]),
+    )
+    assert check_render_mode_allowed(row, "client") == "Bounds unavailable"
+
+
+def test_client_mode_rejected_when_bounds_wrong_length():
+    meta = {"cog_url": "https://example/a.tif"}
+    row = _dataset(
+        metadata_json=json.dumps(meta),
+        bounds_json=json.dumps([-10.0, -10.0, 10.0]),
+    )
+    assert check_render_mode_allowed(row, "client") == "Bounds unavailable"

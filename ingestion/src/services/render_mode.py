@@ -84,9 +84,13 @@ def check_render_mode_allowed(
         return "Temporal dataset"
     if not inputs["cog_url"]:
         return "No COG URL"
-    if not inputs["bounds"]:
+    bounds = inputs["bounds"]
+    if not isinstance(bounds, (list, tuple)) or len(bounds) != 4:
         return "Bounds unavailable"
-    south, north = inputs["bounds"][1], inputs["bounds"][3]
+    try:
+        south, north = float(bounds[1]), float(bounds[3])
+    except (TypeError, ValueError):
+        return "Bounds unavailable"
     if abs(south) >= 85.05 or abs(north) >= 85.05:
         return "Bounds exceed supported latitude range"
 

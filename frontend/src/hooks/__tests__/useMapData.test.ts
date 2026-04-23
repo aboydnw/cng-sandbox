@@ -274,6 +274,11 @@ describe("useMapData", () => {
 });
 
 describe("datasetToMapItem", () => {
+  it("coerces undefined render_mode to null", () => {
+    expect(
+      datasetToMapItem({ ...MOCK_DATASET, render_mode: undefined }).renderMode
+    ).toBeNull();
+  });
   it("propagates null render_mode", () => {
     expect(datasetToMapItem(MOCK_DATASET).renderMode).toBeNull();
   });
@@ -290,6 +295,12 @@ describe("datasetToMapItem", () => {
 });
 
 describe("connectionToMapItem", () => {
+  it("coerces undefined render_mode to null", () => {
+    expect(
+      connectionToMapItem({ ...MOCK_CONNECTION, render_mode: undefined })
+        .renderMode
+    ).toBeNull();
+  });
   it("propagates null render_mode", () => {
     expect(connectionToMapItem(MOCK_CONNECTION).renderMode).toBeNull();
   });

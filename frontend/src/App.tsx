@@ -17,6 +17,8 @@ import AboutPage from "./pages/AboutPage";
 import DiscoverPage from "./pages/DiscoverPage";
 import DiscoverDatasetPage from "./pages/DiscoverDatasetPage";
 import { WelcomeToast } from "./components/WelcomeToast";
+import { Toaster } from "./components/ui/toaster";
+import { toaster } from "./lib/toaster";
 
 function StoryReaderRedirect() {
   const { id } = useParams<{ id: string }>();
@@ -62,13 +64,16 @@ export default function App() {
   }, []); // Empty deps — run once on mount
 
   return (
-    <Routes>
-      <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
-      <Route path="/map/connection/:id" element={<MapPage shared />} />
-      <Route path="/map/:id" element={<MapPage shared />} />
-      <Route path="/story/:id" element={<StoryReaderPage />} />
-      <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
-      <Route path="*" element={<WorkspaceRedirect />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
+        <Route path="/map/connection/:id" element={<MapPage shared />} />
+        <Route path="/map/:id" element={<MapPage shared />} />
+        <Route path="/story/:id" element={<StoryReaderPage />} />
+        <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
+        <Route path="*" element={<WorkspaceRedirect />} />
+      </Routes>
+      <Toaster toaster={toaster} />
+    </>
   );
 }

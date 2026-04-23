@@ -50,6 +50,7 @@ import { useMapSnapshot } from "../hooks/useMapSnapshot";
 import { buildSnapshotFilename } from "../utils/snapshotFilename";
 import { evaluateClientRenderEligibility } from "../lib/layers/clientRenderEligibility";
 import { connectionsApi, datasetsApi } from "../lib/api";
+import { toaster } from "../lib/toaster";
 import type { RenderMode } from "../hooks/useMapControls";
 import type { Table } from "apache-arrow";
 
@@ -109,16 +110,22 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
 
   const handleRenderModeChange = useCallback(
     (mode: RenderMode) => {
+      const prev = controls.renderMode;
       controls.setRenderMode(mode);
       if (shared) return;
       if (mode !== "client" && mode !== "server") return;
       if (!item) return;
       const api = item.source === "connection" ? connectionsApi : datasetsApi;
       api.setRenderMode(item.id, mode).catch((err) => {
-        console.warn("Failed to persist render mode", err);
+        controls.setRenderMode(prev);
+        toaster.create({
+          title: "Failed to update render mode",
+          description: (err as Error).message,
+          type: "error",
+        });
       });
     },
-    [controls.setRenderMode, item, shared]
+    [controls.setRenderMode, controls.renderMode, item, shared]
   );
 
   // --- Camera ---

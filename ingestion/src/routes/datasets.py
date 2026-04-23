@@ -353,9 +353,7 @@ async def unmark_categorical(dataset_id: str, request: Request):
 
         meta = json.loads(row.metadata_json) if row.metadata_json else {}
         if not meta.get("is_categorical"):
-            raise HTTPException(
-                status_code=409, detail="Dataset is not categorical"
-            )
+            raise HTTPException(status_code=409, detail="Dataset is not categorical")
 
         meta.pop("is_categorical", None)
         meta.pop("categories", None)

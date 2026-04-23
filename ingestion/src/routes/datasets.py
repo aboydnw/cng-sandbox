@@ -10,6 +10,7 @@ from src.dependencies import get_session
 from src.models.dataset import DatasetRow
 from src.services import sharing
 from src.services.categorical import QUALITATIVE_PALETTE
+from src.services.render_mode import check_render_mode_allowed
 from src.services.categorical_extract import (
     TooManyValues,
     UnsupportedDtype,
@@ -28,6 +29,19 @@ router = APIRouter(prefix="/api")
 
 class SharePayload(BaseModel):
     is_shared: bool
+
+
+class RenderModePayload(BaseModel):
+    render_mode: str | None
+
+    @field_validator("render_mode")
+    @classmethod
+    def _check_value(cls, v):
+        if v is None:
+            return v
+        if v not in ("client", "server"):
+            raise ValueError("render_mode must be 'client', 'server', or null")
+        return v
 
 
 class CategoryUpdate(BaseModel):
@@ -114,6 +128,36 @@ async def share_dataset(dataset_id: str, body: SharePayload, request: Request):
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         row.is_shared = body.is_shared
+        session.commit()
+        session.refresh(row)
+        d = row.to_dict()
+        d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
+        return d
+    finally:
+        session.close()
+
+
+@router.patch("/datasets/{dataset_id}/render-mode")
+async def set_dataset_render_mode(
+    dataset_id: str, body: RenderModePayload, request: Request
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be modified"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        reason = check_render_mode_allowed(row, body.render_mode)
+        if reason is not None:
+            raise HTTPException(status_code=400, detail=reason)
+        row.render_mode = body.render_mode
         session.commit()
         session.refresh(row)
         d = row.to_dict()

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.2](https://github.com/aboydnw/cng-sandbox/compare/v1.24.1...v1.24.2) (2026-04-23)
+
+
+### Bug Fixes
+
+* remove stale deck.gl-raster texture workaround ([#330](https://github.com/aboydnw/cng-sandbox/issues/330)) ([7ce05f4](https://github.com/aboydnw/cng-sandbox/commit/7ce05f4c2dd149a7825a7930ff73a08d6d910768))
+
 ## [1.24.1](https://github.com/aboydnw/cng-sandbox/compare/v1.24.0...v1.24.1) (2026-04-22)
 
 

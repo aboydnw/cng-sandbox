@@ -88,6 +88,7 @@ const defaultProps = {
   datasetMin: null,
   datasetMax: null,
   canMarkCategorical: false,
+  canMarkContinuous: false,
   onDatasetUpdated: vi.fn(),
 };
 

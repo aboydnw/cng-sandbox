@@ -118,7 +118,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
         console.warn("Failed to persist render mode", err);
       });
     },
-    [controls, item, shared]
+    [controls.setRenderMode, item, shared]
   );
 
   // --- Camera ---

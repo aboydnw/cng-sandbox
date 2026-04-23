@@ -114,4 +114,46 @@ describe("buildCogLayerPaletted with categories", () => {
     // tile, so the pixel inspector reads the specific tile it picked.
     expect(Array.from(result.raw)).toEqual([1, 0, 1, 0]);
   });
+
+  it("passes unpadded r8 texture data to deck.gl-raster 0.5", async () => {
+    const layers = buildCogLayerPaletted({
+      cogUrl: "/cog/example.tif",
+      opacity: 1,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getTileData = (layers[0] as any).props.getTileData;
+
+    const fakeTile = {
+      array: {
+        layout: "interleaved",
+        bands: [],
+        data: new Uint8Array([1, 2, 3, 4, 5, 6]),
+        width: 3,
+        height: 2,
+      },
+    };
+    const image = {
+      fetchTile: vi.fn().mockResolvedValue(fakeTile),
+    };
+    const device = {
+      createTexture: vi.fn().mockReturnValue({ mock: "tex" }),
+    };
+
+    await getTileData(image, {
+      device,
+      x: 3,
+      y: 5,
+      signal: new AbortController().signal,
+    });
+
+    expect(device.createTexture).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: new Uint8Array([1, 2, 3, 4, 5, 6]),
+        format: "r8unorm",
+        width: 3,
+        height: 2,
+      })
+    );
+  });
 });

@@ -31,6 +31,38 @@ function renderCtrl(
   );
 }
 
+describe("RasterSidebarControls shared prop", () => {
+  it("renders the render-mode toggle when not shared", () => {
+    renderCtrl({
+      canClientRender: true,
+      renderMode: "server",
+      onRenderModeChange: () => {},
+    });
+    expect(screen.getByText(/Client-side rendering/)).toBeInTheDocument();
+  });
+
+  it("hides the render-mode toggle when shared", () => {
+    renderCtrl({
+      shared: true,
+      canClientRender: true,
+      renderMode: "server",
+      onRenderModeChange: () => {},
+    });
+    expect(screen.queryByText(/Client-side rendering/)).not.toBeInTheDocument();
+  });
+
+  it("hides the unavailable reason when shared", () => {
+    renderCtrl({
+      shared: true,
+      canClientRender: false,
+      clientRenderDisabledReason: "File exceeds 500 MB browser limit",
+    });
+    expect(
+      screen.queryByText(/File exceeds 500 MB browser limit/)
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("RasterSidebarControls rescale + flip", () => {
   it("shows dataset defaults as placeholders when overrides are null", () => {
     renderCtrl();

@@ -306,6 +306,50 @@ describe("useMapControls", () => {
   });
 });
 
+describe("useMapControls renderMode precedence", () => {
+  it("uses item.renderMode when set to server, overriding eligibility default", () => {
+    const item = makeItem({
+      renderMode: "server",
+      cogUrl: "https://example.com/a.tif",
+      bounds: [-10, -10, 10, 10],
+      dataset: { converted_file_size: 100 } as never,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.renderMode).toBe("server");
+  });
+
+  it("uses item.renderMode when set to client and eligibility allows", () => {
+    const item = makeItem({
+      renderMode: "client",
+      cogUrl: "https://example.com/a.tif",
+      bounds: [-10, -10, 10, 10],
+      dataset: { converted_file_size: 100 } as never,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.renderMode).toBe("client");
+  });
+
+  it("coerces stored 'client' to 'server' when eligibility fails (temporal)", () => {
+    const item = makeItem({
+      renderMode: "client",
+      isTemporal: true,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.renderMode).toBe("server");
+  });
+
+  it("falls back to eligibility default when item.renderMode is null", () => {
+    const item = makeItem({
+      renderMode: null,
+      cogUrl: "https://example.com/a.tif",
+      bounds: [-10, -10, 10, 10],
+      dataset: { converted_file_size: 100 } as never,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.renderMode).toBe("client");
+  });
+});
+
 describe("client render size caps", () => {
   function itemWithSize(
     size: number,

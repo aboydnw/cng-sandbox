@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.25.0](https://github.com/aboydnw/cng-sandbox/compare/v1.24.2...v1.25.0) (2026-04-23)
+
+
+### Features
+
+* add Plausible analytics ([#336](https://github.com/aboydnw/cng-sandbox/issues/336)) ([270ac54](https://github.com/aboydnw/cng-sandbox/commit/270ac54e58be2d6017eecc2ba348638104a129c7))
+* persist categorical-to-continuous toggle via backend ([#329](https://github.com/aboydnw/cng-sandbox/issues/329)) ([72ce3c7](https://github.com/aboydnw/cng-sandbox/commit/72ce3c73b7629e8db444c36a877a442cb0976f80))
+* persist render mode on resource for shared map views ([#335](https://github.com/aboydnw/cng-sandbox/issues/335)) ([13a8393](https://github.com/aboydnw/cng-sandbox/commit/13a83934e442c82088d2ce1f272c9dcf10f9b099))
+
 ## [1.24.2](https://github.com/aboydnw/cng-sandbox/compare/v1.24.1...v1.24.2) (2026-04-23)
 
 

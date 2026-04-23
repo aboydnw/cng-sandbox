@@ -5,81 +5,6 @@ import {
   Colormap,
 } from "@developmentseed/deck.gl-raster/gpu-modules";
 import { buildCategoricalLut, type LutCategory } from "./categoricalLut";
-import wktParser from "wkt-parser";
-
-// --- EPSG resolver (offline for common CRSes, network fallback) ---
-
-// proj4 requires projection origin/scale params (long0, lat0, lat_ts, x0, y0,
-// k0) on merc definitions; without them forward() emits NaN x, which NaNs out
-// every reference-point reprojection downstream and crashes the TileLayer's
-// bounding-volume calculation. The axis is "enu" so input is interpreted as
-// [lon, lat], matching the rest of the code.
-const EPSG_DEFS: Record<number, unknown> = {
-  4326: {
-    projName: "longlat",
-    name: "WGS 84",
-    srsCode: "WGS 84",
-    ellps: "WGS 84",
-    a: 6378137,
-    rf: 298.257223563,
-    long0: 0,
-    lat0: 0,
-    x0: 0,
-    y0: 0,
-    axis: "enu",
-    units: "degree",
-  },
-  3857: {
-    projName: "merc",
-    name: "WGS 84 / Pseudo-Mercator",
-    srsCode: "WGS 84 / Pseudo-Mercator",
-    // Web Mercator is defined on a sphere with a = b = 6378137. Using the
-    // WGS84 ellipsoid (rf ≈ 298.26) here would apply elliptical mercator math
-    // and shift y by tens of km at mid/high latitudes, breaking alignment
-    // with canonical tile-space (rescaleEPSG3857ToCommonSpace assumes
-    // 2π * 6378137 circumference).
-    a: 6378137,
-    b: 6378137,
-    long0: 0,
-    lat0: 0,
-    lat_ts: 0,
-    x0: 0,
-    y0: 0,
-    k0: 1,
-    axis: "enu",
-    units: "metre",
-  },
-};
-
-async function localEpsgResolver(epsg: number) {
-  if (EPSG_DEFS[epsg]) return EPSG_DEFS[epsg];
-  const resp = await fetch(`https://epsg.io/${epsg}.json`);
-  if (!resp.ok) throw new Error(`Failed to fetch EPSG:${epsg}`);
-  const projjson = await resp.json();
-  const parsed = wktParser(projjson);
-  EPSG_DEFS[epsg] = parsed;
-  return parsed;
-}
-
-// --- WebGL helpers ---
-
-function padToAlignment(
-  src: Uint8Array,
-  width: number,
-  height: number
-): Uint8Array {
-  const rowBytes = width;
-  const alignedRowBytes = Math.ceil(rowBytes / 4) * 4;
-  if (alignedRowBytes === rowBytes) return src;
-  const dst = new Uint8Array(alignedRowBytes * height);
-  for (let r = 0; r < height; r++) {
-    dst.set(
-      src.subarray(r * rowBytes, (r + 1) * rowBytes),
-      r * alignedRowBytes
-    );
-  }
-  return dst;
-}
 
 const ViridisColorize = {
   name: "viridis-colorize",
@@ -184,7 +109,7 @@ export function buildCogLayerPaletted({
     }
 
     const valueTex = device.createTexture({
-      data: padToAlignment(raw, width, height),
+      data: raw,
       format: "r8unorm",
       width,
       height,
@@ -299,10 +224,8 @@ export function buildCogLayerContinuous({
       );
     }
 
-    const textureData = padToAlignment(uint8, width, height);
-
     const texture = device.createTexture({
-      data: textureData,
+      data: uint8,
       format: "r8unorm",
       width,
       height,
@@ -333,5 +256,3 @@ export function buildCogLayerContinuous({
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }
-
-export { localEpsgResolver };

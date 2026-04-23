@@ -13,7 +13,7 @@ CLIENT_RENDER_CAP_PALETTED = 2 * 1024 * 1024 * 1024  # 2 GB
 CLIENT_RENDER_CAP_CONTINUOUS = 500 * 1024 * 1024  # 500 MB
 
 _INTEGER_DTYPES = frozenset(
-    ("int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64")
+    ("int8", "uint8", "int16", "uint16", "int32", "uint32")
 )
 
 

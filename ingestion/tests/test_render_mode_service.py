@@ -121,6 +121,35 @@ def test_connection_client_rejected_when_size_unknown():
     assert check_render_mode_allowed(row, "client") == "File size unknown"
 
 
+def test_client_mode_rejected_when_int64_categorical_too_big_for_continuous_cap():
+    """int64 must be treated as continuous (matches frontend INTEGER_DTYPES)."""
+    meta = {
+        "cog_url": "https://example/a.tif",
+        "converted_file_size": CLIENT_RENDER_CAP_CONTINUOUS + 1,
+        "dtype": "int64",
+        "is_categorical": True,
+    }
+    row = _dataset(
+        metadata_json=json.dumps(meta),
+        bounds_json=json.dumps([-10.0, -10.0, 10.0, 10.0]),
+    )
+    assert "cap" in check_render_mode_allowed(row, "client")
+
+
+def test_client_mode_rejects_large_categorical_uint64_like_frontend():
+    meta = {
+        "cog_url": "https://example/a.tif",
+        "converted_file_size": 800 * 1024 * 1024,
+        "dtype": "uint64",
+        "is_categorical": True,
+    }
+    row = _dataset(
+        metadata_json=json.dumps(meta),
+        bounds_json=json.dumps([-10.0, -10.0, 10.0, 10.0]),
+    )
+    assert "cap" in check_render_mode_allowed(row, "client")
+
+
 def test_connection_client_rejected_when_paletted_too_big():
     row = ConnectionRow(
         id=str(uuid.uuid4()),

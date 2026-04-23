@@ -8,12 +8,14 @@
 	# DuckDB-WASM (GeoParquet client renderer). static.cloudflareinsights.com
 	# is allowed because Cloudflare (the proxy in front of the site) injects a
 	# Web Analytics beacon when the domain has proxy + analytics enabled; the
-	# connect-src permits the matching report endpoint.
+	# connect-src permits the matching report endpoint. plausible.io is
+	# allowed so the privacy-friendly analytics tracker can load and post
+	# events.
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
 	}
 
 	# Data-serving paths: proxy to R2 public URL. Public — range requests

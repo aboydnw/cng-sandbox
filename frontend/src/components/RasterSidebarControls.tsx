@@ -4,6 +4,7 @@ import { ArrowsLeftRight, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { ColormapDropdown } from "./ColormapDropdown";
 import { EditableCategoryLegend } from "./EditableCategoryLegend";
 import { MarkAsCategoricalCard } from "./MarkAsCategoricalCard";
+import { MarkAsContinuousLink } from "./MarkAsContinuousLink";
 
 interface BandInfo {
   name: string;
@@ -30,6 +31,7 @@ interface RasterSidebarControlsProps {
   datasetId?: string;
   source?: "dataset" | "connection";
   canMarkCategorical?: boolean;
+  canMarkContinuous?: boolean;
   onDatasetUpdated?: () => void;
   onCategoriesChange?: (
     categories: { value: number; color: string; label: string }[]
@@ -72,6 +74,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
     datasetId,
     source,
     canMarkCategorical,
+    canMarkContinuous,
     onDatasetUpdated,
     onCategoriesChange,
     onCategoricalOverride,
@@ -121,33 +124,24 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         Visualization Controls
       </Text>
 
-      {isCategorical &&
-        categories &&
-        categories.length > 0 &&
-        datasetId &&
-        !shared && (
-          <>
+      {isCategorical && datasetId && !shared && (
+        <>
+          {categories && categories.length > 0 && (
             <EditableCategoryLegend
               datasetId={datasetId}
               source={source}
               categories={categories}
               onCategoriesChange={onCategoriesChange ?? (() => {})}
             />
-            {onCategoricalOverride && (
-              <Text
-                fontSize="10px"
-                color="brand.textSecondary"
-                mt={1}
-                mb={3}
-                cursor="pointer"
-                _hover={{ color: "brand.orange" }}
-                onClick={() => onCategoricalOverride(false)}
-              >
-                Show as continuous →
-              </Text>
-            )}
-          </>
-        )}
+          )}
+          {canMarkContinuous && onDatasetUpdated && (
+            <MarkAsContinuousLink
+              datasetId={datasetId}
+              onSuccess={onDatasetUpdated}
+            />
+          )}
+        </>
+      )}
 
       {!isCategorical && (
         <>

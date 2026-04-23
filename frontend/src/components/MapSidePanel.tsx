@@ -64,6 +64,7 @@ interface MapSidePanelProps {
   onColormapReversedChange: (reversed: boolean) => void;
   // Mark as categorical
   canMarkCategorical: boolean;
+  canMarkContinuous: boolean;
   onDatasetUpdated: () => void;
   // Shared view
   shared?: boolean;
@@ -101,6 +102,7 @@ export function MapSidePanel({
   colormapReversed,
   onColormapReversedChange,
   canMarkCategorical,
+  canMarkContinuous,
   onDatasetUpdated,
   shared = false,
 }: MapSidePanelProps) {
@@ -212,6 +214,7 @@ export function MapSidePanel({
             showCategoricalToggle ? onCategoricalOverride : undefined
           }
           canMarkCategorical={canMarkCategorical}
+          canMarkContinuous={canMarkContinuous}
           onDatasetUpdated={onDatasetUpdated}
           rescaleMin={rescaleMin}
           rescaleMax={rescaleMax}

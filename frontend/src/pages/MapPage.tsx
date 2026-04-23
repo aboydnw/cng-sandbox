@@ -700,6 +700,12 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 !item.dataset?.is_example &&
                 !item.dataset?.is_categorical
               }
+              canMarkContinuous={
+                item?.source === "dataset" &&
+                !!item.dataset?.id &&
+                !item.dataset?.is_example &&
+                !!item.dataset?.is_categorical
+              }
               onDatasetUpdated={refresh}
               shared={shared}
             />

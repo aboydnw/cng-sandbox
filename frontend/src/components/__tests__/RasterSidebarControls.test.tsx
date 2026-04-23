@@ -95,6 +95,21 @@ describe("RasterSidebarControls rescale + flip", () => {
     expect(screen.queryByRole("button", { name: /flip colormap/i })).toBeNull();
   });
 
+  it("shows mark-as-continuous action even when category entries are missing", () => {
+    renderCtrl({
+      isCategorical: true,
+      categories: null,
+      datasetId: "d1",
+      canMarkContinuous: true,
+      onDatasetUpdated: vi.fn(),
+      showColormap: false,
+    });
+
+    expect(
+      screen.getByRole("button", { name: /mark as continuous/i })
+    ).toBeInTheDocument();
+  });
+
   it("empty string commits null (back to auto)", () => {
     const onRescaleChange = vi.fn();
     renderCtrl({ rescaleMin: 10, rescaleMax: 50, onRescaleChange });

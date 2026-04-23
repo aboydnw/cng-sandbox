@@ -321,7 +321,7 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
 });
 
 describe("buildLayersForChapter with raster dataset", () => {
-  it("forces server-side rendering for a raster dataset chapter even when client-eligible", () => {
+  it("renders a client-eligible raster chapter on the client", () => {
     const chapter = createChapter({
       layer_config: {
         dataset_id: "ds-1",
@@ -345,7 +345,7 @@ describe("buildLayersForChapter with raster dataset", () => {
     );
     expect(layers).toBeDefined();
     expect(renderMetadata).toBeDefined();
-    expect(renderMetadata?.renderMode).toBe("server");
+    expect(renderMetadata?.renderMode).toBe("client");
   });
 
   it("returns no renderMetadata for a vector dataset chapter", () => {

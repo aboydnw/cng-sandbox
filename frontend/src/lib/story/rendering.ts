@@ -11,11 +11,6 @@ import { DEFAULT_LAYER_CONFIG } from "./types";
 import type { Chapter } from "./types";
 import type { Dataset, Connection } from "../../types";
 
-// Stories currently force server-side raster rendering. The client-side path
-// remains wired through `resolveRasterLayers` so flipping this to `false`
-// re-enables it once the outstanding client-render bugs are resolved.
-const STORIES_FORCE_SERVER_RENDER = true;
-
 export type ContentBlock =
   | { type: "scrollytelling"; chapters: Chapter[]; startIndex: number }
   | { type: "prose"; chapter: Chapter; index: number }
@@ -99,7 +94,6 @@ export function buildLayersForChapter(
         rescaleMax,
         serverTileUrl,
         effectiveCategories: conn.categories ?? undefined,
-        forceServer: STORIES_FORCE_SERVER_RENDER,
       });
       return {
         layers: resolved.layers,
@@ -161,7 +155,6 @@ export function buildLayersForChapter(
       rescaleMin: null,
       rescaleMax: null,
       serverTileUrl: tileUrl,
-      forceServer: STORIES_FORCE_SERVER_RENDER,
     });
     return {
       layers: resolved.layers,
@@ -204,7 +197,6 @@ export function buildLayersForChapter(
       rescaleMax,
       serverTileUrl,
       effectiveCategories: ds.categories ?? undefined,
-      forceServer: STORIES_FORCE_SERVER_RENDER,
     });
     return {
       layers: resolved.layers,

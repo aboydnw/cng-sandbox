@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.0](https://github.com/aboydnw/cng-sandbox/compare/v1.25.0...v1.26.0) (2026-04-23)
+
+
+### Features
+
+* **frontend:** remove STORIES_FORCE_SERVER_RENDER, stories now follow eligibility ([#337](https://github.com/aboydnw/cng-sandbox/issues/337)) ([de9c253](https://github.com/aboydnw/cng-sandbox/commit/de9c25370904e77bde1acce4544ffad1c0d1aad4))
+
 ## [1.25.0](https://github.com/aboydnw/cng-sandbox/compare/v1.24.2...v1.25.0) (2026-04-23)
 
 

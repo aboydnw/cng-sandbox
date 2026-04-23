@@ -24,6 +24,7 @@ class DatasetRow(Base):
     expires_at = Column(DateTime, nullable=True)
     is_example = Column(Boolean, nullable=False, default=False)
     is_shared = Column(Boolean, nullable=False, default=False)
+    render_mode = Column(String, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Dataset API response format."""
@@ -43,6 +44,7 @@ class DatasetRow(Base):
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "is_example": bool(self.is_example),
             "is_shared": bool(self.is_shared),
+            "render_mode": self.render_mode,
         }
 
 
@@ -59,6 +61,7 @@ _TOP_LEVEL_COLUMNS = frozenset(
         "expires_at",
         "is_example",
         "is_shared",
+        "render_mode",
     )
 )
 
@@ -87,6 +90,7 @@ def persist_dataset(db_session_factory, dataset) -> None:
             expires_at=getattr(dataset, "expires_at", None),
             is_example=getattr(dataset, "is_example", False),
             is_shared=getattr(dataset, "is_shared", False),
+            render_mode=getattr(dataset, "render_mode", None),
         )
         session.add(row)
         session.commit()

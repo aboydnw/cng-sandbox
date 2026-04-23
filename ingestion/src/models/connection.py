@@ -37,6 +37,7 @@ class ConnectionRow(Base):
     feature_count = Column(Integer, nullable=True)
     file_size = Column(BigInteger, nullable=True)
     is_shared = Column(Boolean, nullable=False, default=False)
+    render_mode = Column(String, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -65,4 +66,5 @@ class ConnectionRow(Base):
             "feature_count": self.feature_count,
             "file_size": self.file_size,
             "is_shared": bool(self.is_shared),
+            "render_mode": self.render_mode,
         }

@@ -14,10 +14,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
-from src.routes.datasets import RenderModePayload
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
-from src.services.render_mode import check_render_mode_allowed
+from src.services.render_mode import RenderModePayload, check_render_mode_allowed
 from src.workspace import validate_workspace_id
 
 logger = logging.getLogger(__name__)

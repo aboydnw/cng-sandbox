@@ -64,3 +64,13 @@ def test_patch_render_mode_404_for_missing(client, db_session):
         json={"render_mode": "server"},
     )
     assert resp.status_code == 404
+
+
+def test_patch_render_mode_null_clears(client, db_session):
+    conn_id = _insert_connection(db_session)
+    resp = client.patch(
+        f"/api/connections/{conn_id}/render-mode",
+        json={"render_mode": None},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["render_mode"] is None

@@ -6,8 +6,23 @@ Mirrors the frontend's `evaluateClientRenderEligibility` so the stored
 
 import json
 
+from pydantic import BaseModel, field_validator
+
 from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
+
+
+class RenderModePayload(BaseModel):
+    render_mode: str | None
+
+    @field_validator("render_mode")
+    @classmethod
+    def _check_value(cls, v):
+        if v is None:
+            return v
+        if v not in ("client", "server"):
+            raise ValueError("render_mode must be 'client', 'server', or null")
+        return v
 
 CLIENT_RENDER_CAP_PALETTED = 2 * 1024 * 1024 * 1024  # 2 GB
 CLIENT_RENDER_CAP_CONTINUOUS = 500 * 1024 * 1024  # 500 MB

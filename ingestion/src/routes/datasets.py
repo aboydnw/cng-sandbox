@@ -10,7 +10,7 @@ from src.dependencies import get_session
 from src.models.dataset import DatasetRow
 from src.services import sharing
 from src.services.categorical import QUALITATIVE_PALETTE
-from src.services.render_mode import check_render_mode_allowed
+from src.services.render_mode import RenderModePayload, check_render_mode_allowed
 from src.services.categorical_extract import (
     TooManyValues,
     UnsupportedDtype,
@@ -29,19 +29,6 @@ router = APIRouter(prefix="/api")
 
 class SharePayload(BaseModel):
     is_shared: bool
-
-
-class RenderModePayload(BaseModel):
-    render_mode: str | None
-
-    @field_validator("render_mode")
-    @classmethod
-    def _check_value(cls, v):
-        if v is None:
-            return v
-        if v not in ("client", "server"):
-            raise ValueError("render_mode must be 'client', 'server', or null")
-        return v
 
 
 class CategoryUpdate(BaseModel):

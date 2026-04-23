@@ -331,3 +331,36 @@ async def mark_categorical(dataset_id: str, request: Request):
         return row.to_dict()
     finally:
         session.close()
+
+
+@router.post("/datasets/{dataset_id}/unmark-categorical")
+async def unmark_categorical(dataset_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be modified"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        if row.dataset_type != "raster":
+            raise HTTPException(status_code=400, detail={"error": "not_a_raster"})
+
+        meta = json.loads(row.metadata_json) if row.metadata_json else {}
+        if not meta.get("is_categorical"):
+            raise HTTPException(
+                status_code=409, detail="Dataset is not categorical"
+            )
+
+        meta.pop("is_categorical", None)
+        meta.pop("categories", None)
+        row.metadata_json = json.dumps(meta, default=str)
+        session.commit()
+        return row.to_dict()
+    finally:
+        session.close()

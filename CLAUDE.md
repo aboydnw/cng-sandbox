@@ -264,6 +264,7 @@ cd ingestion && uv run pytest -v
 - `DELETE /api/datasets/{id}` — Delete a dataset; returns 403 if the dataset is an example (`is_example=True`) or belongs to another workspace
 - `PATCH /api/datasets/{id}/categories` — Update category labels and/or colors for a categorical raster; body is a list of `{"value": int, "label"?: str, "color"?: "#RRGGBB"}` objects (each entry must include at least one of `label` or `color`); the first color override snapshots the prior color into `defaultColor` so the UI can offer a reset; returns 400 if dataset is not categorical or a value doesn't exist, 403 if the dataset is an example
 - `POST /api/datasets/{id}/mark-categorical` — Promote a non-categorical integer raster to categorical by scanning unique values and assigning default colors from the qualitative palette; returns 400 if values can't be extracted (unsupported dtype or too many unique values), 403 if the dataset is an example or belongs to another workspace
+- `POST /api/datasets/{id}/unmark-categorical` — Demote a categorical raster back to continuous by clearing `is_categorical` and `categories` from metadata; returns 409 if the dataset is not currently categorical, 400 if the dataset is not a raster, 403 if the dataset is an example or belongs to another workspace
 
 **Stories (shareable map narratives):**
 - `POST /api/stories` — Create a story with chapters linking to datasets

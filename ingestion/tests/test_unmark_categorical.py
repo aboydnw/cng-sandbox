@@ -144,4 +144,4 @@ def test_unmark_categorical_requires_workspace_header(client, db_engine):
         metadata=_categorical_metadata(),
     )
     resp = client.post("/api/datasets/ds-no-header/unmark-categorical")
-    assert resp.status_code == 400
+    assert resp.status_code == 403

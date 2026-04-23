@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Box, Button, Text } from "@chakra-ui/react";
 import { workspaceFetch } from "../lib/api";
 
@@ -13,9 +13,11 @@ export function MarkAsContinuousLink({
 }: MarkAsContinuousLinkProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const inFlightRef = useRef(false);
 
   const handleClick = async () => {
-    if (pending) return;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setError(null);
     setPending(true);
     try {
@@ -31,6 +33,7 @@ export function MarkAsContinuousLink({
     } catch {
       setError("Could not mark as continuous.");
     } finally {
+      inFlightRef.current = false;
       setPending(false);
     }
   };

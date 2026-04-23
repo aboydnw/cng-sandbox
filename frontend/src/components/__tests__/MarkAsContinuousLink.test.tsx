@@ -54,4 +54,29 @@ describe("MarkAsContinuousLink", () => {
       await screen.findByText(/could not mark as continuous/i)
     ).toBeInTheDocument();
   });
+
+  it("prevents duplicate POSTs on rapid re-click", async () => {
+    let resolveFetch: ((value: { ok: boolean }) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    const onSuccess = vi.fn();
+    renderWithProvider(
+      <MarkAsContinuousLink datasetId="ds-1" onSuccess={onSuccess} />
+    );
+
+    const button = screen.getByRole("button", { name: /mark as continuous/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    resolveFetch?.({ ok: true });
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+  });
 });

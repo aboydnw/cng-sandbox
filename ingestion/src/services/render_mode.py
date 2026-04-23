@@ -35,9 +35,7 @@ _INTEGER_DTYPES = frozenset(
 def _is_paletted(dtype: str | None, is_categorical: bool) -> bool:
     if dtype in ("uint8", "int8"):
         return True
-    if is_categorical and dtype in _INTEGER_DTYPES:
-        return True
-    return False
+    return bool(is_categorical and dtype in _INTEGER_DTYPES)
 
 
 def _dataset_inputs(row: DatasetRow) -> dict:

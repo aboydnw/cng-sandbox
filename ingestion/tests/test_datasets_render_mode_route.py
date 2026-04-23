@@ -2,7 +2,6 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-import pytest
 from starlette.testclient import TestClient
 
 from src.models.dataset import DatasetRow

@@ -90,6 +90,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
 
   // --- Controls ---
   const controls = useMapControls(item, initialOverrides);
+  const renderModeRequestRef = useRef(0);
 
   // Persist overrides to URL when they change
   useEffect(() => {
@@ -115,8 +116,16 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       if (shared) return;
       if (mode !== "client" && mode !== "server") return;
       if (!item) return;
+      const token = ++renderModeRequestRef.current;
+      const targetItemId = item.id;
       const api = item.source === "connection" ? connectionsApi : datasetsApi;
       api.setRenderMode(item.id, mode).catch((err) => {
+        if (
+          token !== renderModeRequestRef.current ||
+          targetItemId !== item.id
+        ) {
+          return;
+        }
         controls.setRenderMode(prev);
         toaster.create({
           title: "Failed to update render mode",

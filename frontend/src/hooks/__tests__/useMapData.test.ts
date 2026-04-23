@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useMapData, datasetToMapItem, connectionToMapItem } from "../useMapData";
+import {
+  useMapData,
+  datasetToMapItem,
+  connectionToMapItem,
+} from "../useMapData";
 import type { Dataset, Connection } from "../../types";
 
 const mockWorkspaceFetch = vi.fn();

@@ -133,3 +133,15 @@ def test_unmark_categorical_returns_404_when_missing(client):
         headers={"x-workspace-id": "wsTest01"},
     )
     assert resp.status_code == 404
+
+
+def test_unmark_categorical_requires_workspace_header(client, db_engine):
+    _make_dataset(
+        db_engine,
+        dataset_id="ds-no-header",
+        workspace_id="wsTest01",
+        filename="scl.tif",
+        metadata=_categorical_metadata(),
+    )
+    resp = client.post("/api/datasets/ds-no-header/unmark-categorical")
+    assert resp.status_code == 400

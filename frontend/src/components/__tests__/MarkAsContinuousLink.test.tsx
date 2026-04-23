@@ -25,7 +25,7 @@ describe("MarkAsContinuousLink", () => {
       <MarkAsContinuousLink datasetId="ds-1" onSuccess={onSuccess} />
     );
 
-    fireEvent.click(screen.getByText(/mark as continuous/i));
+    fireEvent.click(screen.getByRole("button", { name: /mark as continuous/i }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
     expect(fetchMock).toHaveBeenCalledWith(
@@ -44,7 +44,7 @@ describe("MarkAsContinuousLink", () => {
       <MarkAsContinuousLink datasetId="ds-1" onSuccess={vi.fn()} />
     );
 
-    fireEvent.click(screen.getByText(/mark as continuous/i));
+    fireEvent.click(screen.getByRole("button", { name: /mark as continuous/i }));
 
     expect(
       await screen.findByText(/could not mark as continuous/i)

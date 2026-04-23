@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Button, Text } from "@chakra-ui/react";
 import { workspaceFetch } from "../lib/api";
 
 interface MarkAsContinuousLinkProps {
@@ -37,16 +37,25 @@ export function MarkAsContinuousLink({
 
   return (
     <Box mt={1} mb={3}>
-      <Text
+      <Button
+        type="button"
+        variant="plain"
+        size="xs"
+        h="auto"
+        minW={0}
+        p={0}
         fontSize="10px"
+        fontWeight={400}
         color="brand.textSecondary"
+        bg="transparent"
         cursor={pending ? "wait" : "pointer"}
         opacity={pending ? 0.6 : 1}
         _hover={{ color: pending ? "brand.textSecondary" : "brand.orange" }}
         onClick={handleClick}
+        disabled={pending}
       >
         {pending ? "Marking as continuous…" : "Mark as continuous →"}
-      </Text>
+      </Button>
       {error && (
         <Text mt={1} fontSize="10px" color="red.600">
           {error}

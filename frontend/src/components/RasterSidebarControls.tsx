@@ -124,26 +124,24 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         Visualization Controls
       </Text>
 
-      {isCategorical &&
-        categories &&
-        categories.length > 0 &&
-        datasetId &&
-        !shared && (
-          <>
+      {isCategorical && datasetId && !shared && (
+        <>
+          {categories && categories.length > 0 && (
             <EditableCategoryLegend
               datasetId={datasetId}
               source={source}
               categories={categories}
               onCategoriesChange={onCategoriesChange ?? (() => {})}
             />
-            {canMarkContinuous && onDatasetUpdated && (
-              <MarkAsContinuousLink
-                datasetId={datasetId}
-                onSuccess={onDatasetUpdated}
-              />
-            )}
-          </>
-        )}
+          )}
+          {canMarkContinuous && onDatasetUpdated && (
+            <MarkAsContinuousLink
+              datasetId={datasetId}
+              onSuccess={onDatasetUpdated}
+            />
+          )}
+        </>
+      )}
 
       {!isCategorical && (
         <>

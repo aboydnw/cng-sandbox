@@ -49,6 +49,8 @@ import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { useMapSnapshot } from "../hooks/useMapSnapshot";
 import { buildSnapshotFilename } from "../utils/snapshotFilename";
 import { evaluateClientRenderEligibility } from "../lib/layers/clientRenderEligibility";
+import { connectionsApi, datasetsApi } from "../lib/api";
+import type { RenderMode } from "../hooks/useMapControls";
 import type { Table } from "apache-arrow";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
@@ -96,10 +98,6 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       rescaleMax: controls.rescaleMax,
       colormapReversed: controls.colormapReversed,
       colormapName: controls.colormapName,
-      renderMode:
-        controls.renderMode === "server" && controls.canClientRender
-          ? "server"
-          : undefined,
     });
   }, [
     item?.id,
@@ -107,9 +105,21 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     controls.rescaleMax,
     controls.colormapReversed,
     controls.colormapName,
-    controls.renderMode,
-    controls.canClientRender,
   ]);
+
+  const handleRenderModeChange = useCallback(
+    (mode: RenderMode) => {
+      controls.setRenderMode(mode);
+      if (shared) return;
+      if (mode !== "client" && mode !== "server") return;
+      if (!item) return;
+      const api = item.source === "connection" ? connectionsApi : datasetsApi;
+      api.setRenderMode(item.id, mode).catch((err) => {
+        console.warn("Failed to persist render mode", err);
+      });
+    },
+    [controls, item, shared]
+  );
 
   // --- Camera ---
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
@@ -672,7 +682,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               selectedBand={controls.selectedBand}
               onBandChange={controls.setSelectedBand}
               renderMode={controls.renderMode}
-              onRenderModeChange={controls.setRenderMode}
+              onRenderModeChange={handleRenderModeChange}
               showingColormap={controls.showingColormap}
               selectableBands={controls.selectableBands}
               hasRgb={controls.hasRgb}

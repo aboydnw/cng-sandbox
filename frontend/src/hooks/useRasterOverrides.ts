@@ -1,12 +1,11 @@
 import { useMemo, useCallback } from "react";
-import type { InitialRasterOverrides, RenderMode } from "./useMapControls";
+import type { InitialRasterOverrides } from "./useMapControls";
 
 interface PersistedOverrides {
   rescaleMin: number | null;
   rescaleMax: number | null;
   colormapReversed: boolean;
   colormapName: string;
-  renderMode?: RenderMode;
 }
 
 type SetParams = (updater: (prev: URLSearchParams) => URLSearchParams) => void;
@@ -56,7 +55,6 @@ export function useRasterOverrides(
       };
     }
     const ls = readLocalStorage(itemId);
-    const validRenderModes: RenderMode[] = ["client", "server"];
     return {
       itemId,
       rescaleMin: typeof ls.rescaleMin === "number" ? ls.rescaleMin : null,
@@ -64,10 +62,6 @@ export function useRasterOverrides(
       colormapReversed: ls.colormapReversed === true,
       colormapName:
         typeof ls.colormapName === "string" ? ls.colormapName : undefined,
-      renderMode:
-        ls.renderMode && validRenderModes.includes(ls.renderMode)
-          ? ls.renderMode
-          : undefined,
     };
   }, [itemId]);
 
@@ -78,8 +72,7 @@ export function useRasterOverrides(
         next.rescaleMin == null &&
         next.rescaleMax == null &&
         !next.colormapReversed &&
-        next.colormapName === "viridis" &&
-        next.renderMode == null;
+        next.colormapName === "viridis";
 
       try {
         if (allDefault) {

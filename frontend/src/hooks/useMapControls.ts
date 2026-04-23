@@ -16,7 +16,6 @@ export interface InitialRasterOverrides {
   rescaleMax: number | null;
   colormapReversed: boolean;
   colormapName?: string;
-  renderMode?: RenderMode;
 }
 
 interface UseMapControlsResult {

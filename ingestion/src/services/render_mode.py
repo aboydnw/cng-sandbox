@@ -24,12 +24,11 @@ class RenderModePayload(BaseModel):
             raise ValueError("render_mode must be 'client', 'server', or null")
         return v
 
+
 CLIENT_RENDER_CAP_PALETTED = 2 * 1024 * 1024 * 1024  # 2 GB
 CLIENT_RENDER_CAP_CONTINUOUS = 500 * 1024 * 1024  # 500 MB
 
-_INTEGER_DTYPES = frozenset(
-    ("int8", "uint8", "int16", "uint16", "int32", "uint32")
-)
+_INTEGER_DTYPES = frozenset(("int8", "uint8", "int16", "uint16", "int32", "uint32"))
 
 
 def _is_paletted(dtype: str | None, is_categorical: bool) -> bool:
@@ -75,9 +74,7 @@ def check_render_mode_allowed(
         return "Invalid render_mode"
 
     inputs = (
-        _dataset_inputs(row)
-        if isinstance(row, DatasetRow)
-        else _connection_inputs(row)
+        _dataset_inputs(row) if isinstance(row, DatasetRow) else _connection_inputs(row)
     )
 
     if inputs["is_temporal"]:

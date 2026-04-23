@@ -214,11 +214,7 @@ def _migrate_schema(engine):
                     raise
         for table in ("datasets", "connections"):
             try:
-                conn.execute(
-                    text(
-                        f"ALTER TABLE {table} ADD COLUMN render_mode TEXT"
-                    )
-                )
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN render_mode TEXT"))
                 conn.commit()
             except DBAPIError as exc:
                 conn.rollback()

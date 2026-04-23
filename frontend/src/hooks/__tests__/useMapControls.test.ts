@@ -27,6 +27,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     parquetUrl: null,
     isTemporal: false,
     timesteps: [],
+    renderMode: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -333,6 +334,7 @@ describe("client render size caps", () => {
       parquetUrl: null,
       isTemporal: false,
       timesteps: [],
+      renderMode: null,
       dataset: {
         id: "ds-1",
         filename: "large.tif",

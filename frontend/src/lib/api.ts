@@ -1,5 +1,16 @@
 import type { Connection } from "../types";
 
+async function readErrorDetail(r: Response): Promise<string> {
+  try {
+    const body = (await r.json()) as { detail?: string };
+    if (typeof body?.detail === "string" && body.detail.length > 0)
+      return body.detail;
+  } catch {
+    // non-JSON body
+  }
+  return `HTTP ${r.status}`;
+}
+
 let _workspaceId = "";
 
 export function setWorkspaceId(id: string): void {
@@ -85,6 +96,20 @@ export const connectionsApi = {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
     });
   },
+
+  setRenderMode(
+    id: string,
+    mode: "client" | "server" | null
+  ): Promise<Connection> {
+    return workspaceFetch(`/api/connections/${id}/render-mode`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ render_mode: mode }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
+    });
+  },
 };
 
 export const datasetsApi = {
@@ -95,6 +120,20 @@ export const datasetsApi = {
       body: JSON.stringify({ is_shared: isShared }),
     }).then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    });
+  },
+
+  setRenderMode(
+    id: string,
+    mode: "client" | "server" | null
+  ): Promise<Record<string, unknown>> {
+    return workspaceFetch(`/api/datasets/${id}/render-mode`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ render_mode: mode }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
     });
   },
 };

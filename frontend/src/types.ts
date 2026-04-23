@@ -68,6 +68,7 @@ export interface Dataset {
   is_zero_copy: boolean;
   is_example?: boolean;
   is_shared: boolean;
+  render_mode?: "client" | "server" | null;
   source_url: string | null;
   expires_at: string | null;
 }
@@ -100,6 +101,7 @@ export interface Connection {
   feature_count: number | null;
   file_size: number | null;
   is_shared: boolean;
+  render_mode?: "client" | "server" | null;
   created_at: string;
 }
 
@@ -180,6 +182,7 @@ export interface MapItem {
   parquetUrl: string | null;
   isTemporal: boolean;
   timesteps: Timestep[];
+  renderMode: "client" | "server" | null;
   dataset: Dataset | null;
   connection: Connection | null;
 }

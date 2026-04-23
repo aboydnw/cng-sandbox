@@ -26,6 +26,7 @@ function rasterDatasetItem(overrides: Partial<MapItem> = {}): MapItem {
     parquetUrl: null,
     isTemporal: false,
     timesteps: [],
+    renderMode: null,
     dataset: { converted_file_size: 100 * 1024 * 1024 } as never,
     connection: null,
     ...overrides,

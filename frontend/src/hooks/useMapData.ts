@@ -28,6 +28,7 @@ export function datasetToMapItem(ds: Dataset): MapItem {
     parquetUrl: ds.parquet_url,
     isTemporal: ds.is_temporal,
     timesteps: ds.timesteps,
+    renderMode: ds.render_mode ?? null,
     dataset: ds,
     connection: null,
   };
@@ -65,6 +66,7 @@ export function connectionToMapItem(conn: Connection): MapItem {
     parquetUrl: null,
     isTemporal: false,
     timesteps: [],
+    renderMode: conn.render_mode ?? null,
     dataset: null,
     connection: conn,
   };

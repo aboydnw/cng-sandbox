@@ -51,6 +51,7 @@ const mockItem: MapItem = {
   isCategorical: false,
   categories: null,
   timesteps: [],
+  renderMode: null,
   dataset: null,
   connection: null,
 };

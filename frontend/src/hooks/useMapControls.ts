@@ -16,7 +16,6 @@ export interface InitialRasterOverrides {
   rescaleMax: number | null;
   colormapReversed: boolean;
   colormapName?: string;
-  renderMode?: RenderMode;
 }
 
 interface UseMapControlsResult {
@@ -81,37 +80,37 @@ export function useMapControls(
     setOpacity(0.8);
     setSelectedBand("rgb");
     setCategoricalOverride(null);
+
     if (initialOverrides && item?.id === initialOverrides.itemId) {
       setColormapName(initialOverrides.colormapName ?? "viridis");
       setRescaleMin(initialOverrides.rescaleMin);
       setRescaleMax(initialOverrides.rescaleMax);
       setColormapReversed(initialOverrides.colormapReversed);
-      if (item?.dataType === "vector") {
-        setRenderMode("vector-tiles");
-      } else if (
-        initialOverrides.renderMode === "client" ||
-        initialOverrides.renderMode === "server"
-      ) {
-        setRenderMode(initialOverrides.renderMode);
-      } else if (eligibility.canRender) {
-        setRenderMode("client");
-      } else {
-        setRenderMode("server");
-      }
     } else {
       setColormapName("viridis");
       setRescaleMin(null);
       setRescaleMax(null);
       setColormapReversed(false);
-      if (item?.dataType === "vector") {
-        setRenderMode("vector-tiles");
-      } else if (eligibility.canRender) {
-        setRenderMode("client");
-      } else {
-        setRenderMode("server");
-      }
     }
-  }, [item?.id, item?.dataType]);
+
+    if (item?.dataType === "vector") {
+      setRenderMode("vector-tiles");
+      return;
+    }
+
+    const stored = item?.renderMode ?? null;
+    if (stored === "server") {
+      setRenderMode("server");
+    } else if (stored === "client" && eligibility.canRender) {
+      setRenderMode("client");
+    } else if (stored === "client" && !eligibility.canRender) {
+      setRenderMode("server");
+    } else if (eligibility.canRender) {
+      setRenderMode("client");
+    } else {
+      setRenderMode("server");
+    }
+  }, [item?.id, item?.dataType, item?.renderMode, eligibility.canRender]);
 
   const setRescale = (min: number | null, max: number | null) => {
     setRescaleMin(min);

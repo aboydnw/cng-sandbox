@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useRasterOverrides } from "../useRasterOverrides";
 
@@ -134,5 +134,24 @@ describe("useRasterOverrides", () => {
     expect(result.current.initialOverrides?.rescaleMin).toBeNull();
     expect(result.current.initialOverrides?.rescaleMax).toBeNull();
     expect(result.current.initialOverrides?.colormapReversed).toBe(false);
+  });
+
+  it("does not write renderMode to localStorage", () => {
+    localStorage.clear();
+    const setSearch = vi.fn();
+    const { result } = renderHook(() =>
+      useRasterOverrides("item-x", new URLSearchParams(), setSearch)
+    );
+    act(() => {
+      result.current.persist({
+        rescaleMin: 1,
+        rescaleMax: 2,
+        colormapReversed: false,
+        colormapName: "viridis",
+      });
+    });
+    const raw = localStorage.getItem("cng:raster-override:item-x");
+    expect(raw).not.toBeNull();
+    expect(JSON.parse(raw as string)).not.toHaveProperty("renderMode");
   });
 });

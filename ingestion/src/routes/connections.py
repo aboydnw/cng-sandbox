@@ -16,6 +16,7 @@ from src.dependencies import get_session
 from src.models.connection import ConnectionRow
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
+from src.services.render_mode import RenderModePayload, check_render_mode_allowed
 from src.workspace import validate_workspace_id
 
 logger = logging.getLogger(__name__)
@@ -327,6 +328,30 @@ async def share_connection(
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         row.is_shared = body.is_shared
+        session.commit()
+        session.refresh(row)
+        return row.to_dict()
+    finally:
+        session.close()
+
+
+@router.patch("/connections/{connection_id}/render-mode")
+async def set_connection_render_mode(
+    connection_id: str, body: RenderModePayload, request: Request
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        reason = check_render_mode_allowed(row, body.render_mode)
+        if reason is not None:
+            raise HTTPException(status_code=400, detail=reason)
+        row.render_mode = body.render_mode
         session.commit()
         session.refresh(row)
         return row.to_dict()

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useMapData } from "../useMapData";
+import {
+  useMapData,
+  datasetToMapItem,
+  connectionToMapItem,
+} from "../useMapData";
+import type { Dataset, Connection } from "../../types";
 
 const mockWorkspaceFetch = vi.fn();
 
@@ -14,13 +19,13 @@ vi.mock("../../lib/api", () => ({
 import { connectionsApi } from "../../lib/api";
 const mockConnectionsGet = vi.mocked(connectionsApi.get);
 
-const MOCK_DATASET = {
+const MOCK_DATASET: Dataset = {
   id: "ds-1",
   filename: "test.tif",
-  dataset_type: "raster" as const,
+  dataset_type: "raster",
   format_pair: "geotiff/cog",
   tile_url: "/raster/tiles/{z}/{x}/{y}",
-  bounds: [-180, -90, 180, 90] as [number, number, number, number],
+  bounds: [-180, -90, 180, 90],
   band_count: 1,
   band_names: ["band1"],
   color_interpretation: ["gray"],
@@ -49,17 +54,25 @@ const MOCK_DATASET = {
   pixel_height: null,
   resolution: null,
   compression: null,
+  is_categorical: false,
+  categories: null,
+  is_mosaic: false,
+  is_zero_copy: false,
+  is_shared: false,
+  render_mode: null,
+  source_url: null,
+  expires_at: null,
 };
 
-const MOCK_CONNECTION = {
+const MOCK_CONNECTION: Connection = {
   id: "conn-1",
   name: "Sentinel-2",
   url: "https://example.com/scene.tif",
-  connection_type: "cog" as const,
-  bounds: [-10, -10, 10, 10] as [number, number, number, number],
+  connection_type: "cog",
+  bounds: [-10, -10, 10, 10],
   min_zoom: 0,
   max_zoom: 14,
-  tile_type: "raster" as const,
+  tile_type: "raster",
   band_count: 1,
   rescale: "0,10000",
   workspace_id: "w1",
@@ -73,6 +86,7 @@ const MOCK_CONNECTION = {
   feature_count: null,
   file_size: null,
   is_shared: false,
+  render_mode: null,
 };
 
 beforeEach(() => {
@@ -256,5 +270,50 @@ describe("useMapData", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.data?.dtype).toBe("uint8");
+  });
+});
+
+describe("datasetToMapItem", () => {
+  it("coerces undefined render_mode to null", () => {
+    expect(
+      datasetToMapItem({ ...MOCK_DATASET, render_mode: undefined }).renderMode
+    ).toBeNull();
+  });
+  it("propagates null render_mode", () => {
+    expect(datasetToMapItem(MOCK_DATASET).renderMode).toBeNull();
+  });
+  it("propagates server render_mode", () => {
+    expect(
+      datasetToMapItem({ ...MOCK_DATASET, render_mode: "server" }).renderMode
+    ).toBe("server");
+  });
+  it("propagates client render_mode", () => {
+    expect(
+      datasetToMapItem({ ...MOCK_DATASET, render_mode: "client" }).renderMode
+    ).toBe("client");
+  });
+});
+
+describe("connectionToMapItem", () => {
+  it("coerces undefined render_mode to null", () => {
+    expect(
+      connectionToMapItem({ ...MOCK_CONNECTION, render_mode: undefined })
+        .renderMode
+    ).toBeNull();
+  });
+  it("propagates null render_mode", () => {
+    expect(connectionToMapItem(MOCK_CONNECTION).renderMode).toBeNull();
+  });
+  it("propagates server render_mode", () => {
+    expect(
+      connectionToMapItem({ ...MOCK_CONNECTION, render_mode: "server" })
+        .renderMode
+    ).toBe("server");
+  });
+  it("propagates client render_mode", () => {
+    expect(
+      connectionToMapItem({ ...MOCK_CONNECTION, render_mode: "client" })
+        .renderMode
+    ).toBe("client");
   });
 });

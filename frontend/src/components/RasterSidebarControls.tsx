@@ -327,7 +327,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         />
       </Box>
 
-      {canClientRender && onRenderModeChange && (
+      {!shared && canClientRender && onRenderModeChange && (
         <Box mb={3} pt={3} borderTop="1px solid" borderColor="brand.border">
           <Flex justify="space-between" align="center">
             <Box>
@@ -366,7 +366,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
           </Flex>
         </Box>
       )}
-      {canClientRender === false && clientRenderDisabledReason && (
+      {!shared && canClientRender === false && clientRenderDisabledReason && (
         <Box mb={3}>
           <Text fontSize="11px" color="brand.textSecondary">
             Client-side rendering unavailable

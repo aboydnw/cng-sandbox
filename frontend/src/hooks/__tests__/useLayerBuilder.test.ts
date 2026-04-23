@@ -38,6 +38,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     parquetUrl: null,
     isTemporal: false,
     timesteps: [],
+    renderMode: null,
     dataset: null,
     connection: null,
     ...overrides,

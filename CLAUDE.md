@@ -17,6 +17,16 @@ Ingestion API → Cloudflare R2 (S3-compatible object store)
 
 All services run in Docker. The frontend proxies all API and tiler requests through Vite's dev server, so the browser only talks to port 5185.
 
+## Reference docs (load on demand)
+
+Dense reference material lives under [docs/](docs/) and should be read only when the task touches that area:
+
+- [docs/frontend-gotchas.md](docs/frontend-gotchas.md) — tile URLs, client-side COG rendering, pixel inspector, snapshots, GeoParquet, Chakra v3, analytics. Read before touching `frontend/src/`.
+- [docs/api-reference.md](docs/api-reference.md) — full ingestion API surface. Read before adding/changing any `/api/*` endpoint or frontend-backend contract.
+- [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, Caddy auth model, CSP, tile caching. Read before prod changes.
+- [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.
+- [docs/example-data.md](docs/example-data.md) — `is_example` datasets/stories, source.coop seeding. Read before touching `src/services/example_*.py`.
+
 ## Project Documentation
 
 All project docs live in Obsidian at `~/Obsidian/Project Docs/CNG Sandbox/`. Start with `index.md` for a linked overview.
@@ -65,105 +75,13 @@ docker compose -f docker-compose.yml up -d <service>
 
 Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tiler`, `ingestion`, `frontend`
 
-## Production Deployment (Hetzner)
+## Production Deployment
 
-The sandbox can be deployed to a public URL with HTTPS using the `prod` Docker Compose profile. Shared `/map` / `/story` views are public; the rest of the SPA, write operations, and workspace listings are gated behind HTTP basic auth via Caddy.
-
-### Auth model
-
-Caddy applies basic auth selectively (see `Caddyfile`):
-
-- **Public (no auth):** `/assets/*` (hashed SPA bundle), public static files shipped with the frontend (`/favicon.ico`, `/logo.svg`, `/gif.worker.js`, `/fonts/*`, `/thumbnails/*`) so shared-view pages can load them without triggering a basic-auth prompt, shared SPA views (`/map/*` including `/map/connection/*`, `/story/:id`, `/story/:id/embed`), `/storage/*` (R2 proxy), `/cog/*`, `/raster/*`, `/vector/*`, individual resource reads like `GET /api/datasets/{id}`, `GET /api/connections/{id}`, `GET /api/stories/{id}`, `/api/proxy`, `/api/health`. This lets shared map/story URLs load for anyone without a password prompt, and lets PMTiles / DuckDB-WASM range requests succeed (they can't send basic auth).
-- **Auth required:** all other SPA paths (root `/`, `/library`, `/discover`, `/about`, `/story/new`, `/story/:id/edit`, `/w/:workspaceId/*`) so the password prompt appears up front instead of surprising the user mid-flow; plus all non-GET/HEAD requests to `/api/*` (uploads, creates, updates, deletes) and workspace-listing reads (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`). API auth remains as defense-in-depth — the SPA gate alone doesn't stop someone from hitting the API directly.
-
-### Prerequisites
-
-1. **Domain:** Point an A record for your domain (e.g. `cngsandbox.org`) to the Hetzner VM's public IPv4 address. Caddy auto-obtains Let's Encrypt certs via HTTP-01 challenge.
-2. **Hetzner firewall:** Allow inbound TCP 22, 80, 443 only (block all other ports from external access). Configure in the Hetzner Cloud console (Firewalls section). Also check the OS-level firewall: `sudo ufw status` — if active, ensure ports 80 and 443 are allowed (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)
-3. **Generate a password hash:**
-   ```bash
-   docker run --rm caddy caddy hash-password --plaintext 'your-password'
-   ```
-
-### Configure
-
-1. Edit `.env` on the VM and fill in the deployment variables:
-   ```
-   SITE_ADDRESS=cngsandbox.org
-   AUTH_USER=demo
-   AUTH_PASSWORD_HASH=$$2a$$14$$... (escape $ as $$ for Docker Compose)
-   ```
-
-### Start
-
-```bash
-docker compose --profile prod up -d --build
-```
-
-### Verify
-
-- Visit `https://cngsandbox.org` — should prompt for username/password immediately (root is gated)
-- After authing, verify the SPA loads and uploads work end-to-end
-- Open a shared map URL (e.g. `https://cngsandbox.org/map/<dataset-id>`) in an incognito window — should load without any prompt
-
-### Notes
-
-- `docker compose up` (without `--profile prod`) still runs local dev without Caddy
-- Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
-- The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
-- Caddy applies baseline security headers to every response (HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`). The CSP allows `'wasm-unsafe-eval'` for DuckDB-WASM, whitelists `https://static.cloudflareinsights.com` (Cloudflare Web Analytics beacon) and `https://plausible.io` (Plausible analytics tracker) on `script-src`, and is permissive on `connect-src`/`img-src` to accommodate user-supplied tile URLs and the CARTO basemap. When adding any new third-party script origin, update both the `Caddyfile` CSP `script-src` directive and this note
-- Tile responses (`/cog/*`, `/raster/*`, `/vector/*`) are served with `Cache-Control: public, max-age=3600`. Tile URLs are immutable per dataset (a change to the underlying data produces a new STAC item id or query param), so a 1-hour browser cache is safe and reduces Hetzner egress
-- `/storage/*` (R2 proxy) responds with `Access-Control-Allow-Origin: *` and preflight handling for `OPTIONS`, so shared COGs can be fetched cross-origin by external tile/raster clients. The path is already public at the edge; CORS just unblocks browsers from reading the bytes on a non-sandbox origin
+Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing HTTPS and selective basic auth. Full deploy steps, auth model (which paths are public vs gated), CSP rules, and tile caching are in [docs/production-deployment.md](docs/production-deployment.md) — read before any prod change.
 
 ## CI/CD
 
-### Pull Requests
-
-All changes go through PRs. Branch protection requires `backend`, `frontend`, `docker-build`, and `conventional-commits` CI jobs to pass before merge. PR titles must follow conventional commit format — this is enforced by the `conventional-commits` workflow.
-
-### Releases
-
-Releases are managed by [release-please](https://github.com/googleapis/release-please). It watches `main` for conventional commits (`feat:`, `fix:`, etc.) and maintains an open Release PR with a changelog and version bump.
-
-**To release:** Merge the Release PR. This triggers auto-deploy to the Hetzner VM.
-
-**Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions to deploy without creating a release.
-
-**Version:** Tracked in `version.txt` (managed by release-please, don't edit manually).
-
-### GitHub App for Release-Please (optional)
-
-By default, release-please uses `GITHUB_TOKEN`, which means its PRs won't trigger CI checks (GitHub limitation). To fix this, set up a GitHub App:
-
-1. Create a GitHub App in your account settings with permissions: Contents (write), Pull Requests (write), Metadata (read)
-2. Install the app on the `cng-sandbox` repository
-3. In repo Settings > Secrets and variables > Actions:
-   - Add `RELEASE_BOT_ID` as a **variable** (the App ID)
-   - Add `RELEASE_BOT_PRIVATE_KEY` as a **secret** (the private key PEM)
-
-### Dependency updates
-
-Dependabot is configured via `.github/dependabot.yml` to open weekly PRs for:
-
-- GitHub Actions
-- npm dependencies in `frontend/`
-- uv dependencies in `ingestion/` and `mcp/`
-- Docker base images in `caddy/`, `frontend/`, and `ingestion/`
-
-Minor and patch updates are grouped per ecosystem to limit PR noise; major updates open as individual PRs so they get reviewed on their own. Each ecosystem uses a 7-day cooldown so Dependabot skips versions released in the last week (reduces exposure to compromised fresh releases). Dependabot PRs go through the same CI checks as any other PR. Review and merge them like normal feature PRs — release-please will fold the resulting `chore(deps):` commits into the next release changelog.
-
-When debugging or reviewing a frontend dependency upgrade, verify both the declared/locked versions and the actually installed tree. This frontend uses Yarn 4 with `nodeLinker: node-modules`, so `package.json` / `yarn.lock` can say one thing while a stale `node_modules` tree still runs an older package. Check with `yarn why <package>` and, when runtime behavior is suspect, `node -p "require('./node_modules/<package>/package.json').version"` from `frontend/`; run `yarn install` if they disagree. Also audit local compatibility shims/workarounds that were added for the old version. An upgrade can be present but still behave like the old version if custom wrappers keep applying now-obsolete behavior.
-
-### Conventional Commits
-
-All commits to `main` must use conventional prefixes:
-
-| Prefix | Meaning | Version bump |
-|--------|---------|-------------|
-| `feat:` | New feature | minor (0.1.0 → 0.2.0) |
-| `fix:` | Bug fix | patch (0.1.0 → 0.1.1) |
-| `feat!:` or `fix!:` | Breaking change | major (0.1.0 → 1.0.0) |
-| `chore:`, `docs:`, `refactor:` | Maintenance | no bump (appears in changelog) |
+PRs require `backend`, `frontend`, `docker-build`, and `conventional-commits` jobs to pass. Releases are automated via release-please (merge the open Release PR to cut a version and auto-deploy). Dependabot opens weekly grouped PRs. Full details (release-please GitHub App setup, dependency-update workflow, conventional-commit table) are in [docs/cicd.md](docs/cicd.md).
 
 ## Services and Ports
 
@@ -217,26 +135,9 @@ cd frontend && npx vitest run
 - **Icons over emojis**: Use [Phosphor Icons](https://phosphoricons.com/) (`@phosphor-icons/react`) for all UI icons. Never use emoji or custom SVG illustrations where a Phosphor icon exists. Keep icon usage consistent with the existing set (see imports across `src/components/`).
 - **Brand palette**: Use the warm brand tokens (`brand.orange`, `brand.bgSubtle`, `brand.border`, `brand.brown`) for interactive states and accents. Avoid Chakra's default `blue.*` scale.
 
-### Gotchas
+### Implementation gotchas
 
-- **MapLibre requires absolute tile URLs**: Vector tile sources must use `window.location.origin + path`, not relative paths. See `VectorMap.tsx`.
-- **deck.gl handles relative URLs fine**: Raster tiles via `createCOGLayer`/`useTitiler` work with relative paths since deck.gl uses `fetch()` internally.
-- **SSE named events**: The ingestion API sends `event: status` SSE events. The frontend must use `addEventListener("status", ...)`, not `onmessage` (which only handles unnamed events).
-- **COG tiler proxy preserves `/cog` prefix**: Unlike `/raster` and `/vector` (which strip their prefix before forwarding), the `/cog` proxy passes the path through unchanged because titiler's COG routes are already mounted under `/cog/`.
-- **Vendored maptool utilities**: `src/lib/maptool/` contains `createCOGLayer`, `createPMTilesProtocol`, `useColorScale`, `MapLegend`, and `listColormaps` — vendored from `@maptool/core` so the sandbox has no external dependency on the library.
-- **Categorical rasters use a JSON colormap, not `colormap_name`**: When a dataset has `isCategorical: true`, tile URLs are built with `colormap=<encoded-JSON>` (a `{value: [r,g,b]}` map) and `resampling=nearest` instead of the usual `colormap_name=` parameter. Mixing them will produce incorrect or broken tiles.
-- **Client-side COG rendering is the default when eligible**: Eligibility is centralized in `evaluateClientRenderEligibility` (`src/lib/layers/clientRenderEligibility.ts`). A COG item is eligible if it has a `cogUrl`, valid `bounds` within ±85.05° latitude, is not temporal, and has a file size within the browser cap (paletted: 2 GB; continuous: 500 MB). `useMapControls` initializes `renderMode` from `item.renderMode` (the server-persisted value on the dataset/connection row): if the stored mode is `"client"` and the item is eligible, it uses client; if the stored mode is `"client"` but the item is ineligible, it falls back to `"server"`; if no mode is stored, eligible items default to `"client"` and ineligible items default to `"server"`. When the user manually switches modes, the choice is persisted server-side via `PATCH /api/datasets/{id}/render-mode` or `PATCH /api/connections/{id}/render-mode` — not to localStorage. `useRasterOverrides` continues to persist colormap and rescale settings to localStorage, but no longer stores `renderMode`. The render-mode toggle is hidden on shared (read-only) map views. Layer construction is centralized in `resolveRasterLayers` (`src/lib/layers/resolveRasterLayers.ts`), which both `useLayerBuilder` (for `MapPage`) and `buildLayersForChapter` (for the story reader/editor) delegate to — stories go through the same eligibility path as maps. `resolveRasterLayers` exposes a `forceServer` escape hatch (tested in its own suite) for callers that want to bypass client rendering unconditionally; no production caller currently uses it. `resolveRasterLayers` re-checks eligibility, then (unless `forceServer` short-circuits to server tiles) calls `classifyCogRenderPath` (`src/lib/layers/cogDtype.ts`) on the source's `dtype` + `isCategorical` flag. `uint8`/`int8` or any integer dtype flagged categorical → `buildCogLayerPaletted`. When categories are supplied, the paletted builder runs a LUT-driven shader pipeline (`CreateTexture` + `Colormap` modules) using a 256-entry RGBA LUT from `buildCategoricalLut` (`src/lib/layers/categoricalLut.ts`), attaches the raw integer tile values to the tile's data so the pixel inspector can sample them, and respects user-edited category colors; without categories it falls back to the library default pipeline (honours the file's color table). Everything else → `buildCogLayerContinuous` (float32 → uint8 normalization + viridis colorize shader, attaches raw float tile values to the tile's data for the pixel inspector). For connections without a stored rescale, the continuous builder falls back to `[0, 1]` (see `parseRescaleString` in `src/lib/connections/rescale.ts`). The cap logic reads `converted_file_size` for datasets and `file_size` for connections. Changing the classifier rules only requires updating `evaluateClientRenderEligibility` and/or `resolveRasterLayers` — both call sites pick up the new behavior automatically.
-- **deck.gl-raster upgrades require wrapper audits**: The custom client-side COG builders in `src/lib/layers/cogLayer.ts` pass raw tile arrays into deck.gl-raster GPU modules so the pixel inspector can keep sampling original values. When upgrading `@developmentseed/deck.gl-raster` or `@developmentseed/deck.gl-geotiff`, read the upstream release notes/issues and re-check these wrappers for obsolete compatibility code. In particular, deck.gl-raster 0.5 fixed deck.gl 9.3 texture upload behavior, so local row-padding/byte-alignment workarounds around `device.createTexture({ data, format: "r8unorm", width, height })` should not be reintroduced.
-- **Render mode is surfaced in every map view**: `RenderModeIndicator` (`src/components/RenderModeIndicator.tsx`) is an info button in the top-right of the map that reveals the active render mode and why, so users can see whether a layer is rendering client-side or falling back to server tiles. `MapPage` renders it next to `SnapButton` for raster items, pulling eligibility via `evaluateClientRenderEligibility(item)` and the size from `dataset.converted_file_size` / `connection.file_size`. Stories use the same component: `buildLayersForChapter` returns `{layers, renderMetadata}` where `renderMetadata` carries `{renderMode, reason, sizeBytes}`, and `StoryRenderer` / `StoryEditorPage` render the indicator from that metadata. The indicator carries `data-snapshot-overlay` so it's included in map snapshots.
-- **Pixel inspector has two tooltip modes**: `usePixelInspector` (`src/components/PixelInspector.tsx`) reads raw values off the hovered tile's own `content.data` (populated by both client-render builders on `getTileData` return) and returns a discriminated `hoverInfo` union. Sampling directly from the hovered tile — rather than a shared `(x, y)`-keyed cache — means zoom-level collisions can't return stale values from a different tile. When the active layer is categorical *and* the user is in client render mode, `MapPage` passes the effective categories to the hook, which matches the looked-up value against the category list and emits a `{kind: "categorical"}` tooltip (color swatch + label via `CategoricalPixelTooltip`). Otherwise it emits a `{kind: "numeric"}` tooltip (formatted value + coord via `PixelInspectorTooltip`). Both tooltips are rendered in `MapPage` and gated on `renderMode === "client"`.
-- **COG URL resolution handles dataset and connection sources**: `resolveCogUrl` in `src/lib/layers/cogLayer.ts` passes absolute `http(s)://` URLs through unchanged (external COG connections) and prefixes `window.location.origin` onto relative paths (dataset COGs served through the Vite proxy). Both client-side builders route their COG URL through this helper before handing it to the deck.gl COG layer.
-- **Map snapshot composites WebGL canvases + DOM overlays**: `useMapSnapshot` (`src/hooks/useMapSnapshot.ts`) renders the MapLibre basemap canvas and the deck.gl canvas onto an off-screen `<canvas>`, then uses `html-to-image` to rasterize any elements marked `data-snapshot-overlay` (e.g. the map legend) and composites them at their correct positions. The output is downloaded as a PNG. Elements that should appear in snapshots must carry the `data-snapshot-overlay` attribute.
-- **GeoParquet connections support two render paths**: `render_path: "client"` loads the file into DuckDB-WASM via `useGeoParquetRender`, returns an Arrow `Table`, and renders via deck.gl (500k feature cap). `render_path: "server"` triggers a background conversion (tippecanoe → PMTiles → R2); the frontend `useConnectionConversion` hook subscribes via EventSource (SSE) to `GET /api/connections/{id}/stream` and shows a conversion overlay on `MapPage` until the job finishes and a `tile_url` is available. When `render_path` is omitted, the server infers it: files over 50 MB default to `"server"`, smaller files default to `"client"`. The frontend also runs `pickRenderPath` (size + 500k feature threshold) to pre-select the path before submitting the connection.
-- **DuckDB-WASM is preloaded on app mount**: `App.tsx` fires a background `initialize()` call from `useDuckDB` inside a `useEffect` so the WASM bundle and worker are warm by the time a user opens a client-rendered GeoParquet connection. The call is fire-and-forget — errors are logged as warnings and don't block the app. `useDuckDB` internally deduplicates concurrent/subsequent `initialize()` calls so `useGeoParquetRender` reuses the preloaded instance.
-- **Chakra v3 dialogs need Portal + DialogPositioner**: `Dialog.Content` must be wrapped in `<Portal><Dialog.Positioner>...</Dialog.Positioner></Portal>` to render as a fixed-position centered modal. Without them, content renders inline at its JSX-tree location (e.g. squished inside a flex header). See `ShareDialog.tsx`, `PublishDialog.tsx`, `UploadModal.tsx`, `GeoParquetPreviewModal.tsx` for the canonical pattern.
-- **Vector tiles must parse on the main thread**: `buildVectorLayer` (`src/lib/layers/vectorLayer.ts`) needs two things together: `loaders: [MVTLoader]` AND `loadOptions: { worker: false }`. MVTLayer's default loader is `MVTWorkerLoader`, which has no main-thread `parseSync` — so disabling the worker alone produces `"mvt loader - no parser found and worker is disabled"`. Registering the full `MVTLoader` gives it a main-thread parser. The worker must still be disabled because loaders.gl's default MVT worker fetches its script from `unpkg.com`, which the Caddy CSP `script-src` blocks in prod. The inner `load(..., MVTLoader)` call used for PMTiles also passes `worker: false`. Keep both unless we start self-hosting the loaders.gl worker bundle and widen the CSP accordingly.
-- **Chakra v3 toaster**: A minimal toaster scaffold lives in `frontend/src/lib/toaster.ts` (exports a singleton `toaster = createToaster(...)`) and `frontend/src/components/ui/toaster.tsx` (renders `<Toaster toaster={toaster} />`). The `<Toaster>` component must be mounted once in `App.tsx`. Use `toaster.create({ title, description, type })` anywhere in the app to show a toast — do not call `createToaster` again elsewhere.
-- **Plausible analytics is loaded from two places**: the `<script async>` tag in `frontend/index.html` pulls the tracker from `https://plausible.io` and `initPlausible()` in `src/lib/plausible.ts` (called from `main.tsx`) installs a command-queue stub on `window.plausible` and invokes `init()`. The stub lets us call `window.plausible(...)` before the remote script finishes loading; events are flushed once it arrives. Keep the CSP `script-src` entry for `https://plausible.io` in `Caddyfile` in sync with the script tag — removing one without the other will silently break analytics in prod.
+Non-obvious behaviors (tile URL absolute-vs-relative, client-side COG rendering pipeline, pixel inspector tooltip modes, Chakra v3 Portal requirement, Plausible CSP coupling, etc.) are catalogued in [docs/frontend-gotchas.md](docs/frontend-gotchas.md). Read before editing anything in `frontend/src/lib/layers/`, `frontend/src/hooks/`, or the map/story components.
 
 ## Ingestion Service
 
@@ -248,65 +149,13 @@ Python FastAPI service. Source in `ingestion/src/`.
 cd ingestion && uv run pytest -v
 ```
 
-### Key endpoints
+### API endpoints
 
-**Upload & conversion:**
-- `POST /api/upload` — Upload a file (multipart form); returns 409 with `{"detail": "duplicate_dataset", "dataset_id": ..., "filename": ...}` if a file with the same name already exists in the workspace
-- `POST /api/convert-url` — Fetch and convert a file from a URL; same 409 duplicate response as above
-- `GET /api/check-duplicate?filename=<name>` — Preflight duplicate check; returns 409 if a dataset with that filename exists, or `{"duplicate": false}` if not
-- `POST /api/check-format` — Pre-upload format validation; accepts a file chunk and filename, returns `{"valid": true}` or `{"valid": false, "error": "..."}`
-- `POST /api/upload-temporal` — Upload multiple raster files as a time series (2–50 files, same format)
-- `POST /api/scan/{scan_id}/convert` — Trigger conversion after a scan completes
+Full endpoint catalog (uploads, jobs, datasets, stories, connections, remote discovery, misc) is in [docs/api-reference.md](docs/api-reference.md). Read before adding or modifying any `/api/*` route.
 
-**Jobs:**
-- `GET /api/jobs/{id}` — Get job status
-- `GET /api/jobs/{id}/stream` — SSE stream of conversion progress; no workspace auth on this endpoint (EventSource cannot send custom headers); job UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
+### Example datasets and stories
 
-**Datasets:**
-- `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace)
-- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`, `is_example`, and `is_shared`); returns 404 if the caller's workspace does not own the dataset and the dataset is not an example, not explicitly shared, and not referenced by a published story
-- `PATCH /api/datasets/{id}` — Update editable dataset metadata (currently just `title`, 1–200 chars; pass `null` to clear); returns 403 if the dataset is an example or belongs to another workspace
-- `PATCH /api/datasets/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the dataset is an example or belongs to another workspace
-- `DELETE /api/datasets/{id}` — Delete a dataset; returns 403 if the dataset is an example (`is_example=True`) or belongs to another workspace
-- `PATCH /api/datasets/{id}/categories` — Update category labels and/or colors for a categorical raster; body is a list of `{"value": int, "label"?: str, "color"?: "#RRGGBB"}` objects (each entry must include at least one of `label` or `color`); the first color override snapshots the prior color into `defaultColor` so the UI can offer a reset; returns 400 if dataset is not categorical or a value doesn't exist, 403 if the dataset is an example
-- `POST /api/datasets/{id}/mark-categorical` — Promote a non-categorical integer raster to categorical by scanning unique values and assigning default colors from the qualitative palette; returns 400 if values can't be extracted (unsupported dtype or too many unique values), 403 if the dataset is an example or belongs to another workspace
-- `POST /api/datasets/{id}/unmark-categorical` — Demote a categorical raster back to continuous by clearing `is_categorical` and `categories` from metadata; returns 409 if the dataset is not currently categorical, 400 if the dataset is not a raster, 403 if the dataset is an example or belongs to another workspace
-- `PATCH /api/datasets/{id}/render-mode` — Persist the user's chosen render mode (`"client"`, `"server"`, or `null` to clear); body `{"render_mode": "client"|"server"|null}`; returns 400 if `"client"` is requested but eligibility checks fail (e.g. no COG URL, temporal dataset, oversized file), 403 if the dataset is an example or belongs to another workspace
-
-**Stories (shareable map narratives):**
-- `POST /api/stories` — Create a story with chapters linking to datasets
-- `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace)
-- `GET /api/stories/{id}` — Get a story by ID
-- `PATCH /api/stories/{id}` — Update a story; returns 403 if the story is an example (`is_example=True`)
-- `POST /api/stories/{id}/fork` — Fork a story (clones chapters/metadata into a new story owned by the caller's workspace with `published=False` and `is_example=False`)
-- `DELETE /api/stories/{id}` — Delete a story; returns 403 if the story is an example
-
-**Connections (external tile sources):**
-- `GET /api/connections` — List connections in the workspace
-- `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections support two render paths via the optional `render_path` field: `"client"` (DuckDB-WASM) or `"server"` (tippecanoe → PMTiles → R2, async background job). When omitted, the server infers the path by issuing a HEAD request for the file size: files over 50 MB → `"server"`, otherwise → `"client"`.
-- `GET /api/connections/{id}/stream` — SSE stream of server-side conversion progress for a GeoParquet connection; emits `event: status` events with `{status, tile_url, error, feature_count}`; no workspace auth on this endpoint (EventSource cannot send custom headers); connection UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
-- `GET /api/connections/{id}` — Get a connection by ID; returns 404 if the caller's workspace does not own the connection and it is not explicitly shared or referenced by a published story
-- `PATCH /api/connections/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the connection belongs to another workspace
-- `PATCH /api/connections/{id}/categories` — Update category labels and/or colors for a categorical COG connection; body is a list of `{"value": int, "label"?: str, "color"?: "#RRGGBB"}` objects (each entry must include at least one of `label` or `color`); the first color override snapshots the prior color into `defaultColor`; returns 400 if connection is not categorical or a value doesn't exist
-- `PATCH /api/connections/{id}/render-mode` — Persist the user's chosen render mode (`"client"`, `"server"`, or `null` to clear); body `{"render_mode": "client"|"server"|null}`; returns 400 if `"client"` is requested but eligibility checks fail, 403 if the connection belongs to another workspace
-- `DELETE /api/connections/{id}` — Delete a connection
-
-**Remote data discovery:**
-- `POST /api/discover` — Discover geospatial files at a URL or S3 prefix
-- `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset
-- `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ausantarctic/ghrsst-mur-v2`, `alexgleith/gebco-2024`, `vizzuality/lg-land-carbon-data`, `vida/google-microsoft-osm-open-buildings`). Raster products (`kind="mosaic"`) run a STAC/path enumerator and register as pgSTAC mosaics; PMTiles products (`kind="pmtiles"`) read the remote PMTiles v3 header for bounds/zoom and register as a `FormatPair.PMTILES` vector dataset pointing at the source URL.
-
-**Other:**
-- `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
-- `POST /api/inspect-url` — Inspect a remote URL before registering it as a connection; body `{"url": "..."}`; returns `{format, is_cog, size_bytes, bounds, has_errors, error_detail}` (`bounds` is reserved for future use and always `null` currently). Format is detected from the path/template (`xyz`, `pmtiles`, `parquet`, `cog`, `tiff`, `geojson`, or `unknown`). For non-XYZ URLs, runs SSRF validation (`validate_url_safe`) and a HEAD probe for `content-length`. When the detected format is `tiff` and the HEAD probe succeeds, also runs `check_remote_is_cog` (10s timeout) to refine the `is_cog` flag; probe failures are swallowed and surfaced as `is_cog=false` rather than as errors
-- `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources); HTTPS-only, blocks private/loopback IPs, restricts to `.pmtiles`/`.tif`/`.tiff` extensions, rejects redirects, caps responses at 50 MB
-- `GET /api/health` — Health check
-
-### Example datasets
-
-On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and are surfaced to every workspace's `GET /api/datasets` response so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly. PMTiles-kind products are registered via `src/services/pmtiles_register.py`, which probes the first 127 bytes of the remote file (`src/services/pmtiles_header.py`) to extract bounds, min/max zoom, and verify the tile type is MVT; mosaic-kind products are enumerated and registered via `register_remote_collection`.
-
-Stories also support the `is_example` flag (see the `stories` table). Example stories are surfaced to every workspace's `GET /api/stories` response and cannot be modified or deleted via the API — instead, callers can `POST /api/stories/{id}/fork` to clone an example into their workspace. A separate startup task (`src/services/example_stories.py`) polls on a fixed cadence and calls `seed_example_stories`, which inserts any story whose required example datasets are already registered (matched by `source_url` in dataset metadata). Running independently of the dataset-registration retry loop means stories whose datasets are ready can seed without waiting for slower products (e.g. GHRSST temporal enumeration). Seeding is idempotent — stories whose titles already exist as `is_example` rows are skipped, and stories whose required datasets aren't yet registered are retried on the next tick.
+On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
 
 ### Conversion pipeline
 

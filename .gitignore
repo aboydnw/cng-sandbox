@@ -18,6 +18,5 @@ scripts/update-duckdns.sh
 .env.*.local
 .superpowers/
 .worktrees/
-docs/
 .yarn/
 package-lock.json

@@ -17,6 +17,7 @@ from src.models.connection import ConnectionRow
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
 from src.services.render_mode import RenderModePayload, check_render_mode_allowed
+from src.services.url_validation import SSRFError, raise_if_redirect
 from src.workspace import validate_workspace_id
 
 logger = logging.getLogger(__name__)
@@ -30,11 +31,10 @@ async def _head_content_length(url: str) -> int | None:
     try:
         async with httpx.AsyncClient(follow_redirects=False, timeout=5) as http:
             r = await http.head(url)
-            if 300 <= r.status_code < 400:
-                return None
+            raise_if_redirect(r)
             cl = r.headers.get("content-length")
             return int(cl) if cl else None
-    except Exception:
+    except (httpx.HTTPError, SSRFError, ValueError):
         return None
 
 

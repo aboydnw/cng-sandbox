@@ -113,6 +113,7 @@ docker compose --profile prod up -d --build
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 - Caddy applies baseline security headers to every response (HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`). The CSP allows `'wasm-unsafe-eval'` for DuckDB-WASM, whitelists `https://static.cloudflareinsights.com` (Cloudflare Web Analytics beacon) and `https://plausible.io` (Plausible analytics tracker) on `script-src`, and is permissive on `connect-src`/`img-src` to accommodate user-supplied tile URLs and the CARTO basemap. When adding any new third-party script origin, update both the `Caddyfile` CSP `script-src` directive and this note
 - Tile responses (`/cog/*`, `/raster/*`, `/vector/*`) are served with `Cache-Control: public, max-age=3600`. Tile URLs are immutable per dataset (a change to the underlying data produces a new STAC item id or query param), so a 1-hour browser cache is safe and reduces Hetzner egress
+- `/storage/*` (R2 proxy) responds with `Access-Control-Allow-Origin: *` and preflight handling for `OPTIONS`, so shared COGs can be fetched cross-origin by external tile/raster clients. The path is already public at the edge; CORS just unblocks browsers from reading the bytes on a non-sandbox origin
 
 ## CI/CD
 

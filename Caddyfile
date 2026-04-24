@@ -20,13 +20,29 @@
 
 	# Data-serving paths: proxy to R2 public URL. Public — range requests
 	# from PMTiles / DuckDB WASM can't carry Basic Auth credentials.
+	# CORS headers are set so shared COGs (is_shared=true) can be consumed
+	# cross-origin by external clients (deck.gl-raster, external map apps,
+	# etc.). Access is already gated by the share flag at the API layer;
+	# once the underlying object is served through this path it's public.
 	handle /storage/* {
-		uri strip_prefix /storage
-		reverse_proxy {$R2_PUBLIC_URL} {
-			header_up Host {upstream_hostport}
-			header_up -Authorization
-			transport http {
-				tls
+		header {
+			Access-Control-Allow-Origin "*"
+			Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+			Access-Control-Allow-Headers "Range"
+			Access-Control-Expose-Headers "Content-Length, Content-Range, Accept-Ranges, ETag"
+		}
+		@options method OPTIONS
+		handle @options {
+			respond 204
+		}
+		handle {
+			uri strip_prefix /storage
+			reverse_proxy {$R2_PUBLIC_URL} {
+				header_up Host {upstream_hostport}
+				header_up -Authorization
+				transport http {
+					tls
+				}
 			}
 		}
 	}

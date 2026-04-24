@@ -2,6 +2,8 @@
 
 Read this when working on any endpoint under `/api/*`, adding new routes, debugging frontend ↔ backend contracts, or when the MCP server needs a new tool.
 
+**Workspace header**: Workspace-listing reads (`GET /api/datasets`, `GET /api/stories`, `GET /api/connections`) require an `X-Workspace-Id` header identifying the caller's 8-character workspace. Without it the server returns 400. The Vite dev proxy and the MCP server both forward this header; direct API callers must set it themselves.
+
 ## Upload & conversion
 
 - `POST /api/upload` — Upload a file (multipart form); returns 409 with `{"detail": "duplicate_dataset", "dataset_id": ..., "filename": ...}` if a file with the same name already exists in the workspace
@@ -18,7 +20,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 ## Datasets
 
-- `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace)
+- `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it).
 - `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`, `is_example`, and `is_shared`); returns 404 if the caller's workspace does not own the dataset and the dataset is not an example, not explicitly shared, and not referenced by a published story
 - `PATCH /api/datasets/{id}` — Update editable dataset metadata (currently just `title`, 1–200 chars; pass `null` to clear); returns 403 if the dataset is an example or belongs to another workspace
 - `PATCH /api/datasets/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the dataset is an example or belongs to another workspace
@@ -31,7 +33,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 ## Stories (shareable map narratives)
 
 - `POST /api/stories` — Create a story with chapters linking to datasets
-- `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace)
+- `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it).
 - `GET /api/stories/{id}` — Get a story by ID
 - `PATCH /api/stories/{id}` — Update a story; returns 403 if the story is an example (`is_example=True`)
 - `POST /api/stories/{id}/fork` — Fork a story (clones chapters/metadata into a new story owned by the caller's workspace with `published=False` and `is_example=False`)
@@ -39,7 +41,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 ## Connections (external tile sources)
 
-- `GET /api/connections` — List connections in the workspace
+- `GET /api/connections` — List connections in the workspace. Requires `X-Workspace-Id` header (returns 400 without it).
 - `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections support two render paths via the optional `render_path` field: `"client"` (DuckDB-WASM) or `"server"` (tippecanoe → PMTiles → R2, async background job). When omitted, the server infers the path by issuing a HEAD request for the file size: files over 50 MB → `"server"`, otherwise → `"client"`.
 - `GET /api/connections/{id}/stream` — SSE stream of server-side conversion progress for a GeoParquet connection; emits `event: status` events with `{status, tile_url, error, feature_count}`; no workspace auth on this endpoint (EventSource cannot send custom headers); connection UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
 - `GET /api/connections/{id}` — Get a connection by ID; returns 404 if the caller's workspace does not own the connection and it is not explicitly shared or referenced by a published story

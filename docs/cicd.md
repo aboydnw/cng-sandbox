@@ -48,4 +48,6 @@ All commits to `main` must use conventional prefixes:
 | `feat:` | New feature | minor (0.1.0 → 0.2.0) |
 | `fix:` | Bug fix | patch (0.1.0 → 0.1.1) |
 | `feat!:` or `fix!:` | Breaking change | major (0.1.0 → 1.0.0) |
-| `chore:`, `docs:`, `refactor:` | Maintenance | no bump (appears in changelog) |
+| `chore:`, `docs:`, `refactor:`, `test:` | Maintenance | no bump (appears in changelog) |
+
+The enforcement workflow (`.github/workflows/conventional-commits.yml`) accepts `feat`, `fix`, `docs`, `chore`, `refactor`, and `test` prefixes. Only `feat`/`fix` (and their `!` breaking variants) trigger a release-please version bump; the rest land in the changelog without bumping.

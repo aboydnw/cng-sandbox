@@ -9,6 +9,18 @@ class SSRFError(ValueError):
     pass
 
 
+def _is_unsafe_ip(addr: ipaddress._BaseAddress) -> bool:
+    """Return True if the address belongs to a range we must not target."""
+    return (
+        addr.is_private
+        or addr.is_loopback
+        or addr.is_reserved
+        or addr.is_link_local
+        or addr.is_multicast
+        or addr.is_unspecified
+    )
+
+
 def validate_url_safe(url: str, *, allow_s3: bool = False) -> str:
     """Validate that a URL does not target private/internal networks.
 
@@ -34,19 +46,22 @@ def validate_url_safe(url: str, *, allow_s3: bool = False) -> str:
 
     try:
         addr = ipaddress.ip_address(hostname)
-        if addr.is_private or addr.is_loopback or addr.is_reserved:
+        if _is_unsafe_ip(addr):
             raise SSRFError("URLs pointing to private networks are not allowed")
     except ValueError:
-        # hostname is a DNS name, resolve it
         try:
             resolved = socket.getaddrinfo(hostname, None)
-            for _, _, _, _, sockaddr in resolved:
-                addr = ipaddress.ip_address(sockaddr[0])
-                if addr.is_private or addr.is_loopback or addr.is_reserved:
-                    raise SSRFError(
-                        "URLs resolving to private networks are not allowed"
-                    )
-        except socket.gaierror:
-            pass
+        except socket.gaierror as exc:
+            raise SSRFError(f"Could not resolve hostname: {hostname}") from exc
+
+        if not resolved:
+            raise SSRFError(f"Could not resolve hostname: {hostname}")
+
+        for _, _, _, _, sockaddr in resolved:
+            addr = ipaddress.ip_address(sockaddr[0])
+            if _is_unsafe_ip(addr):
+                raise SSRFError(
+                    "URLs resolving to private networks are not allowed"
+                )
 
     return url

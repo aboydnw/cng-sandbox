@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.27.0](https://github.com/aboydnw/cng-sandbox/compare/v1.26.0...v1.27.0) (2026-04-24)
+
+
+### Features
+
+* add CORS headers to /storage/* endpoint ([#339](https://github.com/aboydnw/cng-sandbox/issues/339)) ([505769e](https://github.com/aboydnw/cng-sandbox/commit/505769e0cdb545bcf4e0eb05523a547faf3aa763))
+
 ## [1.26.0](https://github.com/aboydnw/cng-sandbox/compare/v1.25.0...v1.26.0) (2026-04-23)
 
 

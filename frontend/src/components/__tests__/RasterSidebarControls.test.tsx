@@ -61,6 +61,29 @@ describe("RasterSidebarControls shared prop", () => {
       screen.queryByText(/File exceeds 500 MB browser limit/)
     ).not.toBeInTheDocument();
   });
+
+  it("renders the mark-as-categorical card when not shared", () => {
+    renderCtrl({
+      canMarkCategorical: true,
+      datasetId: "d1",
+      onDatasetUpdated: vi.fn(),
+    });
+    expect(
+      screen.getByRole("button", { name: /mark as categorical/i })
+    ).toBeInTheDocument();
+  });
+
+  it("hides the mark-as-categorical card when shared", () => {
+    renderCtrl({
+      shared: true,
+      canMarkCategorical: true,
+      datasetId: "d1",
+      onDatasetUpdated: vi.fn(),
+    });
+    expect(
+      screen.queryByRole("button", { name: /mark as categorical/i })
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("RasterSidebarControls rescale + flip", () => {

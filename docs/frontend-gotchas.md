@@ -4,7 +4,7 @@ Implementation details and non-obvious behaviors in the frontend. Read this when
 
 ## Tile URLs and loaders
 
-- **MapLibre requires absolute tile URLs**: Vector tile sources must use `window.location.origin + path`, not relative paths. See `VectorMap.tsx`.
+- **Vector tile sources need absolute URLs**: `buildVectorLayer` (`src/lib/layers/vectorLayer.ts`) prefixes `window.location.origin` onto relative tile URLs before handing them to deck.gl's `MVTLayer`. External PMTiles go through `/api/proxy` to avoid CORS.
 - **deck.gl handles relative URLs fine**: Raster tiles via `createCOGLayer`/`useTitiler` work with relative paths since deck.gl uses `fetch()` internally.
 - **SSE named events**: The ingestion API sends `event: status` SSE events. The frontend must use `addEventListener("status", ...)`, not `onmessage` (which only handles unnamed events).
 - **COG tiler proxy preserves `/cog` prefix**: Unlike `/raster` and `/vector` (which strip their prefix before forwarding), the `/cog` proxy passes the path through unchanged because titiler's COG routes are already mounted under `/cog/`.

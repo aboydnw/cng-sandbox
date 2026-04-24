@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.services.cog_checker import check_remote_is_cog
-from src.services.url_validation import SSRFError, validate_url_safe
+from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
 
 router = APIRouter(prefix="/api", tags=["inspection"])
 
@@ -48,14 +48,17 @@ def _detect_format(url: str) -> tuple[str, bool]:
 
 async def _probe_size(url: str) -> tuple[int | None, str | None]:
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=5.0) as client:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=5.0) as client:
             response = await client.head(url)
+            raise_if_redirect(response)
             if response.is_success:
                 content_length = response.headers.get("content-length")
                 return (int(content_length) if content_length else None, None)
             return None, f"HTTP {response.status_code}"
     except httpx.TimeoutException:
         return None, "Request timeout"
+    except SSRFError as exc:
+        return None, str(exc)
     except Exception as exc:
         return None, str(exc)
 

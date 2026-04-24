@@ -2,11 +2,30 @@
 
 import ipaddress
 import socket
+from typing import Protocol
 from urllib.parse import urlparse
 
 
 class SSRFError(ValueError):
     pass
+
+
+class _HasStatus(Protocol):
+    status_code: int
+
+
+def raise_if_redirect(response: _HasStatus) -> None:
+    """Reject 3xx responses so callers cannot be SSRFed via redirect.
+
+    Callers must pass `follow_redirects=False` to httpx and invoke this
+    helper before trusting the response. validate_url_safe cannot inspect
+    the redirect target, so following a redirect would bypass SSRF checks.
+    """
+    if 300 <= response.status_code < 400:
+        raise SSRFError(
+            "Redirects are not permitted on validated URLs; "
+            "the redirect target cannot be re-validated safely."
+        )
 
 
 def _is_unsafe_ip(addr: ipaddress._BaseAddress) -> bool:

@@ -52,6 +52,8 @@ class TestEstimateTotalSize:
         from src.services import remote_pipeline
 
         class FakeResponse:
+            status_code = 200
+
             @property
             def headers(self):
                 return {"content-length": "1000"}
@@ -63,7 +65,7 @@ class TestEstimateTotalSize:
             async def __aexit__(self, *a):
                 pass
 
-            async def head(self, url, follow_redirects=True):
+            async def head(self, url, follow_redirects=False):
                 return FakeResponse()
 
         monkeypatch.setattr(
@@ -80,6 +82,8 @@ class TestEstimateTotalSize:
         from src.services import remote_pipeline
 
         class FakeResponse:
+            status_code = 200
+
             @property
             def headers(self):
                 return {}
@@ -91,7 +95,7 @@ class TestEstimateTotalSize:
             async def __aexit__(self, *a):
                 pass
 
-            async def head(self, url, follow_redirects=True):
+            async def head(self, url, follow_redirects=False):
                 return FakeResponse()
 
         monkeypatch.setattr(

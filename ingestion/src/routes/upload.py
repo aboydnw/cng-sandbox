@@ -25,7 +25,7 @@ from src.services.duplicate_check import check_duplicate_filename
 from src.services.format_checker import check_format
 from src.services.pipeline import run_pipeline
 from src.services.temporal_pipeline import run_temporal_pipeline
-from src.services.url_validation import SSRFError, validate_url_safe
+from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
 from src.state import jobs, scan_store, scan_store_lock
 from src.workspace import get_workspace_id
 
@@ -219,12 +219,15 @@ async def convert_url(
     try:
         async with _save_chunks(suffix=ext) as (tmp_path, write):  # noqa: SIM117
             async with httpx.AsyncClient(
-                follow_redirects=True, timeout=120.0
+                follow_redirects=False, timeout=120.0
             ) as client:
                 async with client.stream("GET", body.url) as resp:
+                    raise_if_redirect(resp)
                     resp.raise_for_status()
                     async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                         await write(chunk)
+    except SSRFError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except httpx.HTTPStatusError as e:
         msg = _format_http_error(
             e.response.status_code, e.response.reason_phrase or "Unknown"

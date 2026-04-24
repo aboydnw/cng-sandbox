@@ -28,8 +28,10 @@ SIZE_THRESHOLD_BYTES = 50 * 1024 * 1024
 
 async def _head_content_length(url: str) -> int | None:
     try:
-        async with httpx.AsyncClient(timeout=5) as http:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=5) as http:
             r = await http.head(url)
+            if 300 <= r.status_code < 400:
+                return None
             cl = r.headers.get("content-length")
             return int(cl) if cl else None
     except Exception:

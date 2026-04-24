@@ -37,6 +37,7 @@ from src.services.temporal_validation import (
     compute_global_stats,
     validate_cross_file_compatibility,
 )
+from src.services.url_validation import raise_if_redirect
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,8 @@ async def _estimate_total_size(urls: list[str], sample_count: int = 5) -> int | 
     async with httpx.AsyncClient(timeout=10.0) as client:
         for url in sample:
             try:
-                resp = await client.head(url, follow_redirects=True)
+                resp = await client.head(url, follow_redirects=False)
+                raise_if_redirect(resp)
                 length = resp.headers.get("content-length")
                 if length is not None:
                     sizes.append(int(length))
@@ -268,8 +270,9 @@ async def _run_with_conversion(
 
                 async with (
                     httpx.AsyncClient(timeout=120.0) as client,
-                    client.stream("GET", url, follow_redirects=True) as resp,
+                    client.stream("GET", url, follow_redirects=False) as resp,
                 ):
+                    raise_if_redirect(resp)
                     resp.raise_for_status()
                     with open(raw_path, "wb") as f:
                         async for chunk in resp.aiter_bytes(chunk_size=1_048_576):

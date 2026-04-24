@@ -145,7 +145,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
 
       {!isCategorical && (
         <>
-          {canMarkCategorical && datasetId && onDatasetUpdated && (
+          {!shared && canMarkCategorical && datasetId && onDatasetUpdated && (
             <MarkAsCategoricalCard
               datasetId={datasetId}
               onSuccess={onDatasetUpdated}

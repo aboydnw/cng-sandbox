@@ -25,6 +25,7 @@
 	# etc.). Access is already gated by the share flag at the API layer;
 	# once the underlying object is served through this path it's public.
 	handle /storage/* {
+		uri strip_prefix /storage
 		header {
 			Access-Control-Allow-Origin "*"
 			Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
@@ -36,7 +37,6 @@
 			respond 204
 		}
 		handle {
-			uri strip_prefix /storage
 			reverse_proxy {$R2_PUBLIC_URL} {
 				header_up Host {upstream_hostport}
 				header_up -Authorization

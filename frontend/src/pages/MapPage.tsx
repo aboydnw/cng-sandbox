@@ -137,6 +137,37 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     [controls.setRenderMode, controls.renderMode, item, shared]
   );
 
+  const [savingPreferredColormap, setSavingPreferredColormap] = useState(false);
+
+  const handleSavePreferredColormap = useCallback(async () => {
+    if (!item) return;
+    setSavingPreferredColormap(true);
+    try {
+      const payload = {
+        preferredColormap: controls.colormapName,
+        preferredColormapReversed: controls.colormapReversed,
+      };
+      if (item.source === "connection") {
+        await connectionsApi.setPreferredColormap(item.id, payload);
+      } else {
+        await datasetsApi.setPreferredColormap(item.id, payload);
+      }
+      refresh();
+      toaster.create({
+        title: "Default colormap saved",
+        type: "success",
+      });
+    } catch (err) {
+      toaster.create({
+        title: "Failed to save default colormap",
+        description: (err as Error).message,
+        type: "error",
+      });
+    } finally {
+      setSavingPreferredColormap(false);
+    }
+  }, [item, controls.colormapName, controls.colormapReversed, refresh]);
+
   // --- Camera ---
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [basemap, setBasemap] = useState("streets");
@@ -734,6 +765,16 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               }
               onDatasetUpdated={refresh}
               shared={shared}
+              savePreferredColormap={
+                !shared && item?.dataType === "raster" && !item?.dataset?.is_example
+                  ? {
+                      currentSavedColormap: item?.preferredColormap ?? null,
+                      currentSavedReversed: item?.preferredColormapReversed ?? null,
+                      onSave: handleSavePreferredColormap,
+                      saving: savingPreferredColormap,
+                    }
+                  : undefined
+              }
             />
           </Box>
         </Flex>

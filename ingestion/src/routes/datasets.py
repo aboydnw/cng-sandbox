@@ -15,6 +15,7 @@ from src.services.categorical_extract import (
     UnsupportedDtype,
     extract_unique_values,
 )
+from src.services.colormap import ColormapPayload
 from src.services.dataset_delete import delete_dataset
 from src.services.render_mode import RenderModePayload, check_render_mode_allowed
 from src.services.storage import StorageService
@@ -145,6 +146,42 @@ async def set_dataset_render_mode(
         if reason is not None:
             raise HTTPException(status_code=400, detail=reason)
         row.render_mode = body.render_mode
+        session.commit()
+        session.refresh(row)
+        d = row.to_dict()
+        d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
+        return d
+    finally:
+        session.close()
+
+
+@router.patch("/datasets/{dataset_id}/colormap")
+async def set_dataset_colormap(
+    dataset_id: str, body: ColormapPayload, request: Request
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(DatasetRow, dataset_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example datasets cannot be modified"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        if row.dataset_type != "raster":
+            raise HTTPException(
+                status_code=400,
+                detail="preferred_colormap only applies to raster datasets",
+            )
+        row.preferred_colormap = body.preferred_colormap
+        if body.preferred_colormap is None:
+            row.preferred_colormap_reversed = None
+        else:
+            row.preferred_colormap_reversed = body.preferred_colormap_reversed
         session.commit()
         session.refresh(row)
         d = row.to_dict()

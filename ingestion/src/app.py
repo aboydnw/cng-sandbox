@@ -7,6 +7,8 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import create_engine as sa_create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -14,6 +16,7 @@ from src.config import get_settings
 from src.models.base import Base
 from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
+from src.rate_limit import limiter, rate_limit_exceeded_handler
 from src.services.cleanup import cleanup_expired_rows
 from src.state import scan_store, scan_store_lock
 
@@ -306,6 +309,10 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.state.db_engine = db_engine
     app.state.db_session_factory = sessionmaker(bind=db_engine)
     app.state.settings = settings
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
     app.add_middleware(
         CORSMiddleware,

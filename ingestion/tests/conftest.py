@@ -20,6 +20,15 @@ async def _noop_lifespan(app):
     yield
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    from src.rate_limit import limiter
+
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
 @pytest.fixture
 def db_engine():
     engine = create_engine(

@@ -4,13 +4,17 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 **Workspace header**: Workspace-listing reads (`GET /api/datasets`, `GET /api/stories`, `GET /api/connections`) require an `X-Workspace-Id` header identifying the caller's 8-character workspace. Without it the server returns 400. The Vite dev proxy and the MCP server both forward this header; direct API callers must set it themselves.
 
+**Rate limiting**: Abuse-prone endpoints are rate-limited via slowapi (see `src/rate_limit.py`). Limits are keyed by `X-Workspace-Id` when present, otherwise by remote IP. Exceeding a limit returns 429 with a `Retry-After` header. A default ceiling of 300/minute applies globally; per-endpoint limits are noted alongside each route below.
+
+**SSRF protection on URL fetches**: Endpoints that fetch user-supplied URLs (`/api/upload` via `convert-url`, `/api/connections`, `/api/inspect-url`, `/api/proxy`, `/api/connect-remote`, `/api/discover`) call `validate_url_safe()` to block addresses in private, loopback, reserved, link-local, multicast, unspecified (`0.0.0.0`/`::`), and IPv4-mapped IPv6 ranges, and disable HTTP redirect following. Redirects are explicitly rejected (via `raise_if_redirect`) because the redirect target cannot be re-validated safely. For COG connections, an extra HEAD pre-flight runs before handing the URL to GDAL `/vsicurl/`, since GDAL follows redirects internally with no public knob to disable.
+
 ## Upload & conversion
 
-- `POST /api/upload` — Upload a file (multipart form); returns 409 with `{"detail": "duplicate_dataset", "dataset_id": ..., "filename": ...}` if a file with the same name already exists in the workspace
-- `POST /api/convert-url` — Fetch and convert a file from a URL; same 409 duplicate response as above
+- `POST /api/upload` — Upload a file (multipart form); returns 409 with `{"detail": "duplicate_dataset", "dataset_id": ..., "filename": ...}` if a file with the same name already exists in the workspace. Rate-limited to 20/hour
+- `POST /api/convert-url` — Fetch and convert a file from a URL; same 409 duplicate response as above; rejects 3xx redirects from the source URL (returns 400). Rate-limited to 20/hour
 - `GET /api/check-duplicate?filename=<name>` — Preflight duplicate check; returns 409 if a dataset with that filename exists, or `{"duplicate": false}` if not
 - `POST /api/check-format` — Pre-upload format validation; accepts a file chunk and filename, returns `{"valid": true}` or `{"valid": false, "error": "..."}`
-- `POST /api/upload-temporal` — Upload multiple raster files as a time series (2–50 files, same format)
+- `POST /api/upload-temporal` — Upload multiple raster files as a time series (2–50 files, same format). Rate-limited to 10/hour
 - `POST /api/scan/{scan_id}/convert` — Trigger conversion after a scan completes
 
 ## Jobs
@@ -43,7 +47,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 ## Connections (external tile sources)
 
 - `GET /api/connections` — List connections in the workspace. Requires `X-Workspace-Id` header (returns 400 without it).
-- `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections support two render paths via the optional `render_path` field: `"client"` (DuckDB-WASM) or `"server"` (tippecanoe → PMTiles → R2, async background job). When omitted, the server infers the path by issuing a HEAD request for the file size: files over 50 MB → `"server"`, otherwise → `"client"`.
+- `POST /api/connections` — Register an external data source (XYZ raster/vector, COG, PMTiles, GeoParquet); validates the URL with `validate_url_safe` (blocks private/loopback IPs) and rejects HEAD redirects on the size probe. COG connections automatically run categorical detection and persist `is_categorical` + `categories` on the connection row. GeoParquet connections support two render paths via the optional `render_path` field: `"client"` (DuckDB-WASM) or `"server"` (tippecanoe → PMTiles → R2, async background job). When omitted, the server infers the path by issuing a HEAD request for the file size: files over 50 MB → `"server"`, otherwise → `"client"`. Rate-limited to 30/hour
 - `GET /api/connections/{id}/stream` — SSE stream of server-side conversion progress for a GeoParquet connection; emits `event: status` events with `{status, tile_url, error, feature_count}`; no workspace auth on this endpoint (EventSource cannot send custom headers); connection UUIDs are the only access barrier — a scoped auth token or cookie-based workspace auth would be more robust for production
 - `GET /api/connections/{id}` — Get a connection by ID; returns 404 if the caller's workspace does not own the connection and it is not explicitly shared or referenced by a published story
 - `PATCH /api/connections/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the connection belongs to another workspace
@@ -54,13 +58,13 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 ## Remote data discovery
 
-- `POST /api/discover` — Discover geospatial files at a URL or S3 prefix
-- `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset
+- `POST /api/discover` — Discover geospatial files at a URL or S3 prefix. Rate-limited to 30/hour
+- `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset. Rate-limited to 30/hour
 - `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ausantarctic/ghrsst-mur-v2`, `alexgleith/gebco-2024`, `vizzuality/lg-land-carbon-data`, `vida/google-microsoft-osm-open-buildings`). Raster products (`kind="mosaic"`) run a STAC/path enumerator and register as pgSTAC mosaics; PMTiles products (`kind="pmtiles"`) read the remote PMTiles v3 header for bounds/zoom and register as a `FormatPair.PMTILES` vector dataset pointing at the source URL.
 
 ## Other
 
-- `POST /api/bug-report` — Submit a bug report (creates a GitHub issue)
-- `POST /api/inspect-url` — Inspect a remote URL before registering it as a connection; body `{"url": "..."}`; returns `{format, is_cog, size_bytes, bounds, has_errors, error_detail}` (`bounds` is reserved for future use and always `null` currently). Format is detected from the path/template (`xyz`, `pmtiles`, `parquet`, `cog`, `tiff`, `geojson`, or `unknown`). For non-XYZ URLs, runs SSRF validation (`validate_url_safe`) and a HEAD probe for `content-length`. When the detected format is `tiff` and the HEAD probe succeeds, also runs `check_remote_is_cog` (10s timeout) to refine the `is_cog` flag; probe failures are swallowed and surfaced as `is_cog=false` rather than as errors
-- `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources); HTTPS-only, blocks private/loopback IPs, restricts to `.pmtiles`/`.tif`/`.tiff` extensions, rejects redirects, caps responses at 50 MB
+- `POST /api/bug-report` — Submit a bug report (creates a GitHub issue). Rate-limited to 5/hour
+- `POST /api/inspect-url` — Inspect a remote URL before registering it as a connection; body `{"url": "..."}`; returns `{format, is_cog, size_bytes, bounds, has_errors, error_detail}` (`bounds` is reserved for future use and always `null` currently). Format is detected from the path/template (`xyz`, `pmtiles`, `parquet`, `cog`, `tiff`, `geojson`, or `unknown`). For non-XYZ URLs, runs SSRF validation (`validate_url_safe`) and a HEAD probe for `content-length` with redirects disabled (3xx responses are surfaced via `error_detail`). When the detected format is `tiff` and the HEAD probe succeeds, also runs `check_remote_is_cog` (10s timeout) to refine the `is_cog` flag; probe failures are swallowed and surfaced as `is_cog=false` rather than as errors. Rate-limited to 120/hour
+- `GET /api/proxy` — Proxy GET requests to external URLs (used by the frontend for CORS-restricted resources); HTTPS-only, blocks private/loopback IPs, restricts to `.pmtiles`/`.tif`/`.tiff` extensions, rejects redirects, caps responses at 50 MB. Rate-limited to 120/hour
 - `GET /api/health` — Health check

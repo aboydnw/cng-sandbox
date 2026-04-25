@@ -6,6 +6,8 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, model_validator
 
+from src.rate_limit import limiter
+
 router = APIRouter(prefix="/api")
 
 
@@ -98,6 +100,7 @@ def _build_issue_body(req: BugReportRequest) -> str:
 
 
 @router.post("/bug-report")
+@limiter.limit("5/hour")
 def submit_bug_report(req: BugReportRequest, request: Request):
     settings = request.app.state.settings
     if not settings.github_token or not settings.github_repo:

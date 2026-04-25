@@ -15,6 +15,7 @@ from src.services.pmtiles_ingest import (
     parquet_to_pmtiles_file,
 )
 from src.services.storage import StorageService
+from src.services.url_validation import raise_if_redirect
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,8 @@ def _download_if_remote(source_url: str, tmp_dir: str) -> str:
     if source_url.startswith(("http://", "https://")):
         local_path = os.path.join(tmp_dir, "source.parquet")
         logger.info("Downloading %s", source_url)
-        with httpx.stream("GET", source_url, follow_redirects=True, timeout=300) as r:
+        with httpx.stream("GET", source_url, follow_redirects=False, timeout=300) as r:
+            raise_if_redirect(r)
             r.raise_for_status()
             with open(local_path, "wb") as f:
                 for chunk in r.iter_bytes(chunk_size=8192):

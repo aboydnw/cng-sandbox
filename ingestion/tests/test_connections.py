@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import pytest
 
 
@@ -519,7 +521,7 @@ def test_head_content_length_propagates_ssrf_error_on_redirect(monkeypatch):
 
     class _FakeResponse:
         status_code = 302
-        headers: dict = {}
+        headers: ClassVar[dict] = {}
 
     class _FakeClient:
         def __init__(self, *args, **kwargs):

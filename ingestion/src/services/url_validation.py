@@ -74,13 +74,13 @@ def validate_url_safe(url: str, *, allow_s3: bool = False) -> str:
             raise SSRFError(f"Could not resolve hostname: {hostname}") from exc
 
         if not resolved:
-            raise SSRFError(f"Could not resolve hostname: {hostname}")
+            raise SSRFError(f"Could not resolve hostname: {hostname}") from None
 
         for _, _, _, _, sockaddr in resolved:
             addr = ipaddress.ip_address(sockaddr[0])
             if _is_unsafe_ip(addr):
                 raise SSRFError(
                     "URLs resolving to private networks are not allowed"
-                )
+                ) from None
 
     return url

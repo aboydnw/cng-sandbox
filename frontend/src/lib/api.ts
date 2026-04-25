@@ -110,6 +110,26 @@ export const connectionsApi = {
       return r.json();
     });
   },
+
+  setPreferredColormap(
+    id: string,
+    payload: {
+      preferredColormap: string | null;
+      preferredColormapReversed: boolean | null;
+    }
+  ): Promise<Connection> {
+    return workspaceFetch(`/api/connections/${id}/colormap`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        preferred_colormap: payload.preferredColormap,
+        preferred_colormap_reversed: payload.preferredColormapReversed,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
+    });
+  },
 };
 
 export const datasetsApi = {
@@ -131,6 +151,26 @@ export const datasetsApi = {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ render_mode: mode }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
+    });
+  },
+
+  setPreferredColormap(
+    id: string,
+    payload: {
+      preferredColormap: string | null;
+      preferredColormapReversed: boolean | null;
+    }
+  ): Promise<Record<string, unknown>> {
+    return workspaceFetch(`/api/datasets/${id}/colormap`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        preferred_colormap: payload.preferredColormap,
+        preferred_colormap_reversed: payload.preferredColormapReversed,
+      }),
     }).then(async (r) => {
       if (!r.ok) throw new Error(await readErrorDetail(r));
       return r.json();

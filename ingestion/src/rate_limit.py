@@ -25,6 +25,28 @@ def _key_func(request: Request) -> str:
 limiter = Limiter(key_func=_key_func, default_limits=["300/minute"])
 
 
+def _retry_after_seconds(detail: str) -> int:
+    parts = detail.split(" per ")
+    if len(parts) != 2:
+        return 60
+    quantity, _, unit = parts[1].partition(" ")
+    try:
+        n = int(quantity) if quantity.isdigit() else 1
+    except ValueError:
+        n = 1
+    seconds = {
+        "second": 1,
+        "seconds": 1,
+        "minute": 60,
+        "minutes": 60,
+        "hour": 3600,
+        "hours": 3600,
+        "day": 86400,
+        "days": 86400,
+    }.get(unit.strip().lower(), 60)
+    return max(1, n * seconds)
+
+
 def rate_limit_exceeded_handler(
     request: Request, exc: RateLimitExceeded
 ) -> JSONResponse:
@@ -41,5 +63,5 @@ def rate_limit_exceeded_handler(
         status_code=429,
         content={"detail": f"Rate limit exceeded: {exc.detail}"},
     )
-    response.headers["Retry-After"] = "60"
+    response.headers["Retry-After"] = str(_retry_after_seconds(exc.detail))
     return response

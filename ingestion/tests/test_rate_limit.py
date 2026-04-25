@@ -31,9 +31,7 @@ def fresh_app():
     )
     app = create_app(settings, lifespan=_noop_lifespan)
     app.state.db_session_factory = sessionmaker(bind=engine)
-    app.state.limiter.reset()
     yield app
-    app.state.limiter.reset()
     engine.dispose()
 
 
@@ -122,3 +120,23 @@ def test_default_limit_applies_to_undecorated_endpoint(fresh_app):
         limiter._default_limits = original
     assert 429 in statuses
     assert statuses.index(429) == 3
+
+
+@pytest.mark.parametrize(
+    "detail,expected",
+    [
+        ("5 per 1 hour", 3600),
+        ("20 per 1 hour", 3600),
+        ("300 per 1 minute", 60),
+        ("1 per 2 hours", 7200),
+        ("10 per 1 second", 1),
+        ("not a real limit", 60),
+        ("", 60),
+        ("5 per", 60),
+        ("5 per 1 fortnight", 60),
+    ],
+)
+def test_retry_after_seconds(detail, expected):
+    from src.rate_limit import _retry_after_seconds
+
+    assert _retry_after_seconds(detail) == expected

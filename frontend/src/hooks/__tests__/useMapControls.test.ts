@@ -358,6 +358,55 @@ describe("useMapControls renderMode precedence", () => {
   });
 });
 
+describe("useMapControls — preferred colormap precedence", () => {
+  it("uses item.preferredColormap when no URL or localStorage override is set", () => {
+    const item = makeItem({
+      preferredColormap: "terrain",
+      preferredColormapReversed: false,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.colormapName).toBe("terrain");
+    expect(result.current.colormapReversed).toBe(false);
+  });
+
+  it("uses item.preferredColormapReversed=true when set", () => {
+    const item = makeItem({
+      preferredColormap: "plasma",
+      preferredColormapReversed: true,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.colormapName).toBe("plasma");
+    expect(result.current.colormapReversed).toBe(true);
+  });
+
+  it("localStorage/URL override wins over item.preferredColormap", () => {
+    const item = makeItem({
+      preferredColormap: "terrain",
+      preferredColormapReversed: false,
+    });
+    const overrides = {
+      itemId: item.id,
+      rescaleMin: null,
+      rescaleMax: null,
+      colormapReversed: true,
+      colormapName: "inferno",
+    };
+    const { result } = renderHook(() => useMapControls(item, overrides));
+    expect(result.current.colormapName).toBe("inferno");
+    expect(result.current.colormapReversed).toBe(true);
+  });
+
+  it("falls back to viridis when item has no preferredColormap", () => {
+    const item = makeItem({
+      preferredColormap: null,
+      preferredColormapReversed: null,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.colormapName).toBe("viridis");
+    expect(result.current.colormapReversed).toBe(false);
+  });
+});
+
 describe("client render size caps", () => {
   function itemWithSize(
     size: number,

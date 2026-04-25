@@ -25,6 +25,8 @@ class DatasetRow(Base):
     is_example = Column(Boolean, nullable=False, default=False)
     is_shared = Column(Boolean, nullable=False, default=False)
     render_mode = Column(String, nullable=True)
+    preferred_colormap = Column(String, nullable=True)
+    preferred_colormap_reversed = Column(Boolean, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Dataset API response format."""
@@ -45,6 +47,12 @@ class DatasetRow(Base):
             "is_example": bool(self.is_example),
             "is_shared": bool(self.is_shared),
             "render_mode": self.render_mode,
+            "preferred_colormap": self.preferred_colormap,
+            "preferred_colormap_reversed": (
+                None
+                if self.preferred_colormap_reversed is None
+                else bool(self.preferred_colormap_reversed)
+            ),
         }
 
 
@@ -62,6 +70,8 @@ _TOP_LEVEL_COLUMNS = frozenset(
         "is_example",
         "is_shared",
         "render_mode",
+        "preferred_colormap",
+        "preferred_colormap_reversed",
     )
 )
 
@@ -91,6 +101,10 @@ def persist_dataset(db_session_factory, dataset) -> None:
             is_example=getattr(dataset, "is_example", False),
             is_shared=getattr(dataset, "is_shared", False),
             render_mode=getattr(dataset, "render_mode", None),
+            preferred_colormap=getattr(dataset, "preferred_colormap", None),
+            preferred_colormap_reversed=getattr(
+                dataset, "preferred_colormap_reversed", None
+            ),
         )
         session.add(row)
         session.commit()

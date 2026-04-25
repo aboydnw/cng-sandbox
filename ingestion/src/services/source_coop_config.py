@@ -23,6 +23,8 @@ class SourceCoopProduct:
     enumerator_args: dict[str, Any] = field(default_factory=dict)
     is_temporal: bool = False
     pmtiles_url: str | None = None
+    preferred_colormap: str | None = None
+    preferred_colormap_reversed: bool | None = None
 
     def __post_init__(self) -> None:
         if self.kind == "pmtiles":
@@ -67,6 +69,8 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
         enumerator="path_listing",
         enumerator_args={},
         is_temporal=False,
+        preferred_colormap="terrain",
+        preferred_colormap_reversed=False,
     ),
     "vizzuality/lg-land-carbon-data": SourceCoopProduct(
         slug="vizzuality/lg-land-carbon-data",

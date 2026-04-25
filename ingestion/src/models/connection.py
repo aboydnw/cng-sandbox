@@ -38,6 +38,8 @@ class ConnectionRow(Base):
     file_size = Column(BigInteger, nullable=True)
     is_shared = Column(Boolean, nullable=False, default=False)
     render_mode = Column(String, nullable=True)
+    preferred_colormap = Column(String, nullable=True)
+    preferred_colormap_reversed = Column(Boolean, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -67,4 +69,10 @@ class ConnectionRow(Base):
             "file_size": self.file_size,
             "is_shared": bool(self.is_shared),
             "render_mode": self.render_mode,
+            "preferred_colormap": self.preferred_colormap,
+            "preferred_colormap_reversed": (
+                None
+                if self.preferred_colormap_reversed is None
+                else bool(self.preferred_colormap_reversed)
+            ),
         }

@@ -405,6 +405,32 @@ describe("useMapControls — preferred colormap precedence", () => {
     expect(result.current.colormapName).toBe("viridis");
     expect(result.current.colormapReversed).toBe(false);
   });
+
+  it("preserves in-session control state when item.preferredColormap changes (save+refresh)", () => {
+    const initial = makeItem({ preferredColormap: null, preferredColormapReversed: null });
+    const { result, rerender } = renderHook(({ item }) => useMapControls(item), {
+      initialProps: { item: initial },
+    });
+
+    act(() => {
+      result.current.setOpacity(0.5);
+      result.current.setRescale(10, 100);
+      result.current.setColormapReversed(true);
+    });
+
+    const refreshed = makeItem({
+      id: initial.id,
+      preferredColormap: "terrain",
+      preferredColormapReversed: true,
+    });
+    rerender({ item: refreshed });
+
+    expect(result.current.opacity).toBe(0.5);
+    expect(result.current.rescaleMin).toBe(10);
+    expect(result.current.rescaleMax).toBe(100);
+    expect(result.current.colormapReversed).toBe(true);
+    expect(result.current.colormapName).toBe("viridis");
+  });
 });
 
 describe("client render size caps", () => {

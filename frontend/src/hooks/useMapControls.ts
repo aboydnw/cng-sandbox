@@ -119,14 +119,11 @@ export function useMapControls(
     } else {
       setRenderMode("server");
     }
-  }, [
-    item?.id,
-    item?.dataType,
-    item?.renderMode,
-    eligibility.canRender,
-    itemColormap,
-    itemReversed,
-  ]);
+    // item.preferredColormap / preferredColormapReversed intentionally omitted:
+    // re-running on dataset refresh would wipe in-session opacity/rescale/
+    // categorical/reversed state. The lazy useState initializers already apply
+    // preferred-colormap precedence at mount.
+  }, [item?.id, item?.dataType, item?.renderMode, eligibility.canRender]);
 
   const setRescale = (min: number | null, max: number | null) => {
     setRescaleMin(min);

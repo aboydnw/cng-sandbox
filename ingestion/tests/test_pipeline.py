@@ -456,7 +456,7 @@ def test_convert_geotiff_categorical_preserves_source_crs(tmp_path):
     """Categorical COG in a non-4326 CRS must keep its source CRS and have overviews."""
     from rasterio.crs import CRS
 
-    width, height = 512, 512
+    width, height = 1024, 1024
     src_crs = CRS.from_epsg(5070)
     transform = rasterio.transform.from_bounds(0, 0, 100000, 100000, width, height)
     # Stripe pattern to force overview bleed detection.

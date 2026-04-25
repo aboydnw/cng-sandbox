@@ -6,7 +6,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 **Rate limiting**: Abuse-prone endpoints are rate-limited via slowapi (see `src/rate_limit.py`). Limits are keyed by `X-Workspace-Id` when present, otherwise by remote IP. Exceeding a limit returns 429 with a `Retry-After` header. A default ceiling of 300/minute applies globally; per-endpoint limits are noted alongside each route below.
 
-**SSRF protection on URL fetches**: Endpoints that fetch user-supplied URLs (`/api/upload` via `convert-url`, `/api/connections`, `/api/inspect-url`, `/api/proxy`, `/api/connect-remote`, `/api/discover`) call `validate_url_safe()` to block private/loopback/reserved IPs and disable HTTP redirect following. Redirects are explicitly rejected (via `raise_if_redirect`) because the redirect target cannot be re-validated safely.
+**SSRF protection on URL fetches**: Endpoints that fetch user-supplied URLs (`/api/upload` via `convert-url`, `/api/connections`, `/api/inspect-url`, `/api/proxy`, `/api/connect-remote`, `/api/discover`) call `validate_url_safe()` to block addresses in private, loopback, reserved, link-local, multicast, unspecified (`0.0.0.0`/`::`), and IPv4-mapped IPv6 ranges, and disable HTTP redirect following. Redirects are explicitly rejected (via `raise_if_redirect`) because the redirect target cannot be re-validated safely. For COG connections, an extra HEAD pre-flight runs before handing the URL to GDAL `/vsicurl/`, since GDAL follows redirects internally with no public knob to disable.
 
 ## Upload & conversion
 

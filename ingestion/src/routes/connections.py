@@ -29,6 +29,10 @@ router = APIRouter(prefix="/api")
 SIZE_THRESHOLD_BYTES = 50 * 1024 * 1024
 
 
+def _sanitize_url_for_log(url: str) -> str:
+    return url.split("?")[0]
+
+
 async def _head_content_length(url: str) -> int | None:
     try:
         async with httpx.AsyncClient(follow_redirects=False, timeout=5) as http:
@@ -140,6 +144,19 @@ async def create_connection(
         validate_url_safe(body.url)
 
         if body.connection_type == "cog":
+            # Pre-flight HEAD to ensure the user-supplied URL doesn't redirect.
+            # GDAL /vsicurl/ follows redirects internally with no public knob
+            # to disable, so a 302 to a private IP would otherwise bypass the
+            # SSRF guard above. This catches the literal-redirector case only;
+            # GDAL may still chase redirects fetched mid-stream.
+            try:
+                async with httpx.AsyncClient(
+                    follow_redirects=False, timeout=10.0
+                ) as http:
+                    head_resp = await http.head(body.url)
+                    raise_if_redirect(head_resp)
+            except httpx.HTTPError:
+                pass
             try:
                 result = await asyncio.to_thread(
                     detect_categories, f"/vsicurl/{body.url}"
@@ -153,7 +170,10 @@ async def create_connection(
                         ]
                     )
             except Exception:
-                logger.exception("Categorical detection failed for %s", body.url)
+                logger.exception(
+                    "Categorical detection failed for %s",
+                    _sanitize_url_for_log(body.url),
+                )
 
         if body.connection_type == "geoparquet" and render_path is None:
             inferred_size = await _head_content_length(body.url)

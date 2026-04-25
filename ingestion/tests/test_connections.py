@@ -478,6 +478,37 @@ def test_patch_connection_categories_rejects_bad_hex(client, monkeypatch):
     assert patch_resp.status_code == 422
 
 
+def test_create_cog_connection_rejects_redirect_to_private_ip(client, monkeypatch):
+    from src.routes import connections as connections_route
+
+    class _FakeRedirectResponse:
+        status_code = 302
+        headers: ClassVar[dict] = {"location": "http://169.254.169.254/latest/"}
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            assert kwargs.get("follow_redirects") is False
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def head(self, url):
+            return _FakeRedirectResponse()
+
+    monkeypatch.setattr(connections_route.httpx, "AsyncClient", _FakeClient)
+
+    body = {
+        "name": "Redirect COG",
+        "url": "https://example.com/landcover.tif",
+        "connection_type": "cog",
+    }
+    resp = client.post("/api/connections", json=body)
+    assert resp.status_code == 400
+
+
 def test_create_cog_connection_rejects_private_ip_url(client):
     body = {
         "name": "Bad COG",

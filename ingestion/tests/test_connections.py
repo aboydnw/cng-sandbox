@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_list_connections_empty(client):
     resp = client.get("/api/connections")
     assert resp.status_code == 200
@@ -96,7 +99,7 @@ def test_delete_connection_wrong_workspace(client, app):
 def test_create_connection_minimal_fields(client):
     body = {
         "name": "XYZ Tiles",
-        "url": "https://tiles.example.com/{z}/{x}/{y}.png",
+        "url": "https://example.com/tiles/{z}/{x}/{y}.png",
         "connection_type": "xyz_raster",
     }
     resp = client.post("/api/connections", json=body)
@@ -225,7 +228,7 @@ def test_create_geoparquet_connection(client):
 def test_patch_connection_categories_rejects_non_categorical(client):
     body = {
         "name": "Plain",
-        "url": "https://tiles.example.com/{z}/{x}/{y}.png",
+        "url": "https://example.com/tiles/{z}/{x}/{y}.png",
         "connection_type": "xyz_raster",
     }
     resp = client.post("/api/connections", json=body)
@@ -471,6 +474,72 @@ def test_patch_connection_categories_rejects_bad_hex(client, monkeypatch):
         json=[{"value": 1, "color": "not-a-hex"}],
     )
     assert patch_resp.status_code == 422
+
+
+def test_create_cog_connection_rejects_private_ip_url(client):
+    body = {
+        "name": "Bad COG",
+        "url": "http://169.254.169.254/foo.tif",
+        "connection_type": "cog",
+    }
+    resp = client.post("/api/connections", json=body)
+    assert resp.status_code == 400
+
+
+def test_create_geoparquet_connection_rejects_private_ip_url(client):
+    body = {
+        "name": "Bad Parquet",
+        "url": "http://10.0.0.1/foo.parquet",
+        "connection_type": "geoparquet",
+        "render_path": None,
+    }
+    resp = client.post("/api/connections", json=body)
+    assert resp.status_code == 400
+
+
+def test_create_connection_rate_limited_at_30_per_hour(client):
+    statuses = []
+    for i in range(31):
+        body = {
+            "name": f"Conn {i}",
+            "url": "https://example.com/data.tif",
+            "connection_type": "cog",
+        }
+        resp = client.post("/api/connections", json=body)
+        statuses.append(resp.status_code)
+    assert statuses[-1] == 429
+    assert statuses.index(429) == 30
+
+
+def test_head_content_length_propagates_ssrf_error_on_redirect(monkeypatch):
+    import asyncio
+
+    from src.routes import connections as connections_route
+    from src.services.url_validation import SSRFError
+
+    class _FakeResponse:
+        status_code = 302
+        headers: dict = {}
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def head(self, url):
+            return _FakeResponse()
+
+    monkeypatch.setattr(connections_route.httpx, "AsyncClient", _FakeClient)
+
+    with pytest.raises(SSRFError):
+        asyncio.run(
+            connections_route._head_content_length("https://example.com/x.parquet")
+        )
 
 
 def test_patch_connection_categories_requires_label_or_color(client, monkeypatch):

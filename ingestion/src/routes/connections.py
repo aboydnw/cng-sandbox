@@ -14,10 +14,11 @@ from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
+from src.rate_limit import limiter
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
 from src.services.render_mode import RenderModePayload, check_render_mode_allowed
-from src.services.url_validation import SSRFError, raise_if_redirect
+from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
 from src.workspace import validate_workspace_id
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,9 @@ async def _head_content_length(url: str) -> int | None:
             raise_if_redirect(r)
             cl = r.headers.get("content-length")
             return int(cl) if cl else None
-    except (httpx.HTTPError, SSRFError, ValueError):
+    except SSRFError:
+        raise
+    except (httpx.HTTPError, ValueError):
         return None
 
 
@@ -100,6 +103,7 @@ async def list_connections(request: Request):
 
 
 @router.post("/connections", status_code=201)
+@limiter.limit("30/hour")
 async def create_connection(
     body: ConnectionCreate,
     request: Request,
@@ -117,36 +121,47 @@ async def create_connection(
             status_code=422,
             detail=f"Invalid tile_type: {body.tile_type}",
         )
+
     is_categorical = False
     categories_json = None
-    if body.connection_type == "cog":
-        try:
-            result = await asyncio.to_thread(detect_categories, f"/vsicurl/{body.url}")
-            if result.is_categorical:
-                is_categorical = True
-                categories_json = json.dumps(
-                    [
-                        {"value": c.value, "color": c.color, "label": c.label}
-                        for c in result.categories
-                    ]
-                )
-        except Exception:
-            logger.exception("Categorical detection failed for %s", body.url)
-
-    # Normalize/validate render_path for geoparquet connections
     render_path = body.render_path
-    if body.connection_type == "geoparquet":
-        if render_path not in ("client", "server", None):
-            raise HTTPException(
-                status_code=422,
-                detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
-            )
-        if render_path is None:
+    if body.connection_type == "geoparquet" and render_path not in (
+        "client",
+        "server",
+        None,
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
+        )
+
+    try:
+        validate_url_safe(body.url)
+
+        if body.connection_type == "cog":
+            try:
+                result = await asyncio.to_thread(
+                    detect_categories, f"/vsicurl/{body.url}"
+                )
+                if result.is_categorical:
+                    is_categorical = True
+                    categories_json = json.dumps(
+                        [
+                            {"value": c.value, "color": c.color, "label": c.label}
+                            for c in result.categories
+                        ]
+                    )
+            except Exception:
+                logger.exception("Categorical detection failed for %s", body.url)
+
+        if body.connection_type == "geoparquet" and render_path is None:
             inferred_size = await _head_content_length(body.url)
             if inferred_size is None or inferred_size > SIZE_THRESHOLD_BYTES:
                 render_path = "server"
             else:
                 render_path = "client"
+    except SSRFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     is_server_conversion = (
         body.connection_type == "geoparquet" and render_path == "server"

@@ -28,6 +28,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     isTemporal: false,
     timesteps: [],
     renderMode: null,
+    preferredColormap: null,
+    preferredColormapReversed: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -229,6 +231,8 @@ describe("useMapControls", () => {
         file_size: 10 * 1024 * 1024, // 10 MB
         created_at: "2026-04-17T00:00:00Z",
         is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -263,6 +267,8 @@ describe("useMapControls", () => {
         file_size: 10 * 1024 * 1024 * 1024, // 10 GB
         created_at: "2026-04-17T00:00:00Z",
         is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -298,6 +304,8 @@ describe("useMapControls", () => {
         file_size: null,
         created_at: "2026-04-17T00:00:00Z",
         is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -379,6 +387,8 @@ describe("client render size caps", () => {
       isTemporal: false,
       timesteps: [],
       renderMode: null,
+      preferredColormap: null,
+      preferredColormapReversed: null,
       dataset: {
         id: "ds-1",
         filename: "large.tif",

@@ -52,6 +52,8 @@ const mockItem: MapItem = {
   categories: null,
   timesteps: [],
   renderMode: null,
+  preferredColormap: null,
+  preferredColormapReversed: null,
   dataset: null,
   connection: null,
 };

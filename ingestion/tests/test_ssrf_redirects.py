@@ -225,11 +225,31 @@ async def _coro(value):
     return value
 
 
-def test_proxy_already_rejects_redirects():
-    import inspect
-
+def test_proxy_rejects_redirect(client, monkeypatch):
     from src.routes import proxy
 
-    source = inspect.getsource(proxy.proxy_resource)
-    assert "follow_redirects=False" in source
-    assert "redirects are not allowed" in source.lower()
+    async def fake_resolve(hostname):
+        return "203.0.113.10"
+
+    class _RedirectResponse:
+        status_code = 302
+        headers: ClassVar[dict] = {"location": "http://127.0.0.1/secret"}
+
+        async def aclose(self):
+            pass
+
+    class _ProxyAsyncClient:
+        def __init__(self, **kwargs):
+            assert kwargs.get("follow_redirects") is False
+
+        async def send(self, request, stream=False):
+            return _RedirectResponse()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(proxy, "_resolve_to_ip", fake_resolve)
+    monkeypatch.setattr(proxy.httpx, "AsyncClient", _ProxyAsyncClient)
+
+    resp = client.get("/api/proxy", params={"url": "https://example.com/file.tif"})
+    assert resp.status_code == 502

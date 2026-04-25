@@ -101,7 +101,7 @@ def backfill_example_colormaps(db_session_factory: sessionmaker) -> None:
     session = db_session_factory()
     try:
         rows = session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
-        updated = 0
+        updated_rows = 0
         for row in rows:
             meta = json.loads(row.metadata_json) if row.metadata_json else {}
             source_url = meta.get("source_url")
@@ -110,12 +110,13 @@ def backfill_example_colormaps(db_session_factory: sessionmaker) -> None:
             product = by_url.get(source_url)
             if product is None:
                 continue
+            row_changed = False
             if (
                 row.preferred_colormap is None
                 and product.preferred_colormap is not None
             ):
                 row.preferred_colormap = product.preferred_colormap
-                updated += 1
+                row_changed = True
             if (
                 row.preferred_colormap_reversed is None
                 and product.preferred_colormap_reversed is not None
@@ -123,12 +124,14 @@ def backfill_example_colormaps(db_session_factory: sessionmaker) -> None:
                 row.preferred_colormap_reversed = (
                     product.preferred_colormap_reversed
                 )
-                updated += 1
-        if updated:
+                row_changed = True
+            if row_changed:
+                updated_rows += 1
+        if updated_rows:
             session.commit()
             logger.info(
                 "backfilled preferred colormap on %d example dataset rows",
-                updated,
+                updated_rows,
             )
     finally:
         session.close()

@@ -28,8 +28,8 @@ ALLOWED_COLORMAPS: frozenset[str] = frozenset(
 
 
 class ColormapPayload(BaseModel):
-    preferred_colormap: str | None
-    preferred_colormap_reversed: bool | None
+    preferred_colormap: str | None = None
+    preferred_colormap_reversed: bool | None = None
 
     @field_validator("preferred_colormap")
     @classmethod

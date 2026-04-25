@@ -90,10 +90,9 @@ def test_patch_colormap_rejects_non_raster(client, db_session):
     assert resp.status_code == 400
 
 
-def test_patch_colormap_forbidden_for_example(app, db_session):
-    ds_id = _insert_dataset(db_session, is_example=True, workspace_id=None)
-    other = TestClient(app, headers={"X-Workspace-Id": "testABCD"})
-    resp = other.patch(
+def test_patch_colormap_forbidden_for_example(client, db_session):
+    ds_id = _insert_dataset(db_session, is_example=True, workspace_id="testABCD")
+    resp = client.patch(
         f"/api/datasets/{ds_id}/colormap",
         json={
             "preferred_colormap": "viridis",

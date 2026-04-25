@@ -361,13 +361,9 @@ async def set_connection_render_mode(
 
 
 def _connection_is_raster(row: ConnectionRow) -> bool:
-    if row.connection_type in ("cog",):
+    if row.connection_type in ("cog", "xyz_raster"):
         return True
-    if row.connection_type == "xyz_raster":
-        return True
-    if row.connection_type == "pmtiles" and row.tile_type == "raster":
-        return True
-    return False
+    return row.connection_type == "pmtiles" and row.tile_type == "raster"
 
 
 @router.patch("/connections/{connection_id}/colormap")

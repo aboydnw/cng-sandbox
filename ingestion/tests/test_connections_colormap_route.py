@@ -106,3 +106,16 @@ def test_patch_colormap_404_for_missing_connection(client):
         },
     )
     assert resp.status_code == 404
+
+
+def test_patch_colormap_normalizes_case(client, db_session):
+    conn_id = _insert_connection(db_session)
+    resp = client.patch(
+        f"/api/connections/{conn_id}/colormap",
+        json={
+            "preferred_colormap": "Terrain",
+            "preferred_colormap_reversed": False,
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["preferred_colormap"] == "terrain"

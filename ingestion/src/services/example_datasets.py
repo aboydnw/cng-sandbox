@@ -121,9 +121,7 @@ def backfill_example_colormaps(db_session_factory: sessionmaker) -> None:
                 row.preferred_colormap_reversed is None
                 and product.preferred_colormap_reversed is not None
             ):
-                row.preferred_colormap_reversed = (
-                    product.preferred_colormap_reversed
-                )
+                row.preferred_colormap_reversed = product.preferred_colormap_reversed
                 row_changed = True
             if row_changed:
                 updated_rows += 1

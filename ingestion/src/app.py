@@ -223,9 +223,7 @@ def _migrate_schema(engine):
         for table in ("datasets", "connections"):
             try:
                 conn.execute(
-                    text(
-                        f"ALTER TABLE {table} ADD COLUMN preferred_colormap TEXT"
-                    )
+                    text(f"ALTER TABLE {table} ADD COLUMN preferred_colormap TEXT")
                 )
                 conn.commit()
             except DBAPIError as exc:

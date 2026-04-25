@@ -17,9 +17,7 @@ def _insert_connection(db_session, **overrides) -> str:
         workspace_id=overrides.pop("workspace_id", "testABCD"),
         created_at=datetime.now(UTC),
         preferred_colormap=overrides.pop("preferred_colormap", None),
-        preferred_colormap_reversed=overrides.pop(
-            "preferred_colormap_reversed", None
-        ),
+        preferred_colormap_reversed=overrides.pop("preferred_colormap_reversed", None),
     )
     db_session.add(row)
     db_session.commit()

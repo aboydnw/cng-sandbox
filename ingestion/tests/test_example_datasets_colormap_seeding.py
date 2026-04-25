@@ -17,9 +17,7 @@ def test_gebco_product_declares_terrain_colormap():
 
 
 def test_products_without_preferred_colormap_default_to_none():
-    any_other = next(
-        p for p in list_products() if p.slug != "alexgleith/gebco-2024"
-    )
+    any_other = next(p for p in list_products() if p.slug != "alexgleith/gebco-2024")
     assert any_other.preferred_colormap is None
     assert any_other.preferred_colormap_reversed is None
 

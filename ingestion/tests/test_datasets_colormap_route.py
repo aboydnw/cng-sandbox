@@ -23,9 +23,7 @@ def _insert_dataset(db_session, **overrides) -> str:
         bounds_json=json.dumps([-10.0, -10.0, 10.0, 10.0]),
         metadata_json=json.dumps(meta),
         preferred_colormap=overrides.pop("preferred_colormap", None),
-        preferred_colormap_reversed=overrides.pop(
-            "preferred_colormap_reversed", None
-        ),
+        preferred_colormap_reversed=overrides.pop("preferred_colormap_reversed", None),
     )
     db_session.add(row)
     db_session.commit()

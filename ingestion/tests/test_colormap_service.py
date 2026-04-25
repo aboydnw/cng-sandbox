@@ -19,9 +19,7 @@ def test_payload_accepts_valid_colormap_and_reversed():
 
 
 def test_payload_accepts_null_colormap_and_null_reversed():
-    payload = ColormapPayload(
-        preferred_colormap=None, preferred_colormap_reversed=None
-    )
+    payload = ColormapPayload(preferred_colormap=None, preferred_colormap_reversed=None)
     assert payload.preferred_colormap is None
     assert payload.preferred_colormap_reversed is None
 

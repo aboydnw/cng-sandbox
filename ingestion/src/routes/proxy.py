@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 
 from src.rate_limit import limiter
+from src.services.url_validation import _is_unsafe_ip
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +26,6 @@ def _sanitize_url_for_log(url: str) -> str:
     return url.split("?")[0]
 
 
-def _is_disallowed_ip(addr: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    return addr.is_private or addr.is_loopback or addr.is_link_local
-
-
 async def _resolve_to_ip(hostname: str) -> str:
     try:
         infos = await asyncio.get_running_loop().getaddrinfo(hostname, None)
@@ -38,7 +35,7 @@ async def _resolve_to_ip(hostname: str) -> str:
         ) from err
     for info in infos:
         addr = ipaddress.ip_address(info[4][0])
-        if _is_disallowed_ip(addr):
+        if _is_unsafe_ip(addr):
             raise HTTPException(
                 status_code=400, detail="Private addresses are not allowed"
             )

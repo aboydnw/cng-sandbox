@@ -16,6 +16,7 @@ from src.dependencies import get_session
 from src.models.connection import ConnectionRow
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
+from src.services.colormap import ColormapPayload
 from src.services.render_mode import RenderModePayload, check_render_mode_allowed
 from src.workspace import validate_workspace_id
 
@@ -352,6 +353,46 @@ async def set_connection_render_mode(
         if reason is not None:
             raise HTTPException(status_code=400, detail=reason)
         row.render_mode = body.render_mode
+        session.commit()
+        session.refresh(row)
+        return row.to_dict()
+    finally:
+        session.close()
+
+
+def _connection_is_raster(row: ConnectionRow) -> bool:
+    if row.connection_type in ("cog",):
+        return True
+    if row.connection_type == "xyz_raster":
+        return True
+    if row.connection_type == "pmtiles" and row.tile_type == "raster":
+        return True
+    return False
+
+
+@router.patch("/connections/{connection_id}/colormap")
+async def set_connection_colormap(
+    connection_id: str, body: ColormapPayload, request: Request
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        if not _connection_is_raster(row):
+            raise HTTPException(
+                status_code=400,
+                detail="preferred_colormap only applies to raster connections",
+            )
+        row.preferred_colormap = body.preferred_colormap
+        if body.preferred_colormap is None:
+            row.preferred_colormap_reversed = None
+        else:
+            row.preferred_colormap_reversed = body.preferred_colormap_reversed
         session.commit()
         session.refresh(row)
         return row.to_dict()

@@ -90,6 +90,50 @@ def _existing_example_source_urls(db_session_factory: sessionmaker) -> set[str]:
         session.close()
 
 
+def backfill_example_colormaps(db_session_factory: sessionmaker) -> None:
+    """Fill in preferred_colormap / preferred_colormap_reversed on example rows.
+
+    Idempotent: only writes when the DB value is currently None. Never
+    overwrites a value set manually in the DB. Matches rows to curated
+    products by the `source_url` stored in `metadata_json`.
+    """
+    by_url = {p.listing_url: p for p in list_products()}
+    session = db_session_factory()
+    try:
+        rows = session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
+        updated = 0
+        for row in rows:
+            meta = json.loads(row.metadata_json) if row.metadata_json else {}
+            source_url = meta.get("source_url")
+            if not source_url:
+                continue
+            product = by_url.get(source_url)
+            if product is None:
+                continue
+            if (
+                row.preferred_colormap is None
+                and product.preferred_colormap is not None
+            ):
+                row.preferred_colormap = product.preferred_colormap
+                updated += 1
+            if (
+                row.preferred_colormap_reversed is None
+                and product.preferred_colormap_reversed is not None
+            ):
+                row.preferred_colormap_reversed = (
+                    product.preferred_colormap_reversed
+                )
+                updated += 1
+        if updated:
+            session.commit()
+            logger.info(
+                "backfilled preferred colormap on %d example dataset rows",
+                updated,
+            )
+    finally:
+        session.close()
+
+
 async def register_example_datasets(
     db_session_factory: sessionmaker,
     only_slugs: set[str] | None = None,
@@ -99,6 +143,7 @@ async def register_example_datasets(
     `only_slugs` narrows the set of products considered (used by tests);
     production callers pass None.
     """
+    backfill_example_colormaps(db_session_factory)
     already = _existing_example_source_urls(db_session_factory)
     for product in ordered_products():
         if only_slugs is not None and product.slug not in only_slugs:

@@ -70,6 +70,8 @@ async def register_pmtiles_example(
         is_example=True,
         is_zero_copy=True,
         created_at=datetime.now(UTC),
+        preferred_colormap=product.preferred_colormap,
+        preferred_colormap_reversed=product.preferred_colormap_reversed,
     )
 
     try:

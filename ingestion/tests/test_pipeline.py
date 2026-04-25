@@ -462,7 +462,7 @@ def test_convert_geotiff_categorical_preserves_source_crs(tmp_path):
     # Stripe pattern to force overview bleed detection.
     data = np.full((1, height, width), 255, dtype=np.uint8)
     for i in range(0, width, 40):
-        data[0, :, i : i + 20] = [1, 2][( i // 40) % 2]
+        data[0, :, i : i + 20] = [1, 2][(i // 40) % 2]
     path = str(tmp_path / "categorical_5070.tif")
     with rasterio.open(
         path,

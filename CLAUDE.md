@@ -26,6 +26,7 @@ Dense reference material lives under [docs/](docs/) and should be read only when
 - [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, Caddy auth model, CSP, tile caching. Read before prod changes.
 - [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.
 - [docs/example-data.md](docs/example-data.md) — `is_example` datasets/stories, source.coop seeding. Read before touching `src/services/example_*.py`.
+- [docs/services.md](docs/services.md) — tipg/titiler-pgstac notes, GDAL+R2 env vars. Read before editing tiler env-vars in `docker-compose.yml` or debugging tile-rendering S3/GDAL config issues.
 
 ## Project Documentation
 
@@ -166,63 +167,21 @@ On startup, background tasks seed curated source.coop products as `is_example=Tr
 5. **Register** → COGs registered in pgSTAC, vectors available via tipg
 6. **Ready** → tile URL returned to frontend
 
-### tipg (vector tiler) notes
+### Tiler service notes
 
-- `TIPG_CATALOG_TTL=5` — refresh interval (seconds) for discovering new PostgreSQL tables. Default is 300s which causes long delays.
-- Source-layer name in MVT tiles is always `"default"`, not the table name.
-- Collection IDs use the `public.` schema prefix (e.g., `public.sandbox_abc123`).
-
-### titiler-pgstac (raster tiler) notes
-
-- Uses GDAL internally. GDAL < 3.11 requires `AWS_S3_ENDPOINT` (hostname:port without protocol) for S3 access, in addition to `AWS_ENDPOINT_URL`.
-- `AWS_VIRTUAL_HOSTING=FALSE` is required for R2 (path-style access).
-
-### GDAL + R2 env vars
-
-Any service that uses GDAL to read from R2 (the raster tiler, plus the ingestion service when reading COGs back during conversion) needs the same env-var set in `docker-compose.yml`:
-
-- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — R2 credentials
-- `AWS_ENDPOINT_URL` — full R2 endpoint (`https://<account>.r2.cloudflarestorage.com`)
-- `AWS_S3_ENDPOINT` — hostname only (`<account>.r2.cloudflarestorage.com`), required by GDAL < 3.11
-- `AWS_HTTPS=YES`
-- `AWS_VIRTUAL_HOSTING=FALSE` — forces path-style URLs (required for R2)
+For tipg, titiler-pgstac, and GDAL+R2 env-var configuration, see [docs/services.md](docs/services.md).
 
 ## MCP Server
 
-A Model Context Protocol server that wraps the ingestion API, exposing datasets, stories, connections, and validation as composable tools for MCP-compatible agents (Claude Desktop, Claude Code, etc.). Source in `mcp/src/cng_mcp/`.
+Wraps the ingestion API as MCP tools (datasets, stories, connections, validation) for Claude Desktop/Code. Source in `mcp/src/cng_mcp/`. See [mcp/README.md](mcp/README.md) for tools, resources, server config, and client examples.
+
+`validate_layer_config` calls `POST /api/validate-layer-config`, which does not yet exist on the ingestion service.
 
 ### Running tests
 
 ```bash
 cd mcp && uv run pytest -v
 ```
-
-### Tools
-
-- `read_datasets` — List workspace datasets
-- `read_story` / `create_story` / `update_story` — Manage stories
-- `read_connections` — List external tile source connections
-- `validate_layer_config` — Pre-flight check for a chapter's layer config
-
-### Resources
-
-- `cng://datasets` — Catalog of datasets in the workspace
-- `cng://story-templates` — Pre-built story templates agents can reference
-- `cng://colormaps` — Valid colormap names
-
-### Running the server
-
-```bash
-cng-mcp --api-url http://localhost:8086 --workspace-id <8-char-id>   # Communicates over stdio
-```
-
-The ingestion API requires an `X-Workspace-Id` header on workspace-listing endpoints (`GET /api/datasets`, `GET /api/connections`, `GET /api/stories`). The MCP server forwards this header when started with `--workspace-id` (or `SANDBOX_WORKSPACE_ID` env var). Without it, those listing endpoints will return 400 and the MCP tools will surface empty results.
-
-See `mcp/README.md` for client config examples and `mcp/ARCHITECTURE.md` for design notes.
-
-### Open dependency
-
-`validate_layer_config` calls `POST /api/validate-layer-config` on the ingestion service, which does not yet exist. The tool is wired up in advance of that endpoint landing.
 
 ## Agent Isolation & Worktrees
 

@@ -220,6 +220,29 @@ def _migrate_schema(engine):
                 conn.rollback()
                 if not _is_duplicate_column(exc):
                     raise
+        for table in ("datasets", "connections"):
+            try:
+                conn.execute(
+                    text(f"ALTER TABLE {table} ADD COLUMN preferred_colormap TEXT")
+                )
+                conn.commit()
+            except DBAPIError as exc:
+                conn.rollback()
+                if not _is_duplicate_column(exc):
+                    raise
+        for table in ("datasets", "connections"):
+            try:
+                conn.execute(
+                    text(
+                        f"ALTER TABLE {table} ADD COLUMN "
+                        "preferred_colormap_reversed BOOLEAN"
+                    )
+                )
+                conn.commit()
+            except DBAPIError as exc:
+                conn.rollback()
+                if not _is_duplicate_column(exc):
+                    raise
         # Remove duplicate is_example rows before creating the unique index so
         # that deployments upgrading from a version without the index don't
         # fail. Keep the row with the lowest id for each duplicate title.

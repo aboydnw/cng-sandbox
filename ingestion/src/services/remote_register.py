@@ -231,6 +231,8 @@ async def register_remote_collection(
         timesteps=timesteps,
         source_url=product.listing_url,
         created_at=job.created_at,
+        preferred_colormap=product.preferred_colormap,
+        preferred_colormap_reversed=product.preferred_colormap_reversed,
     )
     persist_dataset(db_session_factory, dataset)
 

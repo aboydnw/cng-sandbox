@@ -7,6 +7,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import field_validator
 
 from src.models import Job
+from src.rate_limit import limiter
 from src.services.discovery import DiscoveryError, fetch_and_discover
 from src.services.remote_pipeline import run_remote_pipeline
 from src.services.url_validation import SSRFError, validate_url_safe
@@ -68,7 +69,8 @@ class ConnectRequest(PydanticBaseModel):
 
 
 @router.post("/discover", response_model=DiscoverResponse)
-async def discover(body: DiscoverRequest):
+@limiter.limit("30/hour")
+async def discover(request: Request, body: DiscoverRequest):
     """Discover geospatial files at a URL or S3 prefix."""
     try:
         discovered = await fetch_and_discover(body.url)
@@ -93,6 +95,7 @@ async def discover(body: DiscoverRequest):
 
 
 @router.post("/connect-remote")
+@limiter.limit("30/hour")
 async def connect_remote(
     request: Request,
     body: ConnectRequest,

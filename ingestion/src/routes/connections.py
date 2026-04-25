@@ -14,9 +14,12 @@ from sse_starlette.sse import EventSourceResponse
 
 from src.dependencies import get_session
 from src.models.connection import ConnectionRow
+from src.rate_limit import limiter
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
+from src.services.colormap import ColormapPayload
 from src.services.render_mode import RenderModePayload, check_render_mode_allowed
+from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
 from src.workspace import validate_workspace_id
 
 logger = logging.getLogger(__name__)
@@ -26,13 +29,20 @@ router = APIRouter(prefix="/api")
 SIZE_THRESHOLD_BYTES = 50 * 1024 * 1024
 
 
+def _sanitize_url_for_log(url: str) -> str:
+    return url.split("?")[0]
+
+
 async def _head_content_length(url: str) -> int | None:
     try:
-        async with httpx.AsyncClient(timeout=5) as http:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=5) as http:
             r = await http.head(url)
+            raise_if_redirect(r)
             cl = r.headers.get("content-length")
             return int(cl) if cl else None
-    except Exception:
+    except SSRFError:
+        raise
+    except (httpx.HTTPError, ValueError):
         return None
 
 
@@ -98,6 +108,7 @@ async def list_connections(request: Request):
 
 
 @router.post("/connections", status_code=201)
+@limiter.limit("30/hour")
 async def create_connection(
     body: ConnectionCreate,
     request: Request,
@@ -115,36 +126,63 @@ async def create_connection(
             status_code=422,
             detail=f"Invalid tile_type: {body.tile_type}",
         )
+
     is_categorical = False
     categories_json = None
-    if body.connection_type == "cog":
-        try:
-            result = await asyncio.to_thread(detect_categories, f"/vsicurl/{body.url}")
-            if result.is_categorical:
-                is_categorical = True
-                categories_json = json.dumps(
-                    [
-                        {"value": c.value, "color": c.color, "label": c.label}
-                        for c in result.categories
-                    ]
-                )
-        except Exception:
-            logger.exception("Categorical detection failed for %s", body.url)
-
-    # Normalize/validate render_path for geoparquet connections
     render_path = body.render_path
-    if body.connection_type == "geoparquet":
-        if render_path not in ("client", "server", None):
-            raise HTTPException(
-                status_code=422,
-                detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
-            )
-        if render_path is None:
+    if body.connection_type == "geoparquet" and render_path not in (
+        "client",
+        "server",
+        None,
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid render_path: {render_path}. Must be 'client' or 'server'.",
+        )
+
+    try:
+        validate_url_safe(body.url)
+
+        if body.connection_type == "cog":
+            # Pre-flight HEAD to ensure the user-supplied URL doesn't redirect.
+            # GDAL /vsicurl/ follows redirects internally with no public knob
+            # to disable, so a 302 to a private IP would otherwise bypass the
+            # SSRF guard above. This catches the literal-redirector case only;
+            # GDAL may still chase redirects fetched mid-stream.
+            try:
+                async with httpx.AsyncClient(
+                    follow_redirects=False, timeout=10.0
+                ) as http:
+                    head_resp = await http.head(body.url)
+                    raise_if_redirect(head_resp)
+            except httpx.HTTPError:
+                pass
+            try:
+                result = await asyncio.to_thread(
+                    detect_categories, f"/vsicurl/{body.url}"
+                )
+                if result.is_categorical:
+                    is_categorical = True
+                    categories_json = json.dumps(
+                        [
+                            {"value": c.value, "color": c.color, "label": c.label}
+                            for c in result.categories
+                        ]
+                    )
+            except Exception:
+                logger.exception(
+                    "Categorical detection failed for %s",
+                    _sanitize_url_for_log(body.url),
+                )
+
+        if body.connection_type == "geoparquet" and render_path is None:
             inferred_size = await _head_content_length(body.url)
             if inferred_size is None or inferred_size > SIZE_THRESHOLD_BYTES:
                 render_path = "server"
             else:
                 render_path = "client"
+    except SSRFError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     is_server_conversion = (
         body.connection_type == "geoparquet" and render_path == "server"
@@ -352,6 +390,42 @@ async def set_connection_render_mode(
         if reason is not None:
             raise HTTPException(status_code=400, detail=reason)
         row.render_mode = body.render_mode
+        session.commit()
+        session.refresh(row)
+        return row.to_dict()
+    finally:
+        session.close()
+
+
+def _connection_is_raster(row: ConnectionRow) -> bool:
+    if row.connection_type in ("cog", "xyz_raster"):
+        return True
+    return row.connection_type == "pmtiles" and row.tile_type == "raster"
+
+
+@router.patch("/connections/{connection_id}/colormap")
+async def set_connection_colormap(
+    connection_id: str, body: ColormapPayload, request: Request
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    session = get_session(request)
+    try:
+        row = session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        if not _connection_is_raster(row):
+            raise HTTPException(
+                status_code=400,
+                detail="preferred_colormap only applies to raster connections",
+            )
+        row.preferred_colormap = body.preferred_colormap
+        if body.preferred_colormap is None:
+            row.preferred_colormap_reversed = None
+        else:
+            row.preferred_colormap_reversed = body.preferred_colormap_reversed
         session.commit()
         session.refresh(row)
         return row.to_dict()

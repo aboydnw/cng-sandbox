@@ -29,6 +29,7 @@ dependencies = [
     "h5py>=3.10.0",
     "beautifulsoup4>=4.14.3",
     "pyarrow>=17.0.0",
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]

@@ -9,6 +9,8 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
+from src.services.url_validation import SSRFError, raise_if_redirect
+
 _SUPPORTED_EXTENSIONS = {
     ".tif",
     ".tiff",
@@ -99,8 +101,9 @@ def _parse_s3_listing(xml_text: str, base_url: str) -> list[DiscoveredFile]:
 async def fetch_and_discover(url: str) -> list[DiscoveredFile]:
     """Fetch a URL and discover geospatial files from its content."""
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=30.0) as client:
             response = await client.get(url)
+            raise_if_redirect(response)
             response.raise_for_status()
             content_type = response.headers.get("content-type", "")
             text = response.text
@@ -108,6 +111,8 @@ async def fetch_and_discover(url: str) -> list[DiscoveredFile]:
             if "xml" in content_type or text.lstrip().startswith("<?xml"):
                 return _parse_s3_listing(text, url)
             return extract_file_links(text, url)
+    except SSRFError as e:
+        raise DiscoveryError(str(e)) from e
     except httpx.ConnectError as e:
         raise DiscoveryError(f"Could not connect to {url}") from e
     except httpx.TimeoutException as e:

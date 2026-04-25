@@ -122,3 +122,21 @@ def test_proxy_returns_502_on_dns_failure(client, monkeypatch):
     monkeypatch.setattr("src.routes.proxy.socket.getaddrinfo", raise_gaierror)
     resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
     assert resp.status_code == 502
+
+
+def test_proxy_rejects_multicast_resolution(client, monkeypatch):
+    monkeypatch.setattr(
+        "src.routes.proxy.socket.getaddrinfo",
+        lambda *a, **kw: [(None, None, None, None, ("224.0.0.1", 0))],
+    )
+    resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
+    assert resp.status_code == 400
+
+
+def test_proxy_rejects_unspecified_resolution(client, monkeypatch):
+    monkeypatch.setattr(
+        "src.routes.proxy.socket.getaddrinfo",
+        lambda *a, **kw: [(None, None, None, None, ("0.0.0.0", 0))],
+    )
+    resp = client.get("/api/proxy?url=https://example.com/file.pmtiles")
+    assert resp.status_code == 400

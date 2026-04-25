@@ -105,6 +105,7 @@ class TestFetchAndDiscover:
 
         class FakeResponse:
             text = html
+            status_code = 200
 
             @property
             def headers(self):

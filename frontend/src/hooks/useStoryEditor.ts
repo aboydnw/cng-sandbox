@@ -106,26 +106,31 @@ export function useStoryEditor() {
     if (id || story) return;
     async function createNew() {
       try {
-        const draft = createStory(datasetIdParam);
+        let fetchedDataset: Dataset | null = null;
         if (datasetIdParam) {
           const resp = await workspaceFetch(
             `${config.apiBase}/api/datasets/${datasetIdParam}`
           );
           if (resp.ok) {
-            const data: Dataset = await resp.json();
-            setDataset(data);
-            if (data.bounds) {
-              const cam = cameraFromBounds(data.bounds);
-              draft.chapters[0].map_state = {
-                center: [cam.longitude, cam.latitude],
-                zoom: cam.zoom,
-                bearing: 0,
-                pitch: 0,
-                basemap: "streets",
-              };
-              setCamera(cam);
-            }
+            fetchedDataset = await resp.json();
+            setDataset(fetchedDataset);
           }
+        }
+        const draft = createStory(datasetIdParam, {
+          preferredColormap: fetchedDataset?.preferred_colormap ?? null,
+          preferredColormapReversed:
+            fetchedDataset?.preferred_colormap_reversed ?? null,
+        });
+        if (fetchedDataset?.bounds) {
+          const cam = cameraFromBounds(fetchedDataset.bounds);
+          draft.chapters[0].map_state = {
+            center: [cam.longitude, cam.latitude],
+            zoom: cam.zoom,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          };
+          setCamera(cam);
         }
         const saved = await createStoryOnServer(draft);
         setStory(saved);
@@ -269,6 +274,12 @@ export function useStoryEditor() {
     const maxOrder = Math.max(...(story?.chapters.map((c) => c.order) ?? [0]));
     const inheritedDatasetId =
       activeChapter?.layer_config.dataset_id ?? story?.dataset_id ?? "";
+    const inheritedDataset = inheritedDatasetId
+      ? datasetMap.get(inheritedDatasetId)
+      : undefined;
+    const preferredColormap = inheritedDataset?.preferred_colormap ?? null;
+    const preferredColormapReversed =
+      inheritedDataset?.preferred_colormap_reversed ?? null;
     const newCh = createChapter({
       order: maxOrder + 1,
       title: `Chapter ${(story?.chapters.length ?? 0) + 1}`,
@@ -279,7 +290,14 @@ export function useStoryEditor() {
         pitch: camera.pitch,
         basemap,
       },
-      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: inheritedDatasetId },
+      layer_config: {
+        ...DEFAULT_LAYER_CONFIG,
+        dataset_id: inheritedDatasetId,
+        colormap: preferredColormap ?? DEFAULT_LAYER_CONFIG.colormap,
+        ...(preferredColormapReversed != null
+          ? { colormap_reversed: preferredColormapReversed }
+          : {}),
+      },
     });
     updateStory((s) => ({ ...s, chapters: [...s.chapters, newCh] }));
     setActiveChapterId(newCh.id);

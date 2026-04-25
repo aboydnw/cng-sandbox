@@ -92,15 +92,29 @@ export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
   };
 }
 
+export interface CreateStoryOptions {
+  preferredColormap?: string | null;
+  preferredColormapReversed?: boolean | null;
+}
+
 export function createStory(
   datasetId?: string | null,
-  overrides: Partial<Story> = {}
+  overrides: Partial<Story> & CreateStoryOptions = {}
 ): Story {
+  const { preferredColormap, preferredColormapReversed, ...storyOverrides } =
+    overrides;
   const chapter = datasetId
     ? createChapter({
         order: 0,
         title: "Chapter 1",
-        layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: datasetId },
+        layer_config: {
+          ...DEFAULT_LAYER_CONFIG,
+          dataset_id: datasetId,
+          colormap: preferredColormap ?? DEFAULT_LAYER_CONFIG.colormap,
+          ...(preferredColormapReversed != null
+            ? { colormap_reversed: preferredColormapReversed }
+            : {}),
+        },
       })
     : createChapter({
         order: 0,
@@ -118,6 +132,6 @@ export function createStory(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     published: false,
-    ...overrides,
+    ...storyOverrides,
   };
 }

@@ -417,3 +417,70 @@ def test_cog_url_none_for_vector():
         else None
     )
     assert cog_url is None
+
+
+@requires_gdalwarp
+@pytest.mark.parametrize("epsg", [5070, 3857])
+def test_convert_geotiff_preserves_source_crs(tmp_path, epsg):
+    """COG output must stay in the source CRS — no forced warp to EPSG:4326."""
+    from rasterio.crs import CRS
+
+    width, height = 10, 10
+    src_crs = CRS.from_epsg(epsg)
+    # Construct a trivial affine in the source CRS units (metres for both).
+    transform = rasterio.transform.from_bounds(0, 0, 1000, 1000, width, height)
+    data = np.arange(width * height, dtype="float32").reshape(1, height, width)
+    path = str(tmp_path / f"input_{epsg}.tif")
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=width,
+        height=height,
+        count=1,
+        dtype="float32",
+        crs=src_crs,
+        transform=transform,
+    ) as dst:
+        dst.write(data)
+    output_path = str(tmp_path / f"out_{epsg}.tif")
+    _convert_geotiff_to_cog(path, output_path, is_categorical=False)
+    with rasterio.open(output_path) as src:
+        assert src.crs.to_epsg() == epsg, (
+            f"expected output CRS EPSG:{epsg}, got {src.crs}"
+        )
+
+
+@requires_gdalwarp
+def test_convert_geotiff_categorical_preserves_source_crs(tmp_path):
+    """Categorical COG in a non-4326 CRS must keep its source CRS and have overviews."""
+    from rasterio.crs import CRS
+
+    width, height = 512, 512
+    src_crs = CRS.from_epsg(5070)
+    transform = rasterio.transform.from_bounds(0, 0, 100000, 100000, width, height)
+    # Stripe pattern to force overview bleed detection.
+    data = np.full((1, height, width), 255, dtype=np.uint8)
+    for i in range(0, width, 40):
+        data[0, :, i : i + 20] = [1, 2][( i // 40) % 2]
+    path = str(tmp_path / "categorical_5070.tif")
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=width,
+        height=height,
+        count=1,
+        dtype="uint8",
+        crs=src_crs,
+        transform=transform,
+        nodata=255,
+    ) as dst:
+        dst.write(data)
+    output_path = str(tmp_path / "out_categorical_5070.tif")
+    _convert_geotiff_to_cog(path, output_path, is_categorical=True)
+    with rasterio.open(output_path) as src:
+        assert src.crs.to_epsg() == 5070, (
+            f"expected output CRS EPSG:5070, got {src.crs}"
+        )
+        assert src.overviews(1), "expected overviews to be built by COG driver"

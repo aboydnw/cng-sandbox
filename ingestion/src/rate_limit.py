@@ -18,8 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def _key_func(request: Request) -> str:
-    """Key by X-Workspace-Id when present, fall back to remote IP."""
-    return request.headers.get("X-Workspace-Id") or get_remote_address(request)
+    """Key by combined workspace + remote IP.
+
+    Combining the two prevents header-rotation bypass: an attacker on a single
+    IP cannot escape rate limits by minting a fresh `X-Workspace-Id` per
+    request, while real users on different IPs remain independently bucketed
+    per workspace.
+    """
+    workspace_id = request.headers.get("X-Workspace-Id") or "anon"
+    return f"{workspace_id}:{get_remote_address(request)}"
 
 
 limiter = Limiter(key_func=_key_func, default_limits=["300/minute"])

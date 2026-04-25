@@ -85,6 +85,32 @@ def test_workspace_keying_independent_counters(fresh_client):
     assert resp.status_code != 429
 
 
+def test_anonymous_header_rotation_shares_bucket(fresh_client):
+    payload = {"page_url": "https://example.com", "dataset_id": "abc"}
+    statuses = []
+    for _ in range(7):
+        resp = fresh_client.post("/api/bug-report", json=payload)
+        statuses.append(resp.status_code)
+    assert 429 in statuses
+    assert statuses.index(429) >= 5
+
+
+def test_key_func_shape_combines_workspace_and_ip():
+    from src.rate_limit import _key_func
+
+    class _Req:
+        def __init__(self, headers, host):
+            self.headers = headers
+            self.client = type("C", (), {"host": host})()
+
+    keyed = _key_func(_Req({"X-Workspace-Id": "wsZZZZZZ"}, "10.0.0.1"))
+    assert keyed.startswith("wsZZZZZZ:")
+    assert keyed.endswith(":10.0.0.1")
+    keyed = _key_func(_Req({}, "10.0.0.2"))
+    assert keyed.startswith("anon:")
+    assert keyed.endswith(":10.0.0.2")
+
+
 def test_ip_fallback_when_no_workspace_header(fresh_app, caplog):
     client = TestClient(fresh_app, raise_server_exceptions=False)
     payload = {"page_url": "https://example.com", "dataset_id": "abc"}

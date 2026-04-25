@@ -58,16 +58,17 @@ class _RedirectAsyncClient:
     async def get(self, url, **kwargs):
         return MagicMock(
             status_code=302,
-            headers={"location": "http://127.0.0.1/secret", "content-type": "text/html"},
+            headers={
+                "location": "http://127.0.0.1/secret",
+                "content-type": "text/html",
+            },
             text="",
         )
 
 
 def test_convert_url_rejects_redirect(client, monkeypatch):
     monkeypatch.setattr("src.routes.upload.httpx.AsyncClient", _RedirectAsyncClient)
-    resp = client.post(
-        "/api/convert-url", json={"url": "https://example.com/file.tif"}
-    )
+    resp = client.post("/api/convert-url", json={"url": "https://example.com/file.tif"})
     assert resp.status_code == 400
     assert "detail" in resp.json()
 

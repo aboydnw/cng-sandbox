@@ -3,9 +3,10 @@ import logging
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from src.rate_limit import limiter
 from src.services.cog_checker import check_remote_is_cog
 from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
 
@@ -76,14 +77,15 @@ async def _probe_is_cog(url: str) -> bool:
 
 
 @router.post("/inspect-url", response_model=InspectUrlResponse)
-async def inspect_url(request: InspectUrlRequest) -> InspectUrlResponse:
-    format_detected, is_cog = _detect_format(request.url)
+@limiter.limit("120/hour")
+async def inspect_url(request: Request, body: InspectUrlRequest) -> InspectUrlResponse:
+    format_detected, is_cog = _detect_format(body.url)
     size_bytes: int | None = None
     error_detail: str | None = None
     has_errors = False
     if format_detected != "xyz":
         try:
-            validate_url_safe(request.url)
+            validate_url_safe(body.url)
         except SSRFError as exc:
             return InspectUrlResponse(
                 format=format_detected,
@@ -93,10 +95,10 @@ async def inspect_url(request: InspectUrlRequest) -> InspectUrlResponse:
                 has_errors=True,
                 error_detail=str(exc),
             )
-        size_bytes, error_detail = await _probe_size(request.url)
+        size_bytes, error_detail = await _probe_size(body.url)
         has_errors = error_detail is not None
         if format_detected == "tiff" and not has_errors:
-            is_cog = await _probe_is_cog(request.url)
+            is_cog = await _probe_is_cog(body.url)
     return InspectUrlResponse(
         format=format_detected,
         is_cog=is_cog,

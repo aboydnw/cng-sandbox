@@ -10,6 +10,8 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 
+from src.rate_limit import limiter
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
@@ -44,6 +46,7 @@ async def _resolve_to_ip(hostname: str) -> str:
 
 
 @router.get("/proxy")
+@limiter.limit("120/hour")
 async def proxy_resource(url: str, request: Request):
     decoded = unquote(url)
     if not decoded.startswith("https://"):

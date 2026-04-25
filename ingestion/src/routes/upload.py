@@ -21,6 +21,7 @@ from starlette.responses import JSONResponse
 
 from src.config import get_settings
 from src.models import Job
+from src.rate_limit import limiter
 from src.services.duplicate_check import check_duplicate_filename
 from src.services.format_checker import check_format
 from src.services.pipeline import run_pipeline
@@ -124,6 +125,7 @@ async def check_format_endpoint(
 
 
 @router.post("/upload")
+@limiter.limit("20/hour")
 async def upload_file(
     request: Request,
     file: UploadFile,
@@ -189,6 +191,7 @@ async def check_duplicate(
 
 
 @router.post("/convert-url")
+@limiter.limit("20/hour")
 async def convert_url(
     request: Request,
     body: ConvertUrlRequest,
@@ -318,6 +321,7 @@ async def _run_and_cleanup(job: Job, input_path: str, db_session_factory):
 
 
 @router.post("/upload-temporal")
+@limiter.limit("10/hour")
 async def upload_temporal(
     request: Request,
     files: list[UploadFile],

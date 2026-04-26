@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.28.0](https://github.com/aboydnw/cng-sandbox/compare/v1.27.0...v1.28.0) (2026-04-26)
+
+
+### Features
+
+* honor dataset preferred colormap in map and story views ([#354](https://github.com/aboydnw/cng-sandbox/issues/354)) ([b9ac017](https://github.com/aboydnw/cng-sandbox/commit/b9ac0172aee1f0dd66a48f4d35b31169c6af9e97))
+* persist preferred colormap on datasets and connections ([#344](https://github.com/aboydnw/cng-sandbox/issues/344)) ([7225ae7](https://github.com/aboydnw/cng-sandbox/commit/7225ae71e5c6ae58fb4678119edeeb8e4381496f))
+* **security:** pre-launch hardening — SSRF, redirect lockdown, rate limits ([#345](https://github.com/aboydnw/cng-sandbox/issues/345)) ([1d123d0](https://github.com/aboydnw/cng-sandbox/commit/1d123d0aa217813ba2fc06682fdb28ad052d3396))
+
+
+### Bug Fixes
+
+* **frontend:** hide Mark as categorical card on shared map view ([#341](https://github.com/aboydnw/cng-sandbox/issues/341)) ([8dbac4f](https://github.com/aboydnw/cng-sandbox/commit/8dbac4faf8d412b5d392dbbcf0850845bf8ed7de))
+
 ## [1.27.0](https://github.com/aboydnw/cng-sandbox/compare/v1.26.0...v1.27.0) (2026-04-24)
 
 

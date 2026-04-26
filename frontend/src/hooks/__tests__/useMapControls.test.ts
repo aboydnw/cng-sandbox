@@ -28,6 +28,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     isTemporal: false,
     timesteps: [],
     renderMode: null,
+    preferredColormap: null,
+    preferredColormapReversed: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -229,6 +231,8 @@ describe("useMapControls", () => {
         file_size: 10 * 1024 * 1024, // 10 MB
         created_at: "2026-04-17T00:00:00Z",
         is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -263,6 +267,8 @@ describe("useMapControls", () => {
         file_size: 10 * 1024 * 1024 * 1024, // 10 GB
         created_at: "2026-04-17T00:00:00Z",
         is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -298,6 +304,8 @@ describe("useMapControls", () => {
         file_size: null,
         created_at: "2026-04-17T00:00:00Z",
         is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -350,6 +358,87 @@ describe("useMapControls renderMode precedence", () => {
   });
 });
 
+describe("useMapControls — preferred colormap precedence", () => {
+  it("uses item.preferredColormap when no URL or localStorage override is set", () => {
+    const item = makeItem({
+      preferredColormap: "terrain",
+      preferredColormapReversed: false,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.colormapName).toBe("terrain");
+    expect(result.current.colormapReversed).toBe(false);
+  });
+
+  it("uses item.preferredColormapReversed=true when set", () => {
+    const item = makeItem({
+      preferredColormap: "plasma",
+      preferredColormapReversed: true,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.colormapName).toBe("plasma");
+    expect(result.current.colormapReversed).toBe(true);
+  });
+
+  it("localStorage/URL override wins over item.preferredColormap", () => {
+    const item = makeItem({
+      preferredColormap: "terrain",
+      preferredColormapReversed: false,
+    });
+    const overrides = {
+      itemId: item.id,
+      rescaleMin: null,
+      rescaleMax: null,
+      colormapReversed: true,
+      colormapName: "inferno",
+    };
+    const { result } = renderHook(() => useMapControls(item, overrides));
+    expect(result.current.colormapName).toBe("inferno");
+    expect(result.current.colormapReversed).toBe(true);
+  });
+
+  it("falls back to viridis when item has no preferredColormap", () => {
+    const item = makeItem({
+      preferredColormap: null,
+      preferredColormapReversed: null,
+    });
+    const { result } = renderHook(() => useMapControls(item));
+    expect(result.current.colormapName).toBe("viridis");
+    expect(result.current.colormapReversed).toBe(false);
+  });
+
+  it("preserves in-session control state when item.preferredColormap changes (save+refresh)", () => {
+    const initial = makeItem({
+      preferredColormap: null,
+      preferredColormapReversed: null,
+    });
+    const { result, rerender } = renderHook(
+      ({ item }) => useMapControls(item),
+      {
+        initialProps: { item: initial },
+      }
+    );
+
+    act(() => {
+      result.current.setOpacity(0.5);
+      result.current.setRescale(10, 100);
+      result.current.setColormapReversed(true);
+    });
+
+    const refreshed = makeItem({
+      id: initial.id,
+      preferredColormap: "terrain",
+      preferredColormapReversed: true,
+    });
+    rerender({ item: refreshed });
+
+    expect(result.current.opacity).toBe(0.5);
+    expect(result.current.rescaleMin).toBe(10);
+    expect(result.current.rescaleMax).toBe(100);
+    expect(result.current.colormapReversed).toBe(true);
+    expect(result.current.colormapName).toBe("viridis");
+  });
+});
+
 describe("client render size caps", () => {
   function itemWithSize(
     size: number,
@@ -379,6 +468,8 @@ describe("client render size caps", () => {
       isTemporal: false,
       timesteps: [],
       renderMode: null,
+      preferredColormap: null,
+      preferredColormapReversed: null,
       dataset: {
         id: "ds-1",
         filename: "large.tif",

@@ -68,6 +68,12 @@ interface MapSidePanelProps {
   onDatasetUpdated: () => void;
   // Shared view
   shared?: boolean;
+  savePreferredColormap?: {
+    currentSavedColormap: string | null;
+    currentSavedReversed: boolean | null;
+    onSave: () => Promise<void>;
+    saving: boolean;
+  };
 }
 
 export function MapSidePanel({
@@ -105,6 +111,7 @@ export function MapSidePanel({
   canMarkContinuous,
   onDatasetUpdated,
   shared = false,
+  savePreferredColormap,
 }: MapSidePanelProps) {
   const [mode, setMode] = useState<PanelMode>("controls");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -224,6 +231,7 @@ export function MapSidePanel({
           colormapReversed={colormapReversed}
           onColormapReversedChange={onColormapReversedChange}
           shared={shared}
+          savePreferredColormap={savePreferredColormap}
         />
       )}
 

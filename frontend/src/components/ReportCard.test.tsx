@@ -64,6 +64,8 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     is_shared: false,
     source_url: null,
     expires_at: null,
+    preferred_colormap: null,
+    preferred_colormap_reversed: null,
     ...overrides,
   };
 }

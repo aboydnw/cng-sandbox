@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
 import { RasterSidebarControls } from "../RasterSidebarControls";
@@ -29,6 +29,10 @@ function renderCtrl(
       <RasterSidebarControls {...defaultProps} {...props} />
     </ChakraProvider>
   );
+}
+
+function renderWithChakra(ui: React.ReactElement) {
+  return render(<ChakraProvider value={system}>{ui}</ChakraProvider>);
 }
 
 describe("RasterSidebarControls shared prop", () => {
@@ -172,5 +176,103 @@ describe("RasterSidebarControls rescale + flip", () => {
     fireEvent.change(min, { target: { value: "" } });
     fireEvent.blur(min);
     expect(onRescaleChange).toHaveBeenCalledWith(null, 50);
+  });
+});
+
+describe("RasterSidebarControls — save as default", () => {
+  const baseProps = {
+    opacity: 0.8,
+    onOpacityChange: vi.fn(),
+    colormapName: "terrain",
+    onColormapChange: vi.fn(),
+    showColormap: true,
+    selectedBand: "rgb" as const,
+    onBandChange: vi.fn(),
+    showBands: false,
+    rescaleMin: null,
+    rescaleMax: null,
+    datasetMin: -5627.7,
+    datasetMax: 3203.7,
+    onRescaleChange: vi.fn(),
+    colormapReversed: false,
+    onColormapReversedChange: vi.fn(),
+  };
+
+  it("renders the save-as-default button when ownable and preference differs", () => {
+    renderWithChakra(
+      <RasterSidebarControls
+        {...baseProps}
+        savePreferredColormap={{
+          currentSavedColormap: "viridis",
+          currentSavedReversed: false,
+          onSave: vi.fn(),
+          saving: false,
+        }}
+      />
+    );
+    const btn = screen.getByRole("button", { name: /save as default/i });
+    expect(btn).toBeTruthy();
+    expect(btn.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("disables the button with a Saved label when preference matches current state", () => {
+    renderWithChakra(
+      <RasterSidebarControls
+        {...baseProps}
+        colormapName="viridis"
+        savePreferredColormap={{
+          currentSavedColormap: "viridis",
+          currentSavedReversed: false,
+          onSave: vi.fn(),
+          saving: false,
+        }}
+      />
+    );
+    const btn = screen.getByRole("button", { name: /saved/i });
+    expect(btn.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("hides the button when savePreferredColormap prop is undefined", () => {
+    renderWithChakra(<RasterSidebarControls {...baseProps} />);
+    expect(
+      screen.queryByRole("button", { name: /save as default/i })
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: /saved/i })).toBeNull();
+  });
+
+  it("hides the button when shared=true", () => {
+    renderWithChakra(
+      <RasterSidebarControls
+        {...baseProps}
+        shared
+        savePreferredColormap={{
+          currentSavedColormap: null,
+          currentSavedReversed: null,
+          onSave: vi.fn(),
+          saving: false,
+        }}
+      />
+    );
+    expect(
+      screen.queryByRole("button", { name: /save as default/i })
+    ).toBeNull();
+  });
+
+  it("calls onSave when clicked", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithChakra(
+      <RasterSidebarControls
+        {...baseProps}
+        savePreferredColormap={{
+          currentSavedColormap: "viridis",
+          currentSavedReversed: false,
+          onSave,
+          saving: false,
+        }}
+      />
+    );
+    const btn = screen.getByRole("button", { name: /save as default/i });
+    fireEvent.click(btn);
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
   });
 });

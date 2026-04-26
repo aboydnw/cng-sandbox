@@ -39,6 +39,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     isTemporal: false,
     timesteps: [],
     renderMode: null,
+    preferredColormap: null,
+    preferredColormapReversed: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -170,6 +172,8 @@ describe("client-side COG render dispatch", () => {
       is_shared: false,
       source_url: null,
       expires_at: null,
+      preferred_colormap: null,
+      preferred_colormap_reversed: null,
       ...overrides,
     };
   }
@@ -252,6 +256,8 @@ function makeConnectionItem(overrides: Partial<MapItem> = {}): MapItem {
     file_size: 10 * 1024 * 1024,
     created_at: "2026-04-17T00:00:00Z",
     is_shared: false,
+    preferred_colormap: null,
+    preferred_colormap_reversed: null,
   };
   return makeItem({
     source: "connection",

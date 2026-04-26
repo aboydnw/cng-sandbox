@@ -58,6 +58,8 @@ const BASE_DATASET: Dataset = {
   is_shared: false,
   source_url: null,
   expires_at: null,
+  preferred_colormap: null,
+  preferred_colormap_reversed: null,
 };
 
 const TEMPORAL_DATASET: Dataset = {
@@ -233,6 +235,8 @@ const BASE_CONNECTION: Connection = {
   feature_count: null,
   file_size: null,
   is_shared: false,
+  preferred_colormap: null,
+  preferred_colormap_reversed: null,
 };
 
 describe("buildLayersForChapter — connection COG rescale and colormap_reversed", () => {

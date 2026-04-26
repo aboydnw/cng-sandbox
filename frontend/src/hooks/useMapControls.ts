@@ -52,10 +52,16 @@ export function useMapControls(
   const seedMatches =
     !!initialOverrides && item?.id === initialOverrides.itemId;
 
+  const itemColormap = item?.preferredColormap ?? null;
+  const itemReversed = item?.preferredColormapReversed ?? null;
+
   const [opacity, setOpacity] = useState(0.8);
-  const [colormapName, setColormapName] = useState(
-    seedMatches ? (initialOverrides!.colormapName ?? "viridis") : "viridis"
-  );
+  const [colormapName, setColormapName] = useState<string>(() => {
+    if (seedMatches && initialOverrides!.colormapName) {
+      return initialOverrides!.colormapName;
+    }
+    return itemColormap ?? "viridis";
+  });
   const [selectedBand, setSelectedBand] = useState<"rgb" | number>("rgb");
   const [renderMode, setRenderMode] = useState<RenderMode>("server");
   const [categoricalOverride, setCategoricalOverride] = useState<
@@ -67,9 +73,12 @@ export function useMapControls(
   const [rescaleMax, setRescaleMax] = useState<number | null>(
     seedMatches ? initialOverrides!.rescaleMax : null
   );
-  const [colormapReversed, setColormapReversed] = useState<boolean>(
-    seedMatches ? initialOverrides!.colormapReversed : false
-  );
+  const [colormapReversed, setColormapReversed] = useState<boolean>(() => {
+    if (seedMatches) {
+      return initialOverrides!.colormapReversed;
+    }
+    return itemReversed ?? false;
+  });
 
   const eligibility = useMemo(
     () => evaluateClientRenderEligibility(item ?? null),
@@ -82,15 +91,17 @@ export function useMapControls(
     setCategoricalOverride(null);
 
     if (initialOverrides && item?.id === initialOverrides.itemId) {
-      setColormapName(initialOverrides.colormapName ?? "viridis");
+      setColormapName(
+        initialOverrides.colormapName ?? itemColormap ?? "viridis"
+      );
       setRescaleMin(initialOverrides.rescaleMin);
       setRescaleMax(initialOverrides.rescaleMax);
       setColormapReversed(initialOverrides.colormapReversed);
     } else {
-      setColormapName("viridis");
+      setColormapName(itemColormap ?? "viridis");
       setRescaleMin(null);
       setRescaleMax(null);
-      setColormapReversed(false);
+      setColormapReversed(itemReversed ?? false);
     }
 
     if (item?.dataType === "vector") {
@@ -110,6 +121,10 @@ export function useMapControls(
     } else {
       setRenderMode("server");
     }
+    // item.preferredColormap / preferredColormapReversed intentionally omitted:
+    // re-running on dataset refresh would wipe in-session opacity/rescale/
+    // categorical/reversed state. The lazy useState initializers already apply
+    // preferred-colormap precedence at mount.
   }, [item?.id, item?.dataType, item?.renderMode, eligibility.canRender]);
 
   const setRescale = (min: number | null, max: number | null) => {

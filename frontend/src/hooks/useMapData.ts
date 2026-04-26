@@ -29,6 +29,8 @@ export function datasetToMapItem(ds: Dataset): MapItem {
     isTemporal: ds.is_temporal,
     timesteps: ds.timesteps,
     renderMode: ds.render_mode ?? null,
+    preferredColormap: ds.preferred_colormap ?? null,
+    preferredColormapReversed: ds.preferred_colormap_reversed ?? null,
     dataset: ds,
     connection: null,
   };
@@ -67,6 +69,8 @@ export function connectionToMapItem(conn: Connection): MapItem {
     isTemporal: false,
     timesteps: [],
     renderMode: conn.render_mode ?? null,
+    preferredColormap: conn.preferred_colormap ?? null,
+    preferredColormapReversed: conn.preferred_colormap_reversed ?? null,
     dataset: null,
     connection: conn,
   };

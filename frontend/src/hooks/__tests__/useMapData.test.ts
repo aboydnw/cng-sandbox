@@ -62,6 +62,8 @@ const MOCK_DATASET: Dataset = {
   render_mode: null,
   source_url: null,
   expires_at: null,
+  preferred_colormap: null,
+  preferred_colormap_reversed: null,
 };
 
 const MOCK_CONNECTION: Connection = {
@@ -87,6 +89,8 @@ const MOCK_CONNECTION: Connection = {
   file_size: null,
   is_shared: false,
   render_mode: null,
+  preferred_colormap: null,
+  preferred_colormap_reversed: null,
 };
 
 beforeEach(() => {
@@ -292,6 +296,24 @@ describe("datasetToMapItem", () => {
       datasetToMapItem({ ...MOCK_DATASET, render_mode: "client" }).renderMode
     ).toBe("client");
   });
+  it("copies preferred_colormap and preferred_colormap_reversed when set", () => {
+    const item = datasetToMapItem({
+      ...MOCK_DATASET,
+      preferred_colormap: "terrain",
+      preferred_colormap_reversed: false,
+    });
+    expect(item.preferredColormap).toBe("terrain");
+    expect(item.preferredColormapReversed).toBe(false);
+  });
+  it("passes preferred_colormap nulls through", () => {
+    const item = datasetToMapItem({
+      ...MOCK_DATASET,
+      preferred_colormap: null,
+      preferred_colormap_reversed: null,
+    });
+    expect(item.preferredColormap).toBeNull();
+    expect(item.preferredColormapReversed).toBeNull();
+  });
 });
 
 describe("connectionToMapItem", () => {
@@ -315,5 +337,14 @@ describe("connectionToMapItem", () => {
       connectionToMapItem({ ...MOCK_CONNECTION, render_mode: "client" })
         .renderMode
     ).toBe("client");
+  });
+  it("copies preferred_colormap and preferred_colormap_reversed when set", () => {
+    const item = connectionToMapItem({
+      ...MOCK_CONNECTION,
+      preferred_colormap: "plasma",
+      preferred_colormap_reversed: true,
+    });
+    expect(item.preferredColormap).toBe("plasma");
+    expect(item.preferredColormapReversed).toBe(true);
   });
 });

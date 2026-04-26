@@ -69,6 +69,8 @@ export interface Dataset {
   is_example?: boolean;
   is_shared: boolean;
   render_mode?: "client" | "server" | null;
+  preferred_colormap: string | null;
+  preferred_colormap_reversed: boolean | null;
   source_url: string | null;
   expires_at: string | null;
 }
@@ -102,6 +104,8 @@ export interface Connection {
   file_size: number | null;
   is_shared: boolean;
   render_mode?: "client" | "server" | null;
+  preferred_colormap: string | null;
+  preferred_colormap_reversed: boolean | null;
   created_at: string;
 }
 
@@ -183,6 +187,8 @@ export interface MapItem {
   isTemporal: boolean;
   timesteps: Timestep[];
   renderMode: "client" | "server" | null;
+  preferredColormap: string | null;
+  preferredColormapReversed: boolean | null;
   dataset: Dataset | null;
   connection: Connection | null;
 }

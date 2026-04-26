@@ -48,9 +48,25 @@ export function StoryCTABanner({ dataset, connection }: StoryCTABannerProps) {
     });
 
     const layerConfig = connection
-      ? { ...DEFAULT_LAYER_CONFIG, connection_id: connection.id }
+      ? {
+          ...DEFAULT_LAYER_CONFIG,
+          connection_id: connection.id,
+          colormap:
+            connection.preferred_colormap ?? DEFAULT_LAYER_CONFIG.colormap,
+          ...(connection.preferred_colormap_reversed != null
+            ? { colormap_reversed: connection.preferred_colormap_reversed }
+            : {}),
+        }
       : dataset
-        ? { ...DEFAULT_LAYER_CONFIG, dataset_id: dataset.id }
+        ? {
+            ...DEFAULT_LAYER_CONFIG,
+            dataset_id: dataset.id,
+            colormap:
+              dataset.preferred_colormap ?? DEFAULT_LAYER_CONFIG.colormap,
+            ...(dataset.preferred_colormap_reversed != null
+              ? { colormap_reversed: dataset.preferred_colormap_reversed }
+              : {}),
+          }
         : DEFAULT_LAYER_CONFIG;
 
     const mapChapter = createChapter({

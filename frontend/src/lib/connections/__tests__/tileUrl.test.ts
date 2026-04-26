@@ -25,6 +25,8 @@ function makeConnection(overrides: Partial<Connection>): Connection {
     feature_count: null,
     file_size: null,
     is_shared: false,
+    preferred_colormap: null,
+    preferred_colormap_reversed: null,
     ...overrides,
   };
 }

@@ -6,5 +6,31 @@
       "Bash(DROP *)",
       "Bash(DELETE FROM*)"
     ]
+  },
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "disabled": false,
+      "args": [
+        "@playwright/mcp@latest",
+        "--headless"
+      ],
+      "env": {}
+    }
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "slack@claude-plugins-official": false,
+    "github@claude-plugins-official": true,
+    "supabase@claude-plugins-official": false,
+    "code-review@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "vercel@claude-plugins-official": false,
+    "chrome-devtools-mcp@chrome-devtools-plugins": false,
+    "superpowers@claude-plugins-official": true,
+    "obsidian@obsidian-skills": true,
+    "caveman@caveman": true,
+    "devseed-blog@ds-skills": true
   }
 }

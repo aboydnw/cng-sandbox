@@ -694,22 +694,27 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
 def _convert_geotiff_to_cog(
     input_path: str, output_path: str, is_categorical: bool = False
 ) -> None:
-    """Convert GeoTIFF to COG using gdalwarp.
+    """Convert GeoTIFF to COG in the source CRS using gdalwarp.
 
-    For categorical rasters, uses nearest-neighbor resampling for both the warp
-    and the COG overviews. Bilinear/cubic on integer category codes blends them
-    into fractional values that truncate to wrong (but valid-looking) category
-    codes, causing bleed/stripe artifacts at low zoom. GDAL's COG driver default
-    is NEAREST for integer dtypes ≤16 bits and CUBIC for anything larger —
-    which silently corrupts categorical uint32 rasters unless we override it.
+    The source CRS is preserved — no reprojection to EPSG:4326. Both the
+    server-side render path (titiler-pgstac) and the client-side renderer
+    (deck.gl-geotiff ≥0.5) reproject non-Mercator COGs on the fly, so
+    warping to 4326 on ingest only resamples pixels unnecessarily and
+    discards the native grid.
+
+    For categorical rasters, uses nearest-neighbor resampling for overview
+    generation. Bilinear/cubic on integer category codes blends them into
+    fractional values that truncate to wrong (but valid-looking) category
+    codes, causing bleed/stripe artifacts at low zoom. GDAL's COG driver
+    default is NEAREST for integer dtypes ≤16 bits and CUBIC for anything
+    larger — which silently corrupts categorical uint32 rasters unless we
+    override it.
     """
     resampling = "near" if is_categorical else "bilinear"
     overview_resampling = "NEAREST" if is_categorical else "CUBIC"
     result = subprocess.run(
         [
             "gdalwarp",
-            "-t_srs",
-            "EPSG:4326",
             "-r",
             resampling,
             "-of",

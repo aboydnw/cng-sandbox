@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { workspaceFetch, setWorkspaceId, datasetsApi, connectionsApi } from "../api";
+import {
+  workspaceFetch,
+  setWorkspaceId,
+  datasetsApi,
+  connectionsApi,
+} from "../api";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -97,8 +102,8 @@ describe("connectionsApi.setPreferredColormap", () => {
       preferred_colormap: "plasma",
       preferred_colormap_reversed: true,
     });
-    expect((result as unknown as Record<string, unknown>).preferred_colormap).toBe(
-      "plasma"
-    );
+    expect(
+      (result as unknown as Record<string, unknown>).preferred_colormap
+    ).toBe("plasma");
   });
 });

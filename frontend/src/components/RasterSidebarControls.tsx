@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Box, Button, Flex, NativeSelect, Text, IconButton } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  NativeSelect,
+  Text,
+  IconButton,
+} from "@chakra-ui/react";
 import { ArrowsLeftRight, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { ColormapDropdown } from "./ColormapDropdown";
 import { EditableCategoryLegend } from "./EditableCategoryLegend";
@@ -216,37 +223,44 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
                   <ArrowsLeftRight size={14} weight="bold" />
                 </IconButton>
               </Flex>
-              {!shared && savePreferredColormap && (() => {
-                const matchesSaved =
-                  savePreferredColormap.currentSavedColormap === colormapName &&
-                  (savePreferredColormap.currentSavedReversed ?? false) ===
-                    colormapReversed;
-                const label = matchesSaved ? "Saved" : "Save as default";
-                return (
-                  <Button
-                    type="button"
-                    variant="plain"
-                    size="xs"
-                    h="auto"
-                    minW={0}
-                    p={0}
-                    mt="4px"
-                    fontSize="10px"
-                    fontWeight={400}
-                    color={matchesSaved ? "brand.textSecondary" : "brand.orange"}
-                    bg="transparent"
-                    cursor={matchesSaved ? "default" : "pointer"}
-                    _hover={{
-                      color: matchesSaved ? "brand.textSecondary" : "brand.brown",
-                    }}
-                    aria-label={label}
-                    disabled={matchesSaved || savePreferredColormap.saving}
-                    onClick={() => void savePreferredColormap.onSave()}
-                  >
-                    {savePreferredColormap.saving ? "Saving…" : label}
-                  </Button>
-                );
-              })()}
+              {!shared &&
+                savePreferredColormap &&
+                (() => {
+                  const matchesSaved =
+                    savePreferredColormap.currentSavedColormap ===
+                      colormapName &&
+                    (savePreferredColormap.currentSavedReversed ?? false) ===
+                      colormapReversed;
+                  const label = matchesSaved ? "Saved" : "Save as default";
+                  return (
+                    <Button
+                      type="button"
+                      variant="plain"
+                      size="xs"
+                      h="auto"
+                      minW={0}
+                      p={0}
+                      mt="4px"
+                      fontSize="10px"
+                      fontWeight={400}
+                      color={
+                        matchesSaved ? "brand.textSecondary" : "brand.orange"
+                      }
+                      bg="transparent"
+                      cursor={matchesSaved ? "default" : "pointer"}
+                      _hover={{
+                        color: matchesSaved
+                          ? "brand.textSecondary"
+                          : "brand.brown",
+                      }}
+                      aria-label={label}
+                      disabled={matchesSaved || savePreferredColormap.saving}
+                      onClick={() => void savePreferredColormap.onSave()}
+                    >
+                      {savePreferredColormap.saving ? "Saving…" : label}
+                    </Button>
+                  );
+                })()}
             </Box>
           )}
 

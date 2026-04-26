@@ -91,7 +91,9 @@ export function useMapControls(
     setCategoricalOverride(null);
 
     if (initialOverrides && item?.id === initialOverrides.itemId) {
-      setColormapName(initialOverrides.colormapName ?? itemColormap ?? "viridis");
+      setColormapName(
+        initialOverrides.colormapName ?? itemColormap ?? "viridis"
+      );
       setRescaleMin(initialOverrides.rescaleMin);
       setRescaleMax(initialOverrides.rescaleMax);
       setColormapReversed(initialOverrides.colormapReversed);

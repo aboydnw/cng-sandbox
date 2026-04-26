@@ -766,10 +766,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               onDatasetUpdated={refresh}
               shared={shared}
               savePreferredColormap={
-                !shared && item?.dataType === "raster" && !item?.dataset?.is_example
+                !shared &&
+                item?.dataType === "raster" &&
+                !item?.dataset?.is_example
                   ? {
                       currentSavedColormap: item?.preferredColormap ?? null,
-                      currentSavedReversed: item?.preferredColormapReversed ?? null,
+                      currentSavedReversed:
+                        item?.preferredColormapReversed ?? null,
                       onSave: handleSavePreferredColormap,
                       saving: savingPreferredColormap,
                     }

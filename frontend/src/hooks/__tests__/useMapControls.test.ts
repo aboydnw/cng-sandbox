@@ -407,10 +407,16 @@ describe("useMapControls — preferred colormap precedence", () => {
   });
 
   it("preserves in-session control state when item.preferredColormap changes (save+refresh)", () => {
-    const initial = makeItem({ preferredColormap: null, preferredColormapReversed: null });
-    const { result, rerender } = renderHook(({ item }) => useMapControls(item), {
-      initialProps: { item: initial },
+    const initial = makeItem({
+      preferredColormap: null,
+      preferredColormapReversed: null,
     });
+    const { result, rerender } = renderHook(
+      ({ item }) => useMapControls(item),
+      {
+        initialProps: { item: initial },
+      }
+    );
 
     act(() => {
       result.current.setOpacity(0.5);

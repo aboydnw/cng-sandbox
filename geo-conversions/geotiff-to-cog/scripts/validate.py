@@ -83,6 +83,13 @@ def check_pixel_fidelity(input_path: str, output_path: str, n: int = 1000,
                           tolerance: float = 1e-4) -> CheckResult:
     """Sample random pixels and compare values."""
     with rasterio.open(input_path) as src, rasterio.open(output_path) as dst:
+        if src.width != dst.width or src.height != dst.height:
+            return CheckResult(
+                "Pixel fidelity",
+                False,
+                f"Dimensions differ (source={src.width}x{src.height}, "
+                f"output={dst.width}x{dst.height}); per-pixel comparison skipped",
+            )
         rng = np.random.default_rng(42)
         rows = rng.integers(0, src.height, size=n)
         cols = rng.integers(0, src.width, size=n)
@@ -321,13 +328,31 @@ def generate_projected_geotiff(path: str):
         dst.write(data, 1)
 
 
-def check_crs_4326(output_path: str) -> CheckResult:
-    """Check that the output COG is in EPSG:4326."""
-    with rasterio.open(output_path) as dst:
-        epsg = dst.crs.to_epsg() if dst.crs else None
-        if epsg == 4326:
-            return CheckResult("CRS EPSG:4326", True, "EPSG:4326")
-        return CheckResult("CRS EPSG:4326", False, f"Expected EPSG:4326, got {dst.crs}")
+def check_crs_preserved(input_path: str, output_path: str) -> CheckResult:
+    """Check that the output COG preserves the source CRS.
+
+    The pipeline no longer reprojects to EPSG:4326 — both the client-side
+    renderer (deck.gl-geotiff) and the server-side tiler (titiler-pgstac)
+    handle non-Mercator COGs natively. This check asserts that the
+    conversion did not silently warp the data into a different CRS, which
+    would change the pixel grid and resample values.
+    """
+    with rasterio.open(input_path) as src, rasterio.open(output_path) as dst:
+        if src.crs is None and dst.crs is None:
+            return CheckResult("CRS preserved", True, "Both input and output have no CRS")
+        if src.crs is None or dst.crs is None:
+            return CheckResult(
+                "CRS preserved",
+                False,
+                f"CRS presence mismatch: input={src.crs}, output={dst.crs}",
+            )
+        if src.crs == dst.crs:
+            return CheckResult("CRS preserved", True, f"{src.crs}")
+        return CheckResult(
+            "CRS preserved",
+            False,
+            f"Output CRS differs from source: input={src.crs}, output={dst.crs}",
+        )
 
 
 def run_self_test() -> bool:
@@ -359,30 +384,17 @@ def run_self_test() -> bool:
         print("Validating...")
         all_passed = run_validation(input_path, output_path)
 
-    # Test 2: Projected GeoTIFF
+    # Test 2: Projected GeoTIFF — output should preserve source CRS, not warp to 4326.
     print("\n--- Test 2: Projected GeoTIFF (EPSG:5070) ---")
     with tempfile.TemporaryDirectory() as tmpdir:
         proj_input = os.path.join(tmpdir, "test_projected.tif")
         proj_output = os.path.join(tmpdir, "test_projected_cog.tif")
         print("Generating synthetic EPSG:5070 GeoTIFF...")
         generate_projected_geotiff(proj_input)
-        print("Converting to COG (should reproject to EPSG:4326)...")
+        print("Converting to COG (should preserve source CRS)...")
         convert_mod.convert(proj_input, proj_output, verbose=True)
         print("Validating...")
-        with rasterio.open(proj_output) as dst:
-            epsg = dst.crs.to_epsg() if dst.crs else None
-            if epsg != 4326:
-                print(f"FAIL: Expected EPSG:4326, got {dst.crs}")
-                all_passed = False
-            else:
-                is_valid, _, _ = cog_validate(proj_output)
-                if not is_valid:
-                    print("FAIL: Output is not a valid COG")
-                    all_passed = False
-                else:
-                    b = dst.bounds
-                    print(f"PASS: Valid COG in EPSG:4326 ({b.left:.2f}, {b.bottom:.2f}, "
-                          f"{b.right:.2f}, {b.top:.2f})")
+        all_passed = run_validation(proj_input, proj_output) and all_passed
     return all_passed
 
 
@@ -392,31 +404,24 @@ def run_checks(input_path: str, output_path: str) -> list[CheckResult]:
     These checks verify that the COG faithfully preserves the source data.
     A failed check here means the conversion produced incorrect output.
 
+    The pipeline preserves the source CRS, so bounds, dimensions, nodata,
+    and pixel values must round-trip identically — any unintended
+    reprojection trips at least the CRS check and the bounds/dimensions/
+    pixel-fidelity checks together.
+
     Advisory checks (downstream compatibility notes that don't indicate data
     corruption) are in run_advisory_checks and are NOT included here so that
     pipeline callers can treat failures as hard errors without false positives.
     """
-    with rasterio.open(input_path) as src:
-        input_is_4326 = src.crs and src.crs.to_epsg() == 4326
-
-    checks = [
+    return [
         check_cog_valid(output_path),
-        check_crs_4326(output_path),
-    ]
-
-    if input_is_4326:
-        checks.extend([
-            check_bounds_match(input_path, output_path),
-            check_dimensions_match(input_path, output_path),
-            check_pixel_fidelity(input_path, output_path),
-            check_nodata_match(input_path, output_path),
-        ])
-
-    checks.extend([
+        check_crs_preserved(input_path, output_path),
+        check_bounds_match(input_path, output_path),
+        check_dimensions_match(input_path, output_path),
+        check_pixel_fidelity(input_path, output_path),
+        check_nodata_match(input_path, output_path),
         check_band_count(input_path, output_path),
-        check_overviews(output_path),
-    ])
-    return checks
+    ]
 
 
 def run_advisory_checks(input_path: str, output_path: str) -> list[CheckResult]:
@@ -426,8 +431,14 @@ def run_advisory_checks(input_path: str, output_path: str) -> list[CheckResult]:
     characteristics that require special handling by downstream consumers
     (e.g. STAC ingest, web map viewers). Failed advisory checks are shown to
     users as informational warnings, not as pipeline errors.
+
+    `check_overviews` is advisory because GDAL's COG driver caps the number
+    of overview levels for very large rasters (hundreds of thousands of
+    pixels per side); fewer levels than the simple log2 formula predicts
+    is normal and does not indicate data corruption.
     """
     return [
+        check_overviews(output_path),
         check_wgs84_bounds(output_path),
         check_mercator_bounds(output_path),
         check_band_metadata(input_path, output_path),

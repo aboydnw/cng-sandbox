@@ -36,7 +36,7 @@ from src.services.storage import StorageService
 logger = logging.getLogger(__name__)
 
 VALIDATION_CHECK_COUNTS: dict[FormatPair, int] = {
-    FormatPair.GEOTIFF_TO_COG: 8,
+    FormatPair.GEOTIFF_TO_COG: 7,
     FormatPair.NETCDF_TO_COG: 8,
     FormatPair.HDF5_TO_COG: 7,
     FormatPair.GEOJSON_TO_GEOPARQUET: 10,

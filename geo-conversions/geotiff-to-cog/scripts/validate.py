@@ -83,6 +83,13 @@ def check_pixel_fidelity(input_path: str, output_path: str, n: int = 1000,
                           tolerance: float = 1e-4) -> CheckResult:
     """Sample random pixels and compare values."""
     with rasterio.open(input_path) as src, rasterio.open(output_path) as dst:
+        if src.width != dst.width or src.height != dst.height:
+            return CheckResult(
+                "Pixel fidelity",
+                False,
+                f"Dimensions differ (source={src.width}x{src.height}, "
+                f"output={dst.width}x{dst.height}); per-pixel comparison skipped",
+            )
         rng = np.random.default_rng(42)
         rows = rng.integers(0, src.height, size=n)
         cols = rng.integers(0, src.width, size=n)
@@ -377,30 +384,17 @@ def run_self_test() -> bool:
         print("Validating...")
         all_passed = run_validation(input_path, output_path)
 
-    # Test 2: Projected GeoTIFF
+    # Test 2: Projected GeoTIFF — output should preserve source CRS, not warp to 4326.
     print("\n--- Test 2: Projected GeoTIFF (EPSG:5070) ---")
     with tempfile.TemporaryDirectory() as tmpdir:
         proj_input = os.path.join(tmpdir, "test_projected.tif")
         proj_output = os.path.join(tmpdir, "test_projected_cog.tif")
         print("Generating synthetic EPSG:5070 GeoTIFF...")
         generate_projected_geotiff(proj_input)
-        print("Converting to COG (should reproject to EPSG:4326)...")
+        print("Converting to COG (should preserve source CRS)...")
         convert_mod.convert(proj_input, proj_output, verbose=True)
         print("Validating...")
-        with rasterio.open(proj_output) as dst:
-            epsg = dst.crs.to_epsg() if dst.crs else None
-            if epsg != 4326:
-                print(f"FAIL: Expected EPSG:4326, got {dst.crs}")
-                all_passed = False
-            else:
-                is_valid, _, _ = cog_validate(proj_output)
-                if not is_valid:
-                    print("FAIL: Output is not a valid COG")
-                    all_passed = False
-                else:
-                    b = dst.bounds
-                    print(f"PASS: Valid COG in EPSG:4326 ({b.left:.2f}, {b.bottom:.2f}, "
-                          f"{b.right:.2f}, {b.top:.2f})")
+        all_passed = run_validation(proj_input, proj_output) and all_passed
     return all_passed
 
 

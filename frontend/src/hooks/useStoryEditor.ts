@@ -410,6 +410,10 @@ export function useStoryEditor() {
           narrative: ch.narrative,
         };
         if (type === "prose") return createProseChapter(base);
+        const inheritedDatasetId = s.dataset_id ?? "";
+        const inheritedDataset = inheritedDatasetId
+          ? datasetMap.get(inheritedDatasetId)
+          : undefined;
         const mapFields = isMapBoundChapter(ch)
           ? { map_state: ch.map_state, layer_config: ch.layer_config }
           : {
@@ -422,7 +426,16 @@ export function useStoryEditor() {
               },
               layer_config: {
                 ...DEFAULT_LAYER_CONFIG,
-                dataset_id: s.dataset_id ?? "",
+                dataset_id: inheritedDatasetId,
+                colormap:
+                  inheritedDataset?.preferred_colormap ??
+                  DEFAULT_LAYER_CONFIG.colormap,
+                ...(inheritedDataset?.preferred_colormap_reversed != null
+                  ? {
+                      colormap_reversed:
+                        inheritedDataset.preferred_colormap_reversed,
+                    }
+                  : {}),
               },
             };
         if (type === "map") return createMapChapter({ ...base, ...mapFields });

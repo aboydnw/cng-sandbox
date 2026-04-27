@@ -63,9 +63,13 @@ function migrateChapter(
 
 export function migrateStory(story: Record<string, unknown>): Story {
   const storyDatasetId = story.dataset_id as string | undefined;
-  const chapters = (
-    (story.chapters as Record<string, unknown>[] | undefined) ?? []
-  ).map((ch) => migrateChapter(ch, storyDatasetId));
+  const rawChapters = Array.isArray(story.chapters) ? story.chapters : [];
+  const chapters = rawChapters
+    .filter(
+      (ch): ch is Record<string, unknown> =>
+        ch != null && typeof ch === "object"
+    )
+    .map((ch) => migrateChapter(ch, storyDatasetId));
 
   const chapterDatasetIds = chapters.flatMap((ch) =>
     "layer_config" in ch && ch.layer_config?.dataset_id

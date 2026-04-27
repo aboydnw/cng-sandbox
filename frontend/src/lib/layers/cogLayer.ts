@@ -5,6 +5,7 @@ import {
   Colormap,
 } from "@developmentseed/deck.gl-raster/gpu-modules";
 import { buildCategoricalLut, type LutCategory } from "./categoricalLut";
+import { cngEpsgResolver } from "./epsg/resolver";
 
 const ViridisColorize = {
   name: "viridis-colorize",
@@ -63,6 +64,7 @@ export function buildCogLayerPaletted({
         geotiff: url,
         opacity,
         maxError: 0.03,
+        epsgResolver: cngEpsgResolver,
       } as any),
     ];
     /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -147,6 +149,7 @@ export function buildCogLayerPaletted({
       renderTile,
       maxError: 0.03,
       pickable: true,
+      epsgResolver: cngEpsgResolver,
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -252,6 +255,7 @@ export function buildCogLayerContinuous({
       renderTile,
       maxError: 0.03,
       pickable: true,
+      epsgResolver: cngEpsgResolver,
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */

@@ -21,7 +21,7 @@ All services run in Docker. The frontend proxies all API and tiler requests thro
 
 Dense reference material lives under [docs/](docs/) and should be read only when the task touches that area:
 
-- [docs/frontend-gotchas.md](docs/frontend-gotchas.md) — tile URLs, client-side COG rendering, pixel inspector, snapshots, GeoParquet, Chakra v3, analytics. Read before touching `frontend/src/`.
+- [docs/frontend-gotchas.md](docs/frontend-gotchas.md) — tile URLs, client-side COG rendering, EPSG resolver, pixel inspector, snapshots, GeoParquet, Chakra v3, analytics. Read before touching `frontend/src/`.
 - [docs/api-reference.md](docs/api-reference.md) — full ingestion API surface. Read before adding/changing any `/api/*` endpoint or frontend-backend contract.
 - [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, Caddy auth model, CSP, tile caching. Read before prod changes.
 - [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.

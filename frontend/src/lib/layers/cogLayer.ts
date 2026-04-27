@@ -1,11 +1,11 @@
 import type { Layer } from "@deck.gl/core";
 import { COGLayer } from "@developmentseed/deck.gl-geotiff";
-import { cngEpsgResolver } from "./epsg/resolver";
 import {
   CreateTexture,
   Colormap,
 } from "@developmentseed/deck.gl-raster/gpu-modules";
 import { buildCategoricalLut, type LutCategory } from "./categoricalLut";
+import { cngEpsgResolver } from "./epsg/resolver";
 
 const ViridisColorize = {
   name: "viridis-colorize",

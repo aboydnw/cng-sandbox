@@ -17,6 +17,10 @@ import {
   DEFAULT_LAYER_CONFIG,
   createStory,
   createChapter,
+  createScrollytellingChapter,
+  createMapChapter,
+  createProseChapter,
+  isMapBoundChapter,
   createStoryOnServer,
   getStoryFromServer,
   saveStoryToServer,
@@ -123,13 +127,16 @@ export function useStoryEditor() {
         });
         if (fetchedDataset?.bounds) {
           const cam = cameraFromBounds(fetchedDataset.bounds);
-          draft.chapters[0].map_state = {
-            center: [cam.longitude, cam.latitude],
-            zoom: cam.zoom,
-            bearing: 0,
-            pitch: 0,
-            basemap: "streets",
-          };
+          const firstChapter = draft.chapters[0];
+          if (firstChapter && isMapBoundChapter(firstChapter)) {
+            firstChapter.map_state = {
+              center: [cam.longitude, cam.latitude],
+              zoom: cam.zoom,
+              bearing: 0,
+              pitch: 0,
+              basemap: "streets",
+            };
+          }
           setCamera(cam);
         }
         const saved = await createStoryOnServer(draft);
@@ -208,14 +215,15 @@ export function useStoryEditor() {
   }
 
   const activeChapter = story?.chapters.find((c) => c.id === activeChapterId);
-  const activeDataset = activeChapter
-    ? (datasetMap.get(activeChapter.layer_config.dataset_id) ?? dataset)
-    : dataset;
+  const activeDataset =
+    activeChapter && isMapBoundChapter(activeChapter)
+      ? (datasetMap.get(activeChapter.layer_config.dataset_id) ?? dataset)
+      : dataset;
 
   function selectChapter(chapterId: string) {
     setActiveChapterId(chapterId);
     const chapter = story?.chapters.find((c) => c.id === chapterId);
-    if (chapter) {
+    if (chapter && isMapBoundChapter(chapter)) {
       setBasemap(chapter.map_state.basemap);
       setTransitionDuration(1000);
       setCamera({
@@ -238,7 +246,7 @@ export function useStoryEditor() {
       updateStory((s) => ({
         ...s,
         chapters: s.chapters.map((ch) =>
-          ch.id === activeChapterId
+          ch.id === activeChapterId && (ch.type === "scrollytelling" || ch.type === "map")
             ? {
                 ...ch,
                 map_state: {
@@ -258,7 +266,7 @@ export function useStoryEditor() {
   }
 
   function resetView() {
-    if (!activeChapter) return;
+    if (!activeChapter || !isMapBoundChapter(activeChapter)) return;
     setBasemap(activeChapter.map_state.basemap);
     setTransitionDuration(1000);
     setCamera({
@@ -273,7 +281,9 @@ export function useStoryEditor() {
   function addChapter() {
     const maxOrder = Math.max(...(story?.chapters.map((c) => c.order) ?? [0]));
     const inheritedDatasetId =
-      activeChapter?.layer_config.dataset_id ?? story?.dataset_id ?? "";
+      (activeChapter && isMapBoundChapter(activeChapter)
+        ? activeChapter.layer_config.dataset_id
+        : "") || story?.dataset_id || "";
     const inheritedDataset = inheritedDatasetId
       ? datasetMap.get(inheritedDatasetId)
       : undefined;
@@ -352,12 +362,17 @@ export function useStoryEditor() {
     layerConfig: LayerConfig,
     boundsOverride?: [number, number, number, number] | null
   ) {
-    const prevConfig = activeChapter?.layer_config;
+    const prevConfig =
+      activeChapter && isMapBoundChapter(activeChapter)
+        ? activeChapter.layer_config
+        : undefined;
 
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, layer_config: layerConfig } : ch
+        ch.id === activeChapterId && (ch.type === "scrollytelling" || ch.type === "map")
+          ? { ...ch, layer_config: layerConfig }
+          : ch
       ),
     }));
 
@@ -382,9 +397,13 @@ export function useStoryEditor() {
   function updateChapterType(type: ChapterType) {
     updateStory((s) => ({
       ...s,
-      chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, type } : ch
-      ),
+      chapters: s.chapters.map((ch) => {
+        if (ch.id !== activeChapterId) return ch;
+        const base = { id: ch.id, order: ch.order, title: ch.title, narrative: ch.narrative };
+        if (type === "prose") return createProseChapter(base);
+        if (type === "map") return createMapChapter(base);
+        return createScrollytellingChapter(base);
+      }),
     }));
   }
 
@@ -392,7 +411,9 @@ export function useStoryEditor() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId ? { ...ch, overlay_position: position } : ch
+        ch.id === activeChapterId && ch.type === "scrollytelling"
+          ? { ...ch, overlay_position: position }
+          : ch
       ),
     }));
   }
@@ -409,9 +430,13 @@ export function useStoryEditor() {
         prev.some((d) => d.id === ds.id) ? prev : [...prev, ds]
       );
       if (activeChapterId) {
+        const baseConfig =
+          activeChapter && isMapBoundChapter(activeChapter)
+            ? activeChapter.layer_config
+            : DEFAULT_LAYER_CONFIG;
         updateChapterLayerConfig(
           {
-            ...(activeChapter?.layer_config ?? DEFAULT_LAYER_CONFIG),
+            ...baseConfig,
             dataset_id: datasetId,
           },
           ds.bounds
@@ -436,6 +461,13 @@ export function useStoryEditor() {
     const unpublished = { ...story, published: false };
     setStory(unpublished);
     saveStoryToServer(unpublished);
+  }
+
+  function updateChapter(next: Chapter) {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) => (ch.id === next.id ? next : ch)),
+    }));
   }
 
   const { layers, previewRenderMetadata } = useMemo<{
@@ -487,6 +519,7 @@ export function useStoryEditor() {
     updateChapterLayerConfig,
     updateChapterType,
     updateChapterOverlayPosition,
+    updateChapter,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,

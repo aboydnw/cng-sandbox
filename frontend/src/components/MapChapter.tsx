@@ -4,7 +4,7 @@ import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
 import { CalendarPopover } from "./CalendarPopover";
 import { RenderModeIndicator } from "./RenderModeIndicator";
-import type { Chapter } from "../lib/story";
+import type { MapChapter as MapChapterType } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
 import { buildLayersForChapter } from "../lib/story/rendering";
@@ -12,7 +12,7 @@ import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
 
 interface MapChapterProps {
-  chapter: Chapter;
+  chapter: MapChapterType;
   chapterIndex: number;
   dataset: Dataset | null;
   connection?: Connection;
@@ -56,7 +56,7 @@ export function MapChapter({
 
     if (!dataset) return { layers: [] };
 
-    const interactiveChapter: Chapter = {
+    const interactiveChapter: MapChapterType = {
       ...chapter,
       layer_config: {
         ...chapter.layer_config,

@@ -48,8 +48,10 @@ describe("migrateStory", () => {
   it("backfills layer_config.dataset_id from story.dataset_id", () => {
     const old = makeOldStory();
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].layer_config.dataset_id).toBe("ds-abc");
-    expect(migrated.chapters[1].layer_config.dataset_id).toBe("ds-abc");
+    const ch0 = migrated.chapters[0];
+    const ch1 = migrated.chapters[1];
+    expect(ch0.type === "scrollytelling" && ch0.layer_config.dataset_id).toBe("ds-abc");
+    expect(ch1.type === "scrollytelling" && ch1.layer_config.dataset_id).toBe("ds-abc");
   });
 
   it("adds dataset_ids array if missing", () => {
@@ -115,8 +117,10 @@ describe("migrateStory", () => {
       published: false,
     };
     const result = migrateStory(modern as unknown as Record<string, unknown>);
-    expect(result.chapters[0].layer_config.dataset_id).toBe("ds-1");
-    expect(result.chapters[1].layer_config.dataset_id).toBe("ds-2");
+    const r0 = result.chapters[0];
+    const r1 = result.chapters[1];
+    expect(r0.type === "scrollytelling" && r0.layer_config.dataset_id).toBe("ds-1");
+    expect(r1.type === "scrollytelling" && r1.layer_config.dataset_id).toBe("ds-2");
     expect(result.dataset_ids).toEqual(["ds-1", "ds-2"]);
   });
 
@@ -145,16 +149,20 @@ describe("migrateStory", () => {
   it("backfills overlay_position as left when missing", () => {
     const old = makeOldStory();
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].overlay_position).toBe("left");
-    expect(migrated.chapters[1].overlay_position).toBe("left");
+    const m0 = migrated.chapters[0];
+    const m1 = migrated.chapters[1];
+    expect(m0.type === "scrollytelling" && m0.overlay_position).toBe("left");
+    expect(m1.type === "scrollytelling" && m1.overlay_position).toBe("left");
   });
 
   it("preserves existing overlay_position", () => {
     const old = makeOldStory();
     (old.chapters as Record<string, unknown>[])[1].overlay_position = "right";
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].overlay_position).toBe("left");
-    expect(migrated.chapters[1].overlay_position).toBe("right");
+    const m0 = migrated.chapters[0];
+    const m1 = migrated.chapters[1];
+    expect(m0.type === "scrollytelling" && m0.overlay_position).toBe("left");
+    expect(m1.type === "scrollytelling" && m1.overlay_position).toBe("right");
   });
 
   it("strips map_state and layer_config from prose chapters during migration", () => {

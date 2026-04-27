@@ -5,7 +5,7 @@ import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
 import { StoryRenderer } from "../components/StoryRenderer";
 
-import { getStoryFromServer, migrateStory } from "../lib/story";
+import { getStoryFromServer, migrateStory, isMapBoundChapter } from "../lib/story";
 import { BugReportLink } from "../components/BugReportLink";
 import type { Story } from "../lib/story";
 import type { Connection, Dataset } from "../types";
@@ -76,7 +76,8 @@ export default function StoryReaderPage({
       const connIds = [
         ...new Set(
           story!.chapters
-            .map((ch) => ch.layer_config?.connection_id)
+            .filter(isMapBoundChapter)
+            .map((ch) => ch.layer_config.connection_id)
             .filter(Boolean) as string[]
         ),
       ];

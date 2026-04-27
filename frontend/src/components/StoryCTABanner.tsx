@@ -11,7 +11,8 @@ import {
 } from "../lib/interactionStyles";
 import {
   createStory,
-  createChapter,
+  createProseChapter,
+  createMapChapter,
   DEFAULT_LAYER_CONFIG,
 } from "../lib/story/types";
 import { createStoryOnServer } from "../lib/story/api";
@@ -40,10 +41,9 @@ export function StoryCTABanner({ dataset, connection }: StoryCTABannerProps) {
         }
       : undefined;
 
-    const proseChapter = createChapter({
+    const proseChapter = createProseChapter({
       order: 0,
       title: "Chapter 1",
-      type: "prose",
       narrative: "",
     });
 
@@ -69,10 +69,9 @@ export function StoryCTABanner({ dataset, connection }: StoryCTABannerProps) {
           }
         : DEFAULT_LAYER_CONFIG;
 
-    const mapChapter = createChapter({
+    const mapChapter = createMapChapter({
       order: 1,
       title: "Chapter 2",
-      type: "map",
       layer_config: layerConfig,
       ...(mapState && { map_state: mapState }),
     });

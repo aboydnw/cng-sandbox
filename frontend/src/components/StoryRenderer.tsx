@@ -12,7 +12,7 @@ import {
   groupChaptersIntoBlocks,
   buildLayersForChapter,
 } from "../lib/story/rendering";
-import type { Story, Chapter } from "../lib/story";
+import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 
 function ScrollytellingBlock({
@@ -22,7 +22,7 @@ function ScrollytellingBlock({
   connectionMap,
   onChapterClick,
 }: {
-  chapters: Chapter[];
+  chapters: ScrollytellingChapter[];
   startIndex: number;
   datasetMap: Map<string, Dataset | null>;
   connectionMap?: Map<string, Connection>;

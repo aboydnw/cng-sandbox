@@ -2,6 +2,9 @@ export type {
   Story,
   Chapter,
   ChapterType,
+  ScrollytellingChapter,
+  MapChapter,
+  ProseChapter,
   MapState,
   StoryIndexEntry,
   LayerConfig,
@@ -10,7 +13,11 @@ export {
   DEFAULT_MAP_STATE,
   DEFAULT_LAYER_CONFIG,
   createChapter,
+  createScrollytellingChapter,
+  createMapChapter,
+  createProseChapter,
   createStory,
+  isMapBoundChapter,
 } from "./types";
 export { listStories, getStory, saveStory, deleteStory } from "./storage";
 export {

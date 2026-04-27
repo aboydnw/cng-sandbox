@@ -7,23 +7,32 @@ import {
 import { buildConnectionTileUrl } from "../connections";
 import { resolveRasterLayers } from "../layers/resolveRasterLayers";
 import { datasetToMapItem, connectionToMapItem } from "../../hooks/useMapData";
-import { DEFAULT_LAYER_CONFIG } from "./types";
-import type { Chapter } from "./types";
+import { DEFAULT_LAYER_CONFIG, isMapBoundChapter } from "./types";
+import type {
+  Chapter,
+  ScrollytellingChapter,
+  MapChapter,
+  ProseChapter,
+} from "./types";
 import type { Dataset, Connection } from "../../types";
 
 export type ContentBlock =
-  | { type: "scrollytelling"; chapters: Chapter[]; startIndex: number }
-  | { type: "prose"; chapter: Chapter; index: number }
-  | { type: "map"; chapter: Chapter; index: number };
+  | {
+      type: "scrollytelling";
+      chapters: ScrollytellingChapter[];
+      startIndex: number;
+    }
+  | { type: "prose"; chapter: ProseChapter; index: number }
+  | { type: "map"; chapter: MapChapter; index: number };
 
 export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
   const blocks: ContentBlock[] = [];
-  let scrollyGroup: Chapter[] = [];
+  let scrollyGroup: ScrollytellingChapter[] = [];
   let scrollyStartIndex = 0;
 
   for (let i = 0; i < chapters.length; i++) {
     const ch = chapters[i];
-    if (ch.type === "scrollytelling" || !ch.type) {
+    if (ch.type === "scrollytelling") {
       if (scrollyGroup.length === 0) scrollyStartIndex = i;
       scrollyGroup.push(ch);
     } else {
@@ -35,7 +44,18 @@ export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
         });
         scrollyGroup = [];
       }
-      blocks.push({ type: ch.type, chapter: ch, index: i });
+      switch (ch.type) {
+        case "map":
+          blocks.push({ type: "map", chapter: ch, index: i });
+          break;
+        case "prose":
+          blocks.push({ type: "prose", chapter: ch, index: i });
+          break;
+        default: {
+          const _exhaustive: never = ch;
+          void _exhaustive;
+        }
+      }
     }
   }
   if (scrollyGroup.length > 0) {
@@ -64,6 +84,7 @@ export function buildLayersForChapter(
   datasetMap: Map<string, Dataset | null>,
   connectionMap?: Map<string, Connection>
 ): ChapterLayerResult {
+  if (!isMapBoundChapter(chapter)) return { layers: [] };
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
   if (lc.connection_id && connectionMap) {

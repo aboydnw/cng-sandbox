@@ -48,8 +48,14 @@ describe("migrateStory", () => {
   it("backfills layer_config.dataset_id from story.dataset_id", () => {
     const old = makeOldStory();
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].layer_config.dataset_id).toBe("ds-abc");
-    expect(migrated.chapters[1].layer_config.dataset_id).toBe("ds-abc");
+    const ch0 = migrated.chapters[0];
+    const ch1 = migrated.chapters[1];
+    expect(ch0.type === "scrollytelling" && ch0.layer_config.dataset_id).toBe(
+      "ds-abc"
+    );
+    expect(ch1.type === "scrollytelling" && ch1.layer_config.dataset_id).toBe(
+      "ds-abc"
+    );
   });
 
   it("adds dataset_ids array if missing", () => {
@@ -115,8 +121,14 @@ describe("migrateStory", () => {
       published: false,
     };
     const result = migrateStory(modern as unknown as Record<string, unknown>);
-    expect(result.chapters[0].layer_config.dataset_id).toBe("ds-1");
-    expect(result.chapters[1].layer_config.dataset_id).toBe("ds-2");
+    const r0 = result.chapters[0];
+    const r1 = result.chapters[1];
+    expect(r0.type === "scrollytelling" && r0.layer_config.dataset_id).toBe(
+      "ds-1"
+    );
+    expect(r1.type === "scrollytelling" && r1.layer_config.dataset_id).toBe(
+      "ds-2"
+    );
     expect(result.dataset_ids).toEqual(["ds-1", "ds-2"]);
   });
 
@@ -145,15 +157,89 @@ describe("migrateStory", () => {
   it("backfills overlay_position as left when missing", () => {
     const old = makeOldStory();
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].overlay_position).toBe("left");
-    expect(migrated.chapters[1].overlay_position).toBe("left");
+    const m0 = migrated.chapters[0];
+    const m1 = migrated.chapters[1];
+    expect(m0.type === "scrollytelling" && m0.overlay_position).toBe("left");
+    expect(m1.type === "scrollytelling" && m1.overlay_position).toBe("left");
   });
 
   it("preserves existing overlay_position", () => {
     const old = makeOldStory();
     (old.chapters as Record<string, unknown>[])[1].overlay_position = "right";
     const migrated = migrateStory(old);
-    expect(migrated.chapters[0].overlay_position).toBe("left");
-    expect(migrated.chapters[1].overlay_position).toBe("right");
+    const m0 = migrated.chapters[0];
+    const m1 = migrated.chapters[1];
+    expect(m0.type === "scrollytelling" && m0.overlay_position).toBe("left");
+    expect(m1.type === "scrollytelling" && m1.overlay_position).toBe("right");
+  });
+
+  it("strips map_state and layer_config from prose chapters during migration", () => {
+    const old = {
+      chapters: [
+        {
+          id: "a",
+          order: 0,
+          type: "prose",
+          title: "Intro",
+          narrative: "Hello",
+          // legacy stored map_state/layer_config that should be dropped
+          map_state: {
+            center: [0, 0],
+            zoom: 2,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          },
+          layer_config: {
+            dataset_id: "x",
+            colormap: "viridis",
+            opacity: 0.8,
+            basemap: "streets",
+          },
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(old);
+    expect(migrated.chapters[0].type).toBe("prose");
+    expect("map_state" in migrated.chapters[0]).toBe(false);
+    expect("layer_config" in migrated.chapters[0]).toBe(false);
+  });
+
+  it("preserves map_state and layer_config on scrollytelling and map chapters", () => {
+    const old = {
+      chapters: [
+        {
+          id: "a",
+          order: 0,
+          type: "scrollytelling",
+          title: "A",
+          narrative: "",
+          map_state: {
+            center: [10, 20],
+            zoom: 5,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          },
+          layer_config: {
+            dataset_id: "x",
+            colormap: "viridis",
+            opacity: 0.8,
+            basemap: "streets",
+          },
+          transition: "fly-to",
+          overlay_position: "left",
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(old);
+    const ch = migrated.chapters[0];
+    expect(ch.type).toBe("scrollytelling");
+    if (ch.type === "scrollytelling") {
+      expect(ch.map_state.zoom).toBe(5);
+      expect(ch.layer_config.dataset_id).toBe("x");
+    }
   });
 });

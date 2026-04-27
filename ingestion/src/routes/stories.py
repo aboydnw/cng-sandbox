@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import TypeAdapter
 from sqlalchemy import or_
 
 from src.dependencies import get_session
@@ -18,6 +19,20 @@ from src.models.story import (
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
+
+_chapter_adapter: TypeAdapter[ChapterPayload] = TypeAdapter(ChapterPayload)
+
+
+def _coerce_chapter(raw: dict) -> ChapterPayload:
+    """Parse a chapter dict, backfilling the default type for legacy rows."""
+    if "type" not in raw:
+        inferred_type = (
+            "scrollytelling"
+            if raw.get("map_state") or raw.get("layer_config")
+            else "prose"
+        )
+        raw = {**raw, "type": inferred_type}
+    return _chapter_adapter.validate_python(raw)
 
 
 def _row_to_response(row: StoryRow) -> StoryResponse:
@@ -39,7 +54,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         description=row.description,
         dataset_id=row.dataset_id,
         dataset_ids=dataset_ids,
-        chapters=[ChapterPayload(**ch) for ch in chapters],
+        chapters=[_coerce_chapter(ch) for ch in chapters],
         published=row.published,
         is_example=bool(row.is_example),
         created_at=row.created_at.isoformat(),

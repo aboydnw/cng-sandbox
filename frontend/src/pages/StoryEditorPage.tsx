@@ -19,6 +19,8 @@ import { PublishDialog } from "../components/PublishDialog";
 import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
+import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
+import { ChapterPreview } from "../components/editor/ChapterPreview";
 
 function TooltipCard({
   text,
@@ -106,13 +108,13 @@ export default function StoryEditorPage() {
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
 
   const activeDatasetTimesteps = useMemo(() => {
-    const config = activeChapter?.layer_config;
-    if (!config) return undefined;
+    if (!activeChapter || !isMapBoundChapter(activeChapter)) return undefined;
+    const config = activeChapter.layer_config;
     const ds = config.dataset_id
       ? allDatasets.find((d) => d.id === config.dataset_id)
       : undefined;
     return ds?.is_temporal ? ds.timesteps : undefined;
-  }, [activeChapter?.layer_config, allDatasets]);
+  }, [activeChapter, allDatasets]);
 
   const { shouldShow, dismiss } = useTooltipDismiss();
   const TOOLTIP_KEYS = ["chapters", "map", "narrative"] as const;
@@ -325,8 +327,8 @@ export default function StoryEditorPage() {
           />
         </Box>
 
-        {/* Center: map (full height) — hidden for prose chapters */}
-        {activeChapter?.type !== "prose" ? (
+        {/* Center: editable map for map-bound chapters; live preview otherwise */}
+        {activeChapter && isMapBoundChapter(activeChapter) ? (
           <Box ref={mapContainerRef} flex={1} position="relative">
             {firstUnseen === "map" && (
               <TooltipCard
@@ -404,7 +406,9 @@ export default function StoryEditorPage() {
             </UnifiedMap>
           </Box>
         ) : (
-          <Box flex={1} />
+          <Box flex={1} overflowY="auto" bg="gray.50">
+            {activeChapter && <ChapterPreview chapter={activeChapter} />}
+          </Box>
         )}
 
         {/* Right: editor panel */}
@@ -431,14 +435,22 @@ export default function StoryEditorPage() {
               narrative={activeChapter.narrative}
               onTitleChange={updateChapterTitle}
               onNarrativeChange={updateChapterNarrative}
-              layerConfig={activeChapter.layer_config}
+              layerConfig={
+                isMapBoundChapter(activeChapter)
+                  ? activeChapter.layer_config
+                  : DEFAULT_LAYER_CONFIG
+              }
               onLayerConfigChange={updateChapterLayerConfig}
               datasetType={activeDataset?.dataset_type ?? "raster"}
               datasets={allDatasets}
               connections={allConnections}
               onUploadClick={() => setUploadModalOpen(true)}
               onAddConnectionClick={() => setConnectionModalOpen(true)}
-              overlayPosition={activeChapter?.overlay_position ?? "left"}
+              overlayPosition={
+                activeChapter.type === "scrollytelling"
+                  ? (activeChapter.overlay_position ?? "left")
+                  : "left"
+              }
               onOverlayPositionChange={updateChapterOverlayPosition}
               temporalTimesteps={activeDatasetTimesteps}
             />

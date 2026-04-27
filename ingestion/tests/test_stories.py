@@ -31,6 +31,7 @@ def test_create_story(client):
                 {
                     "id": "ch-1",
                     "order": 0,
+                    "type": "scrollytelling",
                     "title": "Chapter 1",
                     "narrative": "Hello world",
                     "map_state": {
@@ -38,6 +39,12 @@ def test_create_story(client):
                         "zoom": 2,
                         "bearing": 0,
                         "pitch": 0,
+                        "basemap": "streets",
+                    },
+                    "layer_config": {
+                        "dataset_id": "ds-123",
+                        "colormap": "viridis",
+                        "opacity": 1.0,
                         "basemap": "streets",
                     },
                     "transition": "fly-to",
@@ -125,9 +132,16 @@ def test_response_includes_dataset_ids(client):
                 {
                     "id": "ch-1",
                     "order": 0,
+                    "type": "scrollytelling",
                     "title": "Ch1",
                     "narrative": "",
-                    "map_state": {},
+                    "map_state": {
+                        "center": [0, 0],
+                        "zoom": 2,
+                        "bearing": 0,
+                        "pitch": 0,
+                        "basemap": "streets",
+                    },
                     "transition": "fly-to",
                     "layer_config": {
                         "dataset_id": "ds-1",
@@ -139,9 +153,16 @@ def test_response_includes_dataset_ids(client):
                 {
                     "id": "ch-2",
                     "order": 1,
+                    "type": "scrollytelling",
                     "title": "Ch2",
                     "narrative": "",
-                    "map_state": {},
+                    "map_state": {
+                        "center": [0, 0],
+                        "zoom": 2,
+                        "bearing": 0,
+                        "pitch": 0,
+                        "basemap": "streets",
+                    },
                     "transition": "fly-to",
                     "layer_config": {
                         "dataset_id": "ds-2",
@@ -182,10 +203,9 @@ def test_dataset_ids_falls_back_to_dataset_id(client):
                 {
                     "id": "ch-1",
                     "order": 0,
+                    "type": "prose",
                     "title": "Ch1",
                     "narrative": "",
-                    "map_state": {},
-                    "transition": "fly-to",
                 },
             ],
         },
@@ -206,13 +226,9 @@ def test_fork_example_story_copies_to_callers_workspace(client, db_session):
                 {
                     "id": "ch1",
                     "order": 0,
-                    "type": "scrollytelling",
+                    "type": "prose",
                     "title": "C1",
                     "narrative": "n",
-                    "map_state": {},
-                    "transition": "fly-to",
-                    "overlay_position": "left",
-                    "layer_config": None,
                 }
             ]
         ),
@@ -380,7 +396,7 @@ def test_fork_is_deep_copy_not_reference(client, db_session):
         id="deep-copy-src",
         title="Original",
         chapters_json=json.dumps(
-            [{"id": "ch1", "order": 0, "title": "T", "narrative": "", "map_state": {}}]
+            [{"id": "ch1", "order": 0, "type": "prose", "title": "T", "narrative": ""}]
         ),
         published=False,
         created_at=now,
@@ -407,3 +423,69 @@ def test_fork_is_deep_copy_not_reference(client, db_session):
     assert get_resp.status_code == 200
     assert get_resp.json()["title"] == "Original"
     assert len(get_resp.json()["chapters"]) == 1
+
+
+def test_legacy_typeless_chapter_loads_as_scrollytelling(client, db_session):
+    now = datetime.now(UTC)
+    legacy_chapters = [
+        {
+            "id": "old-1",
+            "order": 0,
+            "title": "Legacy",
+            "narrative": "",
+            "map_state": {
+                "center": [0, 0],
+                "zoom": 2,
+                "bearing": 0,
+                "pitch": 0,
+                "basemap": "streets",
+            },
+            "layer_config": {
+                "dataset_id": "x",
+                "colormap": "viridis",
+                "opacity": 0.8,
+                "basemap": "streets",
+            },
+        }
+    ]
+    row = StoryRow(
+        id="legacy-1",
+        title="Legacy story",
+        chapters_json=json.dumps(legacy_chapters),
+        published=True,
+        created_at=now,
+        updated_at=now,
+        workspace_id="testABCD",
+        is_example=False,
+    )
+    db_session.add(row)
+    db_session.commit()
+
+    resp = client.get("/api/stories/legacy-1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["chapters"][0]["type"] == "scrollytelling"
+
+
+def test_legacy_prose_chapter_without_map_fields_loads_as_prose(client, db_session):
+    now = datetime.now(UTC)
+    legacy_chapters = [
+        {"id": "prose-1", "order": 0, "title": "Intro", "narrative": "Hello world"}
+    ]
+    row = StoryRow(
+        id="legacy-prose-1",
+        title="Legacy prose story",
+        chapters_json=json.dumps(legacy_chapters),
+        published=True,
+        created_at=now,
+        updated_at=now,
+        workspace_id="testABCD",
+        is_example=False,
+    )
+    db_session.add(row)
+    db_session.commit()
+
+    resp = client.get("/api/stories/legacy-prose-1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["chapters"][0]["type"] == "prose"

@@ -1,9 +1,9 @@
 import { Box, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
-import type { Chapter } from "../lib/story";
+import type { ProseChapter as ProseChapterType } from "../lib/story";
 
 interface ProseChapterProps {
-  chapter: Chapter;
+  chapter: ProseChapterType;
   chapterIndex: number;
 }
 

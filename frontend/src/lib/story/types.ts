@@ -18,7 +18,7 @@ export interface MapState {
 
 export interface LayerConfig {
   dataset_id: string;
-  connection_id?: string; // new — one or the other is set
+  connection_id?: string;
   colormap: string;
   opacity: number;
   basemap: string;
@@ -31,17 +31,32 @@ export interface LayerConfig {
 
 export type ChapterType = "scrollytelling" | "prose" | "map";
 
-export interface Chapter {
+interface BaseChapter {
   id: string;
   order: number;
-  type: ChapterType;
   title: string;
   narrative: string;
+}
+
+export interface ScrollytellingChapter extends BaseChapter {
+  type: "scrollytelling";
   map_state: MapState;
+  layer_config: LayerConfig;
   transition: "fly-to" | "instant";
   overlay_position: "left" | "right";
+}
+
+export interface MapChapter extends BaseChapter {
+  type: "map";
+  map_state: MapState;
   layer_config: LayerConfig;
 }
+
+export interface ProseChapter extends BaseChapter {
+  type: "prose";
+}
+
+export type Chapter = ScrollytellingChapter | MapChapter | ProseChapter;
 
 export interface Story {
   id: string;
@@ -77,19 +92,51 @@ export const DEFAULT_MAP_STATE: MapState = {
   basemap: "streets",
 };
 
-export function createChapter(overrides: Partial<Chapter> = {}): Chapter {
+const baseFields = (overrides: Partial<BaseChapter>): BaseChapter => ({
+  id: overrides.id ?? uuid(),
+  order: overrides.order ?? 0,
+  title: overrides.title ?? "Untitled chapter",
+  narrative: overrides.narrative ?? "",
+});
+
+export function createScrollytellingChapter(
+  overrides: Partial<ScrollytellingChapter> = {}
+): ScrollytellingChapter {
   return {
-    id: uuid(),
-    order: 0,
+    ...baseFields(overrides),
     type: "scrollytelling",
-    title: "Untitled chapter",
-    narrative: "",
-    map_state: { ...DEFAULT_MAP_STATE },
-    transition: "fly-to",
-    overlay_position: "left",
-    layer_config: { ...DEFAULT_LAYER_CONFIG },
-    ...overrides,
+    map_state: overrides.map_state ?? { ...DEFAULT_MAP_STATE },
+    layer_config: overrides.layer_config ?? { ...DEFAULT_LAYER_CONFIG },
+    transition: overrides.transition ?? "fly-to",
+    overlay_position: overrides.overlay_position ?? "left",
   };
+}
+
+export function createMapChapter(
+  overrides: Partial<MapChapter> = {}
+): MapChapter {
+  return {
+    ...baseFields(overrides),
+    type: "map",
+    map_state: overrides.map_state ?? { ...DEFAULT_MAP_STATE },
+    layer_config: overrides.layer_config ?? { ...DEFAULT_LAYER_CONFIG },
+  };
+}
+
+export function createProseChapter(
+  overrides: Partial<ProseChapter> = {}
+): ProseChapter {
+  return {
+    ...baseFields(overrides),
+    type: "prose",
+  };
+}
+
+/** Backwards-compat alias used by older callers. Defaults to scrollytelling. */
+export function createChapter(
+  overrides: Partial<ScrollytellingChapter> = {}
+): ScrollytellingChapter {
+  return createScrollytellingChapter(overrides);
 }
 
 export interface CreateStoryOptions {
@@ -103,8 +150,8 @@ export function createStory(
 ): Story {
   const { preferredColormap, preferredColormapReversed, ...storyOverrides } =
     overrides;
-  const chapter = datasetId
-    ? createChapter({
+  const chapter: Chapter = datasetId
+    ? createScrollytellingChapter({
         order: 0,
         title: "Chapter 1",
         layer_config: {
@@ -116,12 +163,7 @@ export function createStory(
             : {}),
         },
       })
-    : createChapter({
-        order: 0,
-        title: "Chapter 1",
-        type: "prose",
-        narrative: "",
-      });
+    : createProseChapter({ order: 0, title: "Chapter 1" });
 
   return {
     id: uuid(),
@@ -134,4 +176,11 @@ export function createStory(
     published: false,
     ...storyOverrides,
   };
+}
+
+/** Type guard: chapter has map_state + layer_config. */
+export function isMapBoundChapter(
+  ch: Chapter
+): ch is ScrollytellingChapter | MapChapter {
+  return ch.type === "scrollytelling" || ch.type === "map";
 }

@@ -17,7 +17,11 @@ import type {
 import type { Dataset, Connection } from "../../types";
 
 export type ContentBlock =
-  | { type: "scrollytelling"; chapters: ScrollytellingChapter[]; startIndex: number }
+  | {
+      type: "scrollytelling";
+      chapters: ScrollytellingChapter[];
+      startIndex: number;
+    }
   | { type: "prose"; chapter: ProseChapter; index: number }
   | { type: "map"; chapter: MapChapter; index: number };
 

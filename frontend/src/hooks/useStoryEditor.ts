@@ -246,7 +246,8 @@ export function useStoryEditor() {
       updateStory((s) => ({
         ...s,
         chapters: s.chapters.map((ch) =>
-          ch.id === activeChapterId && (ch.type === "scrollytelling" || ch.type === "map")
+          ch.id === activeChapterId &&
+          (ch.type === "scrollytelling" || ch.type === "map")
             ? {
                 ...ch,
                 map_state: {
@@ -283,7 +284,9 @@ export function useStoryEditor() {
     const inheritedDatasetId =
       (activeChapter && isMapBoundChapter(activeChapter)
         ? activeChapter.layer_config.dataset_id
-        : "") || story?.dataset_id || "";
+        : "") ||
+      story?.dataset_id ||
+      "";
     const inheritedDataset = inheritedDatasetId
       ? datasetMap.get(inheritedDatasetId)
       : undefined;
@@ -370,7 +373,8 @@ export function useStoryEditor() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId && (ch.type === "scrollytelling" || ch.type === "map")
+        ch.id === activeChapterId &&
+        (ch.type === "scrollytelling" || ch.type === "map")
           ? { ...ch, layer_config: layerConfig }
           : ch
       ),
@@ -399,7 +403,12 @@ export function useStoryEditor() {
       ...s,
       chapters: s.chapters.map((ch) => {
         if (ch.id !== activeChapterId) return ch;
-        const base = { id: ch.id, order: ch.order, title: ch.title, narrative: ch.narrative };
+        const base = {
+          id: ch.id,
+          order: ch.order,
+          title: ch.title,
+          narrative: ch.narrative,
+        };
         if (type === "prose") return createProseChapter(base);
         if (type === "map") return createMapChapter(base);
         return createScrollytellingChapter(base);

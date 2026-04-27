@@ -328,7 +328,9 @@ export default function StoryEditorPage() {
         </Box>
 
         {/* Center: editable map for map-bound chapters; live preview otherwise */}
-        {activeChapter && (activeChapter.type === "scrollytelling" || activeChapter.type === "map") ? (
+        {activeChapter &&
+        (activeChapter.type === "scrollytelling" ||
+          activeChapter.type === "map") ? (
           <Box ref={mapContainerRef} flex={1} position="relative">
             {firstUnseen === "map" && (
               <TooltipCard
@@ -435,14 +437,22 @@ export default function StoryEditorPage() {
               narrative={activeChapter.narrative}
               onTitleChange={updateChapterTitle}
               onNarrativeChange={updateChapterNarrative}
-              layerConfig={isMapBoundChapter(activeChapter) ? activeChapter.layer_config : DEFAULT_LAYER_CONFIG}
+              layerConfig={
+                isMapBoundChapter(activeChapter)
+                  ? activeChapter.layer_config
+                  : DEFAULT_LAYER_CONFIG
+              }
               onLayerConfigChange={updateChapterLayerConfig}
               datasetType={activeDataset?.dataset_type ?? "raster"}
               datasets={allDatasets}
               connections={allConnections}
               onUploadClick={() => setUploadModalOpen(true)}
               onAddConnectionClick={() => setConnectionModalOpen(true)}
-              overlayPosition={activeChapter.type === "scrollytelling" ? (activeChapter.overlay_position ?? "left") : "left"}
+              overlayPosition={
+                activeChapter.type === "scrollytelling"
+                  ? (activeChapter.overlay_position ?? "left")
+                  : "left"
+              }
               onOverlayPositionChange={updateChapterOverlayPosition}
               temporalTimesteps={activeDatasetTimesteps}
             />

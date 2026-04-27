@@ -50,8 +50,12 @@ describe("migrateStory", () => {
     const migrated = migrateStory(old);
     const ch0 = migrated.chapters[0];
     const ch1 = migrated.chapters[1];
-    expect(ch0.type === "scrollytelling" && ch0.layer_config.dataset_id).toBe("ds-abc");
-    expect(ch1.type === "scrollytelling" && ch1.layer_config.dataset_id).toBe("ds-abc");
+    expect(ch0.type === "scrollytelling" && ch0.layer_config.dataset_id).toBe(
+      "ds-abc"
+    );
+    expect(ch1.type === "scrollytelling" && ch1.layer_config.dataset_id).toBe(
+      "ds-abc"
+    );
   });
 
   it("adds dataset_ids array if missing", () => {
@@ -119,8 +123,12 @@ describe("migrateStory", () => {
     const result = migrateStory(modern as unknown as Record<string, unknown>);
     const r0 = result.chapters[0];
     const r1 = result.chapters[1];
-    expect(r0.type === "scrollytelling" && r0.layer_config.dataset_id).toBe("ds-1");
-    expect(r1.type === "scrollytelling" && r1.layer_config.dataset_id).toBe("ds-2");
+    expect(r0.type === "scrollytelling" && r0.layer_config.dataset_id).toBe(
+      "ds-1"
+    );
+    expect(r1.type === "scrollytelling" && r1.layer_config.dataset_id).toBe(
+      "ds-2"
+    );
     expect(result.dataset_ids).toEqual(["ds-1", "ds-2"]);
   });
 
@@ -175,8 +183,19 @@ describe("migrateStory", () => {
           title: "Intro",
           narrative: "Hello",
           // legacy stored map_state/layer_config that should be dropped
-          map_state: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0, basemap: "streets" },
-          layer_config: { dataset_id: "x", colormap: "viridis", opacity: 0.8, basemap: "streets" },
+          map_state: {
+            center: [0, 0],
+            zoom: 2,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          },
+          layer_config: {
+            dataset_id: "x",
+            colormap: "viridis",
+            opacity: 0.8,
+            basemap: "streets",
+          },
         },
       ],
     } as Record<string, unknown>;
@@ -196,8 +215,19 @@ describe("migrateStory", () => {
           type: "scrollytelling",
           title: "A",
           narrative: "",
-          map_state: { center: [10, 20], zoom: 5, bearing: 0, pitch: 0, basemap: "streets" },
-          layer_config: { dataset_id: "x", colormap: "viridis", opacity: 0.8, basemap: "streets" },
+          map_state: {
+            center: [10, 20],
+            zoom: 5,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          },
+          layer_config: {
+            dataset_id: "x",
+            colormap: "viridis",
+            opacity: 0.8,
+            basemap: "streets",
+          },
           transition: "fly-to",
           overlay_position: "left",
         },

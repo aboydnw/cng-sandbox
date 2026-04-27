@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Boolean, Column, DateTime, String, Text
@@ -77,7 +77,7 @@ class ProseChapter(_BaseChapter):
 
 
 ChapterPayload = Annotated[
-    Union[ScrollytellingChapter, MapChapter, ProseChapter],
+    ScrollytellingChapter | MapChapter | ProseChapter,
     Field(discriminator="type"),
 ]
 

@@ -1,6 +1,14 @@
-import type { Chapter, Story } from "./types";
-
-const MAP_BOUND_TYPES = new Set(["scrollytelling", "map"]);
+import {
+  type Chapter,
+  type Story,
+  type MapState,
+  type LayerConfig,
+  DEFAULT_MAP_STATE,
+  DEFAULT_LAYER_CONFIG,
+  createProseChapter,
+  createMapChapter,
+  createScrollytellingChapter,
+} from "./types";
 
 function migrateChapter(
   raw: Record<string, unknown>,
@@ -15,45 +23,37 @@ function migrateChapter(
   };
 
   if (type === "prose") {
-    return { ...base, type: "prose" };
+    return createProseChapter(base);
   }
 
-  const lc = {
-    ...(raw.layer_config as Record<string, unknown> | undefined),
-  } as Record<string, unknown>;
-  if (!lc.dataset_id) {
-    lc.dataset_id = storyDatasetId;
-  }
+  const layer_config: LayerConfig = {
+    ...DEFAULT_LAYER_CONFIG,
+    ...(raw.layer_config as Partial<LayerConfig> | undefined),
+    dataset_id:
+      ((raw.layer_config as Partial<LayerConfig> | undefined)?.dataset_id ??
+        storyDatasetId ??
+        ""),
+  };
 
-  const map_state = (raw.map_state as Record<string, unknown>) ?? {
-    center: [0, 0],
-    zoom: 2,
-    bearing: 0,
-    pitch: 0,
-    basemap: "streets",
+  const map_state: MapState = {
+    ...DEFAULT_MAP_STATE,
+    ...(raw.map_state as Partial<MapState> | undefined),
   };
 
   if (type === "map") {
-    return {
-      ...base,
-      type: "map",
-      map_state: map_state as Chapter["map_state" & keyof Chapter] as never,
-      layer_config: lc as never,
-    } as Chapter;
+    return createMapChapter({ ...base, map_state, layer_config });
   }
 
-  // scrollytelling (default)
-  return {
+  return createScrollytellingChapter({
     ...base,
-    type: "scrollytelling",
-    map_state: map_state as never,
-    layer_config: lc as never,
+    map_state,
+    layer_config,
     transition: (raw.transition as "fly-to" | "instant") ?? "fly-to",
     overlay_position:
       raw.overlay_position === "left" || raw.overlay_position === "right"
         ? (raw.overlay_position as "left" | "right")
         : "left",
-  } as Chapter;
+  });
 }
 
 export function migrateStory(story: Record<string, unknown>): Story {
@@ -81,5 +81,3 @@ export function migrateStory(story: Record<string, unknown>): Story {
 
   return { ...(story as object), chapters, dataset_ids } as unknown as Story;
 }
-
-void MAP_BOUND_TYPES;

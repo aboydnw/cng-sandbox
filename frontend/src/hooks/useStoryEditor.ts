@@ -409,9 +409,12 @@ export function useStoryEditor() {
           title: ch.title,
           narrative: ch.narrative,
         };
+        const mapFields = isMapBoundChapter(ch)
+          ? { map_state: ch.map_state, layer_config: ch.layer_config }
+          : {};
         if (type === "prose") return createProseChapter(base);
-        if (type === "map") return createMapChapter(base);
-        return createScrollytellingChapter(base);
+        if (type === "map") return createMapChapter({ ...base, ...mapFields });
+        return createScrollytellingChapter({ ...base, ...mapFields });
       }),
     }));
   }

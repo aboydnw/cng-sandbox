@@ -25,8 +25,13 @@ _chapter_adapter: TypeAdapter[ChapterPayload] = TypeAdapter(ChapterPayload)
 
 def _coerce_chapter(raw: dict) -> ChapterPayload:
     """Parse a chapter dict, backfilling the default type for legacy rows."""
-    if not raw.get("type"):
-        raw = {**raw, "type": "scrollytelling"}
+    if "type" not in raw:
+        inferred_type = (
+            "scrollytelling"
+            if raw.get("map_state") or raw.get("layer_config")
+            else "prose"
+        )
+        raw = {**raw, "type": inferred_type}
     return _chapter_adapter.validate_python(raw)
 
 

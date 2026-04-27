@@ -433,8 +433,19 @@ def test_legacy_typeless_chapter_loads_as_scrollytelling(client, db_session):
             "order": 0,
             "title": "Legacy",
             "narrative": "",
-            "map_state": {"center": [0, 0], "zoom": 2, "bearing": 0, "pitch": 0, "basemap": "streets"},
-            "layer_config": {"dataset_id": "x", "colormap": "viridis", "opacity": 0.8, "basemap": "streets"},
+            "map_state": {
+                "center": [0, 0],
+                "zoom": 2,
+                "bearing": 0,
+                "pitch": 0,
+                "basemap": "streets",
+            },
+            "layer_config": {
+                "dataset_id": "x",
+                "colormap": "viridis",
+                "opacity": 0.8,
+                "basemap": "streets",
+            },
         }
     ]
     row = StoryRow(
@@ -454,3 +465,27 @@ def test_legacy_typeless_chapter_loads_as_scrollytelling(client, db_session):
     assert resp.status_code == 200
     body = resp.json()
     assert body["chapters"][0]["type"] == "scrollytelling"
+
+
+def test_legacy_prose_chapter_without_map_fields_loads_as_prose(client, db_session):
+    now = datetime.now(UTC)
+    legacy_chapters = [
+        {"id": "prose-1", "order": 0, "title": "Intro", "narrative": "Hello world"}
+    ]
+    row = StoryRow(
+        id="legacy-prose-1",
+        title="Legacy prose story",
+        chapters_json=json.dumps(legacy_chapters),
+        published=True,
+        created_at=now,
+        updated_at=now,
+        workspace_id="testABCD",
+        is_example=False,
+    )
+    db_session.add(row)
+    db_session.commit()
+
+    resp = client.get("/api/stories/legacy-prose-1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["chapters"][0]["type"] == "prose"

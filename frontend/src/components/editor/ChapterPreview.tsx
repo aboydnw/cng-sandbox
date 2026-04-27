@@ -15,7 +15,7 @@ interface ChapterPreviewProps {
  */
 export function ChapterPreview({ chapter }: ChapterPreviewProps) {
   if (chapter.type === "prose") {
-    return <ProseChapter chapter={chapter} chapterIndex={0} />;
+    return <ProseChapter chapter={chapter} chapterIndex={chapter.order} />;
   }
   return null;
 }

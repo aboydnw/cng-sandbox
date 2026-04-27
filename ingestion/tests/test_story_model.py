@@ -33,8 +33,19 @@ def test_scrollytelling_chapter_parses():
         "type": "scrollytelling",
         "title": "T",
         "narrative": "",
-        "map_state": {"center": [0, 0], "zoom": 2, "bearing": 0, "pitch": 0, "basemap": "streets"},
-        "layer_config": {"dataset_id": "x", "colormap": "viridis", "opacity": 0.8, "basemap": "streets"},
+        "map_state": {
+            "center": [0, 0],
+            "zoom": 2,
+            "bearing": 0,
+            "pitch": 0,
+            "basemap": "streets",
+        },
+        "layer_config": {
+            "dataset_id": "x",
+            "colormap": "viridis",
+            "opacity": 0.8,
+            "basemap": "streets",
+        },
         "transition": "fly-to",
         "overlay_position": "left",
     }
@@ -49,8 +60,19 @@ def test_map_chapter_parses():
         "type": "map",
         "title": "T",
         "narrative": "",
-        "map_state": {"center": [0, 0], "zoom": 2, "bearing": 0, "pitch": 0, "basemap": "streets"},
-        "layer_config": {"dataset_id": "x", "colormap": "viridis", "opacity": 0.8, "basemap": "streets"},
+        "map_state": {
+            "center": [0, 0],
+            "zoom": 2,
+            "bearing": 0,
+            "pitch": 0,
+            "basemap": "streets",
+        },
+        "layer_config": {
+            "dataset_id": "x",
+            "colormap": "viridis",
+            "opacity": 0.8,
+            "basemap": "streets",
+        },
     }
     story = StoryCreate(chapters=[payload])
     assert isinstance(story.chapters[0], MapChapter)

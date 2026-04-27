@@ -37,12 +37,12 @@ export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
           borderRadius="6px"
           cursor="pointer"
           bg={value === type ? "brand.bgSubtle" : "transparent"}
-          color={value === type ? "brand.orange" : "gray.400"}
+          color={value === type ? "brand.orange" : "brand.brown"}
           fontWeight={value === type ? 600 : 500}
           onClick={() => onChange(type)}
           _hover={{
-            bg: value === type ? "brand.bgSubtle" : "gray.50",
-            color: value === type ? "brand.orange" : "gray.600",
+            bg: value === type ? "brand.bgSubtle" : "brand.bgSubtle",
+            color: value === type ? "brand.orange" : "brand.brown",
           }}
           _active={{ transform: "scale(0.98)" }}
           title={CHAPTER_TYPE_DESCRIPTIONS[type]}

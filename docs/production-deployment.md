@@ -51,7 +51,7 @@ docker compose --profile prod up -d --build
 
 ### EPSG resolution
 
-The frontend bundles an inline subset of EPSG codes (~30 common codes plus all 120 UTM zones) used to reproject non-Mercator COGs without a runtime network fetch. Codes outside the subset fall back to fetching `https://epsg.io/{code}.json` via the deck.gl-geotiff default resolver. If a deployment-level CSP blocks `epsg.io`, uncommon CRSes will fail to render; common CRSes (Web Mercator, NAD83/Conus Albers, all UTM zones, common European and polar projections) are unaffected.
+The frontend bundles an inline subset of EPSG codes (31 curated codes plus all 120 UTM zones) used to reproject non-Mercator COGs without a runtime network fetch. Codes outside the subset fall back to fetching `https://epsg.io/{code}.json` via the deck.gl-geotiff default resolver. If a deployment-level CSP blocks `epsg.io`, uncommon CRSes will fail to render; common CRSes (Web Mercator, NAD83/Conus Albers, all UTM zones, common European and polar projections) are unaffected.
 
 - Tile responses (`/cog/*`, `/raster/*`, `/vector/*`) are served with `Cache-Control: public, max-age=3600`. Tile URLs are immutable per dataset (a change to the underlying data produces a new STAC item id or query param), so a 1-hour browser cache is safe and reduces Hetzner egress
 - `/storage/*` (R2 proxy) responds with `Access-Control-Allow-Origin: *` and preflight handling for `OPTIONS`, so shared COGs can be fetched cross-origin by external tile/raster clients. The path is already public at the edge; CORS just unblocks browsers from reading the bytes on a non-sandbox origin

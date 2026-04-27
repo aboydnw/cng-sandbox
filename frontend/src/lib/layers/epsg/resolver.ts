@@ -6,7 +6,9 @@ export function createCngEpsgResolver(
   networkResolver: EpsgResolver = defaultEpsgResolver
 ): EpsgResolver {
   const cache = new Map<number, Promise<ProjectionDefinition>>();
-  return async function cngEpsgResolver(epsg: number): Promise<ProjectionDefinition> {
+  return async function cngEpsgResolver(
+    epsg: number
+  ): Promise<ProjectionDefinition> {
     const cached = cache.get(epsg);
     if (cached) return cached;
 

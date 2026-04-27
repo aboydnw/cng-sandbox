@@ -11,4 +11,5 @@ function buildRegistry(): Map<number, ProjectionDefinition> {
   return map;
 }
 
-export const INLINE_REGISTRY: ReadonlyMap<number, ProjectionDefinition> = buildRegistry();
+export const INLINE_REGISTRY: ReadonlyMap<number, ProjectionDefinition> =
+  buildRegistry();

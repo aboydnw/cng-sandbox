@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { EpsgResolver } from "@developmentseed/proj";
 import { createCngEpsgResolver } from "../resolver";
 
 describe("cngEpsgResolver", () => {
-  let networkResolver: ReturnType<typeof vi.fn>;
+  let networkResolver: ReturnType<typeof vi.fn> & EpsgResolver;
 
   beforeEach(() => {
-    networkResolver = vi.fn();
+    networkResolver = vi.fn() as ReturnType<typeof vi.fn> & EpsgResolver;
   });
 
   it("resolves a curated code (5070) without invoking the network resolver", async () => {

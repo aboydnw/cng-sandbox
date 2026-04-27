@@ -17,7 +17,7 @@ describe("generateUtmZones", () => {
   it("zone 14N is at central meridian -99°", () => {
     const zones = generateUtmZones();
     const def = zones.get(32614)!;
-    const fwd = proj4("EPSG:4326", def);
+    const fwd = proj4("EPSG:4326", def as unknown as string);
     const point = fwd.forward([-99, 40]);
     expect(point[0]).toBeCloseTo(500000, 0);
   });
@@ -25,7 +25,7 @@ describe("generateUtmZones", () => {
   it("zone 1N is at central meridian -177°", () => {
     const zones = generateUtmZones();
     const def = zones.get(32601)!;
-    const fwd = proj4("EPSG:4326", def);
+    const fwd = proj4("EPSG:4326", def as unknown as string);
     const point = fwd.forward([-177, 0]);
     expect(point[0]).toBeCloseTo(500000, 0);
   });
@@ -33,7 +33,7 @@ describe("generateUtmZones", () => {
   it("south-hemisphere zones have false northing 10,000,000", () => {
     const zones = generateUtmZones();
     const def = zones.get(32714)!;
-    const fwd = proj4("EPSG:4326", def);
+    const fwd = proj4("EPSG:4326", def as unknown as string);
     const point = fwd.forward([-99, 0]);
     expect(point[1]).toBeCloseTo(10000000, 0);
   });

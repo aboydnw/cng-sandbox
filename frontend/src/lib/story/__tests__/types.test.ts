@@ -1,39 +1,37 @@
-import { describe, expect, it } from "vitest";
-import { createChapter, createStory, DEFAULT_LAYER_CONFIG } from "../types";
+import { describe, it, expect } from "vitest";
+import {
+  createScrollytellingChapter,
+  createMapChapter,
+  createProseChapter,
+} from "../types";
 
-describe("createChapter — preferred colormap snapshot", () => {
-  it("uses DEFAULT_LAYER_CONFIG.colormap when no preferred colormap is provided", () => {
-    const ch = createChapter();
-    expect(ch.layer_config.colormap).toBe(DEFAULT_LAYER_CONFIG.colormap);
+describe("chapter factories", () => {
+  it("createScrollytellingChapter returns a scrollytelling chapter with map_state and layer_config", () => {
+    const ch = createScrollytellingChapter();
+    expect(ch.type).toBe("scrollytelling");
+    expect(ch.map_state).toBeDefined();
+    expect(ch.layer_config).toBeDefined();
+    expect(ch.transition).toBe("fly-to");
+    expect(ch.overlay_position).toBe("left");
   });
 
-  it("accepts an explicit layer_config override (backward compat)", () => {
-    const ch = createChapter({
-      layer_config: {
-        ...DEFAULT_LAYER_CONFIG,
-        colormap: "plasma",
-      },
-    });
-    expect(ch.layer_config.colormap).toBe("plasma");
-  });
-});
-
-describe("createStory — first chapter picks up preferred colormap", () => {
-  it("snapshots preferredColormap into the first chapter's layer_config", () => {
-    const story = createStory("ds-abc", {
-      preferredColormap: "terrain",
-      preferredColormapReversed: false,
-    });
-    expect(story.chapters[0].layer_config.colormap).toBe("terrain");
-    expect(story.chapters[0].layer_config.colormap_reversed).toBe(false);
-    expect(story.chapters[0].layer_config.dataset_id).toBe("ds-abc");
+  it("createMapChapter returns a map chapter with map_state and layer_config", () => {
+    const ch = createMapChapter();
+    expect(ch.type).toBe("map");
+    expect(ch.map_state).toBeDefined();
+    expect(ch.layer_config).toBeDefined();
   });
 
-  it("falls back to DEFAULT_LAYER_CONFIG when no preference is provided", () => {
-    const story = createStory("ds-abc");
-    expect(story.chapters[0].layer_config.colormap).toBe(
-      DEFAULT_LAYER_CONFIG.colormap
-    );
-    expect(story.chapters[0].layer_config.colormap_reversed).toBe(undefined);
+  it("createProseChapter returns a prose chapter without map_state or layer_config", () => {
+    const ch = createProseChapter();
+    expect(ch.type).toBe("prose");
+    expect("map_state" in ch).toBe(false);
+    expect("layer_config" in ch).toBe(false);
+  });
+
+  it("factories accept overrides", () => {
+    const ch = createScrollytellingChapter({ title: "Chapter X", order: 3 });
+    expect(ch.title).toBe("Chapter X");
+    expect(ch.order).toBe(3);
   });
 });

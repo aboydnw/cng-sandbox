@@ -20,6 +20,7 @@ import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
+import { ChapterPreview } from "../components/editor/ChapterPreview";
 
 function TooltipCard({
   text,
@@ -326,8 +327,8 @@ export default function StoryEditorPage() {
           />
         </Box>
 
-        {/* Center: map (full height) — hidden for prose chapters */}
-        {activeChapter?.type !== "prose" ? (
+        {/* Center: editable map for map-bound chapters; live preview otherwise */}
+        {activeChapter && (activeChapter.type === "scrollytelling" || activeChapter.type === "map") ? (
           <Box ref={mapContainerRef} flex={1} position="relative">
             {firstUnseen === "map" && (
               <TooltipCard
@@ -405,7 +406,9 @@ export default function StoryEditorPage() {
             </UnifiedMap>
           </Box>
         ) : (
-          <Box flex={1} />
+          <Box flex={1} overflowY="auto" bg="gray.50">
+            {activeChapter && <ChapterPreview chapter={activeChapter} />}
+          </Box>
         )}
 
         {/* Right: editor panel */}

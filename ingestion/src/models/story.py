@@ -2,9 +2,9 @@
 
 import uuid
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import Boolean, Column, DateTime, String, Text
 
 from src.models.base import Base
@@ -30,16 +30,56 @@ class StoryRow(Base):
     workspace_id = Column(String, nullable=True)
 
 
-class ChapterPayload(BaseModel):
+class MapStatePayload(BaseModel):
+    center: tuple[float, float]
+    zoom: float
+    bearing: float
+    pitch: float
+    basemap: str
+
+
+class LayerConfigPayload(BaseModel):
+    dataset_id: str
+    connection_id: str | None = None
+    colormap: str
+    opacity: float
+    basemap: str
+    band: int | None = None
+    timestep: int | None = None
+    rescale_min: float | None = None
+    rescale_max: float | None = None
+    colormap_reversed: bool | None = None
+
+
+class _BaseChapter(BaseModel):
     id: str
     order: int
-    type: str = "scrollytelling"
     title: str
     narrative: str
-    map_state: dict
-    transition: str = "fly-to"
+
+
+class ScrollytellingChapter(_BaseChapter):
+    type: Literal["scrollytelling"] = "scrollytelling"
+    map_state: MapStatePayload
+    layer_config: LayerConfigPayload
+    transition: Literal["fly-to", "instant"] = "fly-to"
     overlay_position: Literal["left", "right"] = "left"
-    layer_config: dict | None = None
+
+
+class MapChapter(_BaseChapter):
+    type: Literal["map"]
+    map_state: MapStatePayload
+    layer_config: LayerConfigPayload
+
+
+class ProseChapter(_BaseChapter):
+    type: Literal["prose"]
+
+
+ChapterPayload = Annotated[
+    Union[ScrollytellingChapter, MapChapter, ProseChapter],
+    Field(discriminator="type"),
+]
 
 
 class StoryCreate(BaseModel):

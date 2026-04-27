@@ -31,6 +31,7 @@ def test_create_story(client):
                 {
                     "id": "ch-1",
                     "order": 0,
+                    "type": "scrollytelling",
                     "title": "Chapter 1",
                     "narrative": "Hello world",
                     "map_state": {
@@ -38,6 +39,12 @@ def test_create_story(client):
                         "zoom": 2,
                         "bearing": 0,
                         "pitch": 0,
+                        "basemap": "streets",
+                    },
+                    "layer_config": {
+                        "dataset_id": "ds-123",
+                        "colormap": "viridis",
+                        "opacity": 1.0,
                         "basemap": "streets",
                     },
                     "transition": "fly-to",
@@ -125,9 +132,16 @@ def test_response_includes_dataset_ids(client):
                 {
                     "id": "ch-1",
                     "order": 0,
+                    "type": "scrollytelling",
                     "title": "Ch1",
                     "narrative": "",
-                    "map_state": {},
+                    "map_state": {
+                        "center": [0, 0],
+                        "zoom": 2,
+                        "bearing": 0,
+                        "pitch": 0,
+                        "basemap": "streets",
+                    },
                     "transition": "fly-to",
                     "layer_config": {
                         "dataset_id": "ds-1",
@@ -139,9 +153,16 @@ def test_response_includes_dataset_ids(client):
                 {
                     "id": "ch-2",
                     "order": 1,
+                    "type": "scrollytelling",
                     "title": "Ch2",
                     "narrative": "",
-                    "map_state": {},
+                    "map_state": {
+                        "center": [0, 0],
+                        "zoom": 2,
+                        "bearing": 0,
+                        "pitch": 0,
+                        "basemap": "streets",
+                    },
                     "transition": "fly-to",
                     "layer_config": {
                         "dataset_id": "ds-2",
@@ -182,10 +203,9 @@ def test_dataset_ids_falls_back_to_dataset_id(client):
                 {
                     "id": "ch-1",
                     "order": 0,
+                    "type": "prose",
                     "title": "Ch1",
                     "narrative": "",
-                    "map_state": {},
-                    "transition": "fly-to",
                 },
             ],
         },
@@ -206,13 +226,9 @@ def test_fork_example_story_copies_to_callers_workspace(client, db_session):
                 {
                     "id": "ch1",
                     "order": 0,
-                    "type": "scrollytelling",
+                    "type": "prose",
                     "title": "C1",
                     "narrative": "n",
-                    "map_state": {},
-                    "transition": "fly-to",
-                    "overlay_position": "left",
-                    "layer_config": None,
                 }
             ]
         ),
@@ -380,7 +396,7 @@ def test_fork_is_deep_copy_not_reference(client, db_session):
         id="deep-copy-src",
         title="Original",
         chapters_json=json.dumps(
-            [{"id": "ch1", "order": 0, "title": "T", "narrative": "", "map_state": {}}]
+            [{"id": "ch1", "order": 0, "type": "prose", "title": "T", "narrative": ""}]
         ),
         published=False,
         created_at=now,

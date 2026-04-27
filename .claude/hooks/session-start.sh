@@ -21,19 +21,19 @@ corepack prepare yarn@4.13.0 --activate >/dev/null
 ( cd frontend && yarn install --immutable )
 
 echo "[session-start] Installing geo-conversions toolkit (uv)..."
-( cd geo-conversions && uv sync --all-extras )
+( cd geo-conversions && uv sync --all-extras --frozen )
 
 echo "[session-start] Installing ingestion deps (uv) + cng-toolkit..."
 (
   cd ingestion
-  uv sync --extra dev
+  uv sync --extra dev --frozen
   # cng-toolkit is required at runtime but lives outside the lockfile; install
   # it editable into the ingestion venv (matches CI setup).
   uv pip install -e "../geo-conversions[all]"
 )
 
 echo "[session-start] Installing MCP deps (uv)..."
-( cd mcp && uv sync --extra dev )
+( cd mcp && uv sync --extra dev --frozen )
 
 # Expose helpful env vars for the rest of the session.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then

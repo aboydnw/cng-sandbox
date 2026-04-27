@@ -113,6 +113,9 @@ export default defineConfig({
     setupFiles: ["./src/test-setup.ts"],
     server: {
       deps: {
+        // Workaround: @developmentseed/proj's dist ships extensionless relative
+        // imports (e.g. `from "./parse-wkt"`) that vitest's Node ESM resolver
+        // rejects. Inlining forces vite to transform the package.
         inline: ["@developmentseed/proj"],
       },
     },

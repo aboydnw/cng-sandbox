@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.29.0](https://github.com/aboydnw/cng-sandbox/compare/v1.28.0...v1.29.0) (2026-04-27)
+
+
+### Features
+
+* bundle common EPSG codes for non-Mercator COG rendering ([#355](https://github.com/aboydnw/cng-sandbox/issues/355)) ([b6c05a5](https://github.com/aboydnw/cng-sandbox/commit/b6c05a568be7844396d4a116a4c9f3bf9fb5362f))
+
 ## [1.28.0](https://github.com/aboydnw/cng-sandbox/compare/v1.27.0...v1.28.0) (2026-04-26)
 
 

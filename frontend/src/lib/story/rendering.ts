@@ -44,10 +44,17 @@ export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
         });
         scrollyGroup = [];
       }
-      if (ch.type === "map") {
-        blocks.push({ type: "map", chapter: ch, index: i });
-      } else {
-        blocks.push({ type: "prose", chapter: ch, index: i });
+      switch (ch.type) {
+        case "map":
+          blocks.push({ type: "map", chapter: ch, index: i });
+          break;
+        case "prose":
+          blocks.push({ type: "prose", chapter: ch, index: i });
+          break;
+        default: {
+          const _exhaustive: never = ch;
+          void _exhaustive;
+        }
       }
     }
   }

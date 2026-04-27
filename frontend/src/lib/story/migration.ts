@@ -14,7 +14,9 @@ function migrateChapter(
   raw: Record<string, unknown>,
   storyDatasetId: string | undefined
 ): Chapter {
-  const type = (raw.type as string) ?? "scrollytelling";
+  const type =
+    (raw.type as string | undefined) ??
+    (raw.map_state || raw.layer_config ? "scrollytelling" : "prose");
   const base = {
     id: raw.id as string,
     order: (raw.order as number) ?? 0,
@@ -30,9 +32,9 @@ function migrateChapter(
     ...DEFAULT_LAYER_CONFIG,
     ...(raw.layer_config as Partial<LayerConfig> | undefined),
     dataset_id:
-      ((raw.layer_config as Partial<LayerConfig> | undefined)?.dataset_id ??
-        storyDatasetId ??
-        ""),
+      (raw.layer_config as Partial<LayerConfig> | undefined)?.dataset_id ??
+      storyDatasetId ??
+      "",
   };
 
   const map_state: MapState = {

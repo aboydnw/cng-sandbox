@@ -328,9 +328,7 @@ export default function StoryEditorPage() {
         </Box>
 
         {/* Center: editable map for map-bound chapters; live preview otherwise */}
-        {activeChapter &&
-        (activeChapter.type === "scrollytelling" ||
-          activeChapter.type === "map") ? (
+        {activeChapter && isMapBoundChapter(activeChapter) ? (
           <Box ref={mapContainerRef} flex={1} position="relative">
             {firstUnseen === "map" && (
               <TooltipCard

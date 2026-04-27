@@ -409,12 +409,36 @@ export function useStoryEditor() {
           title: ch.title,
           narrative: ch.narrative,
         };
+        if (type === "prose") return createProseChapter(base);
         const mapFields = isMapBoundChapter(ch)
           ? { map_state: ch.map_state, layer_config: ch.layer_config }
-          : {};
-        if (type === "prose") return createProseChapter(base);
+          : {
+              map_state: {
+                center: [camera.longitude, camera.latitude] as [number, number],
+                zoom: camera.zoom,
+                bearing: camera.bearing,
+                pitch: camera.pitch,
+                basemap,
+              },
+              layer_config: {
+                ...DEFAULT_LAYER_CONFIG,
+                dataset_id: s.dataset_id ?? "",
+                basemap,
+              },
+            };
         if (type === "map") return createMapChapter({ ...base, ...mapFields });
-        return createScrollytellingChapter({ ...base, ...mapFields });
+        const scrollyFields =
+          ch.type === "scrollytelling"
+            ? {
+                transition: ch.transition,
+                overlay_position: ch.overlay_position,
+              }
+            : {};
+        return createScrollytellingChapter({
+          ...base,
+          ...mapFields,
+          ...scrollyFields,
+        });
       }),
     }));
   }

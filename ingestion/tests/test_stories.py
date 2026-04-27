@@ -423,3 +423,34 @@ def test_fork_is_deep_copy_not_reference(client, db_session):
     assert get_resp.status_code == 200
     assert get_resp.json()["title"] == "Original"
     assert len(get_resp.json()["chapters"]) == 1
+
+
+def test_legacy_typeless_chapter_loads_as_scrollytelling(client, db_session):
+    now = datetime.now(UTC)
+    legacy_chapters = [
+        {
+            "id": "old-1",
+            "order": 0,
+            "title": "Legacy",
+            "narrative": "",
+            "map_state": {"center": [0, 0], "zoom": 2, "bearing": 0, "pitch": 0, "basemap": "streets"},
+            "layer_config": {"dataset_id": "x", "colormap": "viridis", "opacity": 0.8, "basemap": "streets"},
+        }
+    ]
+    row = StoryRow(
+        id="legacy-1",
+        title="Legacy story",
+        chapters_json=json.dumps(legacy_chapters),
+        published=True,
+        created_at=now,
+        updated_at=now,
+        workspace_id="testABCD",
+        is_example=False,
+    )
+    db_session.add(row)
+    db_session.commit()
+
+    resp = client.get("/api/stories/legacy-1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["chapters"][0]["type"] == "scrollytelling"

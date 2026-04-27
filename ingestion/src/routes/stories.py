@@ -23,6 +23,13 @@ router = APIRouter(prefix="/api")
 _chapter_adapter: TypeAdapter[ChapterPayload] = TypeAdapter(ChapterPayload)
 
 
+def _coerce_chapter(raw: dict) -> ChapterPayload:
+    """Parse a chapter dict, backfilling the default type for legacy rows."""
+    if not raw.get("type"):
+        raw = {**raw, "type": "scrollytelling"}
+    return _chapter_adapter.validate_python(raw)
+
+
 def _row_to_response(row: StoryRow) -> StoryResponse:
     chapters = json.loads(row.chapters_json) if row.chapters_json else []
     chapter_dataset_ids = []
@@ -42,7 +49,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         description=row.description,
         dataset_id=row.dataset_id,
         dataset_ids=dataset_ids,
-        chapters=[_chapter_adapter.validate_python(ch) for ch in chapters],
+        chapters=[_coerce_chapter(ch) for ch in chapters],
         published=row.published,
         is_example=bool(row.is_example),
         created_at=row.created_at.isoformat(),

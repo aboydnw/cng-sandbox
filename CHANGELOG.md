@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.29.1](https://github.com/aboydnw/cng-sandbox/compare/v1.29.0...v1.29.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* **ingestion:** align validator with source-CRS-preserving pipeline ([#358](https://github.com/aboydnw/cng-sandbox/issues/358)) ([de78ec9](https://github.com/aboydnw/cng-sandbox/commit/de78ec978cb3c23d27123006f8c93c0d07a7d519))
+
 ## [1.29.0](https://github.com/aboydnw/cng-sandbox/compare/v1.28.0...v1.29.0) (2026-04-27)
 
 

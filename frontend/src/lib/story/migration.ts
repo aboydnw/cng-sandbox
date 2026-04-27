@@ -15,8 +15,11 @@ function migrateChapter(
   storyDatasetId: string | undefined
 ): Chapter {
   const type =
-    (raw.type as string | undefined) ??
-    (raw.map_state || raw.layer_config ? "scrollytelling" : "prose");
+    raw.type === "prose" || raw.type === "map" || raw.type === "scrollytelling"
+      ? raw.type
+      : raw.map_state || raw.layer_config
+        ? "scrollytelling"
+        : "prose";
   const base = {
     id: raw.id as string,
     order: (raw.order as number) ?? 0,

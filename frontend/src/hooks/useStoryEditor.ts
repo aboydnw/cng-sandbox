@@ -423,7 +423,6 @@ export function useStoryEditor() {
               layer_config: {
                 ...DEFAULT_LAYER_CONFIG,
                 dataset_id: s.dataset_id ?? "",
-                basemap,
               },
             };
         if (type === "map") return createMapChapter({ ...base, ...mapFields });

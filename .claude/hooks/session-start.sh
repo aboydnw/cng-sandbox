@@ -13,6 +13,12 @@ fi
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 cd "$REPO_ROOT"
 
+# Some web sandbox images install Node under /opt/node22 but don't always put
+# it on PATH for hook subprocesses. Ensure node/corepack are findable.
+if [ -d /opt/node22/bin ]; then
+  export PATH="/opt/node22/bin:$PATH"
+fi
+
 echo "[session-start] Installing frontend deps (yarn 4 via corepack)..."
 # repo.yarnpkg.com is blocked in the web sandbox; route corepack through npm.
 export COREPACK_NPM_REGISTRY="${COREPACK_NPM_REGISTRY:-https://registry.npmjs.org}"
@@ -37,9 +43,9 @@ echo "[session-start] Installing MCP deps (uv)..."
 
 # Expose helpful env vars for the rest of the session.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  {
-    echo 'export PATH="$HOME/.local/bin:$PATH"'
-  } >> "$CLAUDE_ENV_FILE"
+  if ! grep -Fqx 'export PATH="$HOME/.local/bin:$PATH"' "$CLAUDE_ENV_FILE" 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$CLAUDE_ENV_FILE"
+  fi
 fi
 
 echo "[session-start] Done."

@@ -48,6 +48,7 @@ docker compose --profile prod up -d --build
 - Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 - Caddy applies baseline security headers to every response (HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`). The CSP allows `'wasm-unsafe-eval'` for DuckDB-WASM, whitelists `https://static.cloudflareinsights.com` (Cloudflare Web Analytics beacon) and `https://plausible.io` (Plausible analytics tracker) on `script-src`, and is permissive on `connect-src`/`img-src` to accommodate user-supplied tile URLs and the CARTO basemap. When adding any new third-party script origin, update both the `Caddyfile` CSP `script-src` directive and this note
+
 ### EPSG resolution
 
 The frontend bundles an inline subset of EPSG codes (~30 common codes plus all 120 UTM zones) used to reproject non-Mercator COGs without a runtime network fetch. Codes outside the subset fall back to fetching `https://epsg.io/{code}.json` via the deck.gl-geotiff default resolver. If a deployment-level CSP blocks `epsg.io`, uncommon CRSes will fail to render; common CRSes (Web Mercator, NAD83/Conus Albers, all UTM zones, common European and polar projections) are unaffected.

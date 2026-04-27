@@ -156,4 +156,52 @@ describe("migrateStory", () => {
     expect(migrated.chapters[0].overlay_position).toBe("left");
     expect(migrated.chapters[1].overlay_position).toBe("right");
   });
+
+  it("strips map_state and layer_config from prose chapters during migration", () => {
+    const old = {
+      chapters: [
+        {
+          id: "a",
+          order: 0,
+          type: "prose",
+          title: "Intro",
+          narrative: "Hello",
+          // legacy stored map_state/layer_config that should be dropped
+          map_state: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0, basemap: "streets" },
+          layer_config: { dataset_id: "x", colormap: "viridis", opacity: 0.8, basemap: "streets" },
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(old);
+    expect(migrated.chapters[0].type).toBe("prose");
+    expect("map_state" in migrated.chapters[0]).toBe(false);
+    expect("layer_config" in migrated.chapters[0]).toBe(false);
+  });
+
+  it("preserves map_state and layer_config on scrollytelling and map chapters", () => {
+    const old = {
+      chapters: [
+        {
+          id: "a",
+          order: 0,
+          type: "scrollytelling",
+          title: "A",
+          narrative: "",
+          map_state: { center: [10, 20], zoom: 5, bearing: 0, pitch: 0, basemap: "streets" },
+          layer_config: { dataset_id: "x", colormap: "viridis", opacity: 0.8, basemap: "streets" },
+          transition: "fly-to",
+          overlay_position: "left",
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(old);
+    const ch = migrated.chapters[0];
+    expect(ch.type).toBe("scrollytelling");
+    if (ch.type === "scrollytelling") {
+      expect(ch.map_state.zoom).toBe(5);
+      expect(ch.layer_config.dataset_id).toBe("x");
+    }
+  });
 });

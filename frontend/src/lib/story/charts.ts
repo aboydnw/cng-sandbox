@@ -37,10 +37,7 @@ export function buildLineOptionFromTimeseries(
       type: opts.y_scale === "log" ? "log" : "value",
       name: opts.y_label ?? "",
     },
-    dataZoom: [
-      { type: "inside" },
-      { type: "slider", height: 20, bottom: 10 },
-    ],
+    dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 10 }],
     series: [
       {
         type: "line",
@@ -81,7 +78,9 @@ function inferXAxisType(
   if (allNumeric) return "value";
   const allStrings = values.every((v) => typeof v === "string");
   if (allStrings) {
-    const allDates = values.every((v) => !Number.isNaN(Date.parse(v as string)));
+    const allDates = values.every(
+      (v) => !Number.isNaN(Date.parse(v as string))
+    );
     if (allDates) return "time";
   }
   return "category";

@@ -1,7 +1,8 @@
 """Tests for the dataset timeseries endpoint."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from src.routes.dataset_charts import _cached_complete_timeseries
 
@@ -125,6 +126,7 @@ def test_titiler_point_returns_none_on_empty_values(monkeypatch):
 
 def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
     import logging
+
     from src.routes.dataset_charts import _titiler_point
 
     class FakeResponse:
@@ -151,7 +153,7 @@ def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
     assert any("500" in record.message for record in caplog.records)
 
 
-def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):  # noqa: F811
+def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):
     with patch("src.routes.dataset_charts._titiler_statistics") as mock_stats, \
          patch("src.routes.dataset_charts._load_dataset") as mock_load:
         mock_load.return_value = {
@@ -174,7 +176,7 @@ def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):  # n
         ]
 
 
-def test_histogram_categorical_returns_class_counts(client: pytest.fixture):  # noqa: F811
+def test_histogram_categorical_returns_class_counts(client: pytest.fixture):
     with patch("src.routes.dataset_charts._titiler_statistics") as mock_stats, \
          patch("src.routes.dataset_charts._load_dataset") as mock_load:
         mock_load.return_value = {

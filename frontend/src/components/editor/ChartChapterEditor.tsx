@@ -10,7 +10,12 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import type { ChapterType, ChartChapter, ChartViz, CsvSource } from "../../lib/story";
+import type {
+  ChapterType,
+  ChartChapter,
+  ChartViz,
+  CsvSource,
+} from "../../lib/story";
 import { uploadCsvAsset } from "../../lib/story/assets";
 import { ChapterTypePicker } from "../ChapterTypePicker";
 import { workspaceFetch } from "../../lib/api";
@@ -23,7 +28,10 @@ interface ChartChapterEditorProps {
   onChapterTypeChange: (type: ChapterType) => void;
 }
 
-function CsvBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapterTypeChange">) {
+function CsvBranch({
+  chapter,
+  onChange,
+}: Omit<ChartChapterEditorProps, "onChapterTypeChange">) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -57,7 +65,10 @@ function CsvBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapt
   }
 
   function updateViz(patch: Partial<ChartViz>) {
-    onChange({ ...chapter, chart: { ...chapter.chart, viz: { ...viz, ...patch } } });
+    onChange({
+      ...chapter,
+      chart: { ...chapter.chart, viz: { ...viz, ...patch } },
+    });
   }
 
   return (
@@ -69,7 +80,11 @@ function CsvBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapt
             <Text fontSize="sm" flex={1} truncate>
               {source.columns.length} columns
             </Text>
-            <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+            >
               Replace
             </Button>
           </Flex>
@@ -146,7 +161,9 @@ function CsvBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapt
               <NativeSelect.Field
                 value={viz.y_fields[0] ?? ""}
                 onChange={(e) =>
-                  updateViz({ y_fields: e.target.value ? [e.target.value] : [] })
+                  updateViz({
+                    y_fields: e.target.value ? [e.target.value] : [],
+                  })
                 }
               >
                 {source.columns.map((c) => (
@@ -178,7 +195,10 @@ function CsvBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapt
   );
 }
 
-function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapterTypeChange">) {
+function DatasetBranch({
+  chapter,
+  onChange,
+}: Omit<ChartChapterEditorProps, "onChapterTypeChange">) {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
 
   useEffect(() => {
@@ -224,10 +244,18 @@ function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onC
             kind: "dataset_timeseries",
             dataset_id: ds.id,
             point: ds.bounds
-              ? [(ds.bounds[0] + ds.bounds[2]) / 2, (ds.bounds[1] + ds.bounds[3]) / 2]
+              ? [
+                  (ds.bounds[0] + ds.bounds[2]) / 2,
+                  (ds.bounds[1] + ds.bounds[3]) / 2,
+                ]
               : [0, 0],
           },
-          viz: { ...chapter.chart.viz, kind: "line", x_field: "datetime", y_fields: ["value"] },
+          viz: {
+            ...chapter.chart.viz,
+            kind: "line",
+            x_field: "datetime",
+            y_fields: ["value"],
+          },
         },
       });
     } else {
@@ -235,7 +263,12 @@ function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onC
         ...chapter,
         chart: {
           source: { kind: "dataset_histogram", dataset_id: ds.id, bins: 20 },
-          viz: { ...chapter.chart.viz, kind: "bar", x_field: "bin", y_fields: ["count"] },
+          viz: {
+            ...chapter.chart.viz,
+            kind: "bar",
+            x_field: "bin",
+            y_fields: ["count"],
+          },
         },
       });
     }
@@ -293,18 +326,20 @@ function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onC
         </Field.Root>
       )}
 
-      {source.kind === "dataset_histogram" && picked && !picked.is_categorical && (
-        <Field.Root>
-          <Field.Label>Bins</Field.Label>
-          <Input
-            type="number"
-            min={2}
-            max={100}
-            value={source.bins ?? 20}
-            onChange={(e) => updateBins(Number(e.target.value))}
-          />
-        </Field.Root>
-      )}
+      {source.kind === "dataset_histogram" &&
+        picked &&
+        !picked.is_categorical && (
+          <Field.Root>
+            <Field.Label>Bins</Field.Label>
+            <Input
+              type="number"
+              min={2}
+              max={100}
+              value={source.bins ?? 20}
+              onChange={(e) => updateBins(Number(e.target.value))}
+            />
+          </Field.Root>
+        )}
     </Flex>
   );
 }
@@ -353,7 +388,9 @@ export function ChartChapterEditor({
 
       <Tabs.Root
         value={tab}
-        onValueChange={(d) => (d.value === "csv" ? switchToCsv() : switchToDataset())}
+        onValueChange={(d) =>
+          d.value === "csv" ? switchToCsv() : switchToDataset()
+        }
       >
         <Tabs.List>
           <Tabs.Trigger value="csv">Upload CSV</Tabs.Trigger>

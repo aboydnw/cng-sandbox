@@ -90,7 +90,10 @@ export function ChartChapterRenderer({
           <Text color="red.600">{error}</Text>
         ) : option ? (
           <Suspense fallback={<Spinner />}>
-            <ReactECharts option={option} style={{ height: 400, width: "100%" }} />
+            <ReactECharts
+              option={option}
+              style={{ height: 400, width: "100%" }}
+            />
           </Suspense>
         ) : (
           <Spinner />

@@ -60,7 +60,10 @@ export function PointPickerMap({
     const map = mapRef.current;
     if (!map || !ready || !bounds) return;
     map.fitBounds(
-      [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
+      [
+        [bounds[0], bounds[1]],
+        [bounds[2], bounds[3]],
+      ],
       { padding: 20, animate: false }
     );
   }, [bounds, ready]);

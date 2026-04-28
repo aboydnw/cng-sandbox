@@ -204,6 +204,156 @@ describe("usePixelInspector categorical branch", () => {
   });
 });
 
+describe("usePixelInspector projection-aware sampling", () => {
+  // 2x2 raw grid, value layout in source-CRS pixel space:
+  //   raw[0]=10 (col=0,row=0)  raw[1]=20 (col=1,row=0)
+  //   raw[2]=30 (col=0,row=1)  raw[3]=40 (col=1,row=1)
+  // The fake projector + inverse below maps the cursor to a known pixel so we
+  // can assert the inspector reads through the projection-aware path, not the
+  // lng/lat-linear fallback.
+  function projectionAwareTile(opts: {
+    raw: ArrayLike<number>;
+    width: number;
+    height: number;
+    projectFrom4326: ProjectFn;
+    inverseTransform: InverseFn;
+    boundingBox?: [number[], number[]];
+  }) {
+    return {
+      index: { x: 0, y: 0, z: 0 },
+      // Wrong/loose lng/lat AABB on purpose — if the inspector falls back to
+      // the linear path it will pick a different pixel and the test fails.
+      boundingBox: opts.boundingBox ?? [
+        [-180, -85],
+        [180, 85],
+      ],
+      content: {
+        inverseTransform: opts.inverseTransform,
+        data: {
+          raw: opts.raw,
+          width: opts.width,
+          height: opts.height,
+          projectFrom4326: opts.projectFrom4326,
+        },
+      },
+    };
+  }
+
+  type ProjectFn = (lng: number, lat: number) => [number, number];
+  type InverseFn = (x: number, y: number) => [number, number];
+
+  it("samples through projectFrom4326 + inverseTransform when both are present", async () => {
+    // Mock projector: passthrough lng→x, lat→y. Inverse maps [x,y] in [-1, 1]
+    // square to a 2x2 pixel grid. Cursor (lng=0.5, lat=-0.5) → src (0.5, -0.5)
+    // → pixel (1.5, 1.5) → row=1, col=1 → raw[3]=40.
+    const projectFrom4326: ProjectFn = (lng, lat) => [lng, lat];
+    const inverseTransform: InverseFn = (x, y) => [x + 1, 1 - y];
+
+    const { result } = renderHook(() => usePixelInspector(null));
+    act(() => {
+      result.current.onHover({
+        coordinate: [0.5, -0.5],
+        x: 0,
+        y: 0,
+        sourceTile: projectionAwareTile({
+          raw: new Float32Array([10, 20, 30, 40]),
+          width: 2,
+          height: 2,
+          projectFrom4326,
+          inverseTransform,
+        }),
+      });
+    });
+    await waitFor(() => {
+      expect(result.current.hoverInfo).toMatchObject({
+        kind: "numeric",
+        value: 40,
+      });
+    });
+  });
+
+  it("returns null when projectFrom4326 maps the cursor outside the tile pixel grid", async () => {
+    // Cursor projects to pixel (5, 5) — well outside the 2x2 grid.
+    const projectFrom4326: ProjectFn = (lng, lat) => [lng, lat];
+    const inverseTransform: InverseFn = (x, y) => [x + 4, y + 4];
+
+    const { result } = renderHook(() => usePixelInspector(null));
+    act(() => {
+      result.current.onHover({
+        coordinate: [0, 0],
+        x: 0,
+        y: 0,
+        sourceTile: projectionAwareTile({
+          raw: new Float32Array([1, 2, 3, 4]),
+          width: 2,
+          height: 2,
+          projectFrom4326,
+          inverseTransform,
+        }),
+      });
+    });
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    expect(result.current.hoverInfo).toBeNull();
+  });
+
+  it("returns null when projectFrom4326 yields NaN (e.g. cursor outside CRS domain)", async () => {
+    const projectFrom4326: ProjectFn = () => [NaN, NaN];
+    const inverseTransform: InverseFn = (x, y) => [x, y];
+
+    const { result } = renderHook(() => usePixelInspector(null));
+    act(() => {
+      result.current.onHover({
+        coordinate: [0, 0],
+        x: 0,
+        y: 0,
+        sourceTile: projectionAwareTile({
+          raw: new Float32Array([1, 2, 3, 4]),
+          width: 2,
+          height: 2,
+          projectFrom4326,
+          inverseTransform,
+        }),
+      });
+    });
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    expect(result.current.hoverInfo).toBeNull();
+  });
+
+  it("falls back to lng/lat-linear when projectFrom4326 is null (server-tile path)", async () => {
+    // No projector → must fall back. Tile bbox covers [-10, 10] × [-10, 10],
+    // cursor at (-5, 5) → pixel (0, 0) → raw[0] = 1.
+    const { result } = renderHook(() => usePixelInspector(null));
+    act(() => {
+      result.current.onHover({
+        coordinate: [-5, 5],
+        x: 0,
+        y: 0,
+        sourceTile: {
+          index: { x: 0, y: 0, z: 0 },
+          boundingBox: [
+            [-10, -10],
+            [10, 10],
+          ] as [number[], number[]],
+          content: {
+            data: {
+              raw: new Float32Array([1, 2, 3, 4]),
+              width: 2,
+              height: 2,
+              projectFrom4326: null,
+            },
+          },
+        },
+      });
+    });
+    await waitFor(() => {
+      expect(result.current.hoverInfo).toMatchObject({
+        kind: "numeric",
+        value: 1,
+      });
+    });
+  });
+});
+
 describe("CategoricalPixelTooltip", () => {
   it("renders the label and a colored swatch", () => {
     renderWithProvider(

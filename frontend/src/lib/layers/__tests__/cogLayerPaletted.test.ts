@@ -76,6 +76,42 @@ describe("buildCogLayerPaletted with categories", () => {
     expect(layerProps.renderTile).toBeUndefined();
   });
 
+  it("passes onGeoTIFFLoad and exposes projectFrom4326 on tile data after it fires", async () => {
+    const layers = buildCogLayerPaletted({
+      cogUrl: "/cog/example.tif",
+      opacity: 1,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const props = (layers[0] as any).props;
+    expect(typeof props.onGeoTIFFLoad).toBe("function");
+
+    const fakeTile = {
+      array: {
+        layout: "interleaved",
+        bands: [],
+        data: new Uint8Array([1, 0, 1, 0]),
+        width: 2,
+        height: 2,
+      },
+    };
+    const image = { fetchTile: vi.fn().mockResolvedValue(fakeTile) };
+    const device = { createTexture: vi.fn().mockReturnValue({ mock: "tex" }) };
+
+    const cachedTile = await props.getTileData(image, {
+      device,
+      x: 0,
+      y: 0,
+      signal: new AbortController().signal,
+    });
+    expect(cachedTile.projectFrom4326).toBeNull();
+
+    // After onGeoTIFFLoad fires, the same cached tile picks up the projector
+    // via its getter — no refetch required.
+    props.onGeoTIFFLoad({}, { projection: "EPSG:3857" });
+    expect(typeof cachedTile.projectFrom4326).toBe("function");
+  });
+
   it("attaches raw tile values to getTileData's return for the pixel inspector", async () => {
     const layers = buildCogLayerPaletted({
       cogUrl: "/cog/example.tif",

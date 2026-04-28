@@ -20,3 +20,4 @@ scripts/update-duckdns.sh
 .worktrees/
 .yarn/
 package-lock.json
+.playwright-mcp/

@@ -19,8 +19,8 @@ beforeEach(() => {
       new Response(JSON.stringify([]), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
-    ),
+      })
+    )
   );
 });
 
@@ -33,8 +33,8 @@ describe("ChartChapterEditor", () => {
           chapter={ch}
           onChange={() => {}}
           onChapterTypeChange={() => {}}
-        />,
-      ),
+        />
+      )
     );
     expect(screen.getByText("Upload CSV")).toBeInTheDocument();
     expect(screen.getByText("From dataset")).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe("ChartChapterEditor", () => {
             },
           },
         });
-      }),
+      })
     ).not.toThrow();
   });
 });

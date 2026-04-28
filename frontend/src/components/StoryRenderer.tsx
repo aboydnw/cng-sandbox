@@ -6,6 +6,7 @@ import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
+import { VideoChapterRenderer } from "./VideoChapterRenderer";
 import { RenderModeIndicator } from "./RenderModeIndicator";
 import { type CameraState, cameraFromBounds } from "../lib/layers";
 import {
@@ -316,8 +317,7 @@ export function StoryRenderer({
           );
         }
 
-        // TODO(video-chapters Task 4): replace with <VideoChapterRenderer />
-        if (block.type === "video") {
+        if (block.type === "video" && block.chapter.type === "video") {
           return (
             <Box
               key={block.chapter.id}
@@ -328,21 +328,25 @@ export function StoryRenderer({
               }
               cursor={onChapterClick ? "pointer" : undefined}
             >
-              Video chapter placeholder
+              <VideoChapterRenderer chapter={block.chapter} chapterIndex={block.index} />
             </Box>
           );
         }
 
-        return (
-          <ScrollytellingBlock
-            key={`scrolly-${blockIndex}`}
-            chapters={block.chapters}
-            startIndex={block.startIndex}
-            datasetMap={datasetMap}
-            connectionMap={connectionMap}
-            onChapterClick={onChapterClick}
-          />
-        );
+        if (block.type === "scrollytelling") {
+          return (
+            <ScrollytellingBlock
+              key={`scrolly-${blockIndex}`}
+              chapters={block.chapters}
+              startIndex={block.startIndex}
+              datasetMap={datasetMap}
+              connectionMap={connectionMap}
+              onChapterClick={onChapterClick}
+            />
+          );
+        }
+
+        return null;
       })}
     </>
   );

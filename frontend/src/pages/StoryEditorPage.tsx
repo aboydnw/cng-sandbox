@@ -13,6 +13,7 @@ import { useStoryEditor } from "../hooks/useStoryEditor";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
+import { VideoChapterEditor } from "../components/editor/VideoChapterEditor";
 import { UploadModal } from "../components/UploadModal";
 import { ConnectionModal } from "../components/ConnectionModal";
 import { PublishDialog } from "../components/PublishDialog";
@@ -95,6 +96,7 @@ export default function StoryEditorPage() {
     updateChapterLayerConfig,
     updateChapterType,
     updateChapterOverlayPosition,
+    updateChapter,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,
@@ -428,32 +430,41 @@ export default function StoryEditorPage() {
             />
           )}
           {activeChapter ? (
-            <NarrativeEditor
-              chapterType={activeChapter.type}
-              onChapterTypeChange={updateChapterType}
-              title={activeChapter.title}
-              narrative={activeChapter.narrative}
-              onTitleChange={updateChapterTitle}
-              onNarrativeChange={updateChapterNarrative}
-              layerConfig={
-                isMapBoundChapter(activeChapter)
-                  ? activeChapter.layer_config
-                  : DEFAULT_LAYER_CONFIG
-              }
-              onLayerConfigChange={updateChapterLayerConfig}
-              datasetType={activeDataset?.dataset_type ?? "raster"}
-              datasets={allDatasets}
-              connections={allConnections}
-              onUploadClick={() => setUploadModalOpen(true)}
-              onAddConnectionClick={() => setConnectionModalOpen(true)}
-              overlayPosition={
-                activeChapter.type === "scrollytelling"
-                  ? (activeChapter.overlay_position ?? "left")
-                  : "left"
-              }
-              onOverlayPositionChange={updateChapterOverlayPosition}
-              temporalTimesteps={activeDatasetTimesteps}
-            />
+            <>
+              {activeChapter.type === "video" ? (
+                <VideoChapterEditor
+                  chapter={activeChapter}
+                  onChange={(next) => updateChapter(next)}
+                />
+              ) : (
+                <NarrativeEditor
+                  chapterType={activeChapter.type}
+                  onChapterTypeChange={updateChapterType}
+                  title={activeChapter.title}
+                  narrative={activeChapter.narrative}
+                  onTitleChange={updateChapterTitle}
+                  onNarrativeChange={updateChapterNarrative}
+                  layerConfig={
+                    isMapBoundChapter(activeChapter)
+                      ? activeChapter.layer_config
+                      : DEFAULT_LAYER_CONFIG
+                  }
+                  onLayerConfigChange={updateChapterLayerConfig}
+                  datasetType={activeDataset?.dataset_type ?? "raster"}
+                  datasets={allDatasets}
+                  connections={allConnections}
+                  onUploadClick={() => setUploadModalOpen(true)}
+                  onAddConnectionClick={() => setConnectionModalOpen(true)}
+                  overlayPosition={
+                    activeChapter.type === "scrollytelling"
+                      ? (activeChapter.overlay_position ?? "left")
+                      : "left"
+                  }
+                  onOverlayPositionChange={updateChapterOverlayPosition}
+                  temporalTimesteps={activeDatasetTimesteps}
+                />
+              )}
+            </>
           ) : (
             <Flex h="100%" align="center" justify="center">
               <Text color="gray.400">Select a chapter to edit</Text>

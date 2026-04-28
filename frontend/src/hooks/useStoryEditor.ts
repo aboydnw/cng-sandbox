@@ -20,6 +20,7 @@ import {
   createScrollytellingChapter,
   createMapChapter,
   createProseChapter,
+  createVideoChapter,
   isMapBoundChapter,
   createStoryOnServer,
   getStoryFromServer,
@@ -410,6 +411,13 @@ export function useStoryEditor() {
           narrative: ch.narrative,
         };
         if (type === "prose") return createProseChapter(base);
+        if (type === "video") {
+          const existingVideo = ch.type === "video" ? ch.video : undefined;
+          return createVideoChapter({
+            ...base,
+            ...(existingVideo ? { video: existingVideo } : {}),
+          });
+        }
         const inheritedDatasetId = s.dataset_id ?? "";
         const inheritedDataset = inheritedDatasetId
           ? datasetMap.get(inheritedDatasetId)

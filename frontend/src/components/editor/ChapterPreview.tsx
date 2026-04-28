@@ -1,5 +1,6 @@
 import type { Chapter } from "../../lib/story";
 import { ProseChapter } from "../ProseChapter";
+import { VideoChapterRenderer } from "../VideoChapterRenderer";
 
 interface ChapterPreviewProps {
   chapter: Chapter;
@@ -16,6 +17,9 @@ interface ChapterPreviewProps {
 export function ChapterPreview({ chapter }: ChapterPreviewProps) {
   if (chapter.type === "prose") {
     return <ProseChapter chapter={chapter} chapterIndex={chapter.order} />;
+  }
+  if (chapter.type === "video") {
+    return <VideoChapterRenderer chapter={chapter} chapterIndex={chapter.order} />;
   }
   return null;
 }

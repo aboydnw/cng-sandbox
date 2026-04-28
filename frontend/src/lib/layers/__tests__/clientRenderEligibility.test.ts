@@ -130,4 +130,19 @@ describe("evaluateClientRenderEligibility", () => {
     );
     expect(result.canRender).toBe(true);
   });
+
+  it("returns ineligible for a multi-band COG", () => {
+    const result = evaluateClientRenderEligibility(
+      rasterDatasetItem({ bandCount: 4 })
+    );
+    expect(result.canRender).toBe(false);
+    expect(result.reason).toMatch(/multi-band/i);
+  });
+
+  it("stays eligible when bandCount is null (unknown)", () => {
+    const result = evaluateClientRenderEligibility(
+      rasterDatasetItem({ bandCount: null })
+    );
+    expect(result.canRender).toBe(true);
+  });
 });

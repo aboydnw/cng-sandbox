@@ -335,12 +335,14 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.jobs import router as jobs_router
     from src.routes.proxy import router as proxy_router
     from src.routes.stories import router as stories_router
+    from src.routes.story_assets import router as story_assets_router
     from src.routes.upload import router as upload_router
 
     app.include_router(upload_router)
     app.include_router(jobs_router)
     app.include_router(datasets_router)
     app.include_router(stories_router)
+    app.include_router(story_assets_router)
     app.include_router(bug_report_router)
     app.include_router(connections_router)
     app.include_router(proxy_router)

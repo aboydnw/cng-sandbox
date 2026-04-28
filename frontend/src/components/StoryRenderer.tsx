@@ -7,6 +7,7 @@ import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
 import { ImageChapterRenderer } from "./ImageChapterRenderer";
+import { ChartChapterRenderer } from "./ChartChapterRenderer";
 import { RenderModeIndicator } from "./RenderModeIndicator";
 import { type CameraState, cameraFromBounds } from "../lib/layers";
 import {
@@ -337,7 +338,15 @@ export function StoryRenderer({
         }
 
         if (block.type === "chart") {
-          return null;
+          return (
+            <Box
+              key={block.chapter.id}
+              onClick={onChapterClick ? () => onChapterClick(block.chapter.id) : undefined}
+              cursor={onChapterClick ? "pointer" : undefined}
+            >
+              <ChartChapterRenderer chapter={block.chapter} chapterIndex={block.index} />
+            </Box>
+          );
         }
 
         return (

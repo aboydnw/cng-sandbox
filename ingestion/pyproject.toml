@@ -30,6 +30,7 @@ dependencies = [
     "beautifulsoup4>=4.14.3",
     "pyarrow>=17.0.0",
     "slowapi>=0.1.9",
+    "pillow>=12.2.0",
 ]
 
 [project.optional-dependencies]

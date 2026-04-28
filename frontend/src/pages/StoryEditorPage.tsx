@@ -21,6 +21,7 @@ import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { ChapterPreview } from "../components/editor/ChapterPreview";
+import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
 
 function TooltipCard({
   text,
@@ -95,6 +96,7 @@ export default function StoryEditorPage() {
     updateChapterLayerConfig,
     updateChapterType,
     updateChapterOverlayPosition,
+    updateChapter,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,
@@ -427,7 +429,13 @@ export default function StoryEditorPage() {
               onDismiss={() => dismiss("narrative")}
             />
           )}
-          {activeChapter ? (
+          {activeChapter && activeChapter.type === "image" ? (
+            <ImageChapterEditor
+              chapter={activeChapter}
+              onChange={updateChapter}
+              onChapterTypeChange={updateChapterType}
+            />
+          ) : activeChapter ? (
             <NarrativeEditor
               chapterType={activeChapter.type}
               onChapterTypeChange={updateChapterType}

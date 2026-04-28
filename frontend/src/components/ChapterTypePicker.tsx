@@ -1,5 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react";
-import { Path, Article, MapTrifold } from "@phosphor-icons/react";
+import { Path, Article, MapTrifold, Image } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import type { ChapterType } from "../lib/story";
 import {
@@ -16,6 +16,7 @@ const CHAPTER_TYPE_OPTIONS: ChapterTypeOption[] = [
   { type: "scrollytelling", icon: <Path size={16} /> },
   { type: "map", icon: <MapTrifold size={16} /> },
   { type: "prose", icon: <Article size={16} /> },
+  { type: "image", icon: <Image size={16} /> },
 ];
 
 interface ChapterTypePickerProps {

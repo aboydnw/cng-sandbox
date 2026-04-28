@@ -188,10 +188,18 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const [reportCardOpen, setReportCardOpen] = useState(false);
 
   // --- Tile transfer size ---
-  const tileUrlPrefix = item?.dataset?.tile_url
-    ? getTileUrlPrefix(item.dataset.tile_url)
-    : "";
-  const bytesTransferred = useTileTransferSize(tileUrlPrefix);
+  // Watch tile-proxy paths plus direct cog/parquet URLs so the metric covers
+  // both server-side tiling and client-side rendering.
+  const transferPrefixes = useMemo(() => {
+    const prefixes: string[] = [];
+    if (item?.dataset?.tile_url) {
+      prefixes.push(getTileUrlPrefix(item.dataset.tile_url));
+    }
+    if (item?.cogUrl) prefixes.push(item.cogUrl);
+    if (item?.parquetUrl) prefixes.push(item.parquetUrl);
+    return prefixes;
+  }, [item?.dataset?.tile_url, item?.cogUrl, item?.parquetUrl]);
+  const bytesTransferred = useTileTransferSize(transferPrefixes);
 
   // --- Temporal ---
   const ds = item?.dataset;

@@ -39,18 +39,61 @@ describe("useTileTransferSize", () => {
   });
 
   it("returns null when no matching entries exist yet", () => {
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize(["/pmtiles/"]));
     expect(result.current).toBeNull();
   });
 
-  it("sums transferSize for unique entries matching the prefix", () => {
+  it("returns null when prefix list is empty", () => {
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+      makeEntry("http://localhost/pmtiles/tile-a", 100),
+    ]);
+    const { result } = renderHook(() => useTileTransferSize([]));
+    expect(result.current).toBeNull();
+  });
+
+  it("sums transferSize for entries matching the prefix", () => {
     vi.spyOn(performance, "getEntriesByType").mockReturnValue([
       makeEntry("http://localhost/pmtiles/datasets/abc/tile-a", 1024),
       makeEntry("http://localhost/pmtiles/datasets/abc/tile-b", 512),
       makeEntry("http://localhost/raster/tiles/0/0/0.png", 2048),
     ]);
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize(["/pmtiles/"]));
     expect(result.current).toBe(1536);
+  });
+
+  it("matches entries against any prefix in the list", () => {
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+      makeEntry("http://localhost/pmtiles/tile-a", 100),
+      makeEntry("http://localhost/cog/dataset.tif", 500),
+      makeEntry("http://localhost/raster/tiles/0/0/0.png", 999),
+    ]);
+    const { result } = renderHook(() =>
+      useTileTransferSize(["/pmtiles/", "/cog/dataset.tif"])
+    );
+    expect(result.current).toBe(600);
+  });
+
+  it("accumulates repeated fetches of the same URL (e.g. COG range requests)", () => {
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+      makeEntry("http://localhost/cog/dataset.tif", 1024),
+      makeEntry("http://localhost/cog/dataset.tif", 2048),
+      makeEntry("http://localhost/cog/dataset.tif", 4096),
+    ]);
+    const { result } = renderHook(() =>
+      useTileTransferSize(["/cog/dataset.tif"])
+    );
+    expect(result.current).toBe(7168);
+  });
+
+  it("matches absolute URL prefixes (cross-origin R2 fetches)", () => {
+    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
+      makeEntry("https://r2.example.com/datasets/abc.tif", 1000),
+      makeEntry("https://r2.example.com/datasets/abc.tif", 2000),
+    ]);
+    const { result } = renderHook(() =>
+      useTileTransferSize(["https://r2.example.com/datasets/abc.tif"])
+    );
+    expect(result.current).toBe(3000);
   });
 
   it("updates when the observer fires with new entries", () => {
@@ -58,7 +101,7 @@ describe("useTileTransferSize", () => {
       makeEntry("http://localhost/pmtiles/tile-a", 100),
     ]);
 
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize(["/pmtiles/"]));
     expect(result.current).toBe(100);
 
     act(() => {
@@ -72,40 +115,17 @@ describe("useTileTransferSize", () => {
     expect(result.current).toBe(300);
   });
 
-  it("deduplicates repeated fetches of the same tile URL", () => {
-    vi.spyOn(performance, "getEntriesByType").mockReturnValue([
-      makeEntry("http://localhost/pmtiles/tile-a", 100),
-    ]);
-
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
-    expect(result.current).toBe(100);
-
-    act(() => {
-      observerCallback(
-        {
-          getEntries: () => [
-            makeEntry("http://localhost/pmtiles/tile-a", 100),
-            makeEntry("http://localhost/pmtiles/tile-b", 200),
-          ],
-        } as unknown as PerformanceObserverEntryList,
-        {} as PerformanceObserver
-      );
-    });
-    // tile-a was already counted, only tile-b is new
-    expect(result.current).toBe(300);
-  });
-
   it("returns 0 (not null) when entries exist but all have transferSize 0 (Timing-Allow-Origin not set)", () => {
     vi.spyOn(performance, "getEntriesByType").mockReturnValue([
       makeEntry("http://localhost/pmtiles/x", 0),
     ]);
-    const { result } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { result } = renderHook(() => useTileTransferSize(["/pmtiles/"]));
     // entries exist but report 0 bytes → 0, not null (null = no entries at all)
     expect(result.current).toBe(0);
   });
 
   it("disconnects the observer on unmount", () => {
-    const { unmount } = renderHook(() => useTileTransferSize("/pmtiles/"));
+    const { unmount } = renderHook(() => useTileTransferSize(["/pmtiles/"]));
     unmount();
     expect(mockDisconnect).toHaveBeenCalledOnce();
   });

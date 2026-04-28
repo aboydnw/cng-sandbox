@@ -44,6 +44,14 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 - `POST /api/stories/{id}/fork` — Fork a story (clones chapters/metadata into a new story owned by the caller's workspace with `published=False` and `is_example=False`)
 - `DELETE /api/stories/{id}` — Delete a story; returns 403 if the story is an example
 
+## Story assets (image/CSV uploads attached to stories)
+
+Binary assets uploaded to support story chapters (currently image chapters; CSV support is planned). Images are compressed via Pillow on upload — the original is downscaled to a max long-edge of 2400px and a thumbnail is generated at 400px long-edge. Both are stored in R2 under `story-assets/{workspace_id}/{asset_id}/` and the metadata row lives in the `story_assets` table.
+
+- `POST /api/story-assets` — Upload an asset (multipart form: `file`, `kind="image"|"csv"`, optional `story_id`). Image uploads must be `image/jpeg`, `image/png`, or `image/webp`, max 25 MB. Returns `{asset_id, url, thumbnail_url, width, height, mime, size_bytes}` with status 201. Returns 413 if the image exceeds 25 MB, 415 if the MIME type is not allowed, 400 if Pillow can't decode it. CSV `kind` is accepted by the schema but currently rejected with 400. Requires `X-Workspace-Id` header.
+- `GET /api/story-assets/{asset_id}` — Fetch asset metadata (`asset_id`, `kind`, `url`, `thumbnail_url`, `width`, `height`, `mime`, `size_bytes`, `row_count`, `columns`). Returns 404 if the asset belongs to another workspace.
+- `DELETE /api/story-assets/{asset_id}` — Delete an asset and its R2 objects (original + thumbnail). Returns 204 on success, 404 if the asset belongs to another workspace. Requires `X-Workspace-Id` header.
+
 ## Connections (external tile sources)
 
 - `GET /api/connections` — List connections in the workspace. Requires `X-Workspace-Id` header (returns 400 without it).

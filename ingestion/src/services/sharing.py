@@ -34,6 +34,11 @@ def is_dataset_referenced_by_published_story(session: Session, dataset_id: str) 
             lc = ch.get("layer_config") or {}
             if isinstance(lc, dict) and lc.get("dataset_id") == dataset_id:
                 return True
+            chart = ch.get("chart")
+            if isinstance(chart, dict):
+                source = chart.get("source")
+                if isinstance(source, dict) and source.get("dataset_id") == dataset_id:
+                    return True
     return False
 
 

@@ -145,3 +145,65 @@ def test_connection_referenced_by_unpublished_story_not_readable(db_session):
         db_session, published=False, chapter_layer_config={"connection_id": row.id}
     )
     assert sharing.can_read_connection(db_session, row, "") is False
+
+
+def _make_story_with_chart(session, *, published, chart_source):
+    chapter = {
+        "id": "ch1",
+        "order": 0,
+        "type": "chart",
+        "title": "Chart chapter",
+        "chart": {"source": chart_source},
+    }
+    row = StoryRow(
+        id="s1",
+        title="S",
+        dataset_id=None,
+        chapters_json=json.dumps([chapter]),
+        published=published,
+        workspace_id="ownerWS",
+    )
+    session.add(row)
+    session.commit()
+    return row
+
+
+def test_dataset_timeseries_chart_source_grants_read(db_session):
+    row = _make_dataset(db_session)
+    _make_story_with_chart(
+        db_session,
+        published=True,
+        chart_source={"kind": "dataset_timeseries", "dataset_id": row.id, "point": [0, 0]},
+    )
+    assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is True
+    assert sharing.is_dataset_referenced_by_published_story(db_session, "ds-other") is False
+
+
+def test_dataset_histogram_chart_source_grants_read(db_session):
+    row = _make_dataset(db_session)
+    _make_story_with_chart(
+        db_session,
+        published=True,
+        chart_source={"kind": "dataset_histogram", "dataset_id": row.id},
+    )
+    assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is True
+
+
+def test_chart_source_unpublished_story_does_not_grant_read(db_session):
+    row = _make_dataset(db_session)
+    _make_story_with_chart(
+        db_session,
+        published=False,
+        chart_source={"kind": "dataset_timeseries", "dataset_id": row.id, "point": [0, 0]},
+    )
+    assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is False
+
+
+def test_csv_chart_source_does_not_match_dataset(db_session):
+    row = _make_dataset(db_session)
+    _make_story_with_chart(
+        db_session,
+        published=True,
+        chart_source={"kind": "csv", "url": "https://example.com/data.csv"},
+    )
+    assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is False

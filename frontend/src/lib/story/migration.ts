@@ -8,14 +8,19 @@ import {
   createProseChapter,
   createMapChapter,
   createScrollytellingChapter,
+  createVideoChapter,
 } from "./types";
+import type { VideoProvider } from "./video";
 
 function migrateChapter(
   raw: Record<string, unknown>,
   storyDatasetId: string | undefined
 ): Chapter {
   const type =
-    raw.type === "prose" || raw.type === "map" || raw.type === "scrollytelling"
+    raw.type === "prose" ||
+    raw.type === "map" ||
+    raw.type === "scrollytelling" ||
+    raw.type === "video"
       ? raw.type
       : raw.map_state || raw.layer_config
         ? "scrollytelling"
@@ -29,6 +34,20 @@ function migrateChapter(
 
   if (type === "prose") {
     return createProseChapter(base);
+  }
+
+  if (type === "video") {
+    const videoData = raw.video as Record<string, unknown> | undefined;
+    const provider: VideoProvider =
+      videoData?.provider === "vimeo" ? "vimeo" : "youtube";
+    return createVideoChapter({
+      ...base,
+      video: {
+        provider,
+        video_id: (videoData?.video_id as string) ?? "",
+        original_url: (videoData?.original_url as string) ?? "",
+      },
+    });
   }
 
   const layer_config: LayerConfig = {

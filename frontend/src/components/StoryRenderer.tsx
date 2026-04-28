@@ -316,6 +316,7 @@ export function StoryRenderer({
           );
         }
 
+        // TODO(video-chapters Task 4): replace with <VideoChapterRenderer />
         if (block.type === "video") {
           return (
             <Box

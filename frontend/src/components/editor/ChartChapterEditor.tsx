@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -13,6 +13,9 @@ import {
 import type { ChapterType, ChartChapter, ChartViz, CsvSource } from "../../lib/story";
 import { uploadCsvAsset } from "../../lib/story/assets";
 import { ChapterTypePicker } from "../ChapterTypePicker";
+import { workspaceFetch } from "../../lib/api";
+import type { Dataset } from "../../types";
+import { PointPickerMap } from "./PointPickerMap";
 
 interface ChartChapterEditorProps {
   chapter: ChartChapter;
@@ -175,12 +178,119 @@ function CsvBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapt
   );
 }
 
-// DatasetBranch is implemented in Task 8.
-function DatasetBranchPlaceholder() {
+function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onChapterTypeChange">) {
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    workspaceFetch("/api/datasets")
+      .then((r) => r.json())
+      .then((data: Dataset[]) => {
+        if (cancelled) return;
+        setDatasets(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const source = chapter.chart.source;
+  const datasetId =
+    source.kind === "dataset_timeseries" || source.kind === "dataset_histogram"
+      ? source.dataset_id
+      : "";
+  const picked = datasets.find((d) => d.id === datasetId) ?? null;
+
+  function selectDataset(ds: Dataset) {
+    if (ds.is_temporal) {
+      onChange({
+        ...chapter,
+        chart: {
+          source: {
+            kind: "dataset_timeseries",
+            dataset_id: ds.id,
+            point: [0, 0],
+          },
+          viz: { ...chapter.chart.viz, kind: "line", x_field: "datetime", y_fields: ["value"] },
+        },
+      });
+    } else {
+      onChange({
+        ...chapter,
+        chart: {
+          source: { kind: "dataset_histogram", dataset_id: ds.id, bins: 20 },
+          viz: { ...chapter.chart.viz, kind: "bar", x_field: "bin", y_fields: ["count"] },
+        },
+      });
+    }
+  }
+
+  function updatePoint(point: [number, number]) {
+    if (source.kind !== "dataset_timeseries") return;
+    onChange({
+      ...chapter,
+      chart: { ...chapter.chart, source: { ...source, point } },
+    });
+  }
+
+  function updateBins(bins: number) {
+    if (source.kind !== "dataset_histogram") return;
+    onChange({
+      ...chapter,
+      chart: { ...chapter.chart, source: { ...source, bins } },
+    });
+  }
+
   return (
-    <Text fontSize="sm" color="gray.500">
-      Dataset-source charts are wired up in the next step.
-    </Text>
+    <Flex direction="column" gap={4}>
+      <Field.Root>
+        <Field.Label>Dataset</Field.Label>
+        <NativeSelect.Root>
+          <NativeSelect.Field
+            value={datasetId}
+            onChange={(e) => {
+              const ds = datasets.find((d) => d.id === e.target.value);
+              if (ds) selectDataset(ds);
+            }}
+          >
+            <option value="">Select…</option>
+            {datasets.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.title || d.filename} {d.is_temporal ? "(temporal)" : ""}
+              </option>
+            ))}
+          </NativeSelect.Field>
+        </NativeSelect.Root>
+      </Field.Root>
+
+      {source.kind === "dataset_timeseries" && picked && (
+        <Field.Root>
+          <Field.Label>Sample point (click on the map)</Field.Label>
+          <PointPickerMap
+            initialPoint={source.point}
+            bounds={picked.bounds ?? null}
+            onPick={updatePoint}
+          />
+          <Field.HelperText>
+            lon {source.point[0].toFixed(3)}, lat {source.point[1].toFixed(3)}
+          </Field.HelperText>
+        </Field.Root>
+      )}
+
+      {source.kind === "dataset_histogram" && picked && !picked.is_categorical && (
+        <Field.Root>
+          <Field.Label>Bins</Field.Label>
+          <Input
+            type="number"
+            min={2}
+            max={100}
+            value={source.bins ?? 20}
+            onChange={(e) => updateBins(Number(e.target.value))}
+          />
+        </Field.Root>
+      )}
+    </Flex>
   );
 }
 
@@ -238,7 +348,7 @@ export function ChartChapterEditor({
           <CsvBranch chapter={chapter} onChange={onChange} />
         </Tabs.Content>
         <Tabs.Content value="dataset">
-          <DatasetBranchPlaceholder />
+          <DatasetBranch chapter={chapter} onChange={onChange} />
         </Tabs.Content>
       </Tabs.Root>
 

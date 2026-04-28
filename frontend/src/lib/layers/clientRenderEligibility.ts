@@ -63,7 +63,17 @@ export function evaluateClientRenderEligibility(
       renderPath: null,
       sizeBytes: null,
       cap: null,
-      reason: "Bounds exceed supported latitude range (\u00B185.05\u00B0)",
+      reason: "Bounds exceed supported latitude range (±85.05°)",
+    };
+  }
+
+  if (item.bandCount !== null && item.bandCount > 1) {
+    return {
+      canRender: false,
+      renderPath: null,
+      sizeBytes: null,
+      cap: null,
+      reason: "Multi-band COG requires server-side rendering",
     };
   }
 

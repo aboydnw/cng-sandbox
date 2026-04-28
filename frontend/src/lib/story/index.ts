@@ -5,6 +5,8 @@ export type {
   ScrollytellingChapter,
   MapChapter,
   ProseChapter,
+  ImageChapter,
+  ImageAsset,
   MapState,
   StoryIndexEntry,
   LayerConfig,
@@ -16,6 +18,7 @@ export {
   createScrollytellingChapter,
   createMapChapter,
   createProseChapter,
+  createImageChapter,
   createStory,
   isMapBoundChapter,
 } from "./types";
@@ -27,6 +30,8 @@ export {
 } from "./api";
 export { migrateStory } from "./migration";
 export { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "./labels";
+export type { UploadedImageAsset } from "./assets";
+export { uploadImageAsset, deleteStoryAsset } from "./assets";
 export type {
   ContentBlock,
   ChapterLayerResult,

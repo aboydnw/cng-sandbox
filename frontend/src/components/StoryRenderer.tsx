@@ -6,6 +6,7 @@ import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
+import { ImageChapterRenderer } from "./ImageChapterRenderer";
 import { RenderModeIndicator } from "./RenderModeIndicator";
 import { type CameraState, cameraFromBounds } from "../lib/layers";
 import {
@@ -311,6 +312,25 @@ export function StoryRenderer({
                 chapterIndex={block.index}
                 dataset={ds}
                 connection={conn}
+              />
+            </Box>
+          );
+        }
+
+        if (block.type === "image") {
+          return (
+            <Box
+              key={block.chapter.id}
+              onClick={
+                onChapterClick
+                  ? () => onChapterClick(block.chapter.id)
+                  : undefined
+              }
+              cursor={onChapterClick ? "pointer" : undefined}
+            >
+              <ImageChapterRenderer
+                chapter={block.chapter}
+                chapterIndex={block.index}
               />
             </Box>
           );

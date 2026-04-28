@@ -19,6 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
+import { isMapBoundChapter } from "../lib/story";
 
 interface PublishDialogProps {
   open: boolean;
@@ -109,9 +110,9 @@ export function PublishDialog({
                     <Flex direction="column" gap={1.5}>
                       {story.chapters.map((ch) => {
                         const hasNarrative = ch.narrative.trim().length > 0;
-                        const isProse = ch.type === "prose";
+                        const isMapBound = isMapBoundChapter(ch);
                         const hasMap =
-                          ch.type !== "prose" && !!ch.layer_config.dataset_id;
+                          isMapBound && !!ch.layer_config.dataset_id;
                         return (
                           <Flex
                             key={ch.id}
@@ -130,7 +131,7 @@ export function PublishDialog({
                               >
                                 Narrative
                               </Badge>
-                              {!isProse && (
+                              {isMapBound && (
                                 <Badge
                                   size="sm"
                                   colorPalette={hasMap ? "green" : "gray"}

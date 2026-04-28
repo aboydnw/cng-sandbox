@@ -159,8 +159,12 @@ async def create_connection(
                     head_resp = await http.head(body.url)
                     raise_if_redirect(head_resp)
                     cl = head_resp.headers.get("content-length")
-                    file_size = int(cl) if cl else None
-            except httpx.HTTPError:
+                    if cl is not None:
+                        parsed = int(cl)
+                        file_size = parsed if parsed >= 0 else None
+                    else:
+                        file_size = None
+            except (httpx.HTTPError, ValueError):
                 pass
             try:
                 result = await asyncio.to_thread(

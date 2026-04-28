@@ -678,3 +678,87 @@ def test_create_cog_connection_file_size_none_when_head_fails(client, monkeypatc
     )
     assert resp.status_code == 201
     assert resp.json()["file_size"] is None
+
+
+def test_create_cog_connection_file_size_none_when_content_length_malformed(
+    client, monkeypatch
+):
+    from src.routes import connections as connections_route
+    from src.services.categorical import CategoricalResult
+
+    class _FakeResponse:
+        status_code = 200
+        headers: ClassVar[dict] = {"content-length": "not-a-number"}
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def head(self, url):
+            return _FakeResponse()
+
+    monkeypatch.setattr(connections_route.httpx, "AsyncClient", _FakeClient)
+    monkeypatch.setattr(
+        connections_route,
+        "detect_categories",
+        lambda path: CategoricalResult(is_categorical=False, categories=[]),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Bad Header COG",
+            "url": "https://example.com/dem.tif",
+            "connection_type": "cog",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["file_size"] is None
+
+
+def test_create_cog_connection_file_size_none_when_content_length_negative(
+    client, monkeypatch
+):
+    from src.routes import connections as connections_route
+    from src.services.categorical import CategoricalResult
+
+    class _FakeResponse:
+        status_code = 200
+        headers: ClassVar[dict] = {"content-length": "-1"}
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def head(self, url):
+            return _FakeResponse()
+
+    monkeypatch.setattr(connections_route.httpx, "AsyncClient", _FakeClient)
+    monkeypatch.setattr(
+        connections_route,
+        "detect_categories",
+        lambda path: CategoricalResult(is_categorical=False, categories=[]),
+    )
+
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Negative CL COG",
+            "url": "https://example.com/dem.tif",
+            "connection_type": "cog",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["file_size"] is None

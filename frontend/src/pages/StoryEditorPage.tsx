@@ -435,6 +435,7 @@ export default function StoryEditorPage() {
                 <VideoChapterEditor
                   chapter={activeChapter}
                   onChange={(next) => updateChapter(next)}
+                  onChapterTypeChange={updateChapterType}
                 />
               ) : (
                 <NarrativeEditor

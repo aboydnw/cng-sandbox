@@ -317,7 +317,7 @@ export function StoryRenderer({
           );
         }
 
-        if (block.type === "video" && block.chapter.type === "video") {
+        if (block.type === "video") {
           return (
             <Box
               key={block.chapter.id}

@@ -14,6 +14,7 @@ import type {
   MapChapter,
   ProseChapter,
   ImageChapter,
+  VideoChapter,
   ChartChapter,
 } from "./types";
 import type { Dataset, Connection } from "../../types";
@@ -27,6 +28,7 @@ export type ContentBlock =
   | { type: "prose"; chapter: ProseChapter; index: number }
   | { type: "map"; chapter: MapChapter; index: number }
   | { type: "image"; chapter: ImageChapter; index: number }
+  | { type: "video"; chapter: VideoChapter; index: number }
   | { type: "chart"; chapter: ChartChapter; index: number };
 
 export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
@@ -57,6 +59,9 @@ export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
           break;
         case "image":
           blocks.push({ type: "image", chapter: ch, index: i });
+          break;
+        case "video":
+          blocks.push({ type: "video", chapter: ch, index: i });
           break;
         case "chart":
           blocks.push({ type: "chart", chapter: ch, index: i });

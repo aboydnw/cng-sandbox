@@ -13,6 +13,7 @@ import { useStoryEditor } from "../hooks/useStoryEditor";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
+import { VideoChapterEditor } from "../components/editor/VideoChapterEditor";
 import { UploadModal } from "../components/UploadModal";
 import { ConnectionModal } from "../components/ConnectionModal";
 import { PublishDialog } from "../components/PublishDialog";
@@ -440,6 +441,12 @@ export default function StoryEditorPage() {
             <ImageChapterEditor
               chapter={activeChapter}
               onChange={updateChapter}
+              onChapterTypeChange={updateChapterType}
+            />
+          ) : activeChapter && activeChapter.type === "video" ? (
+            <VideoChapterEditor
+              chapter={activeChapter}
+              onChange={(next) => updateChapter(next)}
               onChapterTypeChange={updateChapterType}
             />
           ) : activeChapter ? (

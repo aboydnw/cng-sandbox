@@ -1,3 +1,5 @@
+import type { VideoProvider } from "./video";
+
 function uuid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -34,6 +36,7 @@ export type ChapterType =
   | "prose"
   | "map"
   | "image"
+  | "video"
   | "chart";
 
 interface BaseChapter {
@@ -73,6 +76,17 @@ export interface ImageAsset {
 export interface ImageChapter extends BaseChapter {
   type: "image";
   image: ImageAsset;
+}
+
+export interface VideoEmbed {
+  provider: VideoProvider;
+  video_id: string;
+  original_url: string;
+}
+
+export interface VideoChapter extends BaseChapter {
+  type: "video";
+  video: VideoEmbed;
 }
 
 export interface CsvSource {
@@ -118,6 +132,7 @@ export type Chapter =
   | MapChapter
   | ProseChapter
   | ImageChapter
+  | VideoChapter
   | ChartChapter;
 
 export interface Story {
@@ -207,6 +222,20 @@ export function createImageChapter(
       alt_text: "",
       width: 0,
       height: 0,
+    },
+  };
+}
+
+export function createVideoChapter(
+  overrides: Partial<VideoChapter> = {}
+): VideoChapter {
+  return {
+    ...baseFields(overrides),
+    type: "video",
+    video: overrides.video ?? {
+      provider: "youtube",
+      video_id: "",
+      original_url: "",
     },
   };
 }

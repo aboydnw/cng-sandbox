@@ -255,3 +255,37 @@ def test_histogram_categorical_returns_class_counts(client: pytest.fixture):
             {"class": 1, "label": "forest", "count": 100},
             {"class": 2, "label": "water", "count": 50},
         ]
+
+
+def test_histogram_categorical_502s_on_non_dict(client: pytest.fixture):
+    with (
+        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+    ):
+        mock_load.return_value = {
+            "id": "ds-1",
+            "is_temporal": False,
+            "is_categorical": True,
+            "categories": [],
+            "stac_collection_id": "col",
+        }
+        mock_stats.return_value = {"categorical": ["not", "a", "dict"]}
+        resp = client.get("/api/datasets/ds-1/histogram")
+        assert resp.status_code == 502
+
+
+def test_histogram_categorical_502s_on_non_integer_entries(client: pytest.fixture):
+    with (
+        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+    ):
+        mock_load.return_value = {
+            "id": "ds-1",
+            "is_temporal": False,
+            "is_categorical": True,
+            "categories": [],
+            "stac_collection_id": "col",
+        }
+        mock_stats.return_value = {"categorical": {"forest": "many"}}
+        resp = client.get("/api/datasets/ds-1/histogram")
+        assert resp.status_code == 502

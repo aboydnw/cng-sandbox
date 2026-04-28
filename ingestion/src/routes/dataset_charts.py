@@ -213,18 +213,36 @@ def dataset_histogram(
     if ds.get("is_categorical"):
         stats = _titiler_statistics(collection_id, categorical=True, bins=bins)
         cats = stats.get("categorical") or {}
+        if not isinstance(cats, dict):
+            raise HTTPException(
+                status_code=502,
+                detail="titiler returned malformed categorical statistics",
+            )
         labels = {
             int(c["value"]): c.get("label") or str(c["value"])
             for c in (ds.get("categories") or [])
         }
         out = []
         for value_str, count in cats.items():
-            value = int(value_str)
+            try:
+                value = int(value_str)
+                count_int = int(count)
+            except (TypeError, ValueError) as exc:
+                logger.warning(
+                    "titiler returned non-integer categorical entry %r=%r: %s",
+                    value_str,
+                    count,
+                    exc,
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail="titiler returned malformed categorical statistics",
+                ) from exc
             out.append(
                 {
                     "class": value,
                     "label": labels.get(value, str(value)),
-                    "count": int(count),
+                    "count": count_int,
                 }
             )
         out.sort(key=lambda r: r["class"])

@@ -4,6 +4,7 @@ import {
   CreateTexture,
   Colormap,
 } from "@developmentseed/deck.gl-raster/gpu-modules";
+import proj4 from "proj4";
 import { buildCategoricalLut, type LutCategory } from "./categoricalLut";
 import { cngEpsgResolver } from "./epsg/resolver";
 
@@ -33,6 +34,45 @@ const ViridisColorize = {
 export function resolveCogUrl(cogUrl: string): string {
   if (/^https?:\/\//i.test(cogUrl)) return cogUrl;
   return new URL(cogUrl, window.location.origin).toString();
+}
+
+/**
+ * Build a closure that captures the COG's source CRS once `onGeoTIFFLoad` fires
+ * and exposes a `projectFrom4326(lng, lat) → [srcX, srcY]` reprojector.
+ *
+ * The pixel inspector needs this to translate the cursor's lng/lat into the
+ * COG's native CRS before applying the per-tile affine. Without it, sampling
+ * via linear interpolation in the lng/lat AABB of a non-Mercator tile picks
+ * the wrong pixel — visibly so for projections with curved parallels (Albers,
+ * polar stereographic, etc.).
+ */
+type ProjectFrom4326 = (lng: number, lat: number) => [number, number];
+
+function createProjectionHolder(): {
+  projectFrom4326: () => ProjectFrom4326 | null;
+  onGeoTIFFLoad: (geotiff: unknown, info: { projection: unknown }) => void;
+} {
+  let cached: ProjectFrom4326 | null = null;
+  return {
+    projectFrom4326: () => cached,
+    onGeoTIFFLoad: (_geotiff, info) => {
+      try {
+        // proj4 accepts wkt-parser AST output (what `parseWkt` returns inside
+        // deck.gl-geotiff) or an EPSG string. Either way, build a forward
+        // converter from EPSG:4326 to the COG's native CRS.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const converter = proj4("EPSG:4326", info.projection as any);
+        cached = (lng, lat) =>
+          converter.forward([lng, lat], false) as [number, number];
+      } catch (err) {
+        console.warn(
+          "[cogLayer] failed to build EPSG:4326 → source-CRS converter",
+          err
+        );
+        cached = null;
+      }
+    },
+  };
 }
 
 interface CogLayerOptions {
@@ -72,6 +112,7 @@ export function buildCogLayerPaletted({
 
   // Categories-driven: cache raw values + LUT-based coloring.
   const lut = buildCategoricalLut(categories);
+  const projection = createProjectionHolder();
 
   const getTileData = async (
     image: {
@@ -128,8 +169,17 @@ export function buildCogLayerPaletted({
 
     // `raw` travels on the tile's data so the pixel inspector can sample it
     // without a separate cache. Keyed by tile identity, not by (x, y), so
-    // zoom-level collisions can't return stale values.
-    return { texture: valueTex, lutTexture: lutTex, width, height, raw };
+    // zoom-level collisions can't return stale values. `projectFrom4326` rides
+    // along so the inspector can convert the cursor's lng/lat into the COG's
+    // native CRS — required for non-Mercator COGs (e.g. NLCD Albers).
+    return {
+      texture: valueTex,
+      lutTexture: lutTex,
+      width,
+      height,
+      raw,
+      projectFrom4326: projection.projectFrom4326(),
+    };
   };
 
   const renderTile = (data: { texture: unknown; lutTexture: unknown }) => ({
@@ -147,6 +197,7 @@ export function buildCogLayerPaletted({
       opacity,
       getTileData,
       renderTile,
+      onGeoTIFFLoad: projection.onGeoTIFFLoad,
       maxError: 0.03,
       pickable: true,
       epsgResolver: cngEpsgResolver,
@@ -163,6 +214,7 @@ export function buildCogLayerContinuous({
 }: CogLayerOptions): Layer[] {
   const url = resolveCogUrl(cogUrl);
   const range = rasterMax - rasterMin || 1;
+  const projection = createProjectionHolder();
 
   const getTileData = async (
     image: {
@@ -235,7 +287,13 @@ export function buildCogLayerContinuous({
       sampler: { minFilter: "nearest", magFilter: "nearest" },
     });
 
-    return { texture, width, height, raw: rawSnapshot };
+    return {
+      texture,
+      width,
+      height,
+      raw: rawSnapshot,
+      projectFrom4326: projection.projectFrom4326(),
+    };
   };
 
   const renderTile = (data: { texture: unknown }) => ({
@@ -253,6 +311,7 @@ export function buildCogLayerContinuous({
       opacity,
       getTileData,
       renderTile,
+      onGeoTIFFLoad: projection.onGeoTIFFLoad,
       maxError: 0.03,
       pickable: true,
       epsgResolver: cngEpsgResolver,

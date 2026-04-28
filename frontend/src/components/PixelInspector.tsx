@@ -5,6 +5,9 @@ type TileBbox =
   | { west: number; south: number; east: number; north: number }
   | { left: number; top: number; right: number; bottom: number };
 
+type ProjectFrom4326 = (lng: number, lat: number) => [number, number];
+type InverseTransform = (srcX: number, srcY: number) => [number, number];
+
 interface HoverSourceTile {
   index: { x: number; y: number; z?: number };
   /**
@@ -16,10 +19,25 @@ interface HoverSourceTile {
   /** Legacy/alternate shape returned by some tileset implementations. */
   bbox?: TileBbox;
   content?: {
+    /**
+     * Affine inverse from deck.gl-geotiff: maps source-CRS coordinates within
+     * a tile to pixel coordinates `[col, row]` within that tile's grid.
+     * Present on COGLayer-rendered tiles (paletted + continuous builders).
+     */
+    inverseTransform?: InverseTransform;
     data?: {
       raw?: ArrayLike<number>;
       width?: number;
       height?: number;
+      /**
+       * Reprojector from EPSG:4326 (lng/lat) to the COG's source CRS.
+       * Attached by `buildCogLayerPaletted` / `buildCogLayerContinuous` once
+       * `onGeoTIFFLoad` resolves the COG's CRS. Required for accurate hover
+       * sampling on non-Mercator COGs (linear lng/lat interpolation across
+       * the tile's lng/lat AABB picks the wrong pixel for projections with
+       * curved parallels — Albers, polar stereographic, etc.).
+       */
+      projectFrom4326?: ProjectFrom4326 | null;
     };
   };
 }
@@ -66,6 +84,46 @@ function lookupValue(
   const height = data?.height;
   if (!raw || !width || !height) return null;
 
+  // Preferred path: use the COG's source CRS to translate lng/lat into the
+  // tile's pixel grid. The lng/lat AABB of a non-Mercator tile is a curvy
+  // quadrilateral, so linear interpolation across the AABB picks the wrong
+  // pixel. Projecting through `projectFrom4326` + the per-tile affine inverse
+  // is exact regardless of the source projection.
+  const projectFrom4326 = data.projectFrom4326;
+  const inverseTransform = sourceTile.content?.inverseTransform;
+  if (projectFrom4326 && inverseTransform) {
+    const [srcX, srcY] = projectFrom4326(lng, lat);
+    if (
+      !Number.isFinite(srcX) ||
+      !Number.isFinite(srcY) ||
+      Number.isNaN(srcX) ||
+      Number.isNaN(srcY)
+    ) {
+      return null;
+    }
+    const [pxFloat, pyFloat] = inverseTransform(srcX, srcY);
+    if (
+      !Number.isFinite(pxFloat) ||
+      !Number.isFinite(pyFloat) ||
+      Number.isNaN(pxFloat) ||
+      Number.isNaN(pyFloat)
+    ) {
+      return null;
+    }
+    if (pxFloat < 0 || pxFloat >= width || pyFloat < 0 || pyFloat >= height) {
+      return null;
+    }
+    const px = Math.min(width - 1, Math.max(0, Math.floor(pxFloat)));
+    const py = Math.min(height - 1, Math.max(0, Math.floor(pyFloat)));
+    const val = raw[py * width + px];
+    if (val !== val) return null;
+    return val;
+  }
+
+  // Fallback: linear lng/lat interpolation. Exact for identity projections,
+  // a reasonable approximation for Web Mercator at small tile spans, and
+  // wrong for projections with curved parallels — but kept so callers without
+  // a projector (tests, server-tile inspector mocks) still get a value.
   const extent = resolveTileExtent(sourceTile);
   if (!extent) return null;
   const [west, south, east, north] = extent;

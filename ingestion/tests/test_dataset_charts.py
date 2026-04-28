@@ -29,7 +29,12 @@ def test_timeseries_returns_value_per_timestep(client):
             ],
             "stac_collection_id": "col",
         }
-        mock_pt.side_effect = [1.0, 2.5, 3.0]
+        values = {
+            "2020-01-01T00:00:00Z": 1.0,
+            "2020-02-01T00:00:00Z": 2.5,
+            "2020-03-01T00:00:00Z": 3.0,
+        }
+        mock_pt.side_effect = lambda collection_id, dt, *_args, **_kw: values[dt]
 
         resp = client.get("/api/datasets/ds-1/timeseries", params={"lon": 0, "lat": 0})
         assert resp.status_code == 200

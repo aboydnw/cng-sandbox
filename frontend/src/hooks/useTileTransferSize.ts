@@ -24,7 +24,6 @@ export function useTileTransferSize(prefixes: string[]): number | null {
       prefixes
         .filter((p) => p.length > 0)
         .map((p) => new URL(p, window.location.origin).toString()),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [prefixKey]
   );
 

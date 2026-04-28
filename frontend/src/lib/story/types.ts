@@ -29,7 +29,12 @@ export interface LayerConfig {
   colormap_reversed?: boolean;
 }
 
-export type ChapterType = "scrollytelling" | "prose" | "map" | "image";
+export type ChapterType =
+  | "scrollytelling"
+  | "prose"
+  | "map"
+  | "image"
+  | "chart";
 
 interface BaseChapter {
   id: string;
@@ -70,11 +75,50 @@ export interface ImageChapter extends BaseChapter {
   image: ImageAsset;
 }
 
+export interface CsvSource {
+  kind: "csv";
+  asset_id: string;
+  url: string;
+  columns: string[];
+}
+
+export interface DatasetTimeseriesSource {
+  kind: "dataset_timeseries";
+  dataset_id: string;
+  point: [number, number];
+}
+
+export interface DatasetHistogramSource {
+  kind: "dataset_histogram";
+  dataset_id: string;
+  bins?: number;
+}
+
+export type ChartSource =
+  | CsvSource
+  | DatasetTimeseriesSource
+  | DatasetHistogramSource;
+
+export interface ChartViz {
+  kind: "line" | "bar";
+  x_field: string;
+  y_fields: string[];
+  x_label?: string;
+  y_label?: string;
+  y_scale?: "linear" | "log";
+}
+
+export interface ChartChapter extends BaseChapter {
+  type: "chart";
+  chart: { source: ChartSource; viz: ChartViz };
+}
+
 export type Chapter =
   | ScrollytellingChapter
   | MapChapter
   | ProseChapter
-  | ImageChapter;
+  | ImageChapter
+  | ChartChapter;
 
 export interface Story {
   id: string;
@@ -163,6 +207,19 @@ export function createImageChapter(
       alt_text: "",
       width: 0,
       height: 0,
+    },
+  };
+}
+
+export function createChartChapter(
+  overrides: Partial<ChartChapter> = {}
+): ChartChapter {
+  return {
+    ...baseFields(overrides),
+    type: "chart",
+    chart: overrides.chart ?? {
+      source: { kind: "csv", asset_id: "", url: "", columns: [] },
+      viz: { kind: "line", x_field: "", y_fields: [], y_scale: "linear" },
     },
   };
 }

@@ -14,6 +14,10 @@ function migrateChapter(
   raw: Record<string, unknown>,
   storyDatasetId: string | undefined
 ): Chapter {
+  if (raw.type === "image" || raw.type === "chart") {
+    return raw as unknown as Chapter;
+  }
+
   const type =
     raw.type === "prose" || raw.type === "map" || raw.type === "scrollytelling"
       ? raw.type

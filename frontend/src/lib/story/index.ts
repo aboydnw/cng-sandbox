@@ -7,6 +7,12 @@ export type {
   ProseChapter,
   ImageChapter,
   ImageAsset,
+  ChartChapter,
+  ChartSource,
+  CsvSource,
+  DatasetTimeseriesSource,
+  DatasetHistogramSource,
+  ChartViz,
   MapState,
   StoryIndexEntry,
   LayerConfig,
@@ -19,6 +25,7 @@ export {
   createMapChapter,
   createProseChapter,
   createImageChapter,
+  createChartChapter,
   createStory,
   isMapBoundChapter,
 } from "./types";
@@ -30,8 +37,8 @@ export {
 } from "./api";
 export { migrateStory } from "./migration";
 export { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "./labels";
-export type { UploadedImageAsset } from "./assets";
-export { uploadImageAsset, deleteStoryAsset } from "./assets";
+export type { UploadedImageAsset, UploadedCsvAsset } from "./assets";
+export { uploadImageAsset, uploadCsvAsset, deleteStoryAsset } from "./assets";
 export type {
   ContentBlock,
   ChapterLayerResult,

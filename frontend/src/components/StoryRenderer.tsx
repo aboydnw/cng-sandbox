@@ -336,6 +336,10 @@ export function StoryRenderer({
           );
         }
 
+        if (block.type === "chart") {
+          return null;
+        }
+
         return (
           <ScrollytellingBlock
             key={`scrolly-${blockIndex}`}

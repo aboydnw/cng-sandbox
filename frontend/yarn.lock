@@ -1345,19 +1345,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@luma.gl/core@npm:^9.3.2":
-  version: 9.3.2
-  resolution: "@luma.gl/core@npm:9.3.2"
-  dependencies:
-    "@math.gl/types": "npm:^4.1.0"
-    "@probe.gl/env": "npm:^4.1.1"
-    "@probe.gl/log": "npm:^4.1.1"
-    "@probe.gl/stats": "npm:^4.1.1"
-    "@types/offscreencanvas": "npm:^2019.7.3"
-  checksum: 10c0/5450f84e7cae241fd5801ceb12e10cf574b85565a9c7afff97bf2f5cc394ec21734e57b86fb78cab8416414b0e777bb0e20a8d533bc79151eeb64248898dd178
-  languageName: node
-  linkType: hard
-
 "@luma.gl/core@npm:^9.3.3":
   version: 9.3.3
   resolution: "@luma.gl/core@npm:9.3.3"
@@ -4132,6 +4119,7 @@ __metadata:
     "@eslint/js": "npm:^10.0.1"
     "@geoarrow/deck.gl-layers": "npm:^0.3.1"
     "@luma.gl/core": "npm:^9.3.3"
+    "@luma.gl/engine": "npm:^9.3.2"
     "@phosphor-icons/react": "npm:^2.1.10"
     "@tanstack/react-query": "npm:^5.99.0"
     "@testing-library/dom": "npm:^10.4.1"

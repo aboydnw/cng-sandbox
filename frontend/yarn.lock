@@ -2282,6 +2282,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/papaparse@npm:^5.5.2":
+  version: 5.5.2
+  resolution: "@types/papaparse@npm:5.5.2"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/27b097b6f8f204b20ade1f2cbf4798eb38caa5fbfa3180fd0faa5e3f9aea371c1786ae180d56f3287556463eefe3100c953e316ea6ee99d7ae1d04111cfc9e50
+  languageName: node
+  linkType: hard
+
 "@types/parse-json@npm:^4.0.0":
   version: 4.0.2
   resolution: "@types/parse-json@npm:4.0.2"
@@ -4117,6 +4126,7 @@ __metadata:
     "@testing-library/react": "npm:^16.0.0"
     "@testing-library/user-event": "npm:^14.6.1"
     "@types/d3-format": "npm:^3.0.4"
+    "@types/papaparse": "npm:^5.5.2"
     "@types/react": "npm:^19.1.13"
     "@types/react-dom": "npm:^19.1.9"
     "@vitejs/plugin-react": "npm:^6.0.1"
@@ -4133,6 +4143,7 @@ __metadata:
     lerc: "npm:^4.0.4"
     maplibre-gl: "npm:^5.23.0"
     mp4-muxer: "npm:^5.2.2"
+    papaparse: "npm:^5.5.3"
     pmtiles: "npm:^4.4.1"
     prettier: "npm:^3.8.2"
     react: "npm:^19.2.5"
@@ -7200,6 +7211,13 @@ __metadata:
   version: 1.0.11
   resolution: "pako@npm:1.0.11"
   checksum: 10c0/86dd99d8b34c3930345b8bbeb5e1cd8a05f608eeb40967b293f72fe469d0e9c88b783a8777e4cc7dc7c91ce54c5e93d88ff4b4f060e6ff18408fd21030d9ffbe
+  languageName: node
+  linkType: hard
+
+"papaparse@npm:^5.5.3":
+  version: 5.5.3
+  resolution: "papaparse@npm:5.5.3"
+  checksum: 10c0/623aae6a35703308fd5a39d616fb3837231ebc70697346355ea508154d3f24df75b6554b736afc1924192205518a5db14e75f5e1cf35d154326050a37cdd9447
   languageName: node
   linkType: hard
 

@@ -1,5 +1,6 @@
 import {
   type Chapter,
+  type ChartChapter,
   type Story,
   type MapState,
   type LayerConfig,
@@ -9,6 +10,7 @@ import {
   createMapChapter,
   createScrollytellingChapter,
   createImageChapter,
+  createChartChapter,
   createVideoChapter,
 } from "./types";
 import type { VideoProvider } from "./video";
@@ -22,13 +24,14 @@ function migrateChapter(
     raw.type === "map" ||
     raw.type === "scrollytelling" ||
     raw.type === "image" ||
-    raw.type === "video"
+    raw.type === "video" ||
+    raw.type === "chart"
       ? raw.type
       : raw.map_state || raw.layer_config
         ? "scrollytelling"
         : "prose";
   const base = {
-    id: raw.id as string,
+    id: (raw.id as string) ?? "",
     order: (raw.order as number) ?? 0,
     title: (raw.title as string) ?? "Untitled chapter",
     narrative: (raw.narrative as string) ?? "",
@@ -66,6 +69,13 @@ function migrateChapter(
         video_id: (videoData?.video_id as string) ?? "",
         original_url: (videoData?.original_url as string) ?? "",
       },
+    });
+  }
+
+  if (type === "chart") {
+    return createChartChapter({
+      ...base,
+      ...(raw.chart ? { chart: raw.chart as ChartChapter["chart"] } : {}),
     });
   }
 

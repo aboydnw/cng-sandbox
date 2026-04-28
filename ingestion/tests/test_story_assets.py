@@ -103,3 +103,47 @@ def test_delete_story_asset_removes_row_and_objects(client, monkeypatch):
 
     resp = client.get(f"/api/story-assets/{asset_id}")
     assert resp.status_code == 404
+
+
+def test_upload_csv_happy_path(client: TestClient, monkeypatch):
+    calls = []
+
+    def fake_put_object(key, body, content_type):
+        calls.append(key)
+        return f"https://r2.example/{key}"
+
+    monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
+
+    csv = b"date,value\n2020-01-01,1.5\n2020-02-01,2.0\n2020-03-01,2.5\n"
+    files = {"file": ("series.csv", csv, "text/csv")}
+    data = {"kind": "csv"}
+    resp = client.post("/api/story-assets", files=files, data=data)
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["mime"] == "text/csv"
+    assert body["columns"] == ["date", "value"]
+    assert body["row_count"] == 3
+    assert len(calls) == 1
+
+
+def test_upload_csv_rejects_oversize(client: TestClient):
+    big = b"a,b\n" + b"1,2\n" * 2_000_000
+    files = {"file": ("big.csv", big, "text/csv")}
+    data = {"kind": "csv"}
+    resp = client.post("/api/story-assets", files=files, data=data)
+    assert resp.status_code == 413
+
+
+def test_upload_csv_rejects_malformed(client: TestClient):
+    files = {"file": ("bad.csv", b"\xff\xfe\x00not csv", "text/csv")}
+    data = {"kind": "csv"}
+    resp = client.post("/api/story-assets", files=files, data=data)
+    assert resp.status_code == 400
+
+
+def test_upload_csv_rejects_non_csv_mime(client: TestClient):
+    csv = b"date,value\n2020-01-01,1.5\n"
+    files = {"file": ("data.csv", csv, "application/pdf")}
+    data = {"kind": "csv"}
+    resp = client.post("/api/story-assets", files=files, data=data)
+    assert resp.status_code == 415

@@ -36,7 +36,8 @@ export type ChapterType =
   | "prose"
   | "map"
   | "image"
-  | "video";
+  | "video"
+  | "chart";
 
 interface BaseChapter {
   id: string;
@@ -88,12 +89,51 @@ export interface VideoChapter extends BaseChapter {
   video: VideoEmbed;
 }
 
+export interface CsvSource {
+  kind: "csv";
+  asset_id: string;
+  url: string;
+  columns: string[];
+}
+
+export interface DatasetTimeseriesSource {
+  kind: "dataset_timeseries";
+  dataset_id: string;
+  point: [number, number];
+}
+
+export interface DatasetHistogramSource {
+  kind: "dataset_histogram";
+  dataset_id: string;
+  bins?: number;
+}
+
+export type ChartSource =
+  | CsvSource
+  | DatasetTimeseriesSource
+  | DatasetHistogramSource;
+
+export interface ChartViz {
+  kind: "line" | "bar";
+  x_field: string;
+  y_fields: string[];
+  x_label?: string;
+  y_label?: string;
+  y_scale?: "linear" | "log";
+}
+
+export interface ChartChapter extends BaseChapter {
+  type: "chart";
+  chart: { source: ChartSource; viz: ChartViz };
+}
+
 export type Chapter =
   | ScrollytellingChapter
   | MapChapter
   | ProseChapter
   | ImageChapter
-  | VideoChapter;
+  | VideoChapter
+  | ChartChapter;
 
 export interface Story {
   id: string;
@@ -196,6 +236,19 @@ export function createVideoChapter(
       provider: "youtube",
       video_id: "",
       original_url: "",
+    },
+  };
+}
+
+export function createChartChapter(
+  overrides: Partial<ChartChapter> = {}
+): ChartChapter {
+  return {
+    ...baseFields(overrides),
+    type: "chart",
+    chart: overrides.chart ?? {
+      source: { kind: "csv", asset_id: "", url: "", columns: [] },
+      viz: { kind: "line", x_field: "", y_fields: [], y_scale: "linear" },
     },
   };
 }

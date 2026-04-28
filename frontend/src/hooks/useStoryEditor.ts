@@ -22,6 +22,7 @@ import {
   createProseChapter,
   createImageChapter,
   createVideoChapter,
+  createChartChapter,
   isMapBoundChapter,
   createStoryOnServer,
   getStoryFromServer,
@@ -412,6 +413,7 @@ export function useStoryEditor() {
           narrative: ch.narrative,
         };
         if (type === "prose") return createProseChapter(base);
+        if (type === "chart") return createChartChapter(base);
         if (type === "image") {
           const existingImage = ch.type === "image" ? ch.image : undefined;
           return createImageChapter({ ...base, image: existingImage });

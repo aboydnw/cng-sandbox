@@ -23,6 +23,7 @@ import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { ChapterPreview } from "../components/editor/ChapterPreview";
 import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
+import { ChartChapterEditor } from "../components/editor/ChartChapterEditor";
 
 function TooltipCard({
   text,
@@ -430,7 +431,13 @@ export default function StoryEditorPage() {
               onDismiss={() => dismiss("narrative")}
             />
           )}
-          {activeChapter && activeChapter.type === "image" ? (
+          {activeChapter && activeChapter.type === "chart" ? (
+            <ChartChapterEditor
+              chapter={activeChapter}
+              onChange={updateChapter}
+              onChapterTypeChange={updateChapterType}
+            />
+          ) : activeChapter && activeChapter.type === "image" ? (
             <ImageChapterEditor
               chapter={activeChapter}
               onChange={updateChapter}

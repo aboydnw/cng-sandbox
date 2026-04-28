@@ -3,6 +3,7 @@ import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import {
   CaretDown,
   CaretUp,
+  ChartLine,
   DotsSixVertical,
   ListBullets,
   MapTrifold,
@@ -205,6 +206,7 @@ export function ChapterList({
                             prose: <ListBullets size={11} />,
                             map: <MapTrifold size={11} />,
                             video: <VideoCamera size={11} />,
+                            chart: <ChartLine size={11} />,
                           } as Record<ChapterType, React.ReactNode>
                         )[chapter.type]
                       }

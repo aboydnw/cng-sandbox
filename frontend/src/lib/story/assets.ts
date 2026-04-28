@@ -30,6 +30,34 @@ export async function uploadImageAsset(
   return resp.json();
 }
 
+export interface UploadedCsvAsset {
+  asset_id: string;
+  url: string;
+  columns: string[];
+  row_count: number;
+  size_bytes: number;
+}
+
+export async function uploadCsvAsset(
+  file: File,
+  storyId?: string
+): Promise<UploadedCsvAsset> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("kind", "csv");
+  if (storyId) form.append("story_id", storyId);
+
+  const resp = await workspaceFetch("/api/story-assets", {
+    method: "POST",
+    body: form,
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`upload failed: ${resp.status} ${text}`);
+  }
+  return resp.json();
+}
+
 export async function deleteStoryAsset(assetId: string): Promise<void> {
   const resp = await workspaceFetch(
     `/api/story-assets/${encodeURIComponent(assetId)}`,

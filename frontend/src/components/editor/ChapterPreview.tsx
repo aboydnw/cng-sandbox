@@ -2,6 +2,7 @@ import type { Chapter } from "../../lib/story";
 import { ProseChapter } from "../ProseChapter";
 import { ImageChapterRenderer } from "../ImageChapterRenderer";
 import { VideoChapterRenderer } from "../VideoChapterRenderer";
+import { ChartChapterRenderer } from "../ChartChapterRenderer";
 
 interface ChapterPreviewProps {
   chapter: Chapter;
@@ -19,6 +20,11 @@ export function ChapterPreview({ chapter }: ChapterPreviewProps) {
   if (chapter.type === "video") {
     return (
       <VideoChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
+    );
+  }
+  if (chapter.type === "chart") {
+    return (
+      <ChartChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
     );
   }
   return null;

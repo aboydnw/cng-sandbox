@@ -330,6 +330,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.connect_remote import router as connect_remote_router
     from src.routes.connect_source_coop import router as connect_source_coop_router
     from src.routes.connections import router as connections_router
+    from src.routes.dataset_charts import router as dataset_charts_router
     from src.routes.datasets import router as datasets_router
     from src.routes.inspect import router as inspect_router
     from src.routes.jobs import router as jobs_router
@@ -341,6 +342,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(upload_router)
     app.include_router(jobs_router)
     app.include_router(datasets_router)
+    app.include_router(dataset_charts_router)
     app.include_router(stories_router)
     app.include_router(story_assets_router)
     app.include_router(bug_report_router)

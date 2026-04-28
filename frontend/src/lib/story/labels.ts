@@ -6,6 +6,7 @@ export const CHAPTER_TYPE_LABELS: Record<ChapterType, string> = {
   map: "Interactive map",
   image: "Image",
   video: "Video",
+  chart: "Chart",
 };
 
 export const CHAPTER_TYPE_DESCRIPTIONS: Record<ChapterType, string> = {
@@ -15,4 +16,5 @@ export const CHAPTER_TYPE_DESCRIPTIONS: Record<ChapterType, string> = {
   map: "Reader freely explores an interactive map",
   image: "Show an image with an optional caption; click to view full screen",
   video: "Embed a YouTube or Vimeo video",
+  chart: "Interactive chart from a CSV upload or an existing dataset",
 };

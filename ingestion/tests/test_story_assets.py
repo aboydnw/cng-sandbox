@@ -139,3 +139,11 @@ def test_upload_csv_rejects_malformed(client: TestClient):
     data = {"kind": "csv"}
     resp = client.post("/api/story-assets", files=files, data=data)
     assert resp.status_code == 400
+
+
+def test_upload_csv_rejects_non_csv_mime(client: TestClient):
+    csv = b"date,value\n2020-01-01,1.5\n"
+    files = {"file": ("data.csv", csv, "application/pdf")}
+    data = {"kind": "csv"}
+    resp = client.post("/api/story-assets", files=files, data=data)
+    assert resp.status_code == 415

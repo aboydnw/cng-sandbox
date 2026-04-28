@@ -68,10 +68,7 @@ async def upload_story_asset(
         if len(raw) > MAX_CSV_BYTES:
             raise HTTPException(status_code=413, detail="csv larger than 5MB")
         if file.content_type and file.content_type not in ALLOWED_CSV_MIMES:
-            if file.content_type.startswith("image/") or file.content_type.startswith(
-                "application/octet-stream"
-            ):
-                raise HTTPException(status_code=415, detail="not a csv")
+            raise HTTPException(status_code=415, detail="not a csv")
         try:
             df = pd.read_csv(io.BytesIO(raw))
         except Exception as exc:  # noqa: BLE001
@@ -83,29 +80,40 @@ async def upload_story_asset(
 
         ws = workspace_id or "public"
         original_key = f"story-assets/{ws}/{asset_id}/data.csv"
-        _put_object(original_key, raw, "text/csv")
-
         columns = [str(c) for c in df.columns]
-        session = get_session(request)
+
+        uploaded_keys: list[str] = []
         try:
-            row = StoryAssetRow(
-                id=asset_id,
-                workspace_id=workspace_id if workspace_id else None,
-                story_id=story_id,
-                kind="csv",
-                original_key=original_key,
-                thumbnail_key=None,
-                width=None,
-                height=None,
-                mime="text/csv",
-                size_bytes=len(raw),
-                row_count=int(df.shape[0]),
-                columns_json=json.dumps(columns),
-            )
-            session.add(row)
-            session.commit()
-        finally:
-            session.close()
+            _put_object(original_key, raw, "text/csv")
+            uploaded_keys.append(original_key)
+
+            session = get_session(request)
+            try:
+                row = StoryAssetRow(
+                    id=asset_id,
+                    workspace_id=workspace_id if workspace_id else None,
+                    story_id=story_id,
+                    kind="csv",
+                    original_key=original_key,
+                    thumbnail_key=None,
+                    width=None,
+                    height=None,
+                    mime="text/csv",
+                    size_bytes=len(raw),
+                    row_count=int(df.shape[0]),
+                    columns_json=json.dumps(columns),
+                )
+                session.add(row)
+                session.commit()
+            finally:
+                session.close()
+        except Exception:
+            for key in uploaded_keys:
+                try:
+                    _delete_object(key)
+                except Exception:
+                    logger.exception("failed to clean up orphaned object %s", key)
+            raise
 
         return {
             "asset_id": asset_id,

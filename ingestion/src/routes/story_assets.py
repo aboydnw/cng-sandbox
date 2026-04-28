@@ -8,6 +8,7 @@ import uuid
 from typing import Annotated, Literal
 
 import obstore
+import pandas as pd
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from src.dependencies import get_session
@@ -22,6 +23,9 @@ router = APIRouter(prefix="/api")
 
 MAX_IMAGE_BYTES = 25 * 1024 * 1024
 ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp"}
+
+MAX_CSV_BYTES = 5 * 1024 * 1024
+ALLOWED_CSV_MIMES = {"text/csv", "application/vnd.ms-excel", "application/csv"}
 
 
 def _put_object(key: str, body: bytes, content_type: str) -> str:
@@ -50,7 +54,7 @@ def _public_url(key: str) -> str:
 async def upload_story_asset(
     request: Request,
     file: Annotated[UploadFile, File()],
-    kind: Annotated[Literal["image"], Form()],
+    kind: Annotated[Literal["image", "csv"], Form()],
     story_id: Annotated[str | None, Form()] = None,
 ):
     """Upload a binary asset (currently image only) to attach to a story."""
@@ -60,72 +64,125 @@ async def upload_story_asset(
     raw = await file.read()
     asset_id = str(uuid.uuid4())
 
-    if kind != "image":
-        raise HTTPException(status_code=400, detail=f"kind '{kind}' not yet supported")
+    if kind == "csv":
+        if len(raw) > MAX_CSV_BYTES:
+            raise HTTPException(status_code=413, detail="csv larger than 5MB")
+        if file.content_type and file.content_type not in ALLOWED_CSV_MIMES:
+            if file.content_type.startswith("image/") or file.content_type.startswith(
+                "application/octet-stream"
+            ):
+                raise HTTPException(status_code=415, detail="not a csv")
+        try:
+            df = pd.read_csv(io.BytesIO(raw))
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(
+                status_code=400, detail=f"could not parse csv: {exc}"
+            ) from exc
+        if df.shape[1] == 0:
+            raise HTTPException(status_code=400, detail="csv has no columns")
 
-    if len(raw) > MAX_IMAGE_BYTES:
-        raise HTTPException(status_code=413, detail="image larger than 25MB")
-    if file.content_type not in ALLOWED_IMAGE_MIMES:
-        raise HTTPException(
-            status_code=415,
-            detail="image must be jpeg, png, or webp",
-        )
-    try:
-        compressed = image_processing.compress_image(raw)
-    except image_processing.InvalidImageError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        ws = workspace_id or "public"
+        original_key = f"story-assets/{ws}/{asset_id}/data.csv"
+        _put_object(original_key, raw, "text/csv")
 
-    ext = "jpg" if compressed.original_mime == "image/jpeg" else "png"
-    ws = workspace_id or "public"
-    original_key = f"story-assets/{ws}/{asset_id}/original.{ext}"
-    thumbnail_key = f"story-assets/{ws}/{asset_id}/thumbnail.jpg"
-
-    uploaded_keys: list[str] = []
-    try:
-        original_url = _put_object(
-            original_key, compressed.original_bytes, compressed.original_mime
-        )
-        uploaded_keys.append(original_key)
-        thumbnail_url = _put_object(
-            thumbnail_key, compressed.thumbnail_bytes, compressed.thumbnail_mime
-        )
-        uploaded_keys.append(thumbnail_key)
-
+        columns = [str(c) for c in df.columns]
         session = get_session(request)
         try:
             row = StoryAssetRow(
                 id=asset_id,
                 workspace_id=workspace_id if workspace_id else None,
                 story_id=story_id,
-                kind="image",
+                kind="csv",
                 original_key=original_key,
-                thumbnail_key=thumbnail_key,
-                width=compressed.width,
-                height=compressed.height,
-                mime=compressed.original_mime,
-                size_bytes=len(compressed.original_bytes),
+                thumbnail_key=None,
+                width=None,
+                height=None,
+                mime="text/csv",
+                size_bytes=len(raw),
+                row_count=int(df.shape[0]),
+                columns_json=json.dumps(columns),
             )
             session.add(row)
             session.commit()
         finally:
             session.close()
-    except Exception:
-        for key in uploaded_keys:
-            try:
-                _delete_object(key)
-            except Exception:
-                logger.exception("failed to clean up orphaned object %s", key)
-        raise
 
-    return {
-        "asset_id": asset_id,
-        "url": original_url,
-        "thumbnail_url": thumbnail_url,
-        "width": compressed.width,
-        "height": compressed.height,
-        "mime": compressed.original_mime,
-        "size_bytes": len(compressed.original_bytes),
-    }
+        return {
+            "asset_id": asset_id,
+            "url": _public_url(original_key),
+            "thumbnail_url": None,
+            "mime": "text/csv",
+            "size_bytes": len(raw),
+            "columns": columns,
+            "row_count": int(df.shape[0]),
+        }
+
+    if kind == "image":
+        if len(raw) > MAX_IMAGE_BYTES:
+            raise HTTPException(status_code=413, detail="image larger than 25MB")
+        if file.content_type not in ALLOWED_IMAGE_MIMES:
+            raise HTTPException(
+                status_code=415,
+                detail="image must be jpeg, png, or webp",
+            )
+        try:
+            compressed = image_processing.compress_image(raw)
+        except image_processing.InvalidImageError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        ext = "jpg" if compressed.original_mime == "image/jpeg" else "png"
+        ws = workspace_id or "public"
+        original_key = f"story-assets/{ws}/{asset_id}/original.{ext}"
+        thumbnail_key = f"story-assets/{ws}/{asset_id}/thumbnail.jpg"
+
+        uploaded_keys: list[str] = []
+        try:
+            original_url = _put_object(
+                original_key, compressed.original_bytes, compressed.original_mime
+            )
+            uploaded_keys.append(original_key)
+            thumbnail_url = _put_object(
+                thumbnail_key, compressed.thumbnail_bytes, compressed.thumbnail_mime
+            )
+            uploaded_keys.append(thumbnail_key)
+
+            session = get_session(request)
+            try:
+                row = StoryAssetRow(
+                    id=asset_id,
+                    workspace_id=workspace_id if workspace_id else None,
+                    story_id=story_id,
+                    kind="image",
+                    original_key=original_key,
+                    thumbnail_key=thumbnail_key,
+                    width=compressed.width,
+                    height=compressed.height,
+                    mime=compressed.original_mime,
+                    size_bytes=len(compressed.original_bytes),
+                )
+                session.add(row)
+                session.commit()
+            finally:
+                session.close()
+        except Exception:
+            for key in uploaded_keys:
+                try:
+                    _delete_object(key)
+                except Exception:
+                    logger.exception("failed to clean up orphaned object %s", key)
+            raise
+
+        return {
+            "asset_id": asset_id,
+            "url": original_url,
+            "thumbnail_url": thumbnail_url,
+            "width": compressed.width,
+            "height": compressed.height,
+            "mime": compressed.original_mime,
+            "size_bytes": len(compressed.original_bytes),
+        }
+
+    raise HTTPException(status_code=400, detail=f"kind '{kind}' not supported")
 
 
 @router.get("/story-assets/{asset_id}")

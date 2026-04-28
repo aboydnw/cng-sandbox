@@ -31,6 +31,7 @@ dependencies = [
     "pyarrow>=17.0.0",
     "slowapi>=0.1.9",
     "pillow>=12.2.0",
+    "pandas>=3.0.2",
 ]
 
 [project.optional-dependencies]
@@ -65,3 +66,8 @@ known-first-party = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]

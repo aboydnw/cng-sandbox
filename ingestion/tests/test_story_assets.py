@@ -55,9 +55,8 @@ def test_upload_image_rejects_non_image_bytes(client: TestClient):
 
 
 def test_get_story_asset_returns_metadata(client, monkeypatch):
-    calls = []
     def fake_put_object(key, body, content_type):
-        calls.append(key)
+        pass
     monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
 
     upload = client.post(

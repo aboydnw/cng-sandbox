@@ -136,6 +136,7 @@ def get_story_asset(asset_id: str, request: Request):
 def delete_story_asset(asset_id: str, request: Request):
     """Delete a story asset and its associated storage objects."""
     workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
     session = get_session(request)
     try:
         row = session.query(StoryAssetRow).filter_by(id=asset_id).first()

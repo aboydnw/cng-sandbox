@@ -1,3 +1,5 @@
+import type { VideoProvider } from "./video";
+
 function uuid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -29,7 +31,11 @@ export interface LayerConfig {
   colormap_reversed?: boolean;
 }
 
-export type ChapterType = "scrollytelling" | "prose" | "map";
+export type ChapterType =
+  | "scrollytelling"
+  | "prose"
+  | "map"
+  | "video";
 
 interface BaseChapter {
   id: string;
@@ -56,7 +62,22 @@ export interface ProseChapter extends BaseChapter {
   type: "prose";
 }
 
-export type Chapter = ScrollytellingChapter | MapChapter | ProseChapter;
+export interface VideoEmbed {
+  provider: VideoProvider;
+  video_id: string;
+  original_url: string;
+}
+
+export interface VideoChapter extends BaseChapter {
+  type: "video";
+  video: VideoEmbed;
+}
+
+export type Chapter =
+  | ScrollytellingChapter
+  | MapChapter
+  | ProseChapter
+  | VideoChapter;
 
 export interface Story {
   id: string;
@@ -129,6 +150,20 @@ export function createProseChapter(
   return {
     ...baseFields(overrides),
     type: "prose",
+  };
+}
+
+export function createVideoChapter(
+  overrides: Partial<VideoChapter> = {}
+): VideoChapter {
+  return {
+    ...baseFields(overrides),
+    type: "video",
+    video: overrides.video ?? {
+      provider: "youtube",
+      video_id: "",
+      original_url: "",
+    },
   };
 }
 

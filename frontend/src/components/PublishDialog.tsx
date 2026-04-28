@@ -111,7 +111,8 @@ export function PublishDialog({
                         const hasNarrative = ch.narrative.trim().length > 0;
                         const isProse = ch.type === "prose";
                         const hasMap =
-                          ch.type !== "prose" && !!ch.layer_config.dataset_id;
+                          (ch.type === "scrollytelling" || ch.type === "map") &&
+                          !!ch.layer_config.dataset_id;
                         return (
                           <Flex
                             key={ch.id}

@@ -5,6 +5,8 @@ export type {
   ScrollytellingChapter,
   MapChapter,
   ProseChapter,
+  VideoChapter,
+  VideoEmbed,
   MapState,
   StoryIndexEntry,
   LayerConfig,
@@ -16,6 +18,7 @@ export {
   createScrollytellingChapter,
   createMapChapter,
   createProseChapter,
+  createVideoChapter,
   createStory,
   isMapBoundChapter,
 } from "./types";

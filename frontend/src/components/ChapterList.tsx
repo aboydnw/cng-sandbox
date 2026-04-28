@@ -7,6 +7,7 @@ import {
   ListBullets,
   MapTrifold,
   Scroll,
+  VideoCamera,
   Plus,
   X,
 } from "@phosphor-icons/react";
@@ -203,6 +204,7 @@ export function ChapterList({
                             scrollytelling: <Scroll size={11} />,
                             prose: <ListBullets size={11} />,
                             map: <MapTrifold size={11} />,
+                            video: <VideoCamera size={11} />,
                           } as Record<ChapterType, React.ReactNode>
                         )[chapter.type]
                       }

@@ -13,6 +13,7 @@ import type {
   ScrollytellingChapter,
   MapChapter,
   ProseChapter,
+  VideoChapter,
 } from "./types";
 import type { Dataset, Connection } from "../../types";
 
@@ -23,7 +24,8 @@ export type ContentBlock =
       startIndex: number;
     }
   | { type: "prose"; chapter: ProseChapter; index: number }
-  | { type: "map"; chapter: MapChapter; index: number };
+  | { type: "map"; chapter: MapChapter; index: number }
+  | { type: "video"; chapter: VideoChapter; index: number };
 
 export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
   const blocks: ContentBlock[] = [];
@@ -50,6 +52,9 @@ export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
           break;
         case "prose":
           blocks.push({ type: "prose", chapter: ch, index: i });
+          break;
+        case "video":
+          blocks.push({ type: "video", chapter: ch, index: i });
           break;
         default: {
           const _exhaustive: never = ch;

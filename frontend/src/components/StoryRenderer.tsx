@@ -316,6 +316,22 @@ export function StoryRenderer({
           );
         }
 
+        if (block.type === "video") {
+          return (
+            <Box
+              key={block.chapter.id}
+              onClick={
+                onChapterClick
+                  ? () => onChapterClick(block.chapter.id)
+                  : undefined
+              }
+              cursor={onChapterClick ? "pointer" : undefined}
+            >
+              Video chapter placeholder
+            </Box>
+          );
+        }
+
         return (
           <ScrollytellingBlock
             key={`scrolly-${blockIndex}`}

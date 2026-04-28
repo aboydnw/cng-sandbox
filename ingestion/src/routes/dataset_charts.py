@@ -52,7 +52,9 @@ def _titiler_point(
         logger.warning("titiler /point %s request failed: %s", url, exc)
         return None
     if resp.status_code != 200:
-        logger.warning("titiler /point %s returned %s: %s", url, resp.status_code, resp.text[:200])
+        logger.warning(
+            "titiler /point %s returned %s: %s", url, resp.status_code, resp.text[:200]
+        )
         return None
     try:
         body = resp.json()
@@ -120,7 +122,9 @@ def _cached_timeseries(
 ) -> tuple:
     """Return timeseries pairs; caches only complete (no-None) results."""
     try:
-        return _cached_complete_timeseries(dataset_id, collection_id, lon, lat, datetimes)
+        return _cached_complete_timeseries(
+            dataset_id, collection_id, lon, lat, datetimes
+        )
     except _PartialTimeseriesError as exc:
         return exc.pairs
 
@@ -163,15 +167,24 @@ def _titiler_statistics(collection_id: str, *, categorical: bool, bins: int) -> 
             resp = http_client.get(url, params=params)
     except httpx.RequestError as exc:
         logger.warning("titiler /statistics %s request failed: %s", url, exc)
-        raise HTTPException(status_code=502, detail="titiler statistics failed") from exc
+        raise HTTPException(
+            status_code=502, detail="titiler statistics failed"
+        ) from exc
     if resp.status_code != 200:
-        logger.warning("titiler /statistics %s returned %s: %s", url, resp.status_code, resp.text[:200])
+        logger.warning(
+            "titiler /statistics %s returned %s: %s",
+            url,
+            resp.status_code,
+            resp.text[:200],
+        )
         raise HTTPException(status_code=502, detail="titiler statistics failed")
     try:
         return resp.json()
     except ValueError as exc:
         logger.warning("titiler /statistics %s returned non-JSON: %s", url, exc)
-        raise HTTPException(status_code=502, detail="titiler statistics failed") from exc
+        raise HTTPException(
+            status_code=502, detail="titiler statistics failed"
+        ) from exc
 
 
 @router.get("/datasets/{dataset_id}/histogram")
@@ -212,10 +225,14 @@ def dataset_histogram(
     stats = _titiler_statistics(collection_id, categorical=False, bins=bins)
     hist = stats.get("histogram") or []
     if len(hist) != 2:
-        raise HTTPException(status_code=502, detail="titiler returned unexpected histogram shape")
+        raise HTTPException(
+            status_code=502, detail="titiler returned unexpected histogram shape"
+        )
     counts, edges = hist[0], hist[1]
     if not edges or len(edges) < len(counts):
-        raise HTTPException(status_code=502, detail="titiler returned malformed histogram")
+        raise HTTPException(
+            status_code=502, detail="titiler returned malformed histogram"
+        )
     out = []
     for i, count in enumerate(counts):
         bin_min = edges[i]

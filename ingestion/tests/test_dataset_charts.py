@@ -15,8 +15,10 @@ def clear_timeseries_cache():
 
 
 def test_timeseries_returns_value_per_timestep(client):
-    with patch("src.routes.dataset_charts._titiler_point") as mock_pt, \
-         patch("src.routes.dataset_charts._load_dataset") as mock_load:
+    with (
+        patch("src.routes.dataset_charts._titiler_point") as mock_pt,
+        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+    ):
         mock_load.return_value = {
             "id": "ds-1",
             "is_temporal": True,
@@ -154,8 +156,10 @@ def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
 
 
 def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):
-    with patch("src.routes.dataset_charts._titiler_statistics") as mock_stats, \
-         patch("src.routes.dataset_charts._load_dataset") as mock_load:
+    with (
+        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+    ):
         mock_load.return_value = {
             "id": "ds-1",
             "is_temporal": False,
@@ -177,8 +181,10 @@ def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):
 
 
 def test_histogram_categorical_returns_class_counts(client: pytest.fixture):
-    with patch("src.routes.dataset_charts._titiler_statistics") as mock_stats, \
-         patch("src.routes.dataset_charts._load_dataset") as mock_load:
+    with (
+        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+    ):
         mock_load.return_value = {
             "id": "ds-1",
             "is_temporal": False,

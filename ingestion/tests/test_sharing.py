@@ -173,10 +173,17 @@ def test_dataset_timeseries_chart_source_grants_read(db_session):
     _make_story_with_chart(
         db_session,
         published=True,
-        chart_source={"kind": "dataset_timeseries", "dataset_id": row.id, "point": [0, 0]},
+        chart_source={
+            "kind": "dataset_timeseries",
+            "dataset_id": row.id,
+            "point": [0, 0],
+        },
     )
     assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is True
-    assert sharing.is_dataset_referenced_by_published_story(db_session, "ds-other") is False
+    assert (
+        sharing.is_dataset_referenced_by_published_story(db_session, "ds-other")
+        is False
+    )
 
 
 def test_dataset_histogram_chart_source_grants_read(db_session):
@@ -194,7 +201,11 @@ def test_chart_source_unpublished_story_does_not_grant_read(db_session):
     _make_story_with_chart(
         db_session,
         published=False,
-        chart_source={"kind": "dataset_timeseries", "dataset_id": row.id, "point": [0, 0]},
+        chart_source={
+            "kind": "dataset_timeseries",
+            "dataset_id": row.id,
+            "point": [0, 0],
+        },
     )
     assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is False
 
@@ -214,6 +225,10 @@ def test_csv_chart_source_with_dataset_id_does_not_grant_access(db_session):
     _make_story_with_chart(
         db_session,
         published=True,
-        chart_source={"kind": "csv", "url": "https://example.com/data.csv", "dataset_id": row.id},
+        chart_source={
+            "kind": "csv",
+            "url": "https://example.com/data.csv",
+            "dataset_id": row.id,
+        },
     )
     assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is False

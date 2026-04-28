@@ -336,7 +336,12 @@ function DatasetBranch({
               min={2}
               max={100}
               value={source.bins ?? 20}
-              onChange={(e) => updateBins(Number(e.target.value))}
+              onChange={(e) => {
+                const parsed = Number(e.target.value);
+                if (!Number.isFinite(parsed)) return;
+                const clamped = Math.min(100, Math.max(2, Math.trunc(parsed)));
+                updateBins(clamped);
+              }}
             />
           </Field.Root>
         )}

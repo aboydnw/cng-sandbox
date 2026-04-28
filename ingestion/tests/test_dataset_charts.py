@@ -126,6 +126,58 @@ def test_titiler_point_returns_none_on_empty_values(monkeypatch):
     assert _titiler_point("col", "2020-01-01", 0.0, 0.0) is None
 
 
+def test_titiler_point_returns_none_on_non_numeric_value(monkeypatch):
+    from src.routes.dataset_charts import _titiler_point
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"values": [[None]]}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            pass
+
+        def get(self, url, params=None):
+            return FakeResponse()
+
+    monkeypatch.setattr("src.routes.dataset_charts.httpx.Client", FakeClient)
+    assert _titiler_point("col", "2020-01-01", 0.0, 0.0) is None
+
+
+def test_titiler_point_returns_none_on_string_value(monkeypatch):
+    from src.routes.dataset_charts import _titiler_point
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"values": ["nan-ish"]}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            pass
+
+        def get(self, url, params=None):
+            return FakeResponse()
+
+    monkeypatch.setattr("src.routes.dataset_charts.httpx.Client", FakeClient)
+    assert _titiler_point("col", "2020-01-01", 0.0, 0.0) is None
+
+
 def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
     import logging
 

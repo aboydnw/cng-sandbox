@@ -66,8 +66,16 @@ def _titiler_point(
         return None
     first = values[0]
     if isinstance(first, list):
-        return float(first[0]) if first else None
-    return float(first)
+        if not first:
+            return None
+        first = first[0]
+    if first is None:
+        return None
+    try:
+        return float(first)
+    except (TypeError, ValueError):
+        logger.warning("titiler /point %s returned non-numeric value: %r", url, first)
+        return None
 
 
 def _build_timeseries(

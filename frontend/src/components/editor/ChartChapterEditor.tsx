@@ -35,7 +35,8 @@ function CsvBranch({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const source = chapter.chart.source as CsvSource;
+  if (chapter.chart.source.kind !== "csv") return null;
+  const source: CsvSource = chapter.chart.source;
   const viz = chapter.chart.viz;
 
   async function handleFile(file: File) {

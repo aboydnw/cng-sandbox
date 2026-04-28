@@ -76,8 +76,82 @@ class ProseChapter(_BaseChapter):
     type: Literal["prose"]
 
 
+class ImageAssetPayload(BaseModel):
+    asset_id: str
+    url: str
+    thumbnail_url: str
+    alt_text: str
+    width: int
+    height: int
+
+
+class ImageChapter(_BaseChapter):
+    type: Literal["image"]
+    image: ImageAssetPayload
+
+
+class VideoEmbedPayload(BaseModel):
+    provider: Literal["youtube", "vimeo"]
+    video_id: str
+    original_url: str
+
+
+class VideoChapter(_BaseChapter):
+    type: Literal["video"]
+    video: VideoEmbedPayload
+
+
+class CsvSourcePayload(BaseModel):
+    kind: Literal["csv"]
+    asset_id: str
+    url: str
+    columns: list[str]
+
+
+class DatasetTimeseriesSourcePayload(BaseModel):
+    kind: Literal["dataset_timeseries"]
+    dataset_id: str
+    point: tuple[float, float]
+
+
+class DatasetHistogramSourcePayload(BaseModel):
+    kind: Literal["dataset_histogram"]
+    dataset_id: str
+    bins: int | None = None
+
+
+ChartSourcePayload = Annotated[
+    CsvSourcePayload | DatasetTimeseriesSourcePayload | DatasetHistogramSourcePayload,
+    Field(discriminator="kind"),
+]
+
+
+class ChartVizPayload(BaseModel):
+    kind: Literal["line", "bar"]
+    x_field: str
+    y_fields: list[str]
+    x_label: str | None = None
+    y_label: str | None = None
+    y_scale: Literal["linear", "log"] | None = None
+
+
+class ChartPayload(BaseModel):
+    source: ChartSourcePayload
+    viz: ChartVizPayload
+
+
+class ChartChapter(_BaseChapter):
+    type: Literal["chart"]
+    chart: ChartPayload
+
+
 ChapterPayload = Annotated[
-    ScrollytellingChapter | MapChapter | ProseChapter,
+    ScrollytellingChapter
+    | MapChapter
+    | ProseChapter
+    | ImageChapter
+    | VideoChapter
+    | ChartChapter,
     Field(discriminator="type"),
 ]
 

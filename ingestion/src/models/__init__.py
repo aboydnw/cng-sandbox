@@ -152,3 +152,7 @@ class Dataset(BaseModel):
     expires_at: datetime | None = None
     preferred_colormap: str | None = None
     preferred_colormap_reversed: bool | None = None
+
+
+# SQLAlchemy table row models
+from src.models.story_asset import StoryAssetRow  # noqa: F401

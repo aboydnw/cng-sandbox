@@ -1,4 +1,4 @@
-"""Pydantic models for jobs and datasets."""
+"""Pydantic models for jobs and datasets, and SQLAlchemy row models."""
 
 import asyncio
 import uuid
@@ -6,6 +6,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
+
+from src.models.story_asset import StoryAssetRow  # noqa: F401
 
 
 class JobStatus(StrEnum):
@@ -154,5 +156,3 @@ class Dataset(BaseModel):
     preferred_colormap_reversed: bool | None = None
 
 
-# SQLAlchemy table row models
-from src.models.story_asset import StoryAssetRow  # noqa: F401

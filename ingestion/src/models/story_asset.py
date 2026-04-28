@@ -14,7 +14,7 @@ class StoryAssetRow(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     workspace_id = Column(String, nullable=True)
     story_id = Column(String, nullable=True)
-    kind = Column(String, nullable=False)  # "image" | "csv"
+    kind = Column(String, nullable=False)
     original_key = Column(String, nullable=False)
     thumbnail_key = Column(String, nullable=True)
     width = Column(Integer, nullable=True)

@@ -26,7 +26,12 @@ ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp"}
 
 def _put_object(key: str, body: bytes, content_type: str) -> str:
     storage = StorageService()
-    obstore.put(storage.store, key, io.BytesIO(body))
+    obstore.put(
+        storage.store,
+        key,
+        io.BytesIO(body),
+        attributes={"Content-Type": content_type},
+    )
     base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
     return f"{base}/{key}"
 
@@ -164,11 +169,17 @@ def delete_story_asset(asset_id: str, request: Request):
             raise HTTPException(status_code=404, detail="asset not found")
         if row.workspace_id and row.workspace_id != workspace_id:
             raise HTTPException(status_code=404, detail="asset not found")
-        _delete_object(row.original_key)
-        if row.thumbnail_key:
-            _delete_object(row.thumbnail_key)
+        original_key = row.original_key
+        thumbnail_key = row.thumbnail_key
         session.delete(row)
         session.commit()
     finally:
         session.close()
+    for key in (original_key, thumbnail_key):
+        if not key:
+            continue
+        try:
+            _delete_object(key)
+        except Exception:
+            logger.exception("failed to delete storage object %s", key)
     return None

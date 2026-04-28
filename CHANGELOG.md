@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.30.2](https://github.com/aboydnw/cng-sandbox/compare/v1.30.1...v1.30.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* **frontend:** exclude multi-band COGs from client rendering ([#379](https://github.com/aboydnw/cng-sandbox/issues/379)) ([4091e56](https://github.com/aboydnw/cng-sandbox/commit/4091e56fcc6e3c3ae2c7b6deb79c35cb57c1579c))
+* remove eager DuckDB initialization ([#377](https://github.com/aboydnw/cng-sandbox/issues/377)) ([a808f55](https://github.com/aboydnw/cng-sandbox/commit/a808f55679bde56be299433d816340c4fbfe5e46))
+
 ## [1.30.1](https://github.com/aboydnw/cng-sandbox/compare/v1.30.0...v1.30.1) (2026-04-28)
 
 

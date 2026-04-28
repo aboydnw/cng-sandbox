@@ -98,23 +98,18 @@ describe("buildCogLayerPaletted with categories", () => {
     const image = { fetchTile: vi.fn().mockResolvedValue(fakeTile) };
     const device = { createTexture: vi.fn().mockReturnValue({ mock: "tex" }) };
 
-    let result = await props.getTileData(image, {
+    const cachedTile = await props.getTileData(image, {
       device,
       x: 0,
       y: 0,
       signal: new AbortController().signal,
     });
-    expect(result.projectFrom4326).toBeNull();
+    expect(cachedTile.projectFrom4326).toBeNull();
 
+    // After onGeoTIFFLoad fires, the same cached tile picks up the projector
+    // via its getter — no refetch required.
     props.onGeoTIFFLoad({}, { projection: "EPSG:3857" });
-
-    result = await props.getTileData(image, {
-      device,
-      x: 0,
-      y: 0,
-      signal: new AbortController().signal,
-    });
-    expect(typeof result.projectFrom4326).toBe("function");
+    expect(typeof cachedTile.projectFrom4326).toBe("function");
   });
 
   it("attaches raw tile values to getTileData's return for the pixel inspector", async () => {

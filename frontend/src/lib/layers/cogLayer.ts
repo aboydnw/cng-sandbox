@@ -169,16 +169,19 @@ export function buildCogLayerPaletted({
 
     // `raw` travels on the tile's data so the pixel inspector can sample it
     // without a separate cache. Keyed by tile identity, not by (x, y), so
-    // zoom-level collisions can't return stale values. `projectFrom4326` rides
-    // along so the inspector can convert the cursor's lng/lat into the COG's
-    // native CRS — required for non-Mercator COGs (e.g. NLCD Albers).
+    // zoom-level collisions can't return stale values. `projectFrom4326` is a
+    // getter so cached tiles pick up the projector once `onGeoTIFFLoad` fires
+    // — defensive against any deck.gl-geotiff lifecycle change that would let
+    // a tile be fetched before the source CRS is resolved.
     return {
       texture: valueTex,
       lutTexture: lutTex,
       width,
       height,
       raw,
-      projectFrom4326: projection.projectFrom4326(),
+      get projectFrom4326() {
+        return projection.projectFrom4326();
+      },
     };
   };
 
@@ -292,7 +295,9 @@ export function buildCogLayerContinuous({
       width,
       height,
       raw: rawSnapshot,
-      projectFrom4326: projection.projectFrom4326(),
+      get projectFrom4326() {
+        return projection.projectFrom4326();
+      },
     };
   };
 

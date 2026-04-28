@@ -70,31 +70,29 @@ describe("buildCogLayerContinuous projection plumbing", () => {
     const device = { createTexture: vi.fn().mockReturnValue({ mock: "tex" }) };
 
     // Before onGeoTIFFLoad fires, the projector is null — the inspector falls
-    // back to lng/lat-linear in this brief window.
-    let result = await props.getTileData(image, {
+    // back to lng/lat-linear in this brief window. The COGLayer lifecycle
+    // shouldn't actually let a tile be fetched this early, but the getter
+    // makes the code defensive against future changes.
+    const cachedTile = await props.getTileData(image, {
       device,
       x: 0,
       y: 0,
       signal: new AbortController().signal,
     });
-    expect(result.projectFrom4326).toBeNull();
+    expect(cachedTile.projectFrom4326).toBeNull();
 
-    // Simulate the load callback with a known EPSG built into proj4.
+    // Simulate the load callback with a known EPSG built into proj4. The
+    // already-fetched tile should now expose the projector via its getter
+    // without needing a refetch.
     props.onGeoTIFFLoad({}, { projection: "EPSG:3857" });
 
-    result = await props.getTileData(image, {
-      device,
-      x: 0,
-      y: 0,
-      signal: new AbortController().signal,
-    });
-    expect(typeof result.projectFrom4326).toBe("function");
+    expect(typeof cachedTile.projectFrom4326).toBe("function");
     // EPSG:4326 → EPSG:3857 at (0, 0) is (0, 0) and at the equator/lng=180 is
     // ~(20037508, 0). Coarse range check is enough to confirm proj4 wired up.
-    const [x0, y0] = result.projectFrom4326(0, 0);
+    const [x0, y0] = cachedTile.projectFrom4326(0, 0);
     expect(Math.abs(x0)).toBeLessThan(1e-6);
     expect(Math.abs(y0)).toBeLessThan(1e-6);
-    const [x180] = result.projectFrom4326(180, 0);
+    const [x180] = cachedTile.projectFrom4326(180, 0);
     expect(x180).toBeGreaterThan(2e7);
   });
 });

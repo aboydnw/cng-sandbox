@@ -116,7 +116,7 @@ function lookupValue(
     const px = Math.min(width - 1, Math.max(0, Math.floor(pxFloat)));
     const py = Math.min(height - 1, Math.max(0, Math.floor(pyFloat)));
     const val = raw[py * width + px];
-    if (val !== val) return null;
+    if (Number.isNaN(val)) return null;
     return val;
   }
 

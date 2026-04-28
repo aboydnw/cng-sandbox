@@ -1,7 +1,7 @@
 import io
 
-from PIL import Image
 from fastapi.testclient import TestClient
+from PIL import Image
 
 
 def _png_bytes(width: int = 1200, height: int = 800) -> bytes:

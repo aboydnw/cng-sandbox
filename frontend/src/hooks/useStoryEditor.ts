@@ -412,8 +412,7 @@ export function useStoryEditor() {
         };
         if (type === "prose") return createProseChapter(base);
         if (type === "image") {
-          const existingImage =
-            ch.type === "image" ? ch.image : undefined;
+          const existingImage = ch.type === "image" ? ch.image : undefined;
           return createImageChapter({ ...base, image: existingImage });
         }
         const inheritedDatasetId = s.dataset_id ?? "";

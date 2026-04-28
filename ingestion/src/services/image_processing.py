@@ -39,7 +39,10 @@ def _resize(img: Image.Image, max_edge: int) -> Image.Image:
     if longest <= max_edge:
         return img
     scale = max_edge / longest
-    new_size = (round(img.size[0] * scale), round(img.size[1] * scale))
+    new_size = (
+        max(1, round(img.size[0] * scale)),
+        max(1, round(img.size[1] * scale)),
+    )
     return img.resize(new_size, Image.Resampling.LANCZOS)
 
 

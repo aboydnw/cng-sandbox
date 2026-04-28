@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -29,18 +29,24 @@ export function ImageChapterEditor({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const chapterRef = useRef(chapter);
+  useEffect(() => {
+    chapterRef.current = chapter;
+  }, [chapter]);
+
   async function handleFile(file: File) {
     setUploading(true);
     setUploadError(null);
     try {
       const uploaded = await uploadImageAsset(file);
+      const latest = chapterRef.current;
       onChange({
-        ...chapter,
+        ...latest,
         image: {
           asset_id: uploaded.asset_id,
           url: uploaded.url,
           thumbnail_url: uploaded.thumbnail_url,
-          alt_text: chapter.image.alt_text,
+          alt_text: latest.image.alt_text,
           width: uploaded.width,
           height: uploaded.height,
         },

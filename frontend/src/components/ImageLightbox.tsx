@@ -41,7 +41,11 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
             e.stopPropagation();
             onClose();
           }}
-          _hover={{ bg: "whiteAlpha.200" }}
+          _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
+          _focusVisible={{
+            outline: "2px solid",
+            outlineColor: "brand.border",
+          }}
         >
           <X size={24} />
         </IconButton>

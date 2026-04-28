@@ -31,9 +31,10 @@ export async function uploadImageAsset(
 }
 
 export async function deleteStoryAsset(assetId: string): Promise<void> {
-  const resp = await workspaceFetch(`/api/story-assets/${assetId}`, {
-    method: "DELETE",
-  });
+  const resp = await workspaceFetch(
+    `/api/story-assets/${encodeURIComponent(assetId)}`,
+    { method: "DELETE" }
+  );
   if (!resp.ok && resp.status !== 404) {
     throw new Error(`delete failed: ${resp.status}`);
   }

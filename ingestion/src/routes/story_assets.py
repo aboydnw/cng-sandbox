@@ -2,9 +2,10 @@
 
 import io
 import json
+import logging
 import os
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 
 import obstore
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -14,6 +15,8 @@ from src.models.story_asset import StoryAssetRow
 from src.services import image_processing
 from src.services.storage import StorageService
 from src.workspace import validate_workspace_id
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
@@ -41,37 +44,47 @@ def _public_url(key: str) -> str:
 @router.post("/story-assets", status_code=201)
 async def upload_story_asset(
     request: Request,
-    file: UploadFile = File(...),
-    kind: Literal["image", "csv"] = Form(...),
-    story_id: str | None = Form(default=None),
+    file: Annotated[UploadFile, File()],
+    kind: Annotated[Literal["image"], Form()],
+    story_id: Annotated[str | None, Form()] = None,
 ):
-    """Upload a binary asset (image or CSV) to attach to a story."""
+    """Upload a binary asset (currently image only) to attach to a story."""
     workspace_id = request.headers.get("x-workspace-id", "")
     validate_workspace_id(workspace_id)
 
     raw = await file.read()
     asset_id = str(uuid.uuid4())
 
-    if kind == "image":
-        if len(raw) > MAX_IMAGE_BYTES:
-            raise HTTPException(status_code=413, detail="image larger than 25MB")
-        if file.content_type not in ALLOWED_IMAGE_MIMES:
-            raise HTTPException(
-                status_code=415,
-                detail="image must be jpeg, png, or webp",
-            )
-        try:
-            compressed = image_processing.compress_image(raw)
-        except image_processing.InvalidImageError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if kind != "image":
+        raise HTTPException(status_code=400, detail=f"kind '{kind}' not yet supported")
 
-        ext = "jpg" if compressed.original_mime == "image/jpeg" else "png"
-        ws = workspace_id or "public"
-        original_key = f"story-assets/{ws}/{asset_id}/original.{ext}"
-        thumbnail_key = f"story-assets/{ws}/{asset_id}/thumbnail.jpg"
+    if len(raw) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="image larger than 25MB")
+    if file.content_type not in ALLOWED_IMAGE_MIMES:
+        raise HTTPException(
+            status_code=415,
+            detail="image must be jpeg, png, or webp",
+        )
+    try:
+        compressed = image_processing.compress_image(raw)
+    except image_processing.InvalidImageError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-        original_url = _put_object(original_key, compressed.original_bytes, compressed.original_mime)
-        thumbnail_url = _put_object(thumbnail_key, compressed.thumbnail_bytes, compressed.thumbnail_mime)
+    ext = "jpg" if compressed.original_mime == "image/jpeg" else "png"
+    ws = workspace_id or "public"
+    original_key = f"story-assets/{ws}/{asset_id}/original.{ext}"
+    thumbnail_key = f"story-assets/{ws}/{asset_id}/thumbnail.jpg"
+
+    uploaded_keys: list[str] = []
+    try:
+        original_url = _put_object(
+            original_key, compressed.original_bytes, compressed.original_mime
+        )
+        uploaded_keys.append(original_key)
+        thumbnail_url = _put_object(
+            thumbnail_key, compressed.thumbnail_bytes, compressed.thumbnail_mime
+        )
+        uploaded_keys.append(thumbnail_key)
 
         session = get_session(request)
         try:
@@ -91,18 +104,23 @@ async def upload_story_asset(
             session.commit()
         finally:
             session.close()
+    except Exception:
+        for key in uploaded_keys:
+            try:
+                _delete_object(key)
+            except Exception:
+                logger.exception("failed to clean up orphaned object %s", key)
+        raise
 
-        return {
-            "asset_id": asset_id,
-            "url": original_url,
-            "thumbnail_url": thumbnail_url,
-            "width": compressed.width,
-            "height": compressed.height,
-            "mime": compressed.original_mime,
-            "size_bytes": len(compressed.original_bytes),
-        }
-
-    raise HTTPException(status_code=400, detail=f"kind '{kind}' not yet supported")
+    return {
+        "asset_id": asset_id,
+        "url": original_url,
+        "thumbnail_url": thumbnail_url,
+        "width": compressed.width,
+        "height": compressed.height,
+        "mime": compressed.original_mime,
+        "size_bytes": len(compressed.original_bytes),
+    }
 
 
 @router.get("/story-assets/{asset_id}")

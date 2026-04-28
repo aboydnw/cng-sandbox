@@ -30,17 +30,27 @@ export function ImageChapterRenderer({
       <Heading size="lg" mb={4} color="gray.800">
         {chapter.title}
       </Heading>
-      <img
-        src={chapter.image.url}
-        alt={chapter.image.alt_text}
+      <Box
+        as="button"
         onClick={() => setLightboxOpen(true)}
-        style={{
-          width: "100%",
-          maxHeight: "500px",
-          objectFit: "contain",
-          cursor: "zoom-in",
-        }}
-      />
+        aria-label={`Zoom into image: ${chapter.image.alt_text}`}
+        display="block"
+        width="100%"
+        p={0}
+        border="none"
+        bg="transparent"
+        cursor="zoom-in"
+      >
+        <img
+          src={chapter.image.url}
+          alt={chapter.image.alt_text}
+          style={{
+            width: "100%",
+            maxHeight: "500px",
+            objectFit: "contain",
+          }}
+        />
+      </Box>
       {chapter.narrative.trim() && (
         <Box
           mt={6}

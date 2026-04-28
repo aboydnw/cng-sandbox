@@ -1,6 +1,7 @@
 """Story asset endpoints: upload, fetch, delete."""
 
 import io
+import json
 import os
 import uuid
 from typing import Literal
@@ -23,6 +24,16 @@ ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp"}
 def _put_object(key: str, body: bytes, content_type: str) -> str:
     storage = StorageService()
     obstore.put(storage.store, key, io.BytesIO(body))
+    base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+    return f"{base}/{key}"
+
+
+def _delete_object(key: str) -> None:
+    storage = StorageService()
+    storage.delete_object(key)
+
+
+def _public_url(key: str) -> str:
     base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
     return f"{base}/{key}"
 
@@ -92,3 +103,51 @@ async def upload_story_asset(
         }
 
     raise HTTPException(status_code=400, detail=f"kind '{kind}' not yet supported")
+
+
+@router.get("/story-assets/{asset_id}")
+def get_story_asset(asset_id: str, request: Request):
+    """Return metadata for a single story asset."""
+    workspace_id = request.headers.get("x-workspace-id", "")
+    session = get_session(request)
+    try:
+        row = session.query(StoryAssetRow).filter_by(id=asset_id).first()
+        if not row:
+            raise HTTPException(status_code=404, detail="asset not found")
+        if row.workspace_id and row.workspace_id != workspace_id:
+            raise HTTPException(status_code=404, detail="asset not found")
+        return {
+            "asset_id": row.id,
+            "kind": row.kind,
+            "url": _public_url(row.original_key),
+            "thumbnail_url": _public_url(row.thumbnail_key) if row.thumbnail_key else None,
+            "width": row.width,
+            "height": row.height,
+            "mime": row.mime,
+            "size_bytes": row.size_bytes,
+            "row_count": row.row_count,
+            "columns": json.loads(row.columns_json) if row.columns_json else None,
+        }
+    finally:
+        session.close()
+
+
+@router.delete("/story-assets/{asset_id}", status_code=204)
+def delete_story_asset(asset_id: str, request: Request):
+    """Delete a story asset and its associated storage objects."""
+    workspace_id = request.headers.get("x-workspace-id", "")
+    session = get_session(request)
+    try:
+        row = session.query(StoryAssetRow).filter_by(id=asset_id).first()
+        if not row:
+            raise HTTPException(status_code=404, detail="asset not found")
+        if row.workspace_id and row.workspace_id != workspace_id:
+            raise HTTPException(status_code=404, detail="asset not found")
+        _delete_object(row.original_key)
+        if row.thumbnail_key:
+            _delete_object(row.thumbnail_key)
+        session.delete(row)
+        session.commit()
+    finally:
+        session.close()
+    return None

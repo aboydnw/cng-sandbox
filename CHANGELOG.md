@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.30.1](https://github.com/aboydnw/cng-sandbox/compare/v1.30.0...v1.30.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **frontend:** count client-rendered fetches in data-fetched metric ([#374](https://github.com/aboydnw/cng-sandbox/issues/374)) ([1c727a3](https://github.com/aboydnw/cng-sandbox/commit/1c727a37a54735d181c08046f484301f380ef711))
+* **frontend:** use no-overlap tile refinement to prevent flashing on translucent rasters ([#372](https://github.com/aboydnw/cng-sandbox/issues/372)) ([a508f2a](https://github.com/aboydnw/cng-sandbox/commit/a508f2af95c3c6cc3be81d2643788215e34fc360))
+* **ingestion:** store file_size from Content-Length on COG connection creation ([#375](https://github.com/aboydnw/cng-sandbox/issues/375)) ([ed284cd](https://github.com/aboydnw/cng-sandbox/commit/ed284cd5d32014edef13b409db5dde97729f619a))
+
 ## [1.30.0](https://github.com/aboydnw/cng-sandbox/compare/v1.29.1...v1.30.0) (2026-04-28)
 
 

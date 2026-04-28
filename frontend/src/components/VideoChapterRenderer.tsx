@@ -49,6 +49,7 @@ export function VideoChapterRenderer({
           <iframe
             src={src}
             loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             title={chapter.title || "Video"}

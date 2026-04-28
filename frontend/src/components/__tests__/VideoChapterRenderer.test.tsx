@@ -26,7 +26,9 @@ function makeChapter(overrides: Partial<VideoChapter> = {}): VideoChapter {
 
 describe("VideoChapterRenderer", () => {
   it("renders the YouTube embed iframe", () => {
-    const { container } = render(wrap(<VideoChapterRenderer chapter={makeChapter()} chapterIndex={0} />));
+    const { container } = render(
+      wrap(<VideoChapterRenderer chapter={makeChapter()} chapterIndex={0} />)
+    );
     const iframe = container.querySelector("iframe");
     expect(iframe?.getAttribute("src")).toBe(
       "https://www.youtube-nocookie.com/embed/abc123?rel=0"
@@ -41,7 +43,9 @@ describe("VideoChapterRenderer", () => {
         original_url: "https://vimeo.com/9999",
       },
     });
-    const { container } = render(wrap(<VideoChapterRenderer chapter={ch} chapterIndex={0} />));
+    const { container } = render(
+      wrap(<VideoChapterRenderer chapter={ch} chapterIndex={0} />)
+    );
     const iframe = container.querySelector("iframe");
     expect(iframe?.getAttribute("src")).toBe(
       "https://player.vimeo.com/video/9999"

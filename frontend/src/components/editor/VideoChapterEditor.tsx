@@ -39,7 +39,11 @@ export function VideoChapterEditor({
       setError("Paste a YouTube or Vimeo URL.");
       onChange({
         ...chapter,
-        video: { provider: chapter.video.provider, video_id: "", original_url: trimmed },
+        video: {
+          provider: chapter.video.provider,
+          video_id: "",
+          original_url: trimmed,
+        },
       });
       return;
     }
@@ -55,7 +59,7 @@ export function VideoChapterEditor({
   }
 
   const validBadge = chapter.video.video_id ? (
-    <Flex align="center" gap={1} fontSize="xs" color="green.600" mt={1}>
+    <Flex align="center" gap={1} fontSize="xs" color="brand.brown" mt={1}>
       <Check size={12} weight="bold" />
       <Text as="span">{chapter.video.provider}</Text>
     </Flex>
@@ -82,11 +86,9 @@ export function VideoChapterEditor({
         {error ? (
           <Field.ErrorText>{error}</Field.ErrorText>
         ) : (
-          validBadge ?? (
-            <Field.HelperText>
-              Paste a YouTube or Vimeo link.
-            </Field.HelperText>
-          )
+          (validBadge ?? (
+            <Field.HelperText>Paste a YouTube or Vimeo link.</Field.HelperText>
+          ))
         )}
       </Field.Root>
 

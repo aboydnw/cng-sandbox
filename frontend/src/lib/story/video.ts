@@ -14,13 +14,15 @@ const YT_HOSTS = new Set([
 const VIMEO_HOSTS = new Set(["vimeo.com", "www.vimeo.com", "player.vimeo.com"]);
 
 export function parseVideoUrl(input: string): ParsedVideo | null {
-  if (!input) return null;
+  const value = input.trim();
+  if (!value) return null;
   let u: URL;
   try {
-    u = new URL(input);
+    u = new URL(value);
   } catch {
     return null;
   }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return null;
 
   const host = u.hostname.toLowerCase();
   const path = u.pathname;
@@ -40,8 +42,7 @@ export function parseVideoUrl(input: string): ParsedVideo | null {
   }
 
   if (VIMEO_HOSTS.has(host)) {
-    const m =
-      path.match(/^\/video\/(\d+)/) ?? path.match(/^\/(\d+)(?:\/|$)/);
+    const m = path.match(/^\/video\/(\d+)/) ?? path.match(/^\/(\d+)(?:\/|$)/);
     return m ? { provider: "vimeo", video_id: m[1] } : null;
   }
 

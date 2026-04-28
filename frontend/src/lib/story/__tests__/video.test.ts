@@ -27,4 +27,9 @@ describe("parseVideoUrl", () => {
     expect(parseVideoUrl("not a url")).toBeNull();
     expect(parseVideoUrl("")).toBeNull();
   });
+
+  it("rejects non-HTTP(S) schemes even on supported hosts", () => {
+    expect(parseVideoUrl("ftp://youtube.com/watch?v=dQw4w9WgXcQ")).toBeNull();
+    expect(parseVideoUrl("javascript:alert(1)")).toBeNull();
+  });
 });

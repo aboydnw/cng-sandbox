@@ -348,7 +348,10 @@ export function StoryRenderer({
               }
               cursor={onChapterClick ? "pointer" : undefined}
             >
-              <VideoChapterRenderer chapter={block.chapter} chapterIndex={block.index} />
+              <VideoChapterRenderer
+                chapter={block.chapter}
+                chapterIndex={block.index}
+              />
             </Box>
           );
         }

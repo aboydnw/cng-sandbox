@@ -1,5 +1,11 @@
 import { Flex, Text } from "@chakra-ui/react";
-import { Path, Article, MapTrifold, Image, VideoCamera } from "@phosphor-icons/react";
+import {
+  Path,
+  Article,
+  MapTrifold,
+  Image,
+  VideoCamera,
+} from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import type { ChapterType } from "../lib/story";
 import {

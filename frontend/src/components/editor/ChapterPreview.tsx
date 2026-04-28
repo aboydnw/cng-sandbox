@@ -17,7 +17,9 @@ export function ChapterPreview({ chapter }: ChapterPreviewProps) {
     );
   }
   if (chapter.type === "video") {
-    return <VideoChapterRenderer chapter={chapter} chapterIndex={chapter.order} />;
+    return (
+      <VideoChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
+    );
   }
   return null;
 }

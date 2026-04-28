@@ -12,6 +12,7 @@ from src.dependencies import get_session
 from src.models.story_asset import StoryAssetRow
 from src.services import image_processing
 from src.services.storage import StorageService
+from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
 
@@ -20,10 +21,6 @@ ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def _put_object(key: str, body: bytes, content_type: str) -> str:
-    """Upload bytes to R2 and return the public URL.
-
-    Indirection so tests can patch this single function.
-    """
     storage = StorageService()
     obstore.put(storage.store, key, io.BytesIO(body))
     base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
@@ -38,9 +35,8 @@ async def upload_story_asset(
     story_id: str | None = Form(default=None),
 ):
     """Upload a binary asset (image or CSV) to attach to a story."""
-    from src.workspace import get_workspace_id
-
-    workspace_id = request.headers.get("x-workspace-id") or None
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
 
     raw = await file.read()
     asset_id = str(uuid.uuid4())
@@ -70,7 +66,7 @@ async def upload_story_asset(
         try:
             row = StoryAssetRow(
                 id=asset_id,
-                workspace_id=workspace_id,
+                workspace_id=workspace_id if workspace_id else None,
                 story_id=story_id,
                 kind="image",
                 original_key=original_key,

@@ -1,5 +1,4 @@
 import io
-from unittest.mock import patch
 
 from PIL import Image
 from fastapi.testclient import TestClient
@@ -12,19 +11,25 @@ def _png_bytes(width: int = 1200, height: int = 800) -> bytes:
     return buf.getvalue()
 
 
-def test_upload_image_happy_path(client: TestClient):
-    with patch("src.routes.story_assets._put_object") as mock_put:
-        mock_put.return_value = "https://r2.example/abc"
-        files = {"file": ("photo.png", _png_bytes(), "image/png")}
-        data = {"kind": "image"}
-        resp = client.post("/api/story-assets", files=files, data=data)
-        assert resp.status_code == 201, resp.text
-        body = resp.json()
-        assert body["mime"] in ("image/jpeg", "image/png")
-        assert body["thumbnail_url"]
-        assert body["width"] > 0
-        assert body["height"] > 0
-        assert mock_put.call_count == 2  # original + thumbnail
+def test_upload_image_happy_path(client: TestClient, monkeypatch):
+    calls = []
+
+    def fake_put_object(key, body, content_type):
+        calls.append(key)
+        return f"https://r2.example/{key}"
+
+    monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
+
+    files = {"file": ("photo.png", _png_bytes(), "image/png")}
+    data = {"kind": "image"}
+    resp = client.post("/api/story-assets", files=files, data=data)
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["mime"] in ("image/jpeg", "image/png")
+    assert body["thumbnail_url"]
+    assert body["width"] > 0
+    assert body["height"] > 0
+    assert len(calls) == 2  # original + thumbnail
 
 
 def test_upload_image_rejects_oversize(client: TestClient):

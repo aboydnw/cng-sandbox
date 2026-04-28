@@ -5,6 +5,8 @@ export type {
   ScrollytellingChapter,
   MapChapter,
   ProseChapter,
+  ImageChapter,
+  ImageAsset,
   MapState,
   StoryIndexEntry,
   LayerConfig,
@@ -16,6 +18,7 @@ export {
   createScrollytellingChapter,
   createMapChapter,
   createProseChapter,
+  createImageChapter,
   createStory,
   isMapBoundChapter,
 } from "./types";

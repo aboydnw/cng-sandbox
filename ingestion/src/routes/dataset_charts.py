@@ -115,3 +115,67 @@ def dataset_timeseries(
     datetimes = tuple(ts["datetime"] for ts in timesteps)
     pairs = _cached_timeseries(dataset_id, collection_id, lon, lat, datetimes)
     return [{"datetime": dt, "value": value} for dt, value in pairs]
+
+
+def _titiler_statistics(collection_id: str, *, categorical: bool, bins: int) -> dict:
+    """Query titiler-pgstac /statistics."""
+    url = f"{RASTER_TILER_URL}/collections/{collection_id}/statistics"
+    params: dict[str, str | int] = {}
+    if categorical:
+        params["categorical"] = "true"
+    else:
+        params["histogram_bins"] = bins
+    with httpx.Client(timeout=30.0) as http:
+        resp = http.get(url, params=params)
+    if resp.status_code != 200:
+        logger.warning("titiler /statistics %s returned %s: %s", url, resp.status_code, resp.text[:200])
+        raise HTTPException(status_code=502, detail="titiler statistics failed")
+    return resp.json()
+
+
+@router.get("/datasets/{dataset_id}/histogram")
+def dataset_histogram(
+    dataset_id: str,
+    request: Request,
+    bins: int = Query(20, ge=2, le=100),
+):
+    """Return histogram data for a dataset — bins for continuous, class counts for categorical."""
+    workspace_id = request.headers.get("x-workspace-id", "") or None
+    session = get_session(request)
+    try:
+        ds = _load_dataset(session, dataset_id, workspace_id)
+    finally:
+        session.close()
+    collection_id = ds.get("stac_collection_id") or dataset_id
+
+    if ds.get("is_categorical"):
+        stats = _titiler_statistics(collection_id, categorical=True, bins=bins)
+        cats = stats.get("categorical") or {}
+        labels = {
+            int(c["value"]): c.get("label") or str(c["value"])
+            for c in (ds.get("categories") or [])
+        }
+        out = []
+        for value_str, count in cats.items():
+            value = int(value_str)
+            out.append(
+                {
+                    "class": value,
+                    "label": labels.get(value, str(value)),
+                    "count": int(count),
+                }
+            )
+        out.sort(key=lambda r: r["class"])
+        return out
+
+    stats = _titiler_statistics(collection_id, categorical=False, bins=bins)
+    hist = stats.get("histogram") or []
+    if len(hist) != 2:
+        raise HTTPException(status_code=502, detail="titiler returned unexpected histogram shape")
+    counts, edges = hist[0], hist[1]
+    out = []
+    for i, count in enumerate(counts):
+        bin_min = edges[i] if i < len(edges) else edges[-1]
+        bin_max = edges[i + 1] if (i + 1) < len(edges) else edges[-1]
+        out.append({"bin_min": bin_min, "bin_max": bin_max, "count": int(count)})
+    return out

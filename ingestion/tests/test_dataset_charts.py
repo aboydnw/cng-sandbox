@@ -149,3 +149,49 @@ def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
         result = _titiler_point("col", "2020-01-01", 0.0, 0.0)
     assert result is None
     assert any("500" in record.message for record in caplog.records)
+
+
+def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):  # noqa: F811
+    with patch("src.routes.dataset_charts._titiler_statistics") as mock_stats, \
+         patch("src.routes.dataset_charts._load_dataset") as mock_load:
+        mock_load.return_value = {
+            "id": "ds-1",
+            "is_temporal": False,
+            "is_categorical": False,
+            "categories": None,
+            "stac_collection_id": "col",
+        }
+        mock_stats.return_value = {
+            "histogram": [[10, 20, 30], [0, 5, 10]],  # [counts, edges]
+        }
+        resp = client.get("/api/datasets/ds-1/histogram", params={"bins": 3})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body == [
+            {"bin_min": 0, "bin_max": 5, "count": 10},
+            {"bin_min": 5, "bin_max": 10, "count": 20},
+            {"bin_min": 10, "bin_max": 10, "count": 30},
+        ]
+
+
+def test_histogram_categorical_returns_class_counts(client: pytest.fixture):  # noqa: F811
+    with patch("src.routes.dataset_charts._titiler_statistics") as mock_stats, \
+         patch("src.routes.dataset_charts._load_dataset") as mock_load:
+        mock_load.return_value = {
+            "id": "ds-1",
+            "is_temporal": False,
+            "is_categorical": True,
+            "categories": [
+                {"value": 1, "color": "#ff0000", "label": "forest"},
+                {"value": 2, "color": "#00ff00", "label": "water"},
+            ],
+            "stac_collection_id": "col",
+        }
+        mock_stats.return_value = {"categorical": {"1": 100, "2": 50}}
+        resp = client.get("/api/datasets/ds-1/histogram")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body == [
+            {"class": 1, "label": "forest", "count": 100},
+            {"class": 2, "label": "water", "count": 50},
+        ]

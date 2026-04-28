@@ -164,6 +164,8 @@ async def create_connection(
                         file_size = parsed if parsed >= 0 else None
                     else:
                         file_size = None
+            except SSRFError:
+                raise
             except (httpx.HTTPError, ValueError):
                 pass
             try:

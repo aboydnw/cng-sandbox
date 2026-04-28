@@ -21,6 +21,7 @@ import {
   createMapChapter,
   createProseChapter,
   createImageChapter,
+  createVideoChapter,
   isMapBoundChapter,
   createStoryOnServer,
   getStoryFromServer,
@@ -414,6 +415,13 @@ export function useStoryEditor() {
         if (type === "image") {
           const existingImage = ch.type === "image" ? ch.image : undefined;
           return createImageChapter({ ...base, image: existingImage });
+        }
+        if (type === "video") {
+          const existingVideo = ch.type === "video" ? ch.video : undefined;
+          return createVideoChapter({
+            ...base,
+            ...(existingVideo ? { video: existingVideo } : {}),
+          });
         }
         const inheritedDatasetId = s.dataset_id ?? "";
         const inheritedDataset = inheritedDatasetId

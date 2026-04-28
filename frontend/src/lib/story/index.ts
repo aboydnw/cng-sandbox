@@ -7,6 +7,8 @@ export type {
   ProseChapter,
   ImageChapter,
   ImageAsset,
+  VideoChapter,
+  VideoEmbed,
   MapState,
   StoryIndexEntry,
   LayerConfig,
@@ -19,6 +21,7 @@ export {
   createMapChapter,
   createProseChapter,
   createImageChapter,
+  createVideoChapter,
   createStory,
   isMapBoundChapter,
 } from "./types";

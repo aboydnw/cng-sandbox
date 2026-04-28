@@ -1,6 +1,7 @@
 import type { Chapter } from "../../lib/story";
 import { ProseChapter } from "../ProseChapter";
 import { ImageChapterRenderer } from "../ImageChapterRenderer";
+import { VideoChapterRenderer } from "../VideoChapterRenderer";
 
 interface ChapterPreviewProps {
   chapter: Chapter;
@@ -13,6 +14,11 @@ export function ChapterPreview({ chapter }: ChapterPreviewProps) {
   if (chapter.type === "image") {
     return (
       <ImageChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
+    );
+  }
+  if (chapter.type === "video") {
+    return (
+      <VideoChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
     );
   }
   return null;

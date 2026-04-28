@@ -31,9 +31,7 @@ export function parseSubsetCsv(
 // for geographic CRSes. Downstream consumers (e.g. metersPerUnit in
 // @developmentseed/proj) require "degree" — without this fix, every
 // EPSG:4326 COG that hits the client render path crashes.
-function normalizeProjection(
-  def: ProjectionDefinition
-): ProjectionDefinition {
+function normalizeProjection(def: ProjectionDefinition): ProjectionDefinition {
   if (def.projName === "longlat" && def.units !== "degree") {
     return { ...def, units: "degree" };
   }

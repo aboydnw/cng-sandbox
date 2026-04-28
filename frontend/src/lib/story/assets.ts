@@ -1,3 +1,5 @@
+import { workspaceFetch } from "../api";
+
 export interface UploadedImageAsset {
   asset_id: string;
   url: string;
@@ -17,7 +19,10 @@ export async function uploadImageAsset(
   form.append("kind", "image");
   if (storyId) form.append("story_id", storyId);
 
-  const resp = await fetch("/api/story-assets", { method: "POST", body: form });
+  const resp = await workspaceFetch("/api/story-assets", {
+    method: "POST",
+    body: form,
+  });
   if (!resp.ok) {
     const text = await resp.text();
     throw new Error(`upload failed: ${resp.status} ${text}`);
@@ -26,7 +31,7 @@ export async function uploadImageAsset(
 }
 
 export async function deleteStoryAsset(assetId: string): Promise<void> {
-  const resp = await fetch(`/api/story-assets/${assetId}`, {
+  const resp = await workspaceFetch(`/api/story-assets/${assetId}`, {
     method: "DELETE",
   });
   if (!resp.ok && resp.status !== 404) {

@@ -30,6 +30,8 @@ export {
 } from "./api";
 export { migrateStory } from "./migration";
 export { CHAPTER_TYPE_LABELS, CHAPTER_TYPE_DESCRIPTIONS } from "./labels";
+export type { UploadedImageAsset } from "./assets";
+export { uploadImageAsset, deleteStoryAsset } from "./assets";
 export type {
   ContentBlock,
   ChapterLayerResult,

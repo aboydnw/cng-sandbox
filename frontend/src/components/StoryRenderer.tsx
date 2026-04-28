@@ -316,6 +316,10 @@ export function StoryRenderer({
           );
         }
 
+        if (block.type === "image") {
+          return null;
+        }
+
         return (
           <ScrollytellingBlock
             key={`scrolly-${blockIndex}`}

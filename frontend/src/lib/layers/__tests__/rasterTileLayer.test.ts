@@ -19,6 +19,16 @@ describe("buildRasterTileLayers", () => {
     expect(layers[0].id).toBe("raster-tile-0");
   });
 
+  it("uses no-overlap refinement strategy to avoid flashing at low opacity", () => {
+    const layers = buildRasterTileLayers({
+      tileUrl: "/raster/tiles/{z}/{x}/{y}.png?colormap_name=viridis",
+      opacity: 0.5,
+      isTemporalActive: false,
+    });
+    const props = layers[0].props as { refinementStrategy?: string };
+    expect(props.refinementStrategy).toBe("no-overlap");
+  });
+
   it("uses custom id for non-temporal layer", () => {
     const layers = buildRasterTileLayers({
       id: "raster-layer-viridis-1",

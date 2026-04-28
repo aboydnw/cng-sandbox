@@ -30,6 +30,7 @@ export function createCOGLayer({
     opacity,
     visible,
     tileSize: 256,
+    refinementStrategy: "no-overlap",
     ...(bounds ? { extent: bounds } : {}),
     ...(onViewportLoad ? { onViewportLoad } : {}),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

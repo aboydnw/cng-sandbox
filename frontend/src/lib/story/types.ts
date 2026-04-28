@@ -35,6 +35,7 @@ export type ChapterType =
   | "scrollytelling"
   | "prose"
   | "map"
+  | "image"
   | "video";
 
 interface BaseChapter {
@@ -62,6 +63,20 @@ export interface ProseChapter extends BaseChapter {
   type: "prose";
 }
 
+export interface ImageAsset {
+  asset_id: string;
+  url: string;
+  thumbnail_url: string;
+  alt_text: string;
+  width: number;
+  height: number;
+}
+
+export interface ImageChapter extends BaseChapter {
+  type: "image";
+  image: ImageAsset;
+}
+
 export interface VideoEmbed {
   provider: VideoProvider;
   video_id: string;
@@ -77,6 +92,7 @@ export type Chapter =
   | ScrollytellingChapter
   | MapChapter
   | ProseChapter
+  | ImageChapter
   | VideoChapter;
 
 export interface Story {
@@ -150,6 +166,23 @@ export function createProseChapter(
   return {
     ...baseFields(overrides),
     type: "prose",
+  };
+}
+
+export function createImageChapter(
+  overrides: Partial<ImageChapter> = {}
+): ImageChapter {
+  return {
+    ...baseFields(overrides),
+    type: "image",
+    image: overrides.image ?? {
+      asset_id: "",
+      url: "",
+      thumbnail_url: "",
+      alt_text: "",
+      width: 0,
+      height: 0,
+    },
   };
 }
 

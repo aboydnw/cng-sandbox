@@ -22,6 +22,7 @@ import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
 import { ChapterPreview } from "../components/editor/ChapterPreview";
+import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
 
 function TooltipCard({
   text,
@@ -429,43 +430,45 @@ export default function StoryEditorPage() {
               onDismiss={() => dismiss("narrative")}
             />
           )}
-          {activeChapter ? (
-            <>
-              {activeChapter.type === "video" ? (
-                <VideoChapterEditor
-                  chapter={activeChapter}
-                  onChange={(next) => updateChapter(next)}
-                  onChapterTypeChange={updateChapterType}
-                />
-              ) : (
-                <NarrativeEditor
-                  chapterType={activeChapter.type}
-                  onChapterTypeChange={updateChapterType}
-                  title={activeChapter.title}
-                  narrative={activeChapter.narrative}
-                  onTitleChange={updateChapterTitle}
-                  onNarrativeChange={updateChapterNarrative}
-                  layerConfig={
-                    isMapBoundChapter(activeChapter)
-                      ? activeChapter.layer_config
-                      : DEFAULT_LAYER_CONFIG
-                  }
-                  onLayerConfigChange={updateChapterLayerConfig}
-                  datasetType={activeDataset?.dataset_type ?? "raster"}
-                  datasets={allDatasets}
-                  connections={allConnections}
-                  onUploadClick={() => setUploadModalOpen(true)}
-                  onAddConnectionClick={() => setConnectionModalOpen(true)}
-                  overlayPosition={
-                    activeChapter.type === "scrollytelling"
-                      ? (activeChapter.overlay_position ?? "left")
-                      : "left"
-                  }
-                  onOverlayPositionChange={updateChapterOverlayPosition}
-                  temporalTimesteps={activeDatasetTimesteps}
-                />
-              )}
-            </>
+          {activeChapter && activeChapter.type === "image" ? (
+            <ImageChapterEditor
+              chapter={activeChapter}
+              onChange={updateChapter}
+              onChapterTypeChange={updateChapterType}
+            />
+          ) : activeChapter && activeChapter.type === "video" ? (
+            <VideoChapterEditor
+              chapter={activeChapter}
+              onChange={(next) => updateChapter(next)}
+              onChapterTypeChange={updateChapterType}
+            />
+          ) : activeChapter ? (
+            <NarrativeEditor
+              chapterType={activeChapter.type}
+              onChapterTypeChange={updateChapterType}
+              title={activeChapter.title}
+              narrative={activeChapter.narrative}
+              onTitleChange={updateChapterTitle}
+              onNarrativeChange={updateChapterNarrative}
+              layerConfig={
+                isMapBoundChapter(activeChapter)
+                  ? activeChapter.layer_config
+                  : DEFAULT_LAYER_CONFIG
+              }
+              onLayerConfigChange={updateChapterLayerConfig}
+              datasetType={activeDataset?.dataset_type ?? "raster"}
+              datasets={allDatasets}
+              connections={allConnections}
+              onUploadClick={() => setUploadModalOpen(true)}
+              onAddConnectionClick={() => setConnectionModalOpen(true)}
+              overlayPosition={
+                activeChapter.type === "scrollytelling"
+                  ? (activeChapter.overlay_position ?? "left")
+                  : "left"
+              }
+              onOverlayPositionChange={updateChapterOverlayPosition}
+              temporalTimesteps={activeDatasetTimesteps}
+            />
           ) : (
             <Flex h="100%" align="center" justify="center">
               <Text color="gray.400">Select a chapter to edit</Text>

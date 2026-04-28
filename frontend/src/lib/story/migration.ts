@@ -8,6 +8,7 @@ import {
   createProseChapter,
   createMapChapter,
   createScrollytellingChapter,
+  createImageChapter,
   createVideoChapter,
 } from "./types";
 import type { VideoProvider } from "./video";
@@ -20,6 +21,7 @@ function migrateChapter(
     raw.type === "prose" ||
     raw.type === "map" ||
     raw.type === "scrollytelling" ||
+    raw.type === "image" ||
     raw.type === "video"
       ? raw.type
       : raw.map_state || raw.layer_config
@@ -34,6 +36,23 @@ function migrateChapter(
 
   if (type === "prose") {
     return createProseChapter(base);
+  }
+
+  if (type === "image") {
+    const imageData = raw.image as Record<string, unknown> | undefined;
+    return createImageChapter({
+      ...base,
+      image: imageData
+        ? {
+            asset_id: (imageData.asset_id as string) ?? "",
+            url: (imageData.url as string) ?? "",
+            thumbnail_url: (imageData.thumbnail_url as string) ?? "",
+            alt_text: (imageData.alt_text as string) ?? "",
+            width: (imageData.width as number) ?? 0,
+            height: (imageData.height as number) ?? 0,
+          }
+        : undefined,
+    });
   }
 
   if (type === "video") {

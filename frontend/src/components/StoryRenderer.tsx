@@ -6,6 +6,7 @@ import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
+import { ImageChapterRenderer } from "./ImageChapterRenderer";
 import { VideoChapterRenderer } from "./VideoChapterRenderer";
 import { RenderModeIndicator } from "./RenderModeIndicator";
 import { type CameraState, cameraFromBounds } from "../lib/layers";
@@ -317,6 +318,25 @@ export function StoryRenderer({
           );
         }
 
+        if (block.type === "image") {
+          return (
+            <Box
+              key={block.chapter.id}
+              onClick={
+                onChapterClick
+                  ? () => onChapterClick(block.chapter.id)
+                  : undefined
+              }
+              cursor={onChapterClick ? "pointer" : undefined}
+            >
+              <ImageChapterRenderer
+                chapter={block.chapter}
+                chapterIndex={block.index}
+              />
+            </Box>
+          );
+        }
+
         if (block.type === "video") {
           return (
             <Box
@@ -333,20 +353,16 @@ export function StoryRenderer({
           );
         }
 
-        if (block.type === "scrollytelling") {
-          return (
-            <ScrollytellingBlock
-              key={`scrolly-${blockIndex}`}
-              chapters={block.chapters}
-              startIndex={block.startIndex}
-              datasetMap={datasetMap}
-              connectionMap={connectionMap}
-              onChapterClick={onChapterClick}
-            />
-          );
-        }
-
-        return null;
+        return (
+          <ScrollytellingBlock
+            key={`scrolly-${blockIndex}`}
+            chapters={block.chapters}
+            startIndex={block.startIndex}
+            datasetMap={datasetMap}
+            connectionMap={connectionMap}
+            onChapterClick={onChapterClick}
+          />
+        );
       })}
     </>
   );

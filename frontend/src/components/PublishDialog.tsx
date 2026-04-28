@@ -110,9 +110,9 @@ export function PublishDialog({
                     <Flex direction="column" gap={1.5}>
                       {story.chapters.map((ch) => {
                         const hasNarrative = ch.narrative.trim().length > 0;
-                        const isProse = ch.type === "prose";
+                        const isMapBound = isMapBoundChapter(ch);
                         const hasMap =
-                          isMapBoundChapter(ch) && !!ch.layer_config.dataset_id;
+                          isMapBound && !!ch.layer_config.dataset_id;
                         return (
                           <Flex
                             key={ch.id}
@@ -131,7 +131,7 @@ export function PublishDialog({
                               >
                                 Narrative
                               </Badge>
-                              {isMapBoundChapter(ch) && (
+                              {isMapBound && (
                                 <Badge
                                   size="sm"
                                   colorPalette={hasMap ? "green" : "gray"}

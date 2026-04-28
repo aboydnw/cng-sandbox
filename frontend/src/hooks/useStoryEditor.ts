@@ -20,6 +20,7 @@ import {
   createScrollytellingChapter,
   createMapChapter,
   createProseChapter,
+  createImageChapter,
   createVideoChapter,
   isMapBoundChapter,
   createStoryOnServer,
@@ -411,6 +412,10 @@ export function useStoryEditor() {
           narrative: ch.narrative,
         };
         if (type === "prose") return createProseChapter(base);
+        if (type === "image") {
+          const existingImage = ch.type === "image" ? ch.image : undefined;
+          return createImageChapter({ ...base, image: existingImage });
+        }
         if (type === "video") {
           const existingVideo = ch.type === "video" ? ch.video : undefined;
           return createVideoChapter({

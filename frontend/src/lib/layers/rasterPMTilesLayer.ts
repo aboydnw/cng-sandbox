@@ -28,6 +28,7 @@ export function buildRasterPMTilesLayer({
     data: `${absoluteUrl}/{z}/{x}/{y}.png`,
     opacity,
     tileSize: 256,
+    refinementStrategy: "no-overlap",
     ...(minZoom !== undefined && { minZoom }),
     ...(maxZoom !== undefined && { maxZoom }),
     fetch: async (url: string) => {

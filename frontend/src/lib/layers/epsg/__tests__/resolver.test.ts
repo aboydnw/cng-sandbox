@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { EpsgResolver } from "@developmentseed/proj";
+import { metersPerUnit } from "@developmentseed/proj";
 import { createCngEpsgResolver } from "../resolver";
 
 describe("cngEpsgResolver", () => {
@@ -14,6 +15,19 @@ describe("cngEpsgResolver", () => {
     const def = await resolver(5070);
     expect(def).toBeDefined();
     expect(networkResolver).not.toHaveBeenCalled();
+  });
+
+  it("returns an EPSG:4326 definition compatible with metersPerUnit", async () => {
+    // Regression: wkt-parser produces `units: "unknown"` for the WKT2
+    // GEOGCRS form in subset.csv, which crashes generateTileMatrixSet
+    // when rendering a geographic-CRS COG client-side.
+    const resolver = createCngEpsgResolver(networkResolver);
+    const def = await resolver(4326);
+    expect(def.units).toBe("degree");
+    const semiMajorAxis = def.a ?? def.datum?.a;
+    expect(() =>
+      metersPerUnit(def.units as "degree", { semiMajorAxis })
+    ).not.toThrow();
   });
 
   it("resolves a UTM zone (32614) without invoking the network resolver", async () => {

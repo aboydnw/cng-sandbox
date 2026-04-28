@@ -152,6 +152,7 @@ services:
       AWS_HTTPS: "YES"
       AWS_VIRTUAL_HOSTING: "FALSE"
       GDAL_CACHEMAX: "512"
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
       STAC_API_URL: http://stac-api:8080
       RASTER_TILER_URL: http://raster-tiler:80
       VECTOR_TILER_URL: http://vector-tiler:80

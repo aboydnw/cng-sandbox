@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.30.0](https://github.com/aboydnw/cng-sandbox/compare/v1.29.1...v1.30.0) (2026-04-28)
+
+
+### Features
+
+* **stories:** chart chapters with CSV and dataset sources ([#364](https://github.com/aboydnw/cng-sandbox/issues/364)) ([c8e09ca](https://github.com/aboydnw/cng-sandbox/commit/c8e09ca26a85a786e1dbd8e64fada8325d9e630a))
+* **stories:** foundation for additional chapter types ([#359](https://github.com/aboydnw/cng-sandbox/issues/359)) ([eb4ec0a](https://github.com/aboydnw/cng-sandbox/commit/eb4ec0a56d708172efa239bfea0ed2a164934689))
+* **stories:** image chapters with click-to-zoom lightbox ([#362](https://github.com/aboydnw/cng-sandbox/issues/362)) ([9c488e9](https://github.com/aboydnw/cng-sandbox/commit/9c488e9d972a2e4146125c90822a3501db52117f))
+* **stories:** video chapters (YouTube + Vimeo embeds) ([#363](https://github.com/aboydnw/cng-sandbox/issues/363)) ([c620703](https://github.com/aboydnw/cng-sandbox/commit/c6207032513890c6f93699e5bd464e439372fd90))
+
+
+### Bug Fixes
+
+* **frontend:** normalize geographic-CRS units in inline EPSG registry ([#371](https://github.com/aboydnw/cng-sandbox/issues/371)) ([00fe75a](https://github.com/aboydnw/cng-sandbox/commit/00fe75acc3bd76a0cac25dcfef686f2dcd98cadc))
+* **frontend:** project lng/lat to source CRS in pixel inspector ([#366](https://github.com/aboydnw/cng-sandbox/issues/366)) ([7a3d8c8](https://github.com/aboydnw/cng-sandbox/commit/7a3d8c8c5b704830336d474d77adae195cbf0603))
+* **ingestion:** pass R2_PUBLIC_URL through to ingestion service ([#367](https://github.com/aboydnw/cng-sandbox/issues/367)) ([ffd474a](https://github.com/aboydnw/cng-sandbox/commit/ffd474af3bc407a5c93372d7548a2166b22804ce))
+* **stories:** allow image, video, and chart chapters to save ([#365](https://github.com/aboydnw/cng-sandbox/issues/365)) ([77a93ff](https://github.com/aboydnw/cng-sandbox/commit/77a93ff69270b82614271e2710c1d0b50fe386df))
+
 ## [1.29.1](https://github.com/aboydnw/cng-sandbox/compare/v1.29.0...v1.29.1) (2026-04-27)
 
 

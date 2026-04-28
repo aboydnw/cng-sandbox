@@ -11,7 +11,9 @@ export function ChapterPreview({ chapter }: ChapterPreviewProps) {
     return <ProseChapter chapter={chapter} chapterIndex={chapter.order} />;
   }
   if (chapter.type === "image") {
-    return <ImageChapterRenderer chapter={chapter} chapterIndex={chapter.order} />;
+    return (
+      <ImageChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
+    );
   }
   return null;
 }

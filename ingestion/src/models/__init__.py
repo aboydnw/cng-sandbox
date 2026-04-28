@@ -154,5 +154,3 @@ class Dataset(BaseModel):
     expires_at: datetime | None = None
     preferred_colormap: str | None = None
     preferred_colormap_reversed: bool | None = None
-
-

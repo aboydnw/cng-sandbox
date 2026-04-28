@@ -57,6 +57,7 @@ def test_upload_image_rejects_non_image_bytes(client: TestClient):
 def test_get_story_asset_returns_metadata(client, monkeypatch):
     def fake_put_object(key, body, content_type):
         pass
+
     monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
 
     upload = client.post(
@@ -78,10 +79,13 @@ def test_get_story_asset_returns_metadata(client, monkeypatch):
 def test_delete_story_asset_removes_row_and_objects(client, monkeypatch):
     calls = []
     deleted = []
+
     def fake_put_object(key, body, content_type):
         calls.append(key)
+
     def fake_delete_object(key):
         deleted.append(key)
+
     monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
     monkeypatch.setattr("src.routes.story_assets._delete_object", fake_delete_object)
 

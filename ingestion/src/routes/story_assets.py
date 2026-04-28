@@ -138,7 +138,9 @@ def get_story_asset(asset_id: str, request: Request):
             "asset_id": row.id,
             "kind": row.kind,
             "url": _public_url(row.original_key),
-            "thumbnail_url": _public_url(row.thumbnail_key) if row.thumbnail_key else None,
+            "thumbnail_url": _public_url(row.thumbnail_key)
+            if row.thumbnail_key
+            else None,
             "width": row.width,
             "height": row.height,
             "mime": row.mime,

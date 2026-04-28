@@ -69,6 +69,24 @@ export function buildBarOptionFromHistogram(
   };
 }
 
+function inferXAxisType(
+  rows: Record<string, unknown>[],
+  xField: string
+): "category" | "value" | "time" {
+  const values = rows.map((r) => r[xField]);
+  if (values.length === 0) return "category";
+  const allNumeric = values.every(
+    (v) => typeof v === "number" && Number.isFinite(v)
+  );
+  if (allNumeric) return "value";
+  const allStrings = values.every((v) => typeof v === "string");
+  if (allStrings) {
+    const allDates = values.every((v) => !Number.isNaN(Date.parse(v as string)));
+    if (allDates) return "time";
+  }
+  return "category";
+}
+
 export function buildOptionFromCsvRows(
   rows: Record<string, unknown>[],
   viz: Pick<
@@ -93,7 +111,7 @@ export function buildOptionFromCsvRows(
       top: viz.y_fields.length > 1 ? 50 : 30,
       bottom: 60,
     },
-    xAxis: { type: "category", name: viz.x_label ?? "" },
+    xAxis: { type: inferXAxisType(rows, viz.x_field), name: viz.x_label ?? "" },
     yAxis: {
       type: viz.y_scale === "log" ? "log" : "value",
       name: viz.y_label ?? "",
@@ -123,7 +141,7 @@ export async function fetchHistogram(
     `/api/datasets/${datasetId}/histogram`,
     window.location.origin
   );
-  if (bins) url.searchParams.set("bins", String(bins));
+  if (bins !== undefined) url.searchParams.set("bins", String(bins));
   const resp = await workspaceFetch(url.toString());
   if (!resp.ok) throw new Error(`histogram failed: ${resp.status}`);
   return resp.json();

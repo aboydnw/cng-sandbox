@@ -183,13 +183,26 @@ function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onC
 
   useEffect(() => {
     let cancelled = false;
-    workspaceFetch("/api/datasets")
-      .then((r) => r.json())
-      .then((data: Dataset[]) => {
+    async function loadDatasets() {
+      try {
+        const r = await workspaceFetch("/api/datasets");
         if (cancelled) return;
-        setDatasets(data);
-      })
-      .catch(() => {});
+        if (!r.ok) {
+          console.error("Failed to load datasets:", r.status);
+          setDatasets([]);
+          return;
+        }
+        const body = await r.json();
+        if (cancelled) return;
+        setDatasets(Array.isArray(body) ? body : (body.datasets ?? []));
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to load datasets:", err);
+          setDatasets([]);
+        }
+      }
+    }
+    void loadDatasets();
     return () => {
       cancelled = true;
     };
@@ -210,7 +223,9 @@ function DatasetBranch({ chapter, onChange }: Omit<ChartChapterEditorProps, "onC
           source: {
             kind: "dataset_timeseries",
             dataset_id: ds.id,
-            point: [0, 0],
+            point: ds.bounds
+              ? [(ds.bounds[0] + ds.bounds[2]) / 2, (ds.bounds[1] + ds.bounds[3]) / 2]
+              : [0, 0],
           },
           viz: { ...chapter.chart.viz, kind: "line", x_field: "datetime", y_fields: ["value"] },
         },

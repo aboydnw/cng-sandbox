@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Box } from "@chakra-ui/react";
 import maplibregl from "maplibre-gl";
+import { BASEMAPS } from "../MapShell";
 
 interface PointPickerMapProps {
   initialPoint: [number, number] | null;
@@ -16,33 +17,25 @@ export function PointPickerMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const onPickRef = useRef(onPick);
   const [ready, setReady] = useState(false);
 
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
+
+  // Mount effect — create map and click handler
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
-      center: initialPoint ?? [0, 0],
+      style: BASEMAPS.streets,
+      center: [0, 0],
       zoom: 2,
     });
     mapRef.current = map;
     map.once("load", () => {
       setReady(true);
-      if (bounds) {
-        map.fitBounds(
-          [
-            [bounds[0], bounds[1]],
-            [bounds[2], bounds[3]],
-          ],
-          { padding: 20, animate: false }
-        );
-      }
-      if (initialPoint) {
-        markerRef.current = new maplibregl.Marker({ color: "#c46a1d" })
-          .setLngLat(initialPoint)
-          .addTo(map);
-      }
     });
     map.on("click", (e) => {
       const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
@@ -53,15 +46,42 @@ export function PointPickerMap({
       } else {
         markerRef.current.setLngLat(lngLat);
       }
-      onPick(lngLat);
+      onPickRef.current(lngLat);
     });
     return () => {
       map.remove();
       mapRef.current = null;
       markerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Bounds-fitting effect — runs when bounds changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !bounds) return;
+    map.fitBounds(
+      [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
+      { padding: 20, animate: false }
+    );
+  }, [bounds, ready]);
+
+  // Marker effect — runs when initialPoint changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (initialPoint) {
+      if (!markerRef.current) {
+        markerRef.current = new maplibregl.Marker({ color: "#c46a1d" })
+          .setLngLat(initialPoint)
+          .addTo(map);
+      } else {
+        markerRef.current.setLngLat(initialPoint);
+      }
+    } else if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+  }, [initialPoint, ready]);
 
   return (
     <Box

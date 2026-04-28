@@ -1,5 +1,6 @@
 """Chart-shaped data endpoints for datasets."""
 
+import logging
 import os
 from functools import lru_cache
 
@@ -8,23 +9,23 @@ from fastapi import APIRouter, HTTPException, Query, Request
 
 from src.dependencies import get_session
 from src.models.dataset import DatasetRow
+from src.services import sharing
 
 router = APIRouter(prefix="/api")
+
+logger = logging.getLogger(__name__)
 
 RASTER_TILER_URL = os.environ.get("RASTER_TILER_URL", "http://raster-tiler:80")
 
 
 def _load_dataset(session, dataset_id: str, workspace_id: str | None) -> dict:
     """Load a dataset row and return its dict representation."""
-    try:
-        row = session.query(DatasetRow).filter_by(id=dataset_id).first()
-        if not row:
-            raise HTTPException(status_code=404, detail="dataset not found")
-        if row.workspace_id and row.workspace_id != workspace_id:
-            raise HTTPException(status_code=404, detail="dataset not found")
-        return row.to_dict()
-    finally:
-        session.close()
+    row = session.query(DatasetRow).filter_by(id=dataset_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="dataset not found")
+    if not sharing.can_read_dataset(session, row, workspace_id or ""):
+        raise HTTPException(status_code=404, detail="dataset not found")
+    return row.to_dict()
 
 
 def _titiler_point(collection_id: str, datetime_iso: str, lon: float, lat: float) -> float | None:
@@ -34,6 +35,7 @@ def _titiler_point(collection_id: str, datetime_iso: str, lon: float, lat: float
     with httpx.Client(timeout=20.0) as http_client:
         resp = http_client.get(url, params=params)
     if resp.status_code != 200:
+        logger.warning("titiler /point %s returned %s: %s", url, resp.status_code, resp.text[:200])
         return None
     body = resp.json()
     values = body.get("values") or []
@@ -45,7 +47,37 @@ def _titiler_point(collection_id: str, datetime_iso: str, lon: float, lat: float
     return float(first)
 
 
+def _build_timeseries(
+    dataset_id: str,
+    collection_id: str,
+    lon: float,
+    lat: float,
+    datetimes: tuple,
+) -> tuple:
+    """Fetch pixel values for all timesteps without caching."""
+    return tuple((dt, _titiler_point(collection_id, dt, lon, lat)) for dt in datetimes)
+
+
+class _PartialTimeseriesError(Exception):
+    def __init__(self, pairs):
+        self.pairs = pairs
+
+
 @lru_cache(maxsize=256)
+def _cached_complete_timeseries(
+    dataset_id: str,
+    collection_id: str,
+    lon: float,
+    lat: float,
+    datetimes: tuple,
+) -> tuple:
+    """Fetch and cache pixel values; raises _PartialTimeseriesError if any value is None."""
+    pairs = _build_timeseries(dataset_id, collection_id, lon, lat, datetimes)
+    if any(value is None for _, value in pairs):
+        raise _PartialTimeseriesError(pairs)
+    return pairs
+
+
 def _cached_timeseries(
     dataset_id: str,
     collection_id: str,
@@ -53,11 +85,11 @@ def _cached_timeseries(
     lat: float,
     datetimes: tuple,
 ) -> tuple:
-    """Fetch pixel values for all timesteps, cached by location and dataset."""
-    out = []
-    for dt in datetimes:
-        out.append((dt, _titiler_point(collection_id, dt, lon, lat)))
-    return tuple(out)
+    """Return timeseries pairs; caches only complete (no-None) results."""
+    try:
+        return _cached_complete_timeseries(dataset_id, collection_id, lon, lat, datetimes)
+    except _PartialTimeseriesError as exc:
+        return exc.pairs
 
 
 @router.get("/datasets/{dataset_id}/timeseries")
@@ -70,7 +102,10 @@ def dataset_timeseries(
     """Return per-timestep pixel values for a temporal dataset at a given point."""
     workspace_id = request.headers.get("x-workspace-id", "") or None
     session = get_session(request)
-    ds = _load_dataset(session, dataset_id, workspace_id)
+    try:
+        ds = _load_dataset(session, dataset_id, workspace_id)
+    finally:
+        session.close()
     if not ds.get("is_temporal"):
         raise HTTPException(status_code=400, detail="dataset is not temporal")
     timesteps = ds.get("timesteps") or []

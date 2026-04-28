@@ -1,33 +1,55 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 /**
- * Accumulates tile bytes fetched since mount by observing PerformanceResourceTiming
- * entries whose URL starts with the given prefix.
+ * Accumulates bytes fetched since mount by observing PerformanceResourceTiming
+ * entries whose URL starts with any of the given prefixes.
+ *
+ * Each prefix is resolved against `window.location.origin`, so callers may pass
+ * either a path (e.g. `/pmtiles/`) or an absolute URL (e.g. `https://r2.example/ds.tif`).
+ * This lets the metric cover both server-side tile requests (proxied paths) and
+ * client-side rendering (direct R2 fetches for COGs and GeoParquet).
+ *
+ * Range requests against the same URL produce multiple PerformanceResourceTiming
+ * entries — they're all counted because dedup is by entry identity, not URL.
  *
  * Returns:
- *   null  — no matching tile requests have been made yet
- *   0     — tile requests exist but all report transferSize=0 (Timing-Allow-Origin not set)
+ *   null  — no matching requests have been made yet
+ *   0     — matching requests exist but all report transferSize=0 (Timing-Allow-Origin not set)
  *   > 0   — bytes fetched so far
  */
-export function useTileTransferSize(tileUrlPrefix: string): number | null {
+export function useTileTransferSize(prefixes: string[]): number | null {
+  const prefixKey = prefixes.join("|");
+  const resolvedPrefixes = useMemo(
+    () =>
+      prefixes
+        .filter((p) => p.length > 0)
+        .map((p) => new URL(p, window.location.origin).toString()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [prefixKey]
+  );
+
   const [bytes, setBytes] = useState<number | null>(null);
-  const accumulatorRef = useRef({ total: 0, count: 0 });
 
   useEffect(() => {
-    const prefix = window.location.origin + tileUrlPrefix;
+    if (resolvedPrefixes.length === 0) {
+      setBytes(null);
+      return;
+    }
+
     const acc = { total: 0, count: 0 };
-    const seen = new Set<string>();
-    accumulatorRef.current = acc;
+    const seen = new WeakSet<PerformanceResourceTiming>();
+
+    const matches = (url: string) =>
+      resolvedPrefixes.some((p) => url.startsWith(p));
 
     const addEntry = (e: PerformanceResourceTiming): boolean => {
-      if (!e.name.startsWith(prefix) || seen.has(e.name)) return false;
-      seen.add(e.name);
+      if (seen.has(e) || !matches(e.name)) return false;
+      seen.add(e);
       acc.total += e.transferSize;
       acc.count++;
       return true;
     };
 
-    // Scan any entries already in the buffer
     const existing = performance.getEntriesByType(
       "resource"
     ) as PerformanceResourceTiming[];
@@ -46,7 +68,7 @@ export function useTileTransferSize(tileUrlPrefix: string): number | null {
     observer.observe({ type: "resource", buffered: false });
 
     return () => observer.disconnect();
-  }, [tileUrlPrefix]);
+  }, [resolvedPrefixes]);
 
   return bytes;
 }

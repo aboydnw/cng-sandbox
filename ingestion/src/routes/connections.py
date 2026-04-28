@@ -129,6 +129,7 @@ async def create_connection(
 
     is_categorical = False
     categories_json = None
+    file_size = None
     render_path = body.render_path
     if body.connection_type == "geoparquet" and render_path not in (
         "client",
@@ -149,13 +150,23 @@ async def create_connection(
             # to disable, so a 302 to a private IP would otherwise bypass the
             # SSRF guard above. This catches the literal-redirector case only;
             # GDAL may still chase redirects fetched mid-stream.
+            # Also captures Content-Length to populate file_size, which gates
+            # client-side render eligibility.
             try:
                 async with httpx.AsyncClient(
                     follow_redirects=False, timeout=10.0
                 ) as http:
                     head_resp = await http.head(body.url)
                     raise_if_redirect(head_resp)
-            except httpx.HTTPError:
+                    cl = head_resp.headers.get("content-length")
+                    if cl is not None:
+                        parsed = int(cl)
+                        file_size = parsed if parsed >= 0 else None
+                    else:
+                        file_size = None
+            except SSRFError:
+                raise
+            except (httpx.HTTPError, ValueError):
                 pass
             try:
                 result = await asyncio.to_thread(
@@ -204,6 +215,7 @@ async def create_connection(
             workspace_id=workspace_id,
             is_categorical=is_categorical,
             categories_json=categories_json,
+            file_size=file_size,
             created_at=datetime.now(UTC),
             render_path=render_path,
             conversion_status="pending" if is_server_conversion else None,

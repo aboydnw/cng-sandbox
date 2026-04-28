@@ -207,3 +207,13 @@ def test_csv_chart_source_does_not_match_dataset(db_session):
         chart_source={"kind": "csv", "url": "https://example.com/data.csv"},
     )
     assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is False
+
+
+def test_csv_chart_source_with_dataset_id_does_not_grant_access(db_session):
+    row = _make_dataset(db_session)
+    _make_story_with_chart(
+        db_session,
+        published=True,
+        chart_source={"kind": "csv", "url": "https://example.com/data.csv", "dataset_id": row.id},
+    )
+    assert sharing.is_dataset_referenced_by_published_story(db_session, row.id) is False

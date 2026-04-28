@@ -1,5 +1,6 @@
 """Chart-shaped data endpoints for datasets."""
 
+import concurrent.futures
 import logging
 import os
 from functools import lru_cache
@@ -28,16 +29,36 @@ def _load_dataset(session, dataset_id: str, workspace_id: str | None) -> dict:
     return row.to_dict()
 
 
-def _titiler_point(collection_id: str, datetime_iso: str, lon: float, lat: float) -> float | None:
-    """Query titiler-pgstac for the pixel value at a point for a given datetime."""
+def _titiler_point(
+    collection_id: str,
+    datetime_iso: str,
+    lon: float,
+    lat: float,
+    client: httpx.Client | None = None,
+) -> float | None:
+    """Query titiler-pgstac /point for a single timestep.
+
+    If `client` is provided, reuse it. Otherwise, create a one-shot client.
+    """
     url = f"{RASTER_TILER_URL}/collections/{collection_id}/point/{lon},{lat}"
     params = {"datetime": datetime_iso}
-    with httpx.Client(timeout=20.0) as http_client:
-        resp = http_client.get(url, params=params)
+    try:
+        if client is None:
+            with httpx.Client(timeout=20.0) as http_client:
+                resp = http_client.get(url, params=params)
+        else:
+            resp = client.get(url, params=params)
+    except httpx.RequestError as exc:
+        logger.warning("titiler /point %s request failed: %s", url, exc)
+        return None
     if resp.status_code != 200:
         logger.warning("titiler /point %s returned %s: %s", url, resp.status_code, resp.text[:200])
         return None
-    body = resp.json()
+    try:
+        body = resp.json()
+    except ValueError as exc:
+        logger.warning("titiler /point %s returned non-JSON: %s", url, exc)
+        return None
     values = body.get("values") or []
     if not values:
         return None
@@ -52,10 +73,22 @@ def _build_timeseries(
     collection_id: str,
     lon: float,
     lat: float,
-    datetimes: tuple,
-) -> tuple:
+    datetimes: tuple[str, ...],
+) -> tuple[tuple[str, float | None], ...]:
     """Fetch pixel values for all timesteps without caching."""
-    return tuple((dt, _titiler_point(collection_id, dt, lon, lat)) for dt in datetimes)
+    with (
+        httpx.Client(timeout=20.0) as client,
+        concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool,
+    ):
+        futures = {
+            pool.submit(_titiler_point, collection_id, dt, lon, lat, client): dt
+            for dt in datetimes
+        }
+        results: dict[str, float | None] = {}
+        for fut in concurrent.futures.as_completed(futures):
+            dt = futures[fut]
+            results[dt] = fut.result()
+    return tuple((dt, results[dt]) for dt in datetimes)
 
 
 class _PartialTimeseriesError(Exception):
@@ -125,12 +158,20 @@ def _titiler_statistics(collection_id: str, *, categorical: bool, bins: int) -> 
         params["categorical"] = "true"
     else:
         params["histogram_bins"] = bins
-    with httpx.Client(timeout=30.0) as http:
-        resp = http.get(url, params=params)
+    try:
+        with httpx.Client(timeout=30.0) as http_client:
+            resp = http_client.get(url, params=params)
+    except httpx.RequestError as exc:
+        logger.warning("titiler /statistics %s request failed: %s", url, exc)
+        raise HTTPException(status_code=502, detail="titiler statistics failed") from exc
     if resp.status_code != 200:
         logger.warning("titiler /statistics %s returned %s: %s", url, resp.status_code, resp.text[:200])
         raise HTTPException(status_code=502, detail="titiler statistics failed")
-    return resp.json()
+    try:
+        return resp.json()
+    except ValueError as exc:
+        logger.warning("titiler /statistics %s returned non-JSON: %s", url, exc)
+        raise HTTPException(status_code=502, detail="titiler statistics failed") from exc
 
 
 @router.get("/datasets/{dataset_id}/histogram")
@@ -173,9 +214,11 @@ def dataset_histogram(
     if len(hist) != 2:
         raise HTTPException(status_code=502, detail="titiler returned unexpected histogram shape")
     counts, edges = hist[0], hist[1]
+    if not edges or len(edges) < len(counts):
+        raise HTTPException(status_code=502, detail="titiler returned malformed histogram")
     out = []
     for i, count in enumerate(counts):
-        bin_min = edges[i] if i < len(edges) else edges[-1]
+        bin_min = edges[i]
         bin_max = edges[i + 1] if (i + 1) < len(edges) else edges[-1]
         out.append({"bin_min": bin_min, "bin_max": bin_max, "count": int(count)})
     return out

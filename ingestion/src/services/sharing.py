@@ -37,7 +37,11 @@ def is_dataset_referenced_by_published_story(session: Session, dataset_id: str) 
             chart = ch.get("chart")
             if isinstance(chart, dict):
                 source = chart.get("source")
-                if isinstance(source, dict) and source.get("dataset_id") == dataset_id:
+                if (
+                    isinstance(source, dict)
+                    and source.get("kind") in {"dataset_timeseries", "dataset_histogram"}
+                    and source.get("dataset_id") == dataset_id
+                ):
                     return True
     return False
 

@@ -67,11 +67,11 @@ async def upload_story_asset(
     if kind == "csv":
         if len(raw) > MAX_CSV_BYTES:
             raise HTTPException(status_code=413, detail="csv larger than 5MB")
-        if file.content_type and file.content_type not in ALLOWED_CSV_MIMES:
+        if file.content_type not in ALLOWED_CSV_MIMES:
             raise HTTPException(status_code=415, detail="not a csv")
         try:
             df = pd.read_csv(io.BytesIO(raw))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise HTTPException(
                 status_code=400, detail=f"could not parse csv: {exc}"
             ) from exc

@@ -1,11 +1,9 @@
-import { useEffect } from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import {
   WorkspaceProvider,
   WorkspaceRedirect,
   useWorkspace,
 } from "./hooks/useWorkspace";
-import { useDuckDB } from "./hooks/useDuckDB";
 import UploadPage from "./pages/UploadPage";
 import MapPage from "./pages/MapPage";
 import ExpiredPage from "./pages/ExpiredPage";
@@ -53,16 +51,6 @@ function WorkspaceRoutes() {
 }
 
 export default function App() {
-  const { initialize: initializeDuckDB } = useDuckDB();
-
-  useEffect(() => {
-    // Fire and forget — DuckDB initializes in the background
-    initializeDuckDB().catch((err) => {
-      console.warn("DuckDB initialization in background failed:", err);
-      // Don't throw — this shouldn't block the app
-    });
-  }, []); // Empty deps — run once on mount
-
   return (
     <>
       <Routes>

@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { ChartChapterEditor } from "../ChartChapterEditor";
-import { createChartChapter } from "../../../lib/story/types";
+import {
+  createChartChapter,
+  type ChartChapter,
+} from "../../../lib/story/types";
 
 function wrap(node: React.ReactNode) {
   return <ChakraProvider value={defaultSystem}>{node}</ChakraProvider>;
@@ -36,28 +40,38 @@ describe("ChartChapterEditor", () => {
     expect(screen.getByText("From dataset")).toBeInTheDocument();
   });
 
-  it("does not crash when source is dataset-typed (CsvBranch is still mounted)", () => {
-    const ch = createChartChapter();
-    ch.chart = {
-      source: { kind: "dataset_histogram", dataset_id: "", bins: 20 },
-      viz: {
-        kind: "bar",
-        x_field: "bin",
-        y_fields: ["count"],
-        y_scale: "linear",
-      },
-    };
+  it("does not crash when the source flips from csv to dataset on a mounted editor", () => {
+    let setChapter: ((c: ChartChapter) => void) | null = null;
+    function Harness() {
+      const [chapter, setCh] = useState<ChartChapter>(createChartChapter());
+      setChapter = setCh;
+      return (
+        <ChartChapterEditor
+          chapter={chapter}
+          onChange={setCh}
+          onChapterTypeChange={() => {}}
+        />
+      );
+    }
+
+    render(wrap(<Harness />));
+    expect(setChapter).not.toBeNull();
+
     expect(() =>
-      render(
-        wrap(
-          <ChartChapterEditor
-            chapter={ch}
-            onChange={() => {}}
-            onChapterTypeChange={() => {}}
-          />,
-        ),
-      ),
+      act(() => {
+        setChapter!({
+          ...createChartChapter(),
+          chart: {
+            source: { kind: "dataset_histogram", dataset_id: "", bins: 20 },
+            viz: {
+              kind: "bar",
+              x_field: "bin",
+              y_fields: ["count"],
+              y_scale: "linear",
+            },
+          },
+        });
+      }),
     ).not.toThrow();
   });
-
 });

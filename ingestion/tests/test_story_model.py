@@ -250,6 +250,75 @@ def test_story_update_accepts_new_chapter_types():
     assert isinstance(update.chapters[1], ChartChapter)
 
 
+def test_image_chapter_rejects_negative_dimensions():
+    payload = {
+        "id": "a",
+        "order": 0,
+        "type": "image",
+        "title": "T",
+        "narrative": "",
+        "image": {
+            "asset_id": "asset-1",
+            "url": "https://example.com/img.jpg",
+            "thumbnail_url": "https://example.com/thumb.jpg",
+            "alt_text": "",
+            "width": -1,
+            "height": 100,
+        },
+    }
+    with pytest.raises(ValidationError):
+        StoryCreate(chapters=[payload])
+
+
+def test_chart_chapter_histogram_rejects_bins_below_two():
+    payload = {
+        "id": "a",
+        "order": 0,
+        "type": "chart",
+        "title": "T",
+        "narrative": "",
+        "chart": {
+            "source": {"kind": "dataset_histogram", "dataset_id": "ds-1", "bins": 1},
+            "viz": {"kind": "bar", "x_field": "bin", "y_fields": ["count"]},
+        },
+    }
+    with pytest.raises(ValidationError):
+        StoryCreate(chapters=[payload])
+
+
+def test_chart_chapter_histogram_rejects_bins_above_one_hundred():
+    payload = {
+        "id": "a",
+        "order": 0,
+        "type": "chart",
+        "title": "T",
+        "narrative": "",
+        "chart": {
+            "source": {"kind": "dataset_histogram", "dataset_id": "ds-1", "bins": 101},
+            "viz": {"kind": "bar", "x_field": "bin", "y_fields": ["count"]},
+        },
+    }
+    with pytest.raises(ValidationError):
+        StoryCreate(chapters=[payload])
+
+
+@pytest.mark.parametrize("bins", [2, 100])
+def test_chart_chapter_histogram_accepts_boundary_bin_counts(bins):
+    payload = {
+        "id": "a",
+        "order": 0,
+        "type": "chart",
+        "title": "T",
+        "narrative": "",
+        "chart": {
+            "source": {"kind": "dataset_histogram", "dataset_id": "ds-1", "bins": bins},
+            "viz": {"kind": "bar", "x_field": "bin", "y_fields": ["count"]},
+        },
+    }
+    story = StoryCreate(chapters=[payload])
+    assert isinstance(story.chapters[0], ChartChapter)
+
+
 def test_unknown_chapter_type_rejected():
     payload = {
         "id": "a",

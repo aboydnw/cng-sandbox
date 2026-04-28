@@ -81,8 +81,8 @@ class ImageAssetPayload(BaseModel):
     url: str
     thumbnail_url: str
     alt_text: str
-    width: int
-    height: int
+    width: int = Field(ge=0)
+    height: int = Field(ge=0)
 
 
 class ImageChapter(_BaseChapter):
@@ -117,7 +117,7 @@ class DatasetTimeseriesSourcePayload(BaseModel):
 class DatasetHistogramSourcePayload(BaseModel):
     kind: Literal["dataset_histogram"]
     dataset_id: str
-    bins: int | None = None
+    bins: int | None = Field(default=None, ge=2, le=100)
 
 
 ChartSourcePayload = Annotated[

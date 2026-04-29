@@ -4,20 +4,34 @@ import { CheckCircle, Copy } from "@phosphor-icons/react";
 
 export interface EmbedSnippetProps {
   viewerOrigin: string;
+  storyId: string;
   configUrl: string;
   width?: string;
   height?: string;
 }
 
+// The snippet must point at the /story/:id/embed route, which is the only
+// path that actually reads ?config= and renders the portable viewer. The
+// root path "/" is the auth-gated upload page on the main domain and would
+// silently redirect end users to a login prompt.
+//
+// Format support note: v1 supports vector-geoparquet, pmtiles, and xyz
+// layers. COG layers in portable mode currently fall back to the server-tile
+// path (relative /cog/tiles/...) which the viewer subdomain does not proxy,
+// so embeds containing COG layers will not render until the exporter emits
+// layer bounds (so client-side rendering can engage) or absolute COG tile
+// URLs. See cngRcAdapter.ts for the same caveat.
 export function EmbedSnippet({
   viewerOrigin,
+  storyId,
   configUrl,
   width = "100%",
   height = "600",
 }: EmbedSnippetProps) {
   const [copied, setCopied] = useState(false);
 
-  const snippet = `<iframe src="${viewerOrigin}/?config=${encodeURIComponent(configUrl)}" width="${width}" height="${height}" frameborder="0" allowfullscreen></iframe>`;
+  const src = `${viewerOrigin}/story/${storyId}/embed?config=${encodeURIComponent(configUrl)}`;
+  const snippet = `<iframe src="${src}" width="${width}" height="${height}" frameborder="0" allowfullscreen></iframe>`;
 
   async function handleCopy() {
     try {

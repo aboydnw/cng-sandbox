@@ -1,3 +1,9 @@
+// COG layers in portable mode currently fall back to the server-tile path
+// (relative /cog/tiles/...). The viewer subdomain has no /cog/ proxy, so
+// COG-backed embeds will not render until cng-rc.json carries layer bounds
+// (so client-side rendering can engage) OR the exporter emits absolute COG
+// tile URLs. v1 supports vector-geoparquet, pmtiles, and xyz; COG is a
+// follow-up.
 import type { Connection, ConnectionType } from "../../types";
 import type { CngRcChapter, CngRcConfig, CngRcLayer } from "./cngRcTypes";
 import {

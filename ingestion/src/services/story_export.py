@@ -26,6 +26,7 @@ _CONNECTION_TYPE_MAP = {
     "pmtiles": "pmtiles",
     "xyz_raster": "xyz",
     "xyz_vector": "xyz",
+    "zarr": "zarr",
 }
 
 

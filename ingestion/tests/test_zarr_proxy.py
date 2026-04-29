@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import ClassVar
 
 
@@ -81,7 +82,7 @@ class FakeRangeClient:
         pass
 
     def build_request(self, method, url, headers=None):
-        return None
+        return SimpleNamespace(headers=headers or {})
 
     async def send(self, request, stream=False, **kwargs):
         FakeRangeClient.last_range = request.headers.get("range")

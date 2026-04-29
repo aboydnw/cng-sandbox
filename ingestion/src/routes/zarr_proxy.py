@@ -110,10 +110,19 @@ async def zarr_proxy(url: str, request: Request):
         raise HTTPException(status_code=resp.status_code, detail="Upstream error")
 
     content_length = resp.headers.get("content-length")
-    if content_length and int(content_length) > MAX_RESPONSE_BYTES:
-        await resp.aclose()
-        await client.aclose()
-        raise HTTPException(status_code=413, detail="Response too large")
+    if content_length:
+        try:
+            parsed_length = int(content_length)
+        except ValueError:
+            await resp.aclose()
+            await client.aclose()
+            raise HTTPException(
+                status_code=502, detail="Invalid upstream Content-Length"
+            )
+        if parsed_length > MAX_RESPONSE_BYTES:
+            await resp.aclose()
+            await client.aclose()
+            raise HTTPException(status_code=413, detail="Response too large")
 
     response_headers: dict[str, str] = {"accept-ranges": "bytes"}
     if "content-type" in resp.headers:

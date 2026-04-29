@@ -67,7 +67,7 @@ export function DiscoverHeader() {
             </Text>
           </Link>
           <Link
-            to={workspacePath("/library")}
+            to={workspacePath("/data")}
             style={{ textDecoration: "none" }}
           >
             <Text fontSize="14px" color={TEXT_MUTED} _hover={{ color: TEXT }}>

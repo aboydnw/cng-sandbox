@@ -28,9 +28,10 @@ describe("Header", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders Library and About nav links", () => {
+  it("renders Data, Stories, and About nav links", () => {
     renderWithProviders(<Header />);
-    expect(screen.getByRole("link", { name: /library/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^data$/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^stories$/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /about/i })).toBeInTheDocument();
   });
 });

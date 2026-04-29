@@ -762,3 +762,30 @@ def test_create_cog_connection_file_size_none_when_content_length_negative(
     )
     assert resp.status_code == 201
     assert resp.json()["file_size"] is None
+
+
+def test_connection_row_persists_config_dict(db_session):
+    from src.models.connection import ConnectionRow
+
+    row = ConnectionRow(
+        id="conn-config-test",
+        name="zarr test",
+        url="https://example.com/store.zarr",
+        connection_type="zarr",
+        config={"variable": "t2m", "rescaleMin": 200.0, "rescaleMax": 320.0},
+    )
+    db_session.add(row)
+    db_session.commit()
+    db_session.expire_all()
+
+    fetched = db_session.query(ConnectionRow).filter_by(id="conn-config-test").one()
+    assert fetched.config == {
+        "variable": "t2m",
+        "rescaleMin": 200.0,
+        "rescaleMax": 320.0,
+    }
+    assert fetched.to_dict()["config"] == {
+        "variable": "t2m",
+        "rescaleMin": 200.0,
+        "rescaleMax": 320.0,
+    }

@@ -4,7 +4,16 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    String,
+    Text,
+)
 
 from src.models.base import Base
 
@@ -40,6 +49,7 @@ class ConnectionRow(Base):
     render_mode = Column(String, nullable=True)
     preferred_colormap = Column(String, nullable=True)
     preferred_colormap_reversed = Column(Boolean, nullable=True)
+    config = Column(JSON, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -75,4 +85,5 @@ class ConnectionRow(Base):
                 if self.preferred_colormap_reversed is None
                 else bool(self.preferred_colormap_reversed)
             ),
+            "config": self.config,
         }

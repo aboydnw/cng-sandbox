@@ -83,8 +83,8 @@ function buildMapState(map: CngRcChapter["map"]): MapState {
 
 function parseTimestep(value: string | null): number | undefined {
   if (value == null) return undefined;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 function buildLayerConfig(
@@ -143,6 +143,7 @@ function convertChapter(
   );
   const mapState = buildMapState(ch.map);
 
+  // image/video/chart chapters fall back to prose: portable asset hosting is deferred.
   switch (ch.type) {
     case "scrollytelling":
       return createScrollytellingChapter({

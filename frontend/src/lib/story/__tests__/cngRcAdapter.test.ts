@@ -78,6 +78,20 @@ describe("cngRcToStory", () => {
     expect(story.dataset_ids).toEqual([]);
   });
 
+  it("maps null description to undefined on the story", () => {
+    const config = makeConfig({
+      metadata: {
+        title: "Sample Story",
+        description: null,
+        author: null,
+        created: "2026-04-20T00:00:00Z",
+        updated: "2026-04-21T00:00:00Z",
+      },
+    });
+    const { story } = cngRcToStory(config);
+    expect(story.description).toBeUndefined();
+  });
+
   it("converts a scrollytelling chapter with map_state and layer_config", () => {
     const config = makeConfig({
       chapters: [
@@ -182,7 +196,7 @@ describe("cngRcToStory", () => {
     expect(xyz!.tile_type).toBe("raster");
   });
 
-  it("skips synthesizing a Connection for layers with no URLs", () => {
+  it("skips connection synthesis when both URLs are missing", () => {
     const config = makeConfig({
       layers: {
         broken: makeLayer({ source_url: null, cng_url: null }),
@@ -222,7 +236,7 @@ describe("cngRcToStory", () => {
     );
   });
 
-  it("falls back to a prose chapter for image, video, and chart portable types", () => {
+  it("falls back to prose for asset-bearing chapter types until asset wiring lands", () => {
     const config = makeConfig({
       chapters: [
         {
@@ -258,6 +272,26 @@ describe("cngRcToStory", () => {
     expect(story.chapters[0].narrative).toBe("Image body");
     expect(story.chapters[1].title).toBe("A video");
     expect(story.chapters[2].narrative).toBe("Chart body");
+  });
+
+  it("produces a default layer_config when a map chapter has no layers", () => {
+    const config = makeConfig({
+      chapters: [
+        {
+          id: "ch-empty-layers",
+          type: "map",
+          title: "Empty layers",
+          body: null,
+          map: null,
+          layers: [],
+        },
+      ],
+    });
+    const { story } = cngRcToStory(config);
+    const chapter = story.chapters[0];
+    if (chapter.type !== "map") throw new Error("expected map");
+    expect(chapter.layer_config.dataset_id).toBe("");
+    expect(chapter.layer_config.connection_id).toBeUndefined();
   });
 
   it("uses DEFAULT_MAP_STATE when chapter has no map", () => {

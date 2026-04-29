@@ -207,6 +207,8 @@ services:
     build:
       context: frontend
       target: builder
+      args:
+        VITE_VIEWER_ORIGIN: ${VITE_VIEWER_ORIGIN:-}
     profiles:
       - prod
     volumes:
@@ -233,6 +235,7 @@ services:
       - frontend_dist:/srv/frontend:ro
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+      VIEWER_SITE_ADDRESS: ${VIEWER_SITE_ADDRESS:-localhost:8443}
       AUTH_USER: ${AUTH_USER:-demo}
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
       R2_PUBLIC_URL: ${R2_PUBLIC_URL}

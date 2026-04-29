@@ -5,6 +5,8 @@ RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install --immutable
 COPY . .
+ARG VITE_VIEWER_ORIGIN
+ENV VITE_VIEWER_ORIGIN=$VITE_VIEWER_ORIGIN
 RUN npx vite build
 
 # --- Dev: hot-reloading Vite dev server for local development ---

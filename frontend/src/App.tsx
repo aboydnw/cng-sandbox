@@ -70,14 +70,16 @@ export default function App() {
         <Route path="/map/:id" element={<MapPage shared />} />
         <Route path="/story/:id" element={<StoryReaderPage />} />
         <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
-        <Route
-          path="/dev/zarr-spike"
-          element={
-            <Suspense fallback={null}>
-              <DevZarrSpike />
-            </Suspense>
-          }
-        />
+        {import.meta.env.DEV && (
+          <Route
+            path="/dev/zarr-spike"
+            element={
+              <Suspense fallback={null}>
+                <DevZarrSpike />
+              </Suspense>
+            }
+          />
+        )}
         <Route path="*" element={<WorkspaceRedirect />} />
       </Routes>
       <Toaster toaster={toaster} />

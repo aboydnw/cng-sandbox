@@ -9,6 +9,7 @@ const ViridisColorize = {
     "fs:DECKGL_FILTER_COLOR": `
       float t = color.r;
       if (t <= 0.0) { discard; }
+      t = (t * 255.0 - 1.0) / 254.0;
       vec3 c0 = vec3(0.267, 0.004, 0.329);
       vec3 c1 = vec3(0.282, 0.140, 0.458);
       vec3 c2 = vec3(0.127, 0.566, 0.551);
@@ -62,13 +63,12 @@ export function buildZarrLayer({
     const uint8 = new Uint8Array(pixelCount);
     for (let i = 0; i < pixelCount; i++) {
       const v = chunk.data[i];
-      if (v !== v) {
+      if (Number.isNaN(v)) {
         uint8[i] = 0;
         continue;
       }
-      uint8[i] = Math.round(
-        Math.max(0, Math.min(255, ((v - rescaleMin) / range) * 255))
-      );
+      const n = Math.max(0, Math.min(1, (v - rescaleMin) / range));
+      uint8[i] = 1 + Math.round(n * 254);
     }
 
     const texture = device.createTexture({

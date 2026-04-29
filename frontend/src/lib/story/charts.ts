@@ -101,9 +101,12 @@ export function buildOptionFromCsvRows(
 ): EChartsOption {
   const seriesField = viz.series_field || null;
   const yField = viz.y_fields[0];
+  if (!yField) {
+    throw new Error("chart is missing a Y column");
+  }
 
   let series: { name: string; type: string; data: unknown[][] }[];
-  if (seriesField && yField) {
+  if (seriesField) {
     const groups = new Map<string, Record<string, unknown>[]>();
     for (const r of rows) {
       const key = String(r[seriesField] ?? "");

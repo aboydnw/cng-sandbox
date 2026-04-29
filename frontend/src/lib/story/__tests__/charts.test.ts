@@ -100,6 +100,16 @@ describe("buildOptionFromCsvRows", () => {
     expect(opt.legend).toBeDefined();
   });
 
+  it("throws when y_fields is empty so the renderer can show an error", () => {
+    expect(() =>
+      buildOptionFromCsvRows([{ x: 1, y: 2 }], {
+        kind: "line",
+        x_field: "x",
+        y_fields: [],
+      })
+    ).toThrow(/Y column/);
+  });
+
   it("preserves series_field group order based on first appearance", () => {
     const rows = [
       { x: 1, g: "second", y: 1 },

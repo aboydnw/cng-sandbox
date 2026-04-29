@@ -247,8 +247,16 @@ def get_story_asset_data(asset_id: str, request: Request):
         session.close()
 
     storage = StorageService()
-    result = obstore.get(storage.store, key)
-    data = bytes(result.bytes())
+    try:
+        result = obstore.get(storage.store, key)
+        data = bytes(result.bytes())
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="asset data not found") from exc
+    except Exception as exc:
+        logger.exception("failed to fetch asset data for key %s", key)
+        raise HTTPException(
+            status_code=502, detail="failed to fetch asset data"
+        ) from exc
     return Response(content=data, media_type=mime)
 
 

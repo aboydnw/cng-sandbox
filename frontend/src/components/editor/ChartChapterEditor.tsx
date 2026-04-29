@@ -55,7 +55,12 @@ function CsvBranch({
             url: uploaded.url,
             columns: uploaded.columns,
           },
-          viz: { ...viz, x_field: xField, y_fields: yField ? [yField] : [] },
+          viz: {
+            ...viz,
+            x_field: xField,
+            y_fields: yField ? [yField] : [],
+            series_field: null,
+          },
         },
       });
     } catch (err) {

@@ -211,6 +211,52 @@ def test_get_story_asset_data_404_when_missing(client):
     assert resp.status_code == 404
 
 
+def test_get_story_asset_data_502_on_storage_failure(client, monkeypatch):
+    csv = b"date,value\n2020-01-01,1.5\n"
+
+    def fake_put_object(key, body, content_type):
+        pass
+
+    def fake_obstore_get(store, key):
+        raise RuntimeError("R2 down")
+
+    monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
+    monkeypatch.setattr("src.routes.story_assets.obstore.get", fake_obstore_get)
+
+    upload = client.post(
+        "/api/story-assets",
+        files={"file": ("a.csv", csv, "text/csv")},
+        data={"kind": "csv"},
+    )
+    asset_id = upload.json()["asset_id"]
+
+    resp = client.get(f"/api/story-assets/{asset_id}/data")
+    assert resp.status_code == 502
+
+
+def test_get_story_asset_data_404_when_object_missing(client, monkeypatch):
+    csv = b"date,value\n2020-01-01,1.5\n"
+
+    def fake_put_object(key, body, content_type):
+        pass
+
+    def fake_obstore_get(store, key):
+        raise FileNotFoundError(key)
+
+    monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
+    monkeypatch.setattr("src.routes.story_assets.obstore.get", fake_obstore_get)
+
+    upload = client.post(
+        "/api/story-assets",
+        files={"file": ("a.csv", csv, "text/csv")},
+        data={"kind": "csv"},
+    )
+    asset_id = upload.json()["asset_id"]
+
+    resp = client.get(f"/api/story-assets/{asset_id}/data")
+    assert resp.status_code == 404
+
+
 def test_public_url_raises_when_env_unset(monkeypatch):
     from src.routes.story_assets import _public_url
 

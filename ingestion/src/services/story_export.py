@@ -20,7 +20,6 @@ from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
 
-
 _CONNECTION_TYPE_MAP = {
     "cog": "raster-cog",
     "geoparquet": "vector-geoparquet",
@@ -95,9 +94,13 @@ def _resolve_map_view(map_state: dict | None) -> CngRcMapView | None:
 def _resolve_layer(lc: dict, session: Session) -> CngRcLayer | None:
     connection_id = lc.get("connection_id")
     dataset_id = lc.get("dataset_id")
+    rescale_min = lc.get("rescale_min")
+    rescale_max = lc.get("rescale_max")
     render = CngRcRender(
         colormap=lc.get("colormap"),
-        rescale=(lc.get("rescale_min"), lc.get("rescale_max")) if lc.get("rescale_min") is not None else None,
+        rescale=(rescale_min, rescale_max)
+        if rescale_min is not None and rescale_max is not None
+        else None,
         opacity=lc.get("opacity", 1.0),
         band=lc.get("band"),
         timestep=lc.get("timestep"),
@@ -136,13 +139,15 @@ def _resolve_layer(lc: dict, session: Session) -> CngRcLayer | None:
 
 
 def _extract_chapter_extra(ch: dict) -> dict | None:
-    """Extract type-specific data that doesn't fit the common chapter shape."""
-    keys = {
-        "image": ["image_url", "alt"],
-        "video": ["video_url", "thumbnail_url", "poster"],
-        "chart": ["chart_spec", "chart_type"],
+    """Extract type-specific nested payload (image/video/chart) for export."""
+    nested_key = {
+        "image": "image",
+        "video": "video",
+        "chart": "chart",
     }.get(ch.get("type"))
-    if not keys:
+    if not nested_key:
         return None
-    payload = {k: ch[k] for k in keys if k in ch}
-    return payload or None
+    payload = ch.get(nested_key)
+    if not isinstance(payload, dict) or not payload:
+        return None
+    return {nested_key: payload}

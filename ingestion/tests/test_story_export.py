@@ -81,6 +81,83 @@ def test_export_resolves_connection_to_source_url(db_session):
     assert layer.render.rescale == (0, 1000)
 
 
+def test_export_image_chapter_carries_nested_payload(db_session):
+    image_payload = {
+        "asset_id": "asset-1",
+        "url": "https://example.com/img.jpg",
+        "thumbnail_url": "https://example.com/thumb.jpg",
+        "alt_text": "An image",
+        "width": 800,
+        "height": 600,
+    }
+    row = _make_story(db_session, chapters=[
+        {
+            "id": "c1",
+            "type": "image",
+            "title": "Photo",
+            "body": "",
+            "image": image_payload,
+        }
+    ])
+    config = story_export.build_config(row, db_session)
+    assert config.chapters[0].extra == {"image": image_payload}
+
+
+def test_export_video_chapter_carries_nested_payload(db_session):
+    video_payload = {
+        "provider": "youtube",
+        "video_id": "abc123",
+        "original_url": "https://youtu.be/abc123",
+    }
+    row = _make_story(db_session, chapters=[
+        {
+            "id": "c1",
+            "type": "video",
+            "title": "Clip",
+            "body": "",
+            "video": video_payload,
+        }
+    ])
+    config = story_export.build_config(row, db_session)
+    assert config.chapters[0].extra == {"video": video_payload}
+
+
+def test_export_rescale_requires_both_min_and_max(db_session):
+    conn = ConnectionRow(
+        id="conn-2",
+        name="GEBCO",
+        url="https://source.coop/gebco/data.tif",
+        connection_type="cog",
+        tile_url=None,
+        bounds_json=None,
+        min_zoom=0,
+        max_zoom=12,
+        tile_type="raster",
+        is_shared=True,
+        workspace_id="ws-test",
+    )
+    db_session.add(conn)
+    db_session.commit()
+
+    row = _make_story(db_session, chapters=[
+        {
+            "id": "c1",
+            "type": "map",
+            "title": "Bathymetry",
+            "body": "",
+            "map_state": {"center": [0, 0], "zoom": 1},
+            "layer_config": {
+                "connection_id": "conn-2",
+                "rescale_min": 0,
+                "opacity": 1.0,
+            },
+        }
+    ])
+    config = story_export.build_config(row, db_session)
+    layer = next(iter(config.layers.values()))
+    assert layer.render.rescale is None
+
+
 def test_export_resolves_dataset_to_cng_url(db_session):
     ds = DatasetRow(
         id="ds-1",

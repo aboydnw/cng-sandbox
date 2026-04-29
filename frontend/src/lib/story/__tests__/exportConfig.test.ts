@@ -7,8 +7,18 @@ describe("downloadStoryConfig", () => {
       ok: true,
       json: async () => ({
         version: "1",
-        origin: { story_id: "story-1", workspace_id: "ws", exported_at: "2026-04-28T00:00:00Z" },
-        metadata: { title: "My Story", description: null, author: null, created: "", updated: "" },
+        origin: {
+          story_id: "story-1",
+          workspace_id: "ws",
+          exported_at: "2026-04-28T00:00:00Z",
+        },
+        metadata: {
+          title: "My Story",
+          description: null,
+          author: null,
+          created: "",
+          updated: "",
+        },
         chapters: [],
         layers: {},
         assets: {},
@@ -24,12 +34,18 @@ describe("downloadStoryConfig", () => {
 
     const clickSpy = vi.fn();
     vi.spyOn(document, "createElement").mockImplementation(() => {
-      return { click: clickSpy, set href(_v: string) {}, set download(_v: string) {} } as never;
+      return {
+        click: clickSpy,
+        set href(_v: string) {},
+        set download(_v: string) {},
+      } as never;
     });
 
     await downloadStoryConfig("story-1", "My Story");
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/stories/story-1/export/config");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/stories/story-1/export/config"
+    );
     expect(createObjectURL).toHaveBeenCalled();
     expect(clickSpy).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock");

@@ -231,7 +231,16 @@ export function PublishDialog({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => downloadStoryConfig(story.id, story.title)}
+                      onClick={() => {
+                        void downloadStoryConfig(story.id, story.title).catch(
+                          (err) => {
+                            console.error(
+                              "Failed to download story config",
+                              err
+                            );
+                          }
+                        );
+                      }}
                     >
                       Download story config (cng-rc.json)
                     </Button>

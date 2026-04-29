@@ -14,7 +14,15 @@ const mockStory = {
   id: "story-1",
   title: "Coastal Erosion 2024",
   description: "Test",
-  chapters: [{ id: "c1", order: 0, type: "prose" as const, title: "Intro", narrative: "" }],
+  chapters: [
+    {
+      id: "c1",
+      order: 0,
+      type: "prose" as const,
+      title: "Intro",
+      narrative: "",
+    },
+  ],
   published: true,
   created_at: "",
   updated_at: "",
@@ -24,7 +32,9 @@ const mockStory = {
 
 describe("PublishDialog Export section", () => {
   it("calls downloadStoryConfig with the story id and title when the button is clicked", async () => {
-    const spy = vi.spyOn(exportConfig, "downloadStoryConfig").mockResolvedValue();
+    const spy = vi
+      .spyOn(exportConfig, "downloadStoryConfig")
+      .mockResolvedValue();
 
     render(
       <ChakraProvider value={defaultSystem}>
@@ -35,10 +45,12 @@ describe("PublishDialog Export section", () => {
           onPublish={() => {}}
           onClose={() => {}}
         />
-      </ChakraProvider>,
+      </ChakraProvider>
     );
 
-    const button = screen.getByRole("button", { name: /download story config/i });
+    const button = screen.getByRole("button", {
+      name: /download story config/i,
+    });
     fireEvent.click(button);
 
     expect(spy).toHaveBeenCalledWith("story-1", "Coastal Erosion 2024");

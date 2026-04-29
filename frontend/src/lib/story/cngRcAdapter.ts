@@ -21,7 +21,11 @@ export interface PortableStoryBundle {
 }
 
 export function pickLayerUrl(layer: CngRcLayer): string | null {
-  return layer.source_url ?? layer.cng_url ?? null;
+  const sourceUrl = layer.source_url?.trim();
+  if (sourceUrl) return sourceUrl;
+
+  const cngUrl = layer.cng_url?.trim();
+  return cngUrl || null;
 }
 
 const TILE_TYPE_BY_LAYER_TYPE: Record<
@@ -89,7 +93,10 @@ function buildMapState(map: CngRcChapter["map"]): MapState {
 
 function parseTimestep(value: string | null): number | undefined {
   if (value == null) return undefined;
-  const n = Number(value);
+  const trimmed = value.trim();
+  if (trimmed === "") return undefined;
+
+  const n = Number(trimmed);
   return Number.isFinite(n) ? n : undefined;
 }
 

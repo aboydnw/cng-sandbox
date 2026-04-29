@@ -124,6 +124,13 @@ describe("StoryReaderPage portable embed", () => {
       typeof url === "string" ? url.includes("/api/stories/") : false
     );
     expect(calledStoryUrls).toHaveLength(0);
+    const calledDatasetOrConnectionUrls = fetchMock.mock.calls.filter(
+      ([url]) =>
+        typeof url === "string"
+          ? url.includes("/api/datasets/") || url.includes("/api/connections/")
+          : false
+    );
+    expect(calledDatasetOrConnectionUrls).toHaveLength(0);
   });
 
   it("falls back to API fetch when ?config= is absent", async () => {

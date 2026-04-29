@@ -45,6 +45,8 @@ export default function StoryReaderPage({
   useEffect(() => {
     if (configParam) {
       let cancelled = false;
+      setError(null);
+      setLoading(true);
       (async () => {
         try {
           const portable = await loadPortableConfig(configParam);

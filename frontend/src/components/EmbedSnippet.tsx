@@ -55,12 +55,22 @@ export function EmbedSnippet({
           size="sm"
           fontSize="xs"
           fontFamily="mono"
-          bg="gray.50"
+          bg="brand.bgSubtle"
+          borderColor="brand.border"
+          _focusVisible={{ borderColor: "brand.orange" }}
           resize="none"
           aria-label="Embed iframe snippet"
           onClick={(e) => (e.target as HTMLTextAreaElement).select()}
         />
-        <Button size="sm" variant="outline" onClick={handleCopy} flexShrink={0}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleCopy}
+          flexShrink={0}
+          borderColor="brand.border"
+          color="brand.brown"
+          _hover={{ bg: "brand.bgSubtle" }}
+        >
           {copied ? (
             <CheckCircle size={14} weight="fill" />
           ) : (

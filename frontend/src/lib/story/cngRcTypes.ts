@@ -1,8 +1,18 @@
 // Mirrors ingestion/src/models/cng_rc.py — keep in sync.
 export interface CngRcConfig {
   version: "1";
-  origin: { story_id: string; workspace_id: string | null; exported_at: string };
-  metadata: { title: string; description: string | null; author: string | null; created: string; updated: string };
+  origin: {
+    story_id: string;
+    workspace_id: string | null;
+    exported_at: string;
+  };
+  metadata: {
+    title: string;
+    description: string | null;
+    author: string | null;
+    created: string;
+    updated: string;
+  };
   chapters: CngRcChapter[];
   layers: Record<string, CngRcLayer>;
   assets: Record<string, CngRcAsset>;

@@ -1,8 +1,11 @@
 import type { CngRcConfig } from "./cngRcTypes";
 
 const INLINE_PAYLOAD_MAX_BYTES = 100_000;
+const CONFIG_FETCH_TIMEOUT_MS = 10_000;
 
-function assertSupportedVersion(parsed: unknown): asserts parsed is CngRcConfig {
+function assertSupportedVersion(
+  parsed: unknown
+): asserts parsed is CngRcConfig {
   if (
     !parsed ||
     typeof parsed !== "object" ||
@@ -44,7 +47,22 @@ export async function loadPortableConfig(
     throw new Error("Config URL must use https://");
   }
 
-  const response = await fetch(configParam);
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(
+    () => controller.abort(),
+    CONFIG_FETCH_TIMEOUT_MS
+  );
+  let response: Response;
+  try {
+    response = await fetch(configParam, { signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Config URL request timed out");
+    }
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
   if (!response.ok) {
     throw new Error(`Failed to load config (${response.status})`);
   }

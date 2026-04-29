@@ -159,7 +159,7 @@ services:
       PUBLIC_RASTER_TILER_URL: /raster
       PUBLIC_VECTOR_TILER_URL: /vector
       POSTGRES_DSN: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
-      CORS_ORIGINS: '["http://localhost:5185", "https://${SITE_ADDRESS:-localhost}"]'
+      CORS_ORIGINS: '["http://localhost:5185", "https://${SITE_ADDRESS:-localhost}", "https://${VIEWER_SITE_ADDRESS:-localhost}"]'
       CHECK_DISK_FREE_SPACE: "FALSE"
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_REPO: ${GITHUB_REPO:-}

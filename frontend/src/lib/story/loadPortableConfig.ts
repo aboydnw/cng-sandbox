@@ -13,7 +13,13 @@ export async function loadPortableConfig(configParam: string): Promise<CngRcConf
     } catch {
       throw new Error("Inline config payload is not valid base64url");
     }
-    return JSON.parse(json) as CngRcConfig;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(json);
+    } catch {
+      throw new Error("Inline config payload is not valid JSON");
+    }
+    return parsed as CngRcConfig;
   }
 
   if (!configParam.startsWith("https://")) {

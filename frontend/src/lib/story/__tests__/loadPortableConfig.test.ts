@@ -44,4 +44,9 @@ describe("loadPortableConfig", () => {
   it("throws on malformed base64url payloads", async () => {
     await expect(loadPortableConfig("base64url:!!!notbase64!!!")).rejects.toThrow();
   });
+
+  it("throws on base64url payload that is not valid JSON", async () => {
+    const encoded = btoa("not json").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    await expect(loadPortableConfig(`base64url:${encoded}`)).rejects.toThrow(/not valid JSON/);
+  });
 });

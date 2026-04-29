@@ -145,6 +145,7 @@ export interface Story {
   created_at: string;
   updated_at: string;
   published: boolean;
+  is_example?: boolean;
 }
 
 export interface StoryIndexEntry {

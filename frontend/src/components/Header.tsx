@@ -54,14 +54,24 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
             </Text>
           </Flex>
         </Link>
-        <Link to={workspacePath("/library")} style={{ textDecoration: "none" }}>
+        <Link to={workspacePath("/data")} style={{ textDecoration: "none" }}>
           <Text
             fontSize="sm"
             fontWeight={500}
-            color="gray.600"
-            _hover={{ color: "gray.800" }}
+            color="brand.brown"
+            _hover={{ color: "brand.orange" }}
           >
-            Library
+            Data
+          </Text>
+        </Link>
+        <Link to={workspacePath("/stories")} style={{ textDecoration: "none" }}>
+          <Text
+            fontSize="sm"
+            fontWeight={500}
+            color="brand.brown"
+            _hover={{ color: "brand.orange" }}
+          >
+            Stories
           </Text>
         </Link>
         <Link to={workspacePath("/about")} style={{ textDecoration: "none" }}>

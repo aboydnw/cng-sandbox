@@ -7,7 +7,8 @@ import {
 import UploadPage from "./pages/UploadPage";
 import MapPage from "./pages/MapPage";
 import ExpiredPage from "./pages/ExpiredPage";
-import LibraryPage from "./pages/LibraryPage";
+import DataPage from "./pages/DataPage";
+import StoriesPage from "./pages/StoriesPage";
 import StoryReaderPage from "./pages/StoryReaderPage";
 import StoryEditorPage from "./pages/StoryEditorPage";
 import StoryEmbedPage from "./pages/StoryEmbedPage";
@@ -25,7 +26,12 @@ function StoryReaderRedirect() {
 
 function DatasetsRedirect() {
   const { workspacePath } = useWorkspace();
-  return <Navigate to={workspacePath("/library")} replace />;
+  return <Navigate to={workspacePath("/data")} replace />;
+}
+
+function LibraryRedirect() {
+  const { workspacePath } = useWorkspace();
+  return <Navigate to={workspacePath("/data")} replace />;
 }
 
 function WorkspaceRoutes() {
@@ -37,7 +43,9 @@ function WorkspaceRoutes() {
         <Route path="/map/:id" element={<MapPage />} />
         <Route path="/map/connection/:id" element={<MapPage />} />
         <Route path="/expired/:id" element={<ExpiredPage />} />
-        <Route path="/library" element={<LibraryPage />} />
+        <Route path="/data" element={<DataPage />} />
+        <Route path="/stories" element={<StoriesPage />} />
+        <Route path="/library" element={<LibraryRedirect />} />
         <Route path="/datasets" element={<DatasetsRedirect />} />
         <Route path="/story/new" element={<StoryEditorPage />} />
         <Route path="/story/:id" element={<StoryReaderRedirect />} />

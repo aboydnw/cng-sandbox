@@ -43,6 +43,7 @@ export function EmbedSnippet({
           fontFamily="mono"
           bg="gray.50"
           resize="none"
+          aria-label="Embed iframe snippet"
           onClick={(e) => (e.target as HTMLTextAreaElement).select()}
         />
         <Button size="sm" variant="outline" onClick={handleCopy} flexShrink={0}>

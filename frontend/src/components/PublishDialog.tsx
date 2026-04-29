@@ -246,19 +246,13 @@ export function PublishDialog({
                       Download story config (cng-rc.json)
                     </Button>
                     <Box mt={4}>
-                      {published ? (
-                        <EmbedSnippet
-                          viewerOrigin={
-                            import.meta.env.VITE_VIEWER_ORIGIN ??
-                            window.location.origin
-                          }
-                          configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
-                        />
-                      ) : (
-                        <Text fontSize="sm" color="fg.muted">
-                          Publish this story to enable embedding.
-                        </Text>
-                      )}
+                      <EmbedSnippet
+                        viewerOrigin={
+                          import.meta.env.VITE_VIEWER_ORIGIN ??
+                          window.location.origin
+                        }
+                        configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
+                      />
                     </Box>
                   </Box>
                 </Flex>

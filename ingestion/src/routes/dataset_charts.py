@@ -41,7 +41,7 @@ def _titiler_point(
     If `client` is provided, reuse it. Otherwise, create a one-shot client.
     """
     url = f"{RASTER_TILER_URL}/collections/{collection_id}/point/{lon},{lat}"
-    params = {"datetime": datetime_iso}
+    params = {"datetime": datetime_iso, "assets": "data"}
     try:
         if client is None:
             with httpx.Client(timeout=20.0) as http_client:
@@ -165,7 +165,7 @@ def dataset_timeseries(
 def _titiler_statistics(collection_id: str, *, categorical: bool, bins: int) -> dict:
     """Query titiler-pgstac /statistics."""
     url = f"{RASTER_TILER_URL}/collections/{collection_id}/statistics"
-    params: dict[str, str | int] = {}
+    params: dict[str, str | int] = {"assets": "data"}
     if categorical:
         params["categorical"] = "true"
     else:

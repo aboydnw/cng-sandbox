@@ -10,6 +10,11 @@ import {
   fetchHistogram,
   fetchTimeseries,
 } from "../lib/story/charts";
+import { getStoryAsset } from "../lib/story/assets";
+
+function isAbsoluteUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
 
 const ReactECharts = lazy(() => import("echarts-for-react"));
 
@@ -35,8 +40,15 @@ export function ChartChapterRenderer({
       try {
         const { source, viz } = chapter.chart;
         if (source.kind === "csv") {
-          if (!source.url) return;
-          const rows = await fetchCsvRows(source.url);
+          if (!source.url && !source.asset_id) return;
+          let csvUrl = source.url;
+          if (!csvUrl || !isAbsoluteUrl(csvUrl)) {
+            if (!source.asset_id) return;
+            const meta = await getStoryAsset(source.asset_id);
+            if (cancelled) return;
+            csvUrl = meta.url;
+          }
+          const rows = await fetchCsvRows(csvUrl);
           if (cancelled) return;
           setOption(buildOptionFromCsvRows(rows, viz));
         } else if (source.kind === "dataset_timeseries") {

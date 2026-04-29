@@ -183,6 +183,68 @@ def test_titiler_point_returns_none_on_string_value(monkeypatch):
     assert _titiler_point("col", "2020-01-01", 0.0, 0.0) is None
 
 
+def test_titiler_point_passes_assets_param(monkeypatch):
+    from src.routes.dataset_charts import _titiler_point
+
+    captured: dict = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"values": [1.0]}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            pass
+
+        def get(self, url, params=None):
+            captured["params"] = params
+            return FakeResponse()
+
+    monkeypatch.setattr("src.routes.dataset_charts.httpx.Client", FakeClient)
+    _titiler_point("col", "2020-01-01", 0.0, 0.0)
+    assert captured["params"]["assets"] == "data"
+    assert captured["params"]["datetime"] == "2020-01-01"
+
+
+def test_titiler_statistics_passes_assets_param(monkeypatch):
+    from src.routes.dataset_charts import _titiler_statistics
+
+    captured: dict = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"histogram": [[], []]}
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            pass
+
+        def get(self, url, params=None):
+            captured["params"] = params
+            return FakeResponse()
+
+    monkeypatch.setattr("src.routes.dataset_charts.httpx.Client", FakeClient)
+    _titiler_statistics("col", categorical=False, bins=10)
+    assert captured["params"]["assets"] == "data"
+    assert captured["params"]["histogram_bins"] == 10
+
+
 def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
     import logging
 

@@ -29,6 +29,11 @@ def _reset_rate_limiter():
     limiter.reset()
 
 
+@pytest.fixture(autouse=True)
+def _r2_public_url(monkeypatch):
+    monkeypatch.setenv("R2_PUBLIC_URL", "https://r2.example")
+
+
 @pytest.fixture
 def db_engine():
     engine = create_engine(

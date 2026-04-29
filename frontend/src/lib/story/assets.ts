@@ -58,6 +58,31 @@ export async function uploadCsvAsset(
   return resp.json();
 }
 
+export interface StoryAssetMetadata {
+  asset_id: string;
+  kind: "image" | "csv";
+  url: string;
+  thumbnail_url: string | null;
+  width: number | null;
+  height: number | null;
+  mime: string;
+  size_bytes: number;
+  row_count: number | null;
+  columns: string[] | null;
+}
+
+export async function getStoryAsset(
+  assetId: string
+): Promise<StoryAssetMetadata> {
+  const resp = await workspaceFetch(
+    `/api/story-assets/${encodeURIComponent(assetId)}`
+  );
+  if (!resp.ok) {
+    throw new Error(`asset fetch failed: ${resp.status}`);
+  }
+  return resp.json();
+}
+
 export async function deleteStoryAsset(assetId: string): Promise<void> {
   const resp = await workspaceFetch(
     `/api/story-assets/${encodeURIComponent(assetId)}`,

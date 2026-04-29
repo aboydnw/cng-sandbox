@@ -28,7 +28,15 @@ MAX_CSV_BYTES = 5 * 1024 * 1024
 ALLOWED_CSV_MIMES = {"text/csv", "application/vnd.ms-excel", "application/csv"}
 
 
+def _public_url(key: str) -> str:
+    base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+    if not base:
+        raise RuntimeError("R2_PUBLIC_URL is not configured")
+    return f"{base}/{key}"
+
+
 def _put_object(key: str, body: bytes, content_type: str) -> str:
+    url = _public_url(key)
     storage = StorageService()
     obstore.put(
         storage.store,
@@ -36,18 +44,12 @@ def _put_object(key: str, body: bytes, content_type: str) -> str:
         io.BytesIO(body),
         attributes={"Content-Type": content_type},
     )
-    base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
-    return f"{base}/{key}"
+    return url
 
 
 def _delete_object(key: str) -> None:
     storage = StorageService()
     storage.delete_object(key)
-
-
-def _public_url(key: str) -> str:
-    base = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
-    return f"{base}/{key}"
 
 
 @router.post("/story-assets", status_code=201)

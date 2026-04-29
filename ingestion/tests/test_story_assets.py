@@ -147,3 +147,43 @@ def test_upload_csv_rejects_non_csv_mime(client: TestClient):
     data = {"kind": "csv"}
     resp = client.post("/api/story-assets", files=files, data=data)
     assert resp.status_code == 415
+
+
+def test_public_url_raises_when_env_unset(monkeypatch):
+    from src.routes.story_assets import _public_url
+
+    monkeypatch.delenv("R2_PUBLIC_URL", raising=False)
+    try:
+        _public_url("some/key")
+    except RuntimeError as exc:
+        assert "R2_PUBLIC_URL" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")
+
+
+def test_public_url_returns_absolute_when_env_set(monkeypatch):
+    from src.routes.story_assets import _public_url
+
+    monkeypatch.setenv("R2_PUBLIC_URL", "https://r2.example/")
+    assert _public_url("a/b.csv") == "https://r2.example/a/b.csv"
+
+
+def test_put_object_validates_env_before_upload(monkeypatch):
+    import src.routes.story_assets as story_assets_mod
+
+    upload_called = False
+
+    def fake_put(*args, **kwargs):
+        nonlocal upload_called
+        upload_called = True
+
+    monkeypatch.setattr(story_assets_mod.obstore, "put", fake_put)
+    monkeypatch.delenv("R2_PUBLIC_URL", raising=False)
+
+    try:
+        story_assets_mod._put_object("some/key", b"x", "text/csv")
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("expected RuntimeError")
+    assert not upload_called, "upload must not happen when R2_PUBLIC_URL is unset"

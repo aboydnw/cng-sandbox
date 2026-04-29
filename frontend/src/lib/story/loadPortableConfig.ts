@@ -1,8 +1,25 @@
 import type { CngRcConfig } from "./cngRcTypes";
 
-export async function loadPortableConfig(configParam: string): Promise<CngRcConfig> {
+const INLINE_PAYLOAD_MAX_BYTES = 100_000;
+
+function assertSupportedVersion(parsed: unknown): asserts parsed is CngRcConfig {
+  if (
+    !parsed ||
+    typeof parsed !== "object" ||
+    (parsed as { version?: unknown }).version !== "1"
+  ) {
+    throw new Error("Unsupported config version");
+  }
+}
+
+export async function loadPortableConfig(
+  configParam: string
+): Promise<CngRcConfig> {
   if (configParam.startsWith("base64url:")) {
     const encoded = configParam.slice("base64url:".length);
+    if (encoded.length > INLINE_PAYLOAD_MAX_BYTES) {
+      throw new Error("Inline config payload exceeds 100 KB size limit");
+    }
     const padded = encoded
       .replace(/-/g, "+")
       .replace(/_/g, "/")
@@ -19,7 +36,8 @@ export async function loadPortableConfig(configParam: string): Promise<CngRcConf
     } catch {
       throw new Error("Inline config payload is not valid JSON");
     }
-    return parsed as CngRcConfig;
+    assertSupportedVersion(parsed);
+    return parsed;
   }
 
   if (!configParam.startsWith("https://")) {
@@ -30,5 +48,7 @@ export async function loadPortableConfig(configParam: string): Promise<CngRcConf
   if (!response.ok) {
     throw new Error(`Failed to load config (${response.status})`);
   }
-  return (await response.json()) as CngRcConfig;
+  const parsed = (await response.json()) as unknown;
+  assertSupportedVersion(parsed);
+  return parsed;
 }

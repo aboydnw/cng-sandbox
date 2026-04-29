@@ -49,4 +49,29 @@ describe("loadPortableConfig", () => {
     const encoded = btoa("not json").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     await expect(loadPortableConfig(`base64url:${encoded}`)).rejects.toThrow(/not valid JSON/);
   });
+
+  it("rejects oversized inline payloads", async () => {
+    const huge = "a".repeat(100_001);
+    await expect(loadPortableConfig(`base64url:${huge}`)).rejects.toThrow(/100 KB/);
+  });
+
+  it("rejects unknown config versions over URL fetch", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ...sampleConfig, version: "2" }),
+    });
+    await expect(
+      loadPortableConfig("https://example.com/x.json")
+    ).rejects.toThrow(/Unsupported config version/);
+  });
+
+  it("rejects unknown config versions in inline payloads", async () => {
+    const encoded = btoa(JSON.stringify({ ...sampleConfig, version: "2" }))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    await expect(loadPortableConfig(`base64url:${encoded}`)).rejects.toThrow(
+      /Unsupported config version/
+    );
+  });
 });

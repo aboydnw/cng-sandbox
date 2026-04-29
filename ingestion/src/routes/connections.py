@@ -46,7 +46,14 @@ async def _head_content_length(url: str) -> int | None:
         return None
 
 
-VALID_CONNECTION_TYPES = {"xyz_raster", "xyz_vector", "cog", "pmtiles", "geoparquet"}
+VALID_CONNECTION_TYPES = {
+    "xyz_raster",
+    "xyz_vector",
+    "cog",
+    "pmtiles",
+    "geoparquet",
+    "zarr",
+}
 VALID_TILE_TYPES = {"raster", "vector", None}
 
 
@@ -67,6 +74,7 @@ class ConnectionCreate(BaseModel):
     band_count: int | None = None
     rescale: str | None = None
     render_path: str | None = None  # "client" | "server"
+    config: dict | None = None
 
     def model_post_init(self, __context):
         if self.bounds is not None and len(self.bounds) != 4:
@@ -216,6 +224,7 @@ async def create_connection(
             is_categorical=is_categorical,
             categories_json=categories_json,
             file_size=file_size,
+            config=body.config,
             created_at=datetime.now(UTC),
             render_path=render_path,
             conversion_status="pending" if is_server_conversion else None,

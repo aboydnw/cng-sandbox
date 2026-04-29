@@ -4,7 +4,16 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    String,
+    Text,
+)
 
 from src.models.base import Base
 
@@ -15,9 +24,7 @@ class ConnectionRow(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     url = Column(String, nullable=False)
-    connection_type = Column(
-        String, nullable=False
-    )  # xyz_raster, xyz_vector, cog, pmtiles, geoparquet
+    connection_type = Column(String, nullable=False)
     bounds_json = Column(String, nullable=True)  # JSON array [w, s, e, n]
     min_zoom = Column(Integer, nullable=True)
     max_zoom = Column(Integer, nullable=True)
@@ -40,6 +47,7 @@ class ConnectionRow(Base):
     render_mode = Column(String, nullable=True)
     preferred_colormap = Column(String, nullable=True)
     preferred_colormap_reversed = Column(Boolean, nullable=True)
+    config = Column(JSON, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -75,4 +83,5 @@ class ConnectionRow(Base):
                 if self.preferred_colormap_reversed is None
                 else bool(self.preferred_colormap_reversed)
             ),
+            "config": self.config,
         }

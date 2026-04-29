@@ -2,6 +2,7 @@ import json
 from datetime import UTC, datetime
 
 from src.models.connection import ConnectionRow
+from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
 from src.services import story_export
 
@@ -78,3 +79,40 @@ def test_export_resolves_connection_to_source_url(db_session):
     assert layer.cng_url is None
     assert layer.render.colormap == "viridis"
     assert layer.render.rescale == (0, 1000)
+
+
+def test_export_resolves_dataset_to_cng_url(db_session):
+    ds = DatasetRow(
+        id="ds-1",
+        filename="data.parquet",
+        dataset_type="vector",
+        format_pair="geojson-to-geoparquet",
+        tile_url="https://example.com/tiles/{z}/{x}/{y}.pbf",
+        metadata_json=json.dumps({
+            "title": "My Vector Data",
+            "source_url": "https://example.com/original.geojson",
+            "parquet_url": "https://r2.cng.devseed.com/data.parquet",
+        }),
+    )
+    db_session.add(ds)
+    db_session.commit()
+
+    row = _make_story(db_session, chapters=[
+        {
+            "id": "c1",
+            "type": "map",
+            "title": "Vector Layer",
+            "body": "",
+            "layer_config": {
+                "dataset_id": "ds-1",
+                "opacity": 0.8,
+            },
+        }
+    ])
+    config = story_export.build_config(row, db_session)
+    assert len(config.layers) == 1
+    layer = next(iter(config.layers.values()))
+    assert layer.type == "vector-geoparquet"
+    assert layer.source_url == "https://example.com/original.geojson"
+    assert layer.cng_url == "https://r2.cng.devseed.com/data.parquet"
+    assert layer.render.opacity == 0.8

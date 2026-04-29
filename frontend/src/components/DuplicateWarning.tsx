@@ -30,7 +30,7 @@ export function DuplicateWarning({
       <Flex gap={3}>
         <Box
           as="button"
-          onClick={() => navigate(workspacePath("/library"))}
+          onClick={() => navigate(workspacePath("/data"))}
           bg="brand.orange"
           color="white"
           px={4}

@@ -13,7 +13,12 @@ export interface CngRcChapter {
   type: "prose" | "map" | "scrollytelling" | "image" | "video" | "chart";
   title: string | null;
   body: string | null;
-  map: { center: [number, number]; zoom: number; bearing: number; pitch: number } | null;
+  map: {
+    center: [number, number];
+    zoom: number;
+    bearing?: number;
+    pitch?: number;
+  } | null;
   layers: string[];
   extra?: Record<string, unknown> | null;
 }

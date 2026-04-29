@@ -81,8 +81,8 @@ function buildMapState(map: CngRcChapter["map"]): MapState {
   return {
     center: map.center,
     zoom: map.zoom,
-    bearing: map.bearing,
-    pitch: map.pitch,
+    bearing: map.bearing ?? 0,
+    pitch: map.pitch ?? 0,
     basemap: DEFAULT_MAP_STATE.basemap,
   };
 }

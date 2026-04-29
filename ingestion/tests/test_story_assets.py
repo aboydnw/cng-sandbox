@@ -149,6 +149,68 @@ def test_upload_csv_rejects_non_csv_mime(client: TestClient):
     assert resp.status_code == 415
 
 
+def test_get_story_asset_data_streams_bytes(client, monkeypatch):
+    csv = b"date,value\n2020-01-01,1.5\n2020-02-01,2.0\n"
+    stored = {}
+
+    def fake_put_object(key, body, content_type):
+        stored[key] = body
+
+    class FakeGetResult:
+        def __init__(self, data):
+            self._data = data
+
+        def bytes(self):
+            return self._data
+
+    def fake_obstore_get(store, key):
+        return FakeGetResult(stored[key])
+
+    monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
+    monkeypatch.setattr("src.routes.story_assets.obstore.get", fake_obstore_get)
+
+    upload = client.post(
+        "/api/story-assets",
+        files={"file": ("series.csv", csv, "text/csv")},
+        data={"kind": "csv"},
+    )
+    assert upload.status_code == 201
+    asset_id = upload.json()["asset_id"]
+
+    resp = client.get(f"/api/story-assets/{asset_id}/data")
+    assert resp.status_code == 200
+    assert resp.content == csv
+    assert resp.headers["content-type"].startswith("text/csv")
+
+
+def test_get_story_asset_data_blocks_other_workspace(client, app, monkeypatch):
+    csv = b"date,value\n2020-01-01,1.5\n"
+    stored = {}
+
+    def fake_put_object(key, body, content_type):
+        stored[key] = body
+
+    monkeypatch.setattr("src.routes.story_assets._put_object", fake_put_object)
+
+    upload = client.post(
+        "/api/story-assets",
+        files={"file": ("a.csv", csv, "text/csv")},
+        data={"kind": "csv"},
+    )
+    asset_id = upload.json()["asset_id"]
+
+    other = TestClient(
+        app, raise_server_exceptions=False, headers={"X-Workspace-Id": "otherABCD"}
+    )
+    resp = other.get(f"/api/story-assets/{asset_id}/data")
+    assert resp.status_code == 404
+
+
+def test_get_story_asset_data_404_when_missing(client):
+    resp = client.get("/api/story-assets/00000000-0000-0000-0000-000000000000/data")
+    assert resp.status_code == 404
+
+
 def test_public_url_raises_when_env_unset(monkeypatch):
     from src.routes.story_assets import _public_url
 

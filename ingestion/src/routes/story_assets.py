@@ -10,6 +10,7 @@ from typing import Annotated, Literal
 import obstore
 import pandas as pd
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
 
 from src.dependencies import get_session
 from src.models.story_asset import StoryAssetRow
@@ -222,6 +223,33 @@ def get_story_asset(asset_id: str, request: Request):
         }
     finally:
         session.close()
+
+
+@router.get("/story-assets/{asset_id}/data")
+def get_story_asset_data(asset_id: str, request: Request):
+    """Stream the raw bytes of a story asset's primary file.
+
+    Returns the file contents server-side so browsers can fetch CSV/image
+    bytes without R2 needing CORS configured.
+    """
+    workspace_id = request.headers.get("x-workspace-id", "")
+    session = get_session(request)
+    try:
+        row = session.query(StoryAssetRow).filter_by(id=asset_id).first()
+        if not row:
+            raise HTTPException(status_code=404, detail="asset not found")
+        if row.workspace_id and row.workspace_id != workspace_id:
+            raise HTTPException(status_code=404, detail="asset not found")
+        key = row.original_key
+        mime = row.mime or "application/octet-stream"
+
+    finally:
+        session.close()
+
+    storage = StorageService()
+    result = obstore.get(storage.store, key)
+    data = bytes(result.bytes())
+    return Response(content=data, media_type=mime)
 
 
 @router.delete("/story-assets/{asset_id}", status_code=204)

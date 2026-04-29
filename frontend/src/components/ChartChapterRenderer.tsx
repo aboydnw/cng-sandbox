@@ -7,14 +7,10 @@ import {
   buildLineOptionFromTimeseries,
   buildOptionFromCsvRows,
   fetchCsvRows,
+  fetchCsvRowsByAssetId,
   fetchHistogram,
   fetchTimeseries,
 } from "../lib/story/charts";
-import { getStoryAsset } from "../lib/story/assets";
-
-function isAbsoluteUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url);
-}
 
 const ReactECharts = lazy(() => import("echarts-for-react"));
 
@@ -45,16 +41,9 @@ export function ChartChapterRenderer({
               "chart csv source is missing both url and asset_id"
             );
           }
-          let csvUrl = source.url;
-          if (!csvUrl || !isAbsoluteUrl(csvUrl)) {
-            if (!source.asset_id) {
-              throw new Error("relative csv source requires asset_id");
-            }
-            const meta = await getStoryAsset(source.asset_id);
-            if (cancelled) return;
-            csvUrl = meta.url;
-          }
-          const rows = await fetchCsvRows(csvUrl);
+          const rows = source.asset_id
+            ? await fetchCsvRowsByAssetId(source.asset_id)
+            : await fetchCsvRows(source.url);
           if (cancelled) return;
           setOption(buildOptionFromCsvRows(rows, viz));
         } else if (source.kind === "dataset_timeseries") {

@@ -117,6 +117,7 @@ export interface ChartViz {
   kind: "line" | "bar";
   x_field: string;
   y_fields: string[];
+  series_field?: string | null;
   x_label?: string;
   y_label?: string;
   y_scale?: "linear" | "log";

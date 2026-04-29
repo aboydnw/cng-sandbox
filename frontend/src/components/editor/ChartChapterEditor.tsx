@@ -177,6 +177,28 @@ function CsvBranch({
           </Field.Root>
 
           <Field.Root>
+            <Field.Label>Series column (optional)</Field.Label>
+            <NativeSelect.Root size="sm">
+              <NativeSelect.Field
+                value={viz.series_field ?? ""}
+                onChange={(e) =>
+                  updateViz({ series_field: e.target.value || null })
+                }
+              >
+                <option value="">None</option>
+                {source.columns.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </NativeSelect.Field>
+            </NativeSelect.Root>
+            <Field.HelperText>
+              Group rows into separate lines (for long-format CSVs).
+            </Field.HelperText>
+          </Field.Root>
+
+          <Field.Root>
             <Field.Label>Y-axis scale</Field.Label>
             <NativeSelect.Root size="sm">
               <NativeSelect.Field

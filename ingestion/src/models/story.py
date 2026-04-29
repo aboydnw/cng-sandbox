@@ -130,6 +130,7 @@ class ChartVizPayload(BaseModel):
     kind: Literal["line", "bar"]
     x_field: str
     y_fields: list[str]
+    series_field: str | None = None
     x_label: str | None = None
     y_label: str | None = None
     y_scale: Literal["linear", "log"] | None = None

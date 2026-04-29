@@ -57,7 +57,7 @@ export async function loadPortableConfig(
     response = await fetch(configParam, { signal: controller.signal });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Config URL request timed out");
+      throw new Error("Config URL request timed out", { cause: error });
     }
     throw error;
   } finally {

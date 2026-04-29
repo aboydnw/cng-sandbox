@@ -157,6 +157,35 @@ def test_chart_chapter_with_csv_source_parses():
     assert isinstance(story.chapters[0], ChartChapter)
 
 
+def test_chart_chapter_with_series_field_parses():
+    payload = {
+        "id": "a",
+        "order": 0,
+        "type": "chart",
+        "title": "T",
+        "narrative": "",
+        "chart": {
+            "source": {
+                "kind": "csv",
+                "asset_id": "asset-1",
+                "url": "https://example.com/data.csv",
+                "columns": ["year", "type", "value"],
+            },
+            "viz": {
+                "kind": "line",
+                "x_field": "year",
+                "y_fields": ["value"],
+                "series_field": "type",
+                "y_scale": "linear",
+            },
+        },
+    }
+    story = StoryCreate(chapters=[payload])
+    chart = story.chapters[0]
+    assert isinstance(chart, ChartChapter)
+    assert chart.chart.viz.series_field == "type"
+
+
 def test_chart_chapter_with_dataset_timeseries_source_parses():
     payload = {
         "id": "a",

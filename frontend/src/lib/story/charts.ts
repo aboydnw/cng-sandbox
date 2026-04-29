@@ -90,24 +90,56 @@ export function buildOptionFromCsvRows(
   rows: Record<string, unknown>[],
   viz: Pick<
     ChartViz,
-    "kind" | "x_field" | "y_fields" | "x_label" | "y_label" | "y_scale"
+    | "kind"
+    | "x_field"
+    | "y_fields"
+    | "series_field"
+    | "x_label"
+    | "y_label"
+    | "y_scale"
   >
 ): EChartsOption {
-  const series = viz.y_fields.map((f) => ({
-    name: f,
-    type: viz.kind,
-    smooth: viz.kind === "line",
-    showSymbol: false,
-    data: rows.map((r) => [r[viz.x_field], r[f]]),
-  }));
+  const seriesField = viz.series_field || null;
+  const yField = viz.y_fields[0];
+  if (!yField) {
+    throw new Error("chart is missing a Y column");
+  }
+
+  let series: { name: string; type: string; data: unknown[][] }[];
+  if (seriesField) {
+    const groups = new Map<string, Record<string, unknown>[]>();
+    for (const r of rows) {
+      const key = String(r[seriesField] ?? "");
+      const bucket = groups.get(key);
+      if (bucket) bucket.push(r);
+      else groups.set(key, [r]);
+    }
+    series = Array.from(groups.entries()).map(([name, groupRows]) => ({
+      name,
+      type: viz.kind,
+      smooth: viz.kind === "line",
+      showSymbol: false,
+      data: groupRows.map((r) => [r[viz.x_field], r[yField]]),
+    }));
+  } else {
+    series = viz.y_fields.map((f) => ({
+      name: f,
+      type: viz.kind,
+      smooth: viz.kind === "line",
+      showSymbol: false,
+      data: rows.map((r) => [r[viz.x_field], r[f]]),
+    }));
+  }
+
+  const showLegend = series.length > 1;
   return {
     tooltip: { trigger: "axis", axisPointer: { type: "cross" } },
     toolbox: COMMON_TOOLBOX,
-    legend: viz.y_fields.length > 1 ? { top: 0 } : undefined,
+    legend: showLegend ? { top: 0 } : undefined,
     grid: {
       left: 50,
       right: 30,
-      top: viz.y_fields.length > 1 ? 50 : 30,
+      top: showLegend ? 50 : 30,
       bottom: 60,
     },
     xAxis: { type: inferXAxisType(rows, viz.x_field), name: viz.x_label ?? "" },
@@ -151,6 +183,23 @@ export async function fetchCsvRows(
 ): Promise<Record<string, unknown>[]> {
   const Papa = (await import("papaparse")).default;
   const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`csv fetch failed: ${resp.status}`);
+  const text = await resp.text();
+  const parsed = Papa.parse(text, {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+  });
+  return parsed.data as Record<string, unknown>[];
+}
+
+export async function fetchCsvRowsByAssetId(
+  assetId: string
+): Promise<Record<string, unknown>[]> {
+  const Papa = (await import("papaparse")).default;
+  const resp = await workspaceFetch(
+    `/api/story-assets/${encodeURIComponent(assetId)}/data`
+  );
   if (!resp.ok) throw new Error(`csv fetch failed: ${resp.status}`);
   const text = await resp.text();
   const parsed = Papa.parse(text, {

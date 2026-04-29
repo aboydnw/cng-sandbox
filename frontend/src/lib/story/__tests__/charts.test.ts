@@ -73,4 +73,59 @@ describe("buildOptionFromCsvRows", () => {
     });
     expect(opt.series).toHaveLength(2);
   });
+
+  it("groups by series_field for long-format CSVs", () => {
+    const rows = [
+      { Year: 2005, Type: "A", Emissions: 10 },
+      { Year: 2006, Type: "A", Emissions: 11 },
+      { Year: 2005, Type: "B", Emissions: 20 },
+      { Year: 2006, Type: "B", Emissions: 22 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "Year",
+      y_fields: ["Emissions"],
+      series_field: "Type",
+    });
+    expect(opt.series).toHaveLength(2);
+    expect(opt.series.map((s: { name: string }) => s.name).sort()).toEqual([
+      "A",
+      "B",
+    ]);
+    const a = opt.series.find((s: { name: string }) => s.name === "A");
+    expect(a.data).toEqual([
+      [2005, 10],
+      [2006, 11],
+    ]);
+    expect(opt.legend).toBeDefined();
+  });
+
+  it("throws when y_fields is empty so the renderer can show an error", () => {
+    expect(() =>
+      buildOptionFromCsvRows([{ x: 1, y: 2 }], {
+        kind: "line",
+        x_field: "x",
+        y_fields: [],
+      })
+    ).toThrow(/Y column/);
+  });
+
+  it("preserves series_field group order based on first appearance", () => {
+    const rows = [
+      { x: 1, g: "second", y: 1 },
+      { x: 1, g: "first", y: 5 },
+      { x: 2, g: "second", y: 2 },
+      { x: 2, g: "first", y: 6 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "x",
+      y_fields: ["y"],
+      series_field: "g",
+    });
+    expect(opt.series.map((s: { name: string }) => s.name)).toEqual([
+      "second",
+      "first",
+    ]);
+  });
 });

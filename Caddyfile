@@ -166,3 +166,41 @@
 		}
 	}
 }
+
+{$VIEWER_SITE_ADDRESS} {
+	# Embed viewer subdomain. Same SPA bundle as the main site, but:
+	#   * no basic auth — viewer is public by design
+	#   * CSP allows frame-ancestors '*' so the iframe can be embedded
+	#     anywhere
+	#   * no /api/*, /storage/*, /cog/*, /raster/*, /vector/* routes
+	#     because the embed page only fetches the user-supplied ?config=
+	#     payload (and any external URLs it references). It does not
+	#     talk back to the CNG backend.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# no-referrer (vs strict-origin-when-cross-origin on the main site):
+		# cross-site fetches initiated from inside the embedded iframe should
+		# not leak the viewer URL to user-supplied tile/asset hosts.
+		Referrer-Policy "no-referrer"
+		# Embeds typically reference user-published config URLs that we don't
+		# want indexed. Setting the response header on every viewer response
+		# avoids needing a meta tag in index.html.
+		X-Robots-Tag "noindex, nofollow"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob:; font-src 'self' data:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors *; base-uri 'self'; object-src 'none'"
+	}
+
+	handle {
+		encode gzip
+		root * /srv/frontend
+
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+
+		@notAssets not path /assets/*
+		header @notAssets Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
+	}
+}

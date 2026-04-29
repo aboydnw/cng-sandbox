@@ -21,6 +21,7 @@ import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
 import { downloadStoryConfig } from "../lib/story/exportConfig";
+import { EmbedSnippet } from "./EmbedSnippet";
 
 interface PublishDialogProps {
   open: boolean;
@@ -244,6 +245,16 @@ export function PublishDialog({
                     >
                       Download story config (cng-rc.json)
                     </Button>
+                    <Box mt={4}>
+                      <EmbedSnippet
+                        viewerOrigin={
+                          import.meta.env.VITE_VIEWER_ORIGIN ??
+                          window.location.origin
+                        }
+                        storyId={story.id}
+                        configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
+                      />
+                    </Box>
                   </Box>
                 </Flex>
               )}

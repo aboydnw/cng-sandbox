@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
@@ -10,11 +10,16 @@ import {
   migrateStory,
   isMapBoundChapter,
 } from "../lib/story";
+import { loadPortableConfig } from "../lib/story/loadPortableConfig";
+import { cngRcToStory } from "../lib/story/cngRcAdapter";
 import { BugReportLink } from "../components/BugReportLink";
 import type { Story } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import { connectionsApi } from "../lib/api";
 import { config } from "../config";
+
+const PORTABLE_LOAD_ERROR =
+  "We couldn't load this story from the provided config URL. Check that the URL is reachable and serves a valid cng-rc.json file.";
 
 export default function StoryReaderPage({
   embed = false,
@@ -22,6 +27,8 @@ export default function StoryReaderPage({
   embed?: boolean;
 }) {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const configParam = searchParams.get("config");
   const workspace = useOptionalWorkspace();
   const workspacePath = workspace?.workspacePath ?? ((p: string) => p);
   const shared = !workspace;
@@ -36,6 +43,27 @@ export default function StoryReaderPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (configParam) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const portable = await loadPortableConfig(configParam);
+          if (cancelled) return;
+          const { story: portableStory, connections } = cngRcToStory(portable);
+          setStory(portableStory);
+          setConnectionMap(connections);
+          setDatasetMap(new Map());
+          setLoading(false);
+        } catch {
+          if (cancelled) return;
+          setError(PORTABLE_LOAD_ERROR);
+          setLoading(false);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
     if (!id) return;
     async function loadStory() {
       try {
@@ -55,9 +83,10 @@ export default function StoryReaderPage({
       }
     }
     loadStory();
-  }, [id]);
+  }, [id, configParam]);
 
   useEffect(() => {
+    if (configParam) return;
     if (!story) return;
     async function fetchData() {
       // Fetch datasets
@@ -106,7 +135,7 @@ export default function StoryReaderPage({
       setLoading(false);
     }
     fetchData();
-  }, [story]);
+  }, [story, configParam]);
 
   if (loading) {
     return (

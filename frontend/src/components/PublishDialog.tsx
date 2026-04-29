@@ -20,6 +20,7 @@ import {
 import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
+import { downloadStoryConfig } from "../lib/story/exportConfig";
 
 interface PublishDialogProps {
   open: boolean;
@@ -212,6 +213,28 @@ export function PublishDialog({
                         {copied ? "Copied" : "Copy"}
                       </Button>
                     </Flex>
+                  </Box>
+                  <Box mt={6}>
+                    <Text
+                      fontSize="xs"
+                      fontWeight={600}
+                      color="gray.500"
+                      mb={1.5}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      Export
+                    </Text>
+                    <Text fontSize="sm" color="fg.muted" mb={3}>
+                      Download a portable representation of this story.
+                    </Text>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadStoryConfig(story.id, story.title)}
+                    >
+                      Download story config (cng-rc.json)
+                    </Button>
                   </Box>
                 </Flex>
               )}

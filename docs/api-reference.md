@@ -44,6 +44,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 - `GET /api/stories/{id}` — Get a story by ID
 - `PATCH /api/stories/{id}` — Update a story; returns 403 if the story is an example (`is_example=True`)
 - `POST /api/stories/{id}/fork` — Fork a story (clones chapters/metadata into a new story owned by the caller's workspace with `published=False` and `is_example=False`)
+- `GET /api/stories/{id}/export/config` — Return the story as a portable `cng-rc.json` config (Pydantic-validated `CngRcConfig`). Resolves layer references to durable URLs: connection-backed layers expose `source_url=connection.url` with `cng_url=null`; dataset-backed layers expose `source_url=dataset.source_url` (often `null`) and `cng_url=dataset.cog_url || dataset.parquet_url`. Access mirrors `GET /api/stories/{id}` plus a third allowed branch: example stories (`is_example=True`) are accessible to every workspace even when unpublished. Returns 404 if the story does not exist or the caller is not entitled to view it.
 - `DELETE /api/stories/{id}` — Delete a story; returns 403 if the story is an example
 
 ## Story assets (image/CSV uploads attached to stories)

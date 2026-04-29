@@ -16,6 +16,7 @@ from src.models.story import (
     StoryRow,
     StoryUpdate,
 )
+from src.services import story_export
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
@@ -122,6 +123,26 @@ async def get_story(story_id: str, request: Request):
         if row.workspace_id != workspace_id and not row.published:
             raise HTTPException(status_code=404, detail="Story not found")
         return _row_to_response(row)
+    finally:
+        session.close()
+
+
+@router.get("/stories/{story_id}/export/config")
+async def export_story_config(story_id: str, request: Request):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    session = get_session(request)
+    try:
+        row = session.get(StoryRow, story_id)
+        if not row:
+            raise HTTPException(status_code=404, detail="Story not found")
+        if (
+            row.workspace_id != workspace_id
+            and not row.published
+            and not row.is_example
+        ):
+            raise HTTPException(status_code=404, detail="Story not found")
+        config = story_export.build_config(row, session)
+        return config.model_dump(mode="json")
     finally:
         session.close()
 

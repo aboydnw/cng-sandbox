@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  datasetToLibraryItem,
-  connectionToLibraryItem,
-} from "../normalize";
+import { datasetToLibraryItem, connectionToLibraryItem } from "../normalize";
 import type { Dataset, Connection } from "../../../types";
 
 function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
@@ -100,8 +97,12 @@ describe("datasetToLibraryItem", () => {
   });
 
   it("maps dataset_type directly to type", () => {
-    expect(datasetToLibraryItem(makeDataset({ dataset_type: "raster" })).type).toBe("raster");
-    expect(datasetToLibraryItem(makeDataset({ dataset_type: "vector" })).type).toBe("vector");
+    expect(
+      datasetToLibraryItem(makeDataset({ dataset_type: "raster" })).type
+    ).toBe("raster");
+    expect(
+      datasetToLibraryItem(makeDataset({ dataset_type: "vector" })).type
+    ).toBe("vector");
   });
 
   it("sets source.label to 'Uploaded' and no href", () => {
@@ -134,16 +135,19 @@ describe("connectionToLibraryItem", () => {
       connectionToLibraryItem(makeConnection({ connection_type: "cog" })).type
     ).toBe("raster");
     expect(
-      connectionToLibraryItem(makeConnection({ connection_type: "xyz_raster" })).type
+      connectionToLibraryItem(makeConnection({ connection_type: "xyz_raster" }))
+        .type
     ).toBe("raster");
   });
 
   it("maps xyz_vector and geoparquet to vector", () => {
     expect(
-      connectionToLibraryItem(makeConnection({ connection_type: "xyz_vector" })).type
+      connectionToLibraryItem(makeConnection({ connection_type: "xyz_vector" }))
+        .type
     ).toBe("vector");
     expect(
-      connectionToLibraryItem(makeConnection({ connection_type: "geoparquet" })).type
+      connectionToLibraryItem(makeConnection({ connection_type: "geoparquet" }))
+        .type
     ).toBe("vector");
   });
 

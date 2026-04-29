@@ -58,8 +58,8 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
           <Text
             fontSize="sm"
             fontWeight={500}
-            color="gray.600"
-            _hover={{ color: "gray.800" }}
+            color="brand.brown"
+            _hover={{ color: "brand.orange" }}
           >
             Data
           </Text>
@@ -68,8 +68,8 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
           <Text
             fontSize="sm"
             fontWeight={500}
-            color="gray.600"
-            _hover={{ color: "gray.800" }}
+            color="brand.brown"
+            _hover={{ color: "brand.orange" }}
           >
             Stories
           </Text>

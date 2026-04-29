@@ -66,10 +66,7 @@ export function DiscoverHeader() {
               Contribute
             </Text>
           </Link>
-          <Link
-            to={workspacePath("/data")}
-            style={{ textDecoration: "none" }}
-          >
+          <Link to={workspacePath("/data")} style={{ textDecoration: "none" }}>
             <Text fontSize="14px" color={TEXT_MUTED} _hover={{ color: TEXT }}>
               Your workspace
             </Text>

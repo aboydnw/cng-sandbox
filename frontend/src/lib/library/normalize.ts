@@ -39,6 +39,8 @@ function connectionTypeToKind(conn: Connection): "raster" | "vector" {
       return "vector";
     case "pmtiles":
       return conn.tile_type === "raster" ? "raster" : "vector";
+    default:
+      return "vector";
   }
 }
 

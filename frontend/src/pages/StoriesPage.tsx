@@ -4,10 +4,7 @@ import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { useWorkspace } from "../hooks/useWorkspace";
-import {
-  listStoriesFromServer,
-  deleteStoryFromServer,
-} from "../lib/story/api";
+import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import type { Story } from "../lib/story/types";
 
 function timeAgo(dateStr: string): string {
@@ -120,10 +117,19 @@ export default function StoriesPage() {
 
         {loading ? (
           <Flex justify="center" py={12}>
-            <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
+            <SpinnerGap
+              size={32}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
           </Flex>
         ) : userStories.length === 0 ? (
-          <Flex direction="column" align="center" py={12} gap={3} color="gray.500">
+          <Flex
+            direction="column"
+            align="center"
+            py={12}
+            gap={3}
+            color="gray.500"
+          >
             <Text>No stories yet.</Text>
             <Link to={workspacePath("/story/new")}>
               <Text color="brand.orange" fontWeight={600}>

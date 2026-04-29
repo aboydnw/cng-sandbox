@@ -67,7 +67,8 @@ export default function DataPage() {
               ds.story_count > 1 ? "s" : ""
             }. Those chapters will no longer display.`
           : "";
-      if (!window.confirm(`Delete "${displayName(ds)}"?${storyWarning}`)) return;
+      if (!window.confirm(`Delete "${displayName(ds)}"?${storyWarning}`))
+        return;
       setDeletingId(item.id);
       try {
         const resp = await workspaceFetch(
@@ -164,7 +165,11 @@ export default function DataPage() {
                           fontSize="xs"
                           fontWeight={600}
                           textTransform="uppercase"
-                          color={ds.dataset_type === "raster" ? "purple.600" : "teal.600"}
+                          color={
+                            ds.dataset_type === "raster"
+                              ? "purple.600"
+                              : "teal.600"
+                          }
                         >
                           {ds.dataset_type}
                         </Text>
@@ -176,7 +181,7 @@ export default function DataPage() {
                       </Table.Cell>
                       <Table.Cell>
                         <Text fontSize="sm" color="gray.600">
-                          {ds.created_at ? timeAgo(ds.created_at as unknown as string) : "—"}
+                          {ds.created_at ? timeAgo(ds.created_at) : "—"}
                         </Text>
                       </Table.Cell>
                     </Table.Row>
@@ -193,110 +198,128 @@ export default function DataPage() {
 
         {datasetsLoading || connectionsLoading ? (
           <Flex justify="center" py={12}>
-            <SpinnerGap size={32} style={{ animation: "spin 1s linear infinite" }} />
+            <SpinnerGap
+              size={32}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
           </Flex>
-        ) : (() => {
-          const userItems: LibraryItem[] = [
-            ...datasets.filter((d) => !d.is_example).map(datasetToLibraryItem),
-            ...connections.map(connectionToLibraryItem),
-          ].sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1));
+        ) : (
+          (() => {
+            const userItems: LibraryItem[] = [
+              ...datasets
+                .filter((d) => !d.is_example)
+                .map(datasetToLibraryItem),
+              ...connections.map(connectionToLibraryItem),
+            ].sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1));
 
-          if (userItems.length === 0) {
+            if (userItems.length === 0) {
+              return (
+                <Flex
+                  direction="column"
+                  align="center"
+                  py={12}
+                  gap={3}
+                  color="gray.500"
+                >
+                  <Text>Nothing in your data library yet.</Text>
+                  <Link to={workspacePath("/")}>
+                    <Text color="brand.orange" fontWeight={600}>
+                      Add your first dataset or connection
+                    </Text>
+                  </Link>
+                </Flex>
+              );
+            }
+
             return (
-              <Flex direction="column" align="center" py={12} gap={3} color="gray.500">
-                <Text>Nothing in your data library yet.</Text>
-                <Link to={workspacePath("/")}>
-                  <Text color="brand.orange" fontWeight={600}>
-                    Add your first dataset or connection
-                  </Text>
-                </Link>
-              </Flex>
-            );
-          }
-
-          return (
-            <Table.Root size="sm" tableLayout="fixed">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader>Name</Table.ColumnHeader>
-                  <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                  <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
-                  <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
-                  <Table.ColumnHeader w="80px" />
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {userItems.map((item) => (
-                  <Table.Row key={`${item.kind}-${item.id}`}>
-                    <Table.Cell>
-                      <Link to={workspacePath(item.detailHref)}>
-                        <Text
-                          color="brand.orange"
-                          _hover={{ textDecoration: "underline" }}
-                          fontWeight={500}
-                          truncate
-                          title={item.name}
-                        >
-                          {item.name}
-                        </Text>
-                      </Link>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text
-                        fontSize="xs"
-                        fontWeight={600}
-                        textTransform="uppercase"
-                        color={item.type === "raster" ? "purple.600" : "teal.600"}
-                      >
-                        {item.type}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      {item.source.href ? (
-                        <a
-                          href={item.source.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={item.source.label}
-                          style={{ color: "var(--chakra-colors-gray-500)", fontSize: 13 }}
-                        >
+              <Table.Root size="sm" tableLayout="fixed">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader>Name</Table.ColumnHeader>
+                    <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                    <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
+                    <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
+                    <Table.ColumnHeader w="80px" />
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {userItems.map((item) => (
+                    <Table.Row key={`${item.kind}-${item.id}`}>
+                      <Table.Cell>
+                        <Link to={workspacePath(item.detailHref)}>
                           <Text
-                            fontSize="sm"
-                            color="gray.500"
+                            color="brand.orange"
+                            _hover={{ textDecoration: "underline" }}
+                            fontWeight={500}
                             truncate
-                            title={item.source.label}
+                            title={item.name}
                           >
+                            {item.name}
+                          </Text>
+                        </Link>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text
+                          fontSize="xs"
+                          fontWeight={600}
+                          textTransform="uppercase"
+                          color={
+                            item.type === "raster" ? "purple.600" : "teal.600"
+                          }
+                        >
+                          {item.type}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {item.source.href ? (
+                          <a
+                            href={item.source.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={item.source.label}
+                            style={{
+                              color: "var(--chakra-colors-gray-500)",
+                              fontSize: 13,
+                            }}
+                          >
+                            <Text
+                              fontSize="sm"
+                              color="gray.500"
+                              truncate
+                              title={item.source.label}
+                            >
+                              {item.source.label}
+                            </Text>
+                          </a>
+                        ) : (
+                          <Text fontSize="sm" color="gray.500">
                             {item.source.label}
                           </Text>
-                        </a>
-                      ) : (
-                        <Text fontSize="sm" color="gray.500">
-                          {item.source.label}
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text fontSize="sm" color="gray.600">
+                          {item.addedAt ? timeAgo(item.addedAt) : "—"}
                         </Text>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm" color="gray.600">
-                        {item.addedAt ? timeAgo(item.addedAt) : "—"}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        colorScheme="red"
-                        loading={deletingId === item.id}
-                        onClick={() => handleDelete(item)}
-                      >
-                        Delete
-                      </Button>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Root>
-          );
-        })()}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          colorScheme="red"
+                          loading={deletingId === item.id}
+                          onClick={() => handleDelete(item)}
+                        >
+                          Delete
+                        </Button>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            );
+          })()
+        )}
       </Box>
     </Box>
   );

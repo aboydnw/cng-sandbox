@@ -47,15 +47,17 @@ def build_config(story: StoryRow, session: Session) -> CngRcConfig:
                 layers[layer_id] = layer
                 chapter_layer_ids.append(layer_id)
 
-        out_chapters.append(CngRcChapter(
-            id=ch.get("id") or str(uuid4()),
-            type=ch.get("type", "prose"),
-            title=ch.get("title"),
-            body=ch.get("body") or ch.get("narrative"),
-            map=_resolve_map_view(ch.get("map_state")),
-            layers=chapter_layer_ids,
-            extra=_extract_chapter_extra(ch),
-        ))
+        out_chapters.append(
+            CngRcChapter(
+                id=ch.get("id") or str(uuid4()),
+                type=ch.get("type", "prose"),
+                title=ch.get("title"),
+                body=ch.get("body") or ch.get("narrative"),
+                map=_resolve_map_view(ch.get("map_state")),
+                layers=chapter_layer_ids,
+                extra=_extract_chapter_extra(ch),
+            )
+        )
 
     return CngRcConfig(
         version="1",

@@ -12,7 +12,13 @@ def test_export_config_returns_cng_rc_json(client):
             "title": "Test",
             "description": "Desc",
             "chapters": [
-                {"id": "c1", "type": "prose", "title": "Hi", "narrative": "Text", "order": 0}
+                {
+                    "id": "c1",
+                    "type": "prose",
+                    "title": "Hi",
+                    "narrative": "Text",
+                    "order": 0,
+                }
             ],
             "published": True,
         },

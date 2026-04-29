@@ -135,7 +135,11 @@ async def export_story_config(story_id: str, request: Request):
         row = session.get(StoryRow, story_id)
         if not row:
             raise HTTPException(status_code=404, detail="Story not found")
-        if row.workspace_id != workspace_id and not row.published and not row.is_example:
+        if (
+            row.workspace_id != workspace_id
+            and not row.published
+            and not row.is_example
+        ):
             raise HTTPException(status_code=404, detail="Story not found")
         config = story_export.build_config(row, session)
         return config.model_dump(mode="json")

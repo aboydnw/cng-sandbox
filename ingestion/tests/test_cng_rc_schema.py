@@ -62,7 +62,13 @@ def test_layer_allows_null_source_url():
         "cng_url": "https://r2.cng.devseed.com/uploaded.tif",
         "label": "Local upload",
         "attribution": None,
-        "render": {"colormap": "viridis", "rescale": [0, 1], "opacity": 1.0, "band": 1, "timestep": None},
+        "render": {
+            "colormap": "viridis",
+            "rescale": [0, 1],
+            "opacity": 1.0,
+            "band": 1,
+            "timestep": None,
+        },
     }
     layer = CngRcLayer.model_validate(raw)
     assert layer.source_url is None

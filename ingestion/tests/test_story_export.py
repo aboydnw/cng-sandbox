@@ -26,9 +26,10 @@ def _make_story(session, *, chapters, workspace_id="ws-test"):
 
 
 def test_export_prose_chapter_no_layers(db_session):
-    row = _make_story(db_session, chapters=[
-        {"id": "c1", "type": "prose", "title": "Hi", "body": "Text"}
-    ])
+    row = _make_story(
+        db_session,
+        chapters=[{"id": "c1", "type": "prose", "title": "Hi", "body": "Text"}],
+    )
     config = story_export.build_config(row, db_session)
     assert config.version == "1"
     assert config.origin.story_id == "story-1"
@@ -55,22 +56,25 @@ def test_export_resolves_connection_to_source_url(db_session):
     db_session.add(conn)
     db_session.commit()
 
-    row = _make_story(db_session, chapters=[
-        {
-            "id": "c1",
-            "type": "map",
-            "title": "Bathymetry",
-            "body": "",
-            "map_state": {"center": [-122.4, 37.7], "zoom": 8},
-            "layer_config": {
-                "connection_id": "conn-1",
-                "colormap": "viridis",
-                "opacity": 1.0,
-                "rescale_min": 0,
-                "rescale_max": 1000,
-            },
-        }
-    ])
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "map",
+                "title": "Bathymetry",
+                "body": "",
+                "map_state": {"center": [-122.4, 37.7], "zoom": 8},
+                "layer_config": {
+                    "connection_id": "conn-1",
+                    "colormap": "viridis",
+                    "opacity": 1.0,
+                    "rescale_min": 0,
+                    "rescale_max": 1000,
+                },
+            }
+        ],
+    )
     config = story_export.build_config(row, db_session)
     assert len(config.layers) == 1
     layer = next(iter(config.layers.values()))
@@ -90,15 +94,18 @@ def test_export_image_chapter_carries_nested_payload(db_session):
         "width": 800,
         "height": 600,
     }
-    row = _make_story(db_session, chapters=[
-        {
-            "id": "c1",
-            "type": "image",
-            "title": "Photo",
-            "body": "",
-            "image": image_payload,
-        }
-    ])
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "image",
+                "title": "Photo",
+                "body": "",
+                "image": image_payload,
+            }
+        ],
+    )
     config = story_export.build_config(row, db_session)
     assert config.chapters[0].extra == {"image": image_payload}
 
@@ -109,15 +116,18 @@ def test_export_video_chapter_carries_nested_payload(db_session):
         "video_id": "abc123",
         "original_url": "https://youtu.be/abc123",
     }
-    row = _make_story(db_session, chapters=[
-        {
-            "id": "c1",
-            "type": "video",
-            "title": "Clip",
-            "body": "",
-            "video": video_payload,
-        }
-    ])
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "video",
+                "title": "Clip",
+                "body": "",
+                "video": video_payload,
+            }
+        ],
+    )
     config = story_export.build_config(row, db_session)
     assert config.chapters[0].extra == {"video": video_payload}
 
@@ -139,20 +149,23 @@ def test_export_rescale_requires_both_min_and_max(db_session):
     db_session.add(conn)
     db_session.commit()
 
-    row = _make_story(db_session, chapters=[
-        {
-            "id": "c1",
-            "type": "map",
-            "title": "Bathymetry",
-            "body": "",
-            "map_state": {"center": [0, 0], "zoom": 1},
-            "layer_config": {
-                "connection_id": "conn-2",
-                "rescale_min": 0,
-                "opacity": 1.0,
-            },
-        }
-    ])
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "map",
+                "title": "Bathymetry",
+                "body": "",
+                "map_state": {"center": [0, 0], "zoom": 1},
+                "layer_config": {
+                    "connection_id": "conn-2",
+                    "rescale_min": 0,
+                    "opacity": 1.0,
+                },
+            }
+        ],
+    )
     config = story_export.build_config(row, db_session)
     layer = next(iter(config.layers.values()))
     assert layer.render.rescale is None
@@ -165,27 +178,32 @@ def test_export_resolves_dataset_to_cng_url(db_session):
         dataset_type="vector",
         format_pair="geojson-to-geoparquet",
         tile_url="https://example.com/tiles/{z}/{x}/{y}.pbf",
-        metadata_json=json.dumps({
-            "title": "My Vector Data",
-            "source_url": "https://example.com/original.geojson",
-            "parquet_url": "https://r2.cng.devseed.com/data.parquet",
-        }),
+        metadata_json=json.dumps(
+            {
+                "title": "My Vector Data",
+                "source_url": "https://example.com/original.geojson",
+                "parquet_url": "https://r2.cng.devseed.com/data.parquet",
+            }
+        ),
     )
     db_session.add(ds)
     db_session.commit()
 
-    row = _make_story(db_session, chapters=[
-        {
-            "id": "c1",
-            "type": "map",
-            "title": "Vector Layer",
-            "body": "",
-            "layer_config": {
-                "dataset_id": "ds-1",
-                "opacity": 0.8,
-            },
-        }
-    ])
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "map",
+                "title": "Vector Layer",
+                "body": "",
+                "layer_config": {
+                    "dataset_id": "ds-1",
+                    "opacity": 0.8,
+                },
+            }
+        ],
+    )
     config = story_export.build_config(row, db_session)
     assert len(config.layers) == 1
     layer = next(iter(config.layers.values()))

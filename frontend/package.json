@@ -23,8 +23,9 @@
     "@deck.gl/mesh-layers": "^9.3.0",
     "@deck.gl/react": "^9.3.0",
     "@deck.gl/widgets": "^9.3.0",
-    "@developmentseed/deck.gl-geotiff": "^0.5.0",
-    "@developmentseed/deck.gl-raster": "^0.5.0",
+    "@developmentseed/deck.gl-geotiff": "^0.6.1",
+    "@developmentseed/deck.gl-raster": "^0.6.1",
+    "@developmentseed/deck.gl-zarr": "0.6.1",
     "@duckdb/duckdb-wasm": "^1.29.0",
     "@emotion/react": "^11.0.0",
     "@geoarrow/deck.gl-layers": "^0.3.1",
@@ -50,7 +51,8 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.14.1",
     "recharts": "^3.8.1",
-    "scrollama": "^3.2.0"
+    "scrollama": "^3.2.0",
+    "zarrita": "0.7.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

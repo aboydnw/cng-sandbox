@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import {
   WorkspaceProvider,
@@ -18,6 +19,8 @@ import DiscoverDatasetPage from "./pages/DiscoverDatasetPage";
 import { WelcomeToast } from "./components/WelcomeToast";
 import { Toaster } from "./components/ui/toaster";
 import { toaster } from "./lib/toaster";
+
+const DevZarrSpike = lazy(() => import("./pages/DevZarrSpike"));
 
 function StoryReaderRedirect() {
   const { id } = useParams<{ id: string }>();
@@ -67,6 +70,16 @@ export default function App() {
         <Route path="/map/:id" element={<MapPage shared />} />
         <Route path="/story/:id" element={<StoryReaderPage />} />
         <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
+        {import.meta.env.DEV && (
+          <Route
+            path="/dev/zarr-spike"
+            element={
+              <Suspense fallback={null}>
+                <DevZarrSpike />
+              </Suspense>
+            }
+          />
+        )}
         <Route path="*" element={<WorkspaceRedirect />} />
       </Routes>
       <Toaster toaster={toaster} />

@@ -30,6 +30,10 @@ AUTH_USER=demo
 AUTH_PASSWORD_HASH=$$2a$$14$$... (escape $ as $$ for Docker Compose)
 ```
 
+## Viewer subdomain (iframe embeds)
+
+The `viewer.<domain>` subdomain serves the same SPA bundle but with no basic auth and a CSP that allows `frame-ancestors '*'`. DNS for `viewer.<domain>` must point at the same Hetzner host as the main site; Caddy auto-provisions the cert from the new server block. Set `VIEWER_SITE_ADDRESS=viewer.<your-domain>` in the production `.env` to enable it.
+
 ## Start
 
 ```bash

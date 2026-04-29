@@ -113,12 +113,12 @@ async def zarr_proxy(url: str, request: Request):
     if content_length:
         try:
             parsed_length = int(content_length)
-        except ValueError:
+        except ValueError as err:
             await resp.aclose()
             await client.aclose()
             raise HTTPException(
                 status_code=502, detail="Invalid upstream Content-Length"
-            )
+            ) from err
         if parsed_length > MAX_RESPONSE_BYTES:
             await resp.aclose()
             await client.aclose()

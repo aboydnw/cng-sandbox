@@ -36,6 +36,7 @@ def _public_url(key: str) -> str:
 
 
 def _put_object(key: str, body: bytes, content_type: str) -> str:
+    url = _public_url(key)
     storage = StorageService()
     obstore.put(
         storage.store,
@@ -43,7 +44,7 @@ def _put_object(key: str, body: bytes, content_type: str) -> str:
         io.BytesIO(body),
         attributes={"Content-Type": content_type},
     )
-    return _public_url(key)
+    return url
 
 
 def _delete_object(key: str) -> None:

@@ -40,10 +40,16 @@ export function ChartChapterRenderer({
       try {
         const { source, viz } = chapter.chart;
         if (source.kind === "csv") {
-          if (!source.url && !source.asset_id) return;
+          if (!source.url && !source.asset_id) {
+            throw new Error(
+              "chart csv source is missing both url and asset_id"
+            );
+          }
           let csvUrl = source.url;
           if (!csvUrl || !isAbsoluteUrl(csvUrl)) {
-            if (!source.asset_id) return;
+            if (!source.asset_id) {
+              throw new Error("relative csv source requires asset_id");
+            }
             const meta = await getStoryAsset(source.asset_id);
             if (cancelled) return;
             csvUrl = meta.url;

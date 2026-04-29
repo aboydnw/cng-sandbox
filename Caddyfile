@@ -179,7 +179,14 @@
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
+		# no-referrer (vs strict-origin-when-cross-origin on the main site):
+		# cross-site fetches initiated from inside the embedded iframe should
+		# not leak the viewer URL to user-supplied tile/asset hosts.
+		Referrer-Policy "no-referrer"
+		# Embeds typically reference user-published config URLs that we don't
+		# want indexed. Setting the response header on every viewer response
+		# avoids needing a meta tag in index.html.
+		X-Robots-Tag "noindex, nofollow"
 		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https: blob:; worker-src 'self' blob:; font-src 'self' data:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors *; base-uri 'self'; object-src 'none'"
 	}
 

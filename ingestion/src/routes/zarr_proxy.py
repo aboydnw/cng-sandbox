@@ -16,7 +16,7 @@ from urllib.parse import unquote, urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 from src.rate_limit import limiter
 from src.services.url_validation import _is_unsafe_ip
@@ -24,6 +24,8 @@ from src.services.url_validation import _is_unsafe_ip
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
+
+MAX_RESPONSE_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
 def _sanitize_url_for_log(url: str) -> str:
@@ -61,6 +63,9 @@ async def zarr_proxy(url: str, request: Request):
     resolved_ip = await _resolve_to_ip(parsed.hostname)
 
     headers = {"accept-encoding": "identity"}
+    range_header = request.headers.get("range")
+    if range_header:
+        headers["Range"] = range_header
 
     safe_url = _sanitize_url_for_log(decoded)
     hostname = parsed.hostname
@@ -88,17 +93,54 @@ async def zarr_proxy(url: str, request: Request):
         logger.error("Zarr proxy request failed for %s: %s", safe_url, e)
         raise HTTPException(status_code=502, detail="Upstream request failed") from e
 
+    if resp.status_code in range(300, 400):
+        await resp.aclose()
+        await client.aclose()
+        logger.warning(
+            "Upstream returned redirect %d for %s", resp.status_code, safe_url
+        )
+        raise HTTPException(
+            status_code=502, detail="Upstream redirects are not allowed"
+        )
+
     if resp.status_code >= 400:
         await resp.aclose()
         await client.aclose()
         logger.error("Upstream returned %d for %s", resp.status_code, safe_url)
         raise HTTPException(status_code=resp.status_code, detail="Upstream error")
 
-    response_headers: dict[str, str] = {}
+    content_length = resp.headers.get("content-length")
+    if content_length and int(content_length) > MAX_RESPONSE_BYTES:
+        await resp.aclose()
+        await client.aclose()
+        raise HTTPException(status_code=413, detail="Response too large")
+
+    response_headers: dict[str, str] = {"accept-ranges": "bytes"}
     if "content-type" in resp.headers:
         response_headers["content-type"] = resp.headers["content-type"]
-    if "content-length" in resp.headers:
-        response_headers["content-length"] = resp.headers["content-length"]
+    if "content-range" in resp.headers:
+        response_headers["content-range"] = resp.headers["content-range"]
+    if content_length:
+        response_headers["content-length"] = content_length
+
+    if not content_length:
+        bytes_received = 0
+        chunks = []
+        try:
+            async for chunk in resp.aiter_bytes(chunk_size=64 * 1024):
+                bytes_received += len(chunk)
+                if bytes_received > MAX_RESPONSE_BYTES:
+                    raise HTTPException(status_code=413, detail="Response too large")
+                chunks.append(chunk)
+        finally:
+            await resp.aclose()
+            await client.aclose()
+        status = 206 if "content-range" in response_headers else 200
+        return Response(
+            content=b"".join(chunks),
+            status_code=status,
+            headers=response_headers,
+        )
 
     async def stream_and_close():
         try:
@@ -108,8 +150,9 @@ async def zarr_proxy(url: str, request: Request):
             await resp.aclose()
             await client.aclose()
 
+    status = 206 if "content-range" in response_headers else 200
     return StreamingResponse(
         content=stream_and_close(),
-        status_code=200,
+        status_code=status,
         headers=response_headers,
     )

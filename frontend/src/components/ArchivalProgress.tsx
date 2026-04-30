@@ -42,7 +42,9 @@ export function ArchivalProgress({
             </DialogHeader>
             <DialogBody>
               <Text fontSize="sm" mb={2}>
-                Capturing chapter {current} of {total}…
+                {current >= total && total > 0
+                  ? "Finalizing download…"
+                  : "Capturing chapters and assembling HTML…"}
               </Text>
               <Box bg="gray.100" borderRadius="md" h="6px" overflow="hidden">
                 <Box

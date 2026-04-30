@@ -7,7 +7,12 @@ export async function downloadArchivalHtml(
   onProgress?: (current: number, total: number) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const response = await fetch(`/api/stories/${storyId}/export/config`, {
+  const response = await fetch(
+    `/api/stories/${encodeURIComponent(storyId)}/export/config`,
+    {
+      signal,
+    }
+  );
     signal,
   });
   if (!response.ok)

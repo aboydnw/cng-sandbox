@@ -172,12 +172,22 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
         const parentPath = name.includes("/")
           ? name.slice(0, name.lastIndexOf("/"))
           : "";
-        const coordPath = parentPath ? `${parentPath}/${timeDim}` : timeDim;
-        if (timeValuesCache.has(coordPath)) {
-          timeValues = timeValuesCache.get(coordPath) ?? null;
+        const scopedCoordPath = parentPath
+          ? `${parentPath}/${timeDim}`
+          : timeDim;
+        if (timeValuesCache.has(scopedCoordPath)) {
+          timeValues = timeValuesCache.get(scopedCoordPath) ?? null;
         } else {
-          timeValues = await decodeTimeValues(root, coordPath);
-          timeValuesCache.set(coordPath, timeValues);
+          timeValues = await decodeTimeValues(root, scopedCoordPath);
+          if (!timeValues && parentPath) {
+            if (timeValuesCache.has(timeDim)) {
+              timeValues = timeValuesCache.get(timeDim) ?? null;
+            } else {
+              timeValues = await decodeTimeValues(root, timeDim);
+              timeValuesCache.set(timeDim, timeValues);
+            }
+          }
+          timeValuesCache.set(scopedCoordPath, timeValues);
         }
       }
       const variable: ZarrVariable = {

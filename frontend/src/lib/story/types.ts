@@ -121,6 +121,8 @@ export interface ChartViz {
   x_label?: string;
   y_label?: string;
   y_scale?: "linear" | "log";
+  x_min?: number | string | null;
+  x_max?: number | string | null;
 }
 
 export interface ChartChapter extends BaseChapter {

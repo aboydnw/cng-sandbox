@@ -11,6 +11,8 @@ export interface CaptureMapOptions {
 export async function captureMapToDataUrl(
   opts: CaptureMapOptions
 ): Promise<string> {
+  if (opts.canvas.width !== opts.width) opts.canvas.width = opts.width;
+  if (opts.canvas.height !== opts.height) opts.canvas.height = opts.height;
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   return opts.canvas.toDataURL("image/png");
 }
@@ -22,5 +24,5 @@ export async function captureMapToDataUrl(
  * Not yet implemented — see Task 4+ of the story archival plan.
  */
 export async function captureChapterMap(): Promise<string> {
-  throw new Error("Not yet implemented — see implementer note");
+  throw new Error("Not yet implemented — see Task 4+ of the story archival plan");
 }

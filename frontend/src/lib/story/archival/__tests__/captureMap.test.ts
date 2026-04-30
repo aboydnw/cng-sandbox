@@ -41,15 +41,16 @@ describe("captureMapToDataUrl", () => {
 
   it("preserves the requested dimensions", async () => {
     const fakeCanvas = document.createElement("canvas");
-    fakeCanvas.width = 1200;
-    fakeCanvas.height = 800;
+    fakeCanvas.width = 100;
+    fakeCanvas.height = 100;
 
-    const dataUrl = await captureMapToDataUrl({
+    await captureMapToDataUrl({
       canvas: fakeCanvas,
       width: 1200,
       height: 800,
     });
 
-    expect(dataUrl.length).toBeGreaterThan(100);
+    expect(fakeCanvas.width).toBe(1200);
+    expect(fakeCanvas.height).toBe(800);
   });
 });

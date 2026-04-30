@@ -91,6 +91,12 @@ async function renderChapter(ch: CngRcChapter, _config: CngRcConfig): Promise<st
     case "chart": {
       return `<section class="chapter chart">${title}<p><em>(Chart rendering pending)</em></p>${body}</section>`;
     }
+
+    default: {
+      const _exhaustive: never = ch.type;
+      void _exhaustive;
+      return `<section class="chapter">${title}${body}</section>`;
+    }
   }
 }
 

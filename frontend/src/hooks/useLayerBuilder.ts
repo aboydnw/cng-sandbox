@@ -263,8 +263,13 @@ export function useLayerBuilder({
         const variable = config.variable;
         if (!variable) return [];
         const timeDim = config.timeDim ?? null;
-        const selection: Record<string, number | null> = timeDim
-          ? { [timeDim]: activeTimestepIndex }
+        const maxTimestepIndex = Math.max((item.timesteps?.length ?? 1) - 1, 0);
+        const clampedTimestepIndex = Math.min(
+          Math.max(activeTimestepIndex, 0),
+          maxTimestepIndex
+        );
+        const selection: Record<string, number> = timeDim
+          ? { [timeDim]: clampedTimestepIndex }
           : {};
         const safeMin =
           rescaleMin ??

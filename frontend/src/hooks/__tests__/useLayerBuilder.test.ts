@@ -545,13 +545,23 @@ describe("useLayerBuilder zarr connections", () => {
   });
 
   it("uses { [timeDim]: activeTimestepIndex } when config has a timeDim", () => {
-    const item = zarrItem({
-      variable: "t2m",
-      timeDim: "time",
-      timeValues: ["a", "b", "c"],
-      rescaleMin: 200,
-      rescaleMax: 320,
-    });
+    const item = zarrItem(
+      {
+        variable: "t2m",
+        timeDim: "time",
+        timeValues: ["a", "b", "c"],
+        rescaleMin: 200,
+        rescaleMax: 320,
+      },
+      {
+        isTemporal: true,
+        timesteps: [
+          { datetime: "a", index: 0 },
+          { datetime: "b", index: 1 },
+          { datetime: "c", index: 2 },
+        ],
+      }
+    );
     const fakeNode = {} as unknown;
     renderHook(() =>
       useLayerBuilder({
@@ -577,6 +587,47 @@ describe("useLayerBuilder zarr connections", () => {
     const call = buildZarrLayerMock.mock.calls[0][0];
     expect(call.selection).toEqual({ time: 2 });
     expect(call.colormapReversed).toBe(true);
+  });
+
+  it("clamps activeTimestepIndex to last valid index when stale", () => {
+    const item = zarrItem(
+      {
+        variable: "t2m",
+        timeDim: "time",
+        timeValues: ["a", "b"],
+      },
+      {
+        isTemporal: true,
+        timesteps: [
+          { datetime: "a", index: 0 },
+          { datetime: "b", index: 1 },
+        ],
+      }
+    );
+    const fakeNode = {} as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 99,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 0,
+        rescaleMax: 1,
+        colormapReversed: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeNode as any,
+      })
+    );
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.selection).toEqual({ time: 1 });
   });
 
   it("falls back to props rescale when config rescale is missing", () => {

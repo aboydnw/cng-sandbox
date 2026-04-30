@@ -1,19 +1,8 @@
 import type { CngRcConfig } from "./cngRcTypes";
+import { assertSupportedVersion } from "./cngRcVersion";
 
 const INLINE_PAYLOAD_MAX_BYTES = 100_000;
 const CONFIG_FETCH_TIMEOUT_MS = 10_000;
-
-function assertSupportedVersion(
-  parsed: unknown
-): asserts parsed is CngRcConfig {
-  if (
-    !parsed ||
-    typeof parsed !== "object" ||
-    (parsed as { version?: unknown }).version !== "1"
-  ) {
-    throw new Error("Unsupported config version");
-  }
-}
 
 export async function loadPortableConfig(
   configParam: string

@@ -86,6 +86,10 @@ function inferXAxisType(
   return "category";
 }
 
+export interface BuildCsvOptionOpts {
+  interactive?: boolean;
+}
+
 export function buildOptionFromCsvRows(
   rows: Record<string, unknown>[],
   viz: Pick<
@@ -97,7 +101,8 @@ export function buildOptionFromCsvRows(
     | "x_label"
     | "y_label"
     | "y_scale"
-  >
+  >,
+  opts: BuildCsvOptionOpts = {}
 ): EChartsOption {
   const seriesField = viz.series_field || null;
   const yField = viz.y_fields[0];
@@ -160,6 +165,14 @@ export function buildOptionFromCsvRows(
     };
   }
 
+  const interactive = opts.interactive ?? true;
+  const dataZoom: { type: string; height?: number; bottom?: number }[] = [
+    { type: "inside" },
+  ];
+  if (interactive) {
+    dataZoom.push({ type: "slider", height: 20, bottom: 10 });
+  }
+
   return {
     tooltip,
     toolbox: COMMON_TOOLBOX,
@@ -175,7 +188,7 @@ export function buildOptionFromCsvRows(
       type: viz.y_scale === "log" ? "log" : "value",
       name: viz.y_label ?? "",
     },
-    dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 10 }],
+    dataZoom,
     series,
   };
 }

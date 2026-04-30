@@ -201,4 +201,28 @@ describe("buildOptionFromCsvRows", () => {
     });
     expect(opt.xAxis.axisLabel).toBeUndefined();
   });
+
+  it("includes the slider dataZoom by default (editor mode)", () => {
+    const rows = [{ x: 1, v: 1 }];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "x",
+      y_fields: ["v"],
+    });
+    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    expect(types).toContain("slider");
+    expect(types).toContain("inside");
+  });
+
+  it("omits the slider dataZoom when interactive=false (reader mode)", () => {
+    const rows = [{ x: 1, v: 1 }];
+    const opt = buildOptionFromCsvRows(
+      rows,
+      { kind: "line", x_field: "x", y_fields: ["v"] },
+      { interactive: false }
+    );
+    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    expect(types).not.toContain("slider");
+    expect(types).toContain("inside");
+  });
 });

@@ -1,3 +1,5 @@
+import { slugifyStoryTitle } from "./slug";
+
 export async function downloadStoryConfig(
   storyId: string,
   storyTitle: string
@@ -20,11 +22,5 @@ export async function downloadStoryConfig(
 }
 
 function filenameFor(title: string): string {
-  const slug =
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 60) || "story";
-  return `${slug}-cng-rc.json`;
+  return `${slugifyStoryTitle(title)}-cng-rc.json`;
 }

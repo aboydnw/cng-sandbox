@@ -21,6 +21,7 @@ import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
 import { downloadStoryConfig } from "../lib/story/exportConfig";
+import { buildAndDownloadBundle } from "../lib/story/buildStaticBundle";
 import { EmbedSnippet } from "./EmbedSnippet";
 
 interface PublishDialogProps {
@@ -245,6 +246,28 @@ export function PublishDialog({
                     >
                       Download story config (cng-rc.json)
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      mt={3}
+                      onClick={() => {
+                        void buildAndDownloadBundle(
+                          story.id,
+                          story.title
+                        ).catch((err) => {
+                          console.error(
+                            "Failed to download static bundle",
+                            err
+                          );
+                        });
+                      }}
+                    >
+                      Download static bundle (.zip)
+                    </Button>
+                    <Text fontSize="xs" color="fg.muted" mt={1}>
+                      Self-contained viewer + config. Upload anywhere static
+                      files can be served.
+                    </Text>
                     <Box mt={4}>
                       <EmbedSnippet
                         viewerOrigin={

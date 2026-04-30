@@ -50,7 +50,8 @@ function filterRowsByRange(
     // Category axis: keep rows whose label appears between the saved labels in source order.
     const labels = rows.map((r) => String(r[xField]));
     const startIdx = xMin == null ? 0 : labels.indexOf(String(xMin));
-    const endIdx = xMax == null ? labels.length - 1 : labels.lastIndexOf(String(xMax));
+    const endIdx =
+      xMax == null ? labels.length - 1 : labels.lastIndexOf(String(xMax));
     if (startIdx < 0 || endIdx < 0 || startIdx > endIdx) return rows;
     const allowed = new Set(labels.slice(startIdx, endIdx + 1));
     filtered = rows.filter((r) => allowed.has(String(r[xField])));
@@ -179,7 +180,7 @@ export function ChartChapterRenderer({
       // Fallback for category axis: derive labels from data and percent slice.
       const labels = source.columns.includes(viz.x_field)
         ? // pull labels from the chart's xAxis data:
-          (inst.getOption().xAxis?.[0]?.data as (string | number)[]) ?? []
+          ((inst.getOption().xAxis?.[0]?.data as (string | number)[]) ?? [])
         : [];
       if (labels.length > 0) {
         const lo = Math.floor((startPct / 100) * (labels.length - 1));

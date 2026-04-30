@@ -11,9 +11,9 @@ vi.mock("echarts-for-react", () => ({
 }));
 
 vi.mock("../../lib/story/charts", async () => {
-  const actual = await vi.importActual<
-    typeof import("../../lib/story/charts")
-  >("../../lib/story/charts");
+  const actual = await vi.importActual<typeof import("../../lib/story/charts")>(
+    "../../lib/story/charts"
+  );
   return {
     ...actual,
     fetchCsvRows: vi.fn(),

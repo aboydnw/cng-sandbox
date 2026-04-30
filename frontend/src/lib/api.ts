@@ -54,6 +54,7 @@ export const connectionsApi = {
     tile_type?: string | null;
     band_count?: number | null;
     rescale?: string | null;
+    config?: Record<string, unknown> | null;
   }): Promise<Connection> {
     return workspaceFetch("/api/connections", {
       method: "POST",

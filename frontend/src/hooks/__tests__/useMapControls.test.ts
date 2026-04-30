@@ -233,6 +233,7 @@ describe("useMapControls", () => {
         is_shared: false,
         preferred_colormap: null,
         preferred_colormap_reversed: null,
+        config: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -269,6 +270,7 @@ describe("useMapControls", () => {
         is_shared: false,
         preferred_colormap: null,
         preferred_colormap_reversed: null,
+        config: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -306,6 +308,7 @@ describe("useMapControls", () => {
         is_shared: false,
         preferred_colormap: null,
         preferred_colormap_reversed: null,
+        config: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));

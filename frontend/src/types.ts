@@ -80,7 +80,16 @@ export type ConnectionType =
   | "xyz_vector"
   | "cog"
   | "pmtiles"
-  | "geoparquet";
+  | "geoparquet"
+  | "zarr";
+
+export interface ZarrConnectionConfig {
+  variable: string;
+  timeDim?: string | null;
+  timeValues?: string[] | null;
+  rescaleMin: number;
+  rescaleMax: number;
+}
 
 export interface Connection {
   id: string;
@@ -106,6 +115,7 @@ export interface Connection {
   render_mode?: "client" | "server" | null;
   preferred_colormap: string | null;
   preferred_colormap_reversed: boolean | null;
+  config: Record<string, unknown> | null;
   created_at: string;
 }
 

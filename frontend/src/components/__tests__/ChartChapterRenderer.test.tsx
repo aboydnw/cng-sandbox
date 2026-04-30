@@ -99,6 +99,48 @@ describe("ChartChapterRenderer (reader mode)", () => {
     const types = opt.dataZoom.map((d: { type: string }) => d.type);
     expect(types).not.toContain("slider");
   });
+
+  it("filters category-axis rows by position so duplicate labels outside the window are dropped", async () => {
+    const dupRows = [
+      { region: "A", v: 1 },
+      { region: "B", v: 2 },
+      { region: "C", v: 3 },
+      { region: "A", v: 99 },
+    ];
+    vi.mocked(charts.fetchCsvRows).mockResolvedValue(dupRows);
+    vi.mocked(charts.fetchCsvRowsByAssetId).mockResolvedValue(dupRows);
+    const chapter: ChartChapter = {
+      id: "c1",
+      type: "chart",
+      order: 0,
+      title: "Test chart",
+      narrative: "",
+      chart: {
+        source: {
+          kind: "csv",
+          asset_id: "a1",
+          url: "http://x/y.csv",
+          columns: ["region", "v"],
+        },
+        viz: {
+          kind: "bar",
+          x_field: "region",
+          y_fields: ["v"],
+          x_min: "A",
+          x_max: "C",
+        },
+      },
+    };
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <ChartChapterRenderer chapter={chapter} chapterIndex={0} />
+      </ChakraProvider>
+    );
+    const el = await waitFor(() => screen.getByTestId("echarts"));
+    const opt = JSON.parse(el.getAttribute("data-option")!);
+    const values = opt.series[0].data.map((d: [string, number]) => d[1]);
+    expect(values).toEqual([1, 2, 3]);
+  });
 });
 
 describe("ChartChapterRenderer (editor mode)", () => {

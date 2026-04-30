@@ -1,4 +1,5 @@
-import type { Chapter } from "../../lib/story";
+import { useRef } from "react";
+import type { Chapter, ChartChapter } from "../../lib/story";
 import { ProseChapter } from "../ProseChapter";
 import { ImageChapterRenderer } from "../ImageChapterRenderer";
 import { VideoChapterRenderer } from "../VideoChapterRenderer";
@@ -10,6 +11,9 @@ interface ChapterPreviewProps {
 }
 
 export function ChapterPreview({ chapter, onChange }: ChapterPreviewProps) {
+  const chapterRef = useRef(chapter);
+  chapterRef.current = chapter;
+
   if (chapter.type === "prose") {
     return <ProseChapter chapter={chapter} chapterIndex={chapter.order} />;
   }
@@ -30,14 +34,16 @@ export function ChapterPreview({ chapter, onChange }: ChapterPreviewProps) {
         chapterIndex={chapter.order}
         onRangeChange={
           onChange
-            ? (range) =>
+            ? (range) => {
+                const latest = chapterRef.current as ChartChapter;
                 onChange({
-                  ...chapter,
+                  ...latest,
                   chart: {
-                    ...chapter.chart,
-                    viz: { ...chapter.chart.viz, ...range },
+                    ...latest.chart,
+                    viz: { ...latest.chart.viz, ...range },
                   },
-                })
+                });
+              }
             : undefined
         }
       />

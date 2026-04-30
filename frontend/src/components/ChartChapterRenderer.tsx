@@ -53,8 +53,7 @@ function filterRowsByRange(
     const endIdx =
       xMax == null ? labels.length - 1 : labels.lastIndexOf(String(xMax));
     if (startIdx < 0 || endIdx < 0 || startIdx > endIdx) return rows;
-    const allowed = new Set(labels.slice(startIdx, endIdx + 1));
-    filtered = rows.filter((r) => allowed.has(String(r[xField])));
+    filtered = rows.slice(startIdx, endIdx + 1);
   }
 
   if (filtered.length === 0) return rows;

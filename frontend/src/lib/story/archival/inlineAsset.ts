@@ -6,7 +6,9 @@
  */
 export async function fetchAndInlineAsBase64(url: string): Promise<string> {
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch asset: ${url} (${response.status})`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch asset (${response.status})`);
+  }
   const blob = await response.blob();
   return await blobToDataUrl(blob);
 }

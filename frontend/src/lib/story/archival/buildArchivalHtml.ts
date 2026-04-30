@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import Markdown from "react-markdown";
 import type { CngRcChapter, CngRcConfig } from "../cngRcTypes";
-import { buildCitationBlock, escapeHtml } from "./citations";
+import { buildCitationBlock, escapeHtml, safeHttpUrl } from "./citations";
 import { captureChapterMap } from "./captureMap";
 import { fetchAndInlineAsBase64 } from "./inlineAsset";
 
@@ -14,7 +14,7 @@ import { fetchAndInlineAsBase64 } from "./inlineAsset";
  */
 export async function buildArchivalHtml(config: CngRcConfig): Promise<string> {
   const chapterFragments = await Promise.all(
-    config.chapters.map((ch) => renderChapter(ch, config)),
+    config.chapters.map((ch) => renderChapter(ch, config))
   );
 
   return `<!doctype html>
@@ -50,27 +50,52 @@ function renderMarkdown(body: string): string {
   return renderToStaticMarkup(createElement(Markdown, null, body));
 }
 
-async function renderChapter(ch: CngRcChapter, _config: CngRcConfig): Promise<string> {
+async function tryCaptureMap(): Promise<string | null> {
+  try {
+    return await captureChapterMap();
+  } catch {
+    return null;
+  }
+}
+
+async function tryInlineAsset(url: string): Promise<string> {
+  try {
+    return await fetchAndInlineAsBase64(url);
+  } catch {
+    return "";
+  }
+}
+
+async function renderChapter(
+  ch: CngRcChapter,
+  _config: CngRcConfig
+): Promise<string> {
   const title = ch.title ? `<h2>${escapeHtml(ch.title)}</h2>` : "";
-  const body = ch.body ? `<div class="chapter-body">${renderMarkdown(ch.body)}</div>` : "";
+  const body = ch.body
+    ? `<div class="chapter-body">${renderMarkdown(ch.body)}</div>`
+    : "";
 
   switch (ch.type) {
     case "prose":
       return `<section class="chapter prose">${title}${body}</section>`;
 
     case "map": {
-      const dataUrl = await captureChapterMap();
-      return `<section class="chapter map">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`;
+      const dataUrl = await tryCaptureMap();
+      return dataUrl
+        ? `<section class="chapter map">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`
+        : `<section class="chapter map">${title}<p><em>(Map snapshot unavailable)</em></p>${body}</section>`;
     }
 
     case "scrollytelling": {
-      const dataUrl = await captureChapterMap();
-      return `<section class="chapter scrolly">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`;
+      const dataUrl = await tryCaptureMap();
+      return dataUrl
+        ? `<section class="chapter scrolly">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`
+        : `<section class="chapter scrolly">${title}<p><em>(Map snapshot unavailable)</em></p>${body}</section>`;
     }
 
     case "image": {
       const url = ch.extra?.image_url as string | undefined;
-      const inlined = url ? await fetchAndInlineAsBase64(url) : "";
+      const inlined = url ? await tryInlineAsset(url) : "";
       return `<section class="chapter image">${title}${inlined ? `<img src="${inlined}" alt="" />` : ""}${body}</section>`;
     }
 
@@ -78,12 +103,13 @@ async function renderChapter(ch: CngRcChapter, _config: CngRcConfig): Promise<st
       const thumbnailUrl =
         (ch.extra?.thumbnail_url as string | undefined) ||
         (ch.extra?.poster as string | undefined);
-      const inlined = thumbnailUrl ? await fetchAndInlineAsBase64(thumbnailUrl) : "";
-      const sourceUrl = ch.extra?.video_url as string | undefined;
+      const inlined = thumbnailUrl ? await tryInlineAsset(thumbnailUrl) : "";
+      const rawSourceUrl = ch.extra?.video_url as string | undefined;
+      const safeSourceUrl = rawSourceUrl ? safeHttpUrl(rawSourceUrl) : null;
       return `<section class="chapter video">
         ${title}
         ${inlined ? `<img src="${inlined}" alt="Video thumbnail" />` : ""}
-        ${sourceUrl ? `<p><small>Original video: <a href="${escapeHtml(sourceUrl)}">${escapeHtml(sourceUrl)}</a></small></p>` : ""}
+        ${safeSourceUrl ? `<p><small>Original video: <a href="${escapeHtml(safeSourceUrl)}">${escapeHtml(safeSourceUrl)}</a></small></p>` : ""}
         ${body}
       </section>`;
     }
@@ -102,19 +128,27 @@ async function renderChapter(ch: CngRcChapter, _config: CngRcConfig): Promise<st
 
 function dublinCoreMetaTags(config: CngRcConfig): string {
   const tags: string[] = [];
-  tags.push(`<meta name="dc.title" content="${escapeHtml(config.metadata.title)}">`);
+  tags.push(
+    `<meta name="dc.title" content="${escapeHtml(config.metadata.title)}">`
+  );
   if (config.metadata.author) {
-    tags.push(`<meta name="dc.creator" content="${escapeHtml(config.metadata.author)}">`);
+    tags.push(
+      `<meta name="dc.creator" content="${escapeHtml(config.metadata.author)}">`
+    );
   }
-  tags.push(`<meta name="dc.date" content="${escapeHtml(config.metadata.updated)}">`);
+  tags.push(
+    `<meta name="dc.date" content="${escapeHtml(config.metadata.updated)}">`
+  );
   if (config.metadata.description) {
     tags.push(
-      `<meta name="dc.description" content="${escapeHtml(config.metadata.description)}">`,
+      `<meta name="dc.description" content="${escapeHtml(config.metadata.description)}">`
     );
   }
   for (const layer of Object.values(config.layers)) {
     if (layer.source_url) {
-      tags.push(`<meta name="dc.source" content="${escapeHtml(layer.source_url)}">`);
+      tags.push(
+        `<meta name="dc.source" content="${escapeHtml(layer.source_url)}">`
+      );
     }
   }
   return tags.join("\n  ");

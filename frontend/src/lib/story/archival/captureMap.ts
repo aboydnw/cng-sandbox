@@ -24,5 +24,7 @@ export async function captureMapToDataUrl(
  * Not yet implemented — see Task 4+ of the story archival plan.
  */
 export async function captureChapterMap(): Promise<string> {
-  throw new Error("Not yet implemented — see Task 4+ of the story archival plan");
+  throw new Error(
+    "Not yet implemented — see Task 4+ of the story archival plan"
+  );
 }

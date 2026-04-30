@@ -7,5 +7,7 @@
  * Task 4 emits a placeholder for chart chapters; this fills in afterwards.
  */
 export async function captureChartToDataUrl(): Promise<string> {
-  throw new Error("Not yet implemented — recharts SVG-to-canvas capture is a follow-up");
+  throw new Error(
+    "Not yet implemented — recharts SVG-to-canvas capture is a follow-up"
+  );
 }

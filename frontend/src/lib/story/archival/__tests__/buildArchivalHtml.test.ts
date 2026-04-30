@@ -3,18 +3,26 @@ import { buildArchivalHtml } from "../buildArchivalHtml";
 import type { CngRcConfig } from "../../cngRcTypes";
 
 vi.mock("../captureMap", () => ({
-  captureChapterMap: vi.fn().mockResolvedValue("data:image/png;base64,iVBORw0KGgo="),
+  captureChapterMap: vi
+    .fn()
+    .mockResolvedValue("data:image/png;base64,iVBORw0KGgo="),
 }));
 
 vi.mock("../inlineAsset", () => ({
-  fetchAndInlineAsBase64: vi.fn().mockResolvedValue("data:image/jpeg;base64,/9j/4AAQ"),
+  fetchAndInlineAsBase64: vi
+    .fn()
+    .mockResolvedValue("data:image/jpeg;base64,/9j/4AAQ"),
 }));
 
 describe("buildArchivalHtml", () => {
   it("emits Dublin Core meta tags from story metadata", async () => {
     const config: CngRcConfig = {
       version: "1",
-      origin: { story_id: "s1", workspace_id: null, exported_at: "2026-04-29T00:00:00Z" },
+      origin: {
+        story_id: "s1",
+        workspace_id: null,
+        exported_at: "2026-04-29T00:00:00Z",
+      },
       metadata: {
         title: "Coastal Erosion 2024",
         description: "Analysis of shoreline change",
@@ -28,18 +36,35 @@ describe("buildArchivalHtml", () => {
     };
 
     const html = await buildArchivalHtml(config);
-    expect(html).toContain('<meta name="dc.title" content="Coastal Erosion 2024">');
+    expect(html).toContain(
+      '<meta name="dc.title" content="Coastal Erosion 2024">'
+    );
     expect(html).toContain('<meta name="dc.creator" content="Dr. Smith">');
-    expect(html).toContain('<meta name="dc.date" content="2026-04-28T00:00:00Z">');
+    expect(html).toContain(
+      '<meta name="dc.date" content="2026-04-28T00:00:00Z">'
+    );
   });
 
   it("renders prose chapters as inline HTML", async () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s1", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [
-        { id: "c1", type: "prose", title: "Introduction", body: "Hello **world**.", map: null, layers: [] },
+        {
+          id: "c1",
+          type: "prose",
+          title: "Introduction",
+          body: "Hello **world**.",
+          map: null,
+          layers: [],
+        },
       ],
       layers: {},
       assets: {},
@@ -55,7 +80,13 @@ describe("buildArchivalHtml", () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s1", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [
         {
           id: "c1",
@@ -78,7 +109,13 @@ describe("buildArchivalHtml", () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s1", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [
         {
           id: "c1",
@@ -87,7 +124,10 @@ describe("buildArchivalHtml", () => {
           body: null,
           map: null,
           layers: [],
-          extra: { video_url: "https://example.com/v.mp4", thumbnail_url: "https://example.com/v.jpg" },
+          extra: {
+            video_url: "https://example.com/v.mp4",
+            thumbnail_url: "https://example.com/v.jpg",
+          },
         },
       ],
       layers: {},
@@ -104,7 +144,13 @@ describe("buildArchivalHtml", () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s1", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [],
       layers: {
         l1: {
@@ -113,7 +159,13 @@ describe("buildArchivalHtml", () => {
           cng_url: null,
           label: "Test layer",
           attribution: "Test attribution",
-          render: { colormap: null, rescale: null, opacity: 1, band: null, timestep: null },
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 1,
+            band: null,
+            timestep: null,
+          },
         },
       },
       assets: {},

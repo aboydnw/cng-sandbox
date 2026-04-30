@@ -7,7 +7,13 @@ describe("buildCitationBlock", () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [],
       layers: {
         a: {
@@ -16,7 +22,13 @@ describe("buildCitationBlock", () => {
           cng_url: null,
           label: "GEBCO Bathymetry",
           attribution: "GEBCO 2024",
-          render: { colormap: null, rescale: null, opacity: 1, band: null, timestep: null },
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 1,
+            band: null,
+            timestep: null,
+          },
         },
         b: {
           type: "vector-geoparquet",
@@ -24,7 +36,13 @@ describe("buildCitationBlock", () => {
           cng_url: "https://r2.cng.devseed.com/buildings.parquet",
           label: "Local buildings",
           attribution: null,
-          render: { colormap: null, rescale: null, opacity: 1, band: null, timestep: null },
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 1,
+            band: null,
+            timestep: null,
+          },
         },
       },
       assets: {},
@@ -42,7 +60,13 @@ describe("buildCitationBlock", () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [],
       layers: {},
       assets: {},
@@ -50,11 +74,53 @@ describe("buildCitationBlock", () => {
     expect(buildCitationBlock(config)).toBe("");
   });
 
+  it("does not emit anchors for non-http schemes", () => {
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [],
+      layers: {
+        a: {
+          type: "raster-cog",
+          source_url: "javascript:alert(1)",
+          cng_url: null,
+          label: "Bad layer",
+          attribution: null,
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 1,
+            band: null,
+            timestep: null,
+          },
+        },
+      },
+      assets: {},
+    };
+    const html = buildCitationBlock(config);
+    expect(html).not.toContain('href="javascript:');
+    expect(html).not.toMatch(/<a [^>]*javascript:/);
+    expect(html).toContain("Bad layer");
+  });
+
   it("escapes HTML in label and attribution", () => {
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s", workspace_id: null, exported_at: "" },
-      metadata: { title: "T", description: null, author: null, created: "", updated: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
       chapters: [],
       layers: {
         a: {
@@ -63,7 +129,13 @@ describe("buildCitationBlock", () => {
           cng_url: null,
           label: "<script>alert(1)</script>",
           attribution: null,
-          render: { colormap: null, rescale: null, opacity: 1, band: null, timestep: null },
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 1,
+            band: null,
+            timestep: null,
+          },
         },
       },
       assets: {},

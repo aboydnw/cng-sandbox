@@ -49,18 +49,39 @@ export function PublishDialog({
     current: number;
     total: number;
   }>({ open: false, current: 0, total: 0 });
+  const archivalAbortRef = useRef<AbortController | null>(null);
 
   async function handleArchival() {
+    archivalAbortRef.current?.abort();
+    const controller = new AbortController();
+    archivalAbortRef.current = controller;
     setArchivalProgress({ open: true, current: 0, total: 1 });
     try {
-      await downloadArchivalHtml(story.id, story.title, (current, total) => {
-        setArchivalProgress({ open: true, current, total });
-      });
+      await downloadArchivalHtml(
+        story.id,
+        story.title,
+        (current, total) => {
+          if (controller.signal.aborted) return;
+          setArchivalProgress({ open: true, current, total });
+        },
+        controller.signal
+      );
     } catch (err) {
-      console.error("Failed to download archival HTML", err);
+      if ((err as { name?: string })?.name !== "AbortError") {
+        console.error("Failed to download archival HTML", err);
+      }
     } finally {
+      if (archivalAbortRef.current === controller) {
+        archivalAbortRef.current = null;
+      }
       setArchivalProgress({ open: false, current: 0, total: 0 });
     }
+  }
+
+  function handleCancelArchival() {
+    archivalAbortRef.current?.abort();
+    archivalAbortRef.current = null;
+    setArchivalProgress({ open: false, current: 0, total: 0 });
   }
 
   const incompleteChapters = story.chapters.filter(
@@ -95,9 +116,7 @@ export function PublishDialog({
         open={archivalProgress.open}
         current={archivalProgress.current}
         total={archivalProgress.total}
-        onClose={() =>
-          setArchivalProgress((prev) => ({ ...prev, open: false }))
-        }
+        onClose={handleCancelArchival}
       />
       <DialogRoot
         open={open}

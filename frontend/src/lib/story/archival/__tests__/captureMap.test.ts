@@ -2,11 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { captureMapToDataUrl } from "../captureMap";
 
 beforeEach(() => {
-  HTMLCanvasElement.prototype.toDataURL = vi.fn(
-    () =>
-      "data:image/png;base64," +
+  vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(
+    "data:image/png;base64," +
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-  ) as unknown as HTMLCanvasElement["toDataURL"];
+  );
 
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
     cb(0);

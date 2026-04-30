@@ -23,11 +23,13 @@ function filterRowsByRange(
   if (xMin == null && xMax == null) return rows;
 
   const isNumeric = typeof xMin === "number" || typeof xMax === "number";
-  const isDateString =
-    typeof xMin === "string" &&
-    typeof xMax === "string" &&
-    !Number.isNaN(Date.parse(xMin)) &&
-    !Number.isNaN(Date.parse(xMax));
+  const parsedDateMin =
+    typeof xMin === "string" ? Date.parse(xMin) : Number.NaN;
+  const parsedDateMax =
+    typeof xMax === "string" ? Date.parse(xMax) : Number.NaN;
+  const hasDateMin = Number.isFinite(parsedDateMin);
+  const hasDateMax = Number.isFinite(parsedDateMax);
+  const isDateString = hasDateMin || hasDateMax;
 
   let filtered: Record<string, unknown>[];
   if (isNumeric) {
@@ -38,8 +40,8 @@ function filterRowsByRange(
       return typeof v === "number" && v >= lo && v <= hi;
     });
   } else if (isDateString) {
-    const lo = Date.parse(xMin as string);
-    const hi = Date.parse(xMax as string);
+    const lo = hasDateMin ? parsedDateMin : -Infinity;
+    const hi = hasDateMax ? parsedDateMax : Infinity;
     filtered = rows.filter((r) => {
       const v = r[xField];
       if (typeof v !== "string") return false;
@@ -60,13 +62,19 @@ function filterRowsByRange(
   return filtered;
 }
 
+interface ChartRange {
+  x_min: number | string | null;
+  x_max: number | string | null;
+}
+
 interface ChartChapterRendererProps {
   chapter: ChartChapter;
   chapterIndex: number;
-  onRangeChange?: (range: {
-    x_min: number | string | null;
-    x_max: number | string | null;
-  }) => void;
+  onRangeChange?: (range: ChartRange) => void;
+}
+
+interface DataZoomEntry {
+  type: string;
 }
 
 export function ChartChapterRenderer({
@@ -107,7 +115,7 @@ export function ChartChapterRenderer({
             interactive: isEditor,
           });
           if (isEditor && viz.x_min != null && viz.x_max != null) {
-            built.dataZoom = built.dataZoom.map((dz: { type: string }) =>
+            built.dataZoom = built.dataZoom.map((dz: DataZoomEntry) =>
               dz.type === "slider" || dz.type === "inside"
                 ? { ...dz, startValue: viz.x_min, endValue: viz.x_max }
                 : dz

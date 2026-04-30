@@ -4,8 +4,16 @@ import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { ChartChapterRenderer } from "../ChartChapterRenderer";
 import type { ChartChapter } from "../../lib/story";
 
+interface EChartsMockProps {
+  option: unknown;
+}
+
+interface DataZoomEntry {
+  type: string;
+}
+
 vi.mock("echarts-for-react", () => ({
-  default: ({ option }: { option: unknown }) => (
+  default: ({ option }: EChartsMockProps) => (
     <div data-testid="echarts" data-option={JSON.stringify(option)} />
   ),
 }));
@@ -96,8 +104,49 @@ describe("ChartChapterRenderer (reader mode)", () => {
     renderChart(makeChapter());
     const el = await waitFor(() => screen.getByTestId("echarts"));
     const opt = JSON.parse(el.getAttribute("data-option")!);
-    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    const types = opt.dataZoom.map((d: DataZoomEntry) => d.type);
     expect(types).not.toContain("slider");
+  });
+
+  it("filters by date when only x_min is a date string (one-sided bound)", async () => {
+    const dateRows = [
+      { date: "2020-01-01", v: 1 },
+      { date: "2020-06-01", v: 2 },
+      { date: "2021-01-01", v: 3 },
+    ];
+    vi.mocked(charts.fetchCsvRows).mockResolvedValue(dateRows);
+    vi.mocked(charts.fetchCsvRowsByAssetId).mockResolvedValue(dateRows);
+    const chapter: ChartChapter = {
+      id: "c1",
+      type: "chart",
+      order: 0,
+      title: "Test chart",
+      narrative: "",
+      chart: {
+        source: {
+          kind: "csv",
+          asset_id: "a1",
+          url: "http://x/y.csv",
+          columns: ["date", "v"],
+        },
+        viz: {
+          kind: "line",
+          x_field: "date",
+          y_fields: ["v"],
+          x_min: "2020-06-01",
+          x_max: null,
+        },
+      },
+    };
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <ChartChapterRenderer chapter={chapter} chapterIndex={0} />
+      </ChakraProvider>
+    );
+    const el = await waitFor(() => screen.getByTestId("echarts"));
+    const opt = JSON.parse(el.getAttribute("data-option")!);
+    const values = opt.series[0].data.map((d: [string, number]) => d[1]);
+    expect(values).toEqual([2, 3]);
   });
 
   it("filters category-axis rows by position so duplicate labels outside the window are dropped", async () => {
@@ -177,7 +226,7 @@ describe("ChartChapterRenderer (editor mode)", () => {
     );
     const el = await waitFor(() => screen.getByTestId("echarts"));
     const opt = JSON.parse(el.getAttribute("data-option")!);
-    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    const types = opt.dataZoom.map((d: DataZoomEntry) => d.type);
     expect(types).toContain("slider");
   });
 });

@@ -39,6 +39,7 @@ export default function DevZarrSpike() {
         opacity: 0.85,
         rescaleMin: 220,
         rescaleMax: 320,
+        colormapName: "viridis",
       })
     : [];
 

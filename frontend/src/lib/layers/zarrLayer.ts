@@ -1,29 +1,11 @@
 import type { Layer } from "@deck.gl/core";
 import { ZarrLayer, type SliceInput } from "@developmentseed/deck.gl-zarr";
-import { CreateTexture } from "@developmentseed/deck.gl-raster/gpu-modules";
+import {
+  CreateTexture,
+  Colormap,
+} from "@developmentseed/deck.gl-raster/gpu-modules";
 import * as zarr from "zarrita";
-
-const ViridisColorize = {
-  name: "viridis-colorize",
-  inject: {
-    "fs:DECKGL_FILTER_COLOR": `
-      float t = color.r;
-      if (t <= 0.0) { discard; }
-      t = (t * 255.0 - 1.0) / 254.0;
-      vec3 c0 = vec3(0.267, 0.004, 0.329);
-      vec3 c1 = vec3(0.282, 0.140, 0.458);
-      vec3 c2 = vec3(0.127, 0.566, 0.551);
-      vec3 c3 = vec3(0.544, 0.773, 0.247);
-      vec3 c4 = vec3(0.993, 0.906, 0.144);
-      vec3 rgb;
-      if (t < 0.25) rgb = mix(c0, c1, t * 4.0);
-      else if (t < 0.5) rgb = mix(c1, c2, (t - 0.25) * 4.0);
-      else if (t < 0.75) rgb = mix(c2, c3, (t - 0.5) * 4.0);
-      else rgb = mix(c3, c4, (t - 0.75) * 4.0);
-      color = vec4(rgb, 1.0);
-    `,
-  },
-};
+import { buildContinuousLut } from "./continuousLut";
 
 export interface ZarrLayerOptions {
   node: zarr.Group<zarr.Readable> | zarr.Array<zarr.DataType, zarr.Readable>;
@@ -32,8 +14,25 @@ export interface ZarrLayerOptions {
   opacity: number;
   rescaleMin: number;
   rescaleMax: number;
+  colormapName: string;
+  colormapReversed?: boolean;
+  /** Used to scope the layer's id so React/deck.gl rebuild on item change. */
+  id?: string;
 }
 
+interface ZarrTileData {
+  texture: unknown;
+  lutTexture: unknown;
+  width: number;
+  height: number;
+}
+
+/**
+ * Builds a deck.gl `ZarrLayer` configured to render a single zarr variable
+ * with a GPU colormap. The colormap is sampled from the existing
+ * `lib/maptool/colormaps.ts` palette set, so the user's selection in the
+ * existing colormap picker drives the render.
+ */
 export function buildZarrLayer({
   node,
   variable,
@@ -41,8 +40,39 @@ export function buildZarrLayer({
   opacity,
   rescaleMin,
   rescaleMax,
+  colormapName,
+  colormapReversed = false,
+  id = "zarr-layer",
 }: ZarrLayerOptions): Layer[] {
   const range = rescaleMax - rescaleMin || 1;
+  const lut = buildContinuousLut(colormapName, colormapReversed);
+  const lutTextureByDevice = new WeakMap<object, unknown>();
+
+  const getOrCreateLutTexture = (device: {
+    createTexture: (opts: unknown) => unknown;
+  }): unknown => {
+    const key = device as unknown as object;
+    const cached = lutTextureByDevice.get(key);
+    if (cached) return cached;
+    const created = device.createTexture({
+      dimension: "2d-array",
+      data: lut,
+      format: "rgba8unorm",
+      width: 256,
+      height: 1,
+      depth: 1,
+      mipLevels: 1,
+      sampler: {
+        minFilter: "linear",
+        magFilter: "linear",
+        addressModeU: "clamp-to-edge",
+        addressModeV: "clamp-to-edge",
+        addressModeW: "clamp-to-edge",
+      },
+    });
+    lutTextureByDevice.set(key, created);
+    return created;
+  };
 
   const getTileData = async (
     arr: zarr.Array<zarr.DataType, zarr.Readable>,
@@ -53,7 +83,7 @@ export function buildZarrLayer({
       height: number;
       signal?: AbortSignal;
     }
-  ) => {
+  ): Promise<ZarrTileData> => {
     const { device, sliceSpec, width, height } = options;
     const chunk = (await zarr.get(arr, sliceSpec)) as {
       data: ArrayLike<number>;
@@ -79,20 +109,22 @@ export function buildZarrLayer({
       sampler: { minFilter: "nearest", magFilter: "nearest" },
     });
 
-    return { texture, width, height };
+    const lutTexture = getOrCreateLutTexture(device);
+
+    return { texture, lutTexture, width, height };
   };
 
-  const renderTile = (data: { texture: unknown }) => ({
+  const renderTile = (data: ZarrTileData) => ({
     renderPipeline: [
       { module: CreateTexture, props: { textureName: data.texture } },
-      { module: ViridisColorize },
+      { module: Colormap, props: { colormapTexture: data.lutTexture } },
     ],
   });
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return [
     new ZarrLayer({
-      id: "zarr-spike-layer",
+      id,
       node,
       variable,
       selection,

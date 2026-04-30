@@ -348,4 +348,96 @@ describe("connectionToMapItem", () => {
     expect(item.preferredColormap).toBe("plasma");
     expect(item.preferredColormapReversed).toBe(true);
   });
+
+  describe("connectionToMapItem zarr handling", () => {
+    function makeZarrConn(config: unknown): import("../../types").Connection {
+      return {
+        id: "z1",
+        name: "test zarr",
+        url: "https://example.com/x.zarr",
+        connection_type: "zarr",
+        bounds: null,
+        min_zoom: null,
+        max_zoom: null,
+        tile_type: "raster",
+        band_count: null,
+        rescale: null,
+        workspace_id: null,
+        is_categorical: false,
+        categories: null,
+        tile_url: null,
+        render_path: "client",
+        conversion_status: null,
+        conversion_error: null,
+        feature_count: null,
+        file_size: null,
+        is_shared: false,
+        preferred_colormap: null,
+        preferred_colormap_reversed: null,
+        config: config as Record<string, unknown> | null,
+        created_at: "2026-01-01T00:00:00Z",
+      } as import("../../types").Connection;
+    }
+
+    it("sets bandCount=1 so the colormap picker UI shows", () => {
+      const item = connectionToMapItem(
+        makeZarrConn({
+          variable: "t2m",
+          rescaleMin: 200,
+          rescaleMax: 320,
+        })
+      );
+      expect(item.bandCount).toBe(1);
+      expect(item.dataType).toBe("raster");
+    });
+
+    it("populates rasterMin and rasterMax from config rescale fields", () => {
+      const item = connectionToMapItem(
+        makeZarrConn({
+          variable: "t2m",
+          rescaleMin: 200,
+          rescaleMax: 320,
+        })
+      );
+      expect(item.rasterMin).toBe(200);
+      expect(item.rasterMax).toBe(320);
+    });
+
+    it("flags isTemporal=true and builds timesteps when timeValues are present", () => {
+      const item = connectionToMapItem(
+        makeZarrConn({
+          variable: "t2m",
+          timeDim: "time",
+          timeValues: ["2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z"],
+          rescaleMin: 200,
+          rescaleMax: 320,
+        })
+      );
+      expect(item.isTemporal).toBe(true);
+      expect(item.timesteps).toEqual([
+        { datetime: "2024-01-01T00:00:00Z", index: 0 },
+        { datetime: "2024-01-02T00:00:00Z", index: 1 },
+      ]);
+    });
+
+    it("leaves isTemporal=false when timeDim is absent", () => {
+      const item = connectionToMapItem(
+        makeZarrConn({
+          variable: "elev",
+          rescaleMin: 0,
+          rescaleMax: 1000,
+        })
+      );
+      expect(item.isTemporal).toBe(false);
+      expect(item.timesteps).toEqual([]);
+    });
+
+    it("handles a null config gracefully (defaults to non-temporal, null rescale)", () => {
+      const item = connectionToMapItem(makeZarrConn(null));
+      expect(item.isTemporal).toBe(false);
+      expect(item.timesteps).toEqual([]);
+      expect(item.rasterMin).toBeNull();
+      expect(item.rasterMax).toBeNull();
+    });
+  });
 });

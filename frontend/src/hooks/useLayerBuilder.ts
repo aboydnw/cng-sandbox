@@ -11,6 +11,8 @@ import {
   isPMTilesDataset,
 } from "../lib/layers";
 import { resolveRasterLayers } from "../lib/layers/resolveRasterLayers";
+import * as zarr from "zarrita";
+import { buildZarrLayer } from "../lib/layers/zarrLayer";
 
 interface UseLayerBuilderOptions {
   item: MapItem | null;
@@ -35,6 +37,7 @@ interface UseLayerBuilderOptions {
     | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onVectorClick?: (info: any) => void;
+  zarrNode?: zarr.Group<zarr.Readable> | null;
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -76,6 +79,7 @@ export function useLayerBuilder({
   colormapReversed,
   effectiveCategories = null,
   onVectorClick,
+  zarrNode = null,
 }: UseLayerBuilderOptions) {
   const tileUrl = useMemo(() => {
     if (!item) return "";
@@ -244,6 +248,54 @@ export function useLayerBuilder({
         return buildGeoJsonLayer({ geojson });
       }
 
+      if (connType === "zarr") {
+        if (!zarrNode) return [];
+        const config =
+          (item.connection.config as
+            | {
+                variable?: string;
+                timeDim?: string | null;
+                rescaleMin?: number | null;
+                rescaleMax?: number | null;
+              }
+            | null
+            | undefined) ?? {};
+        const variable = config.variable;
+        if (!variable) return [];
+        const timeDim = config.timeDim ?? null;
+        const maxTimestepIndex = Math.max((item.timesteps?.length ?? 1) - 1, 0);
+        const clampedTimestepIndex = Math.min(
+          Math.max(activeTimestepIndex, 0),
+          maxTimestepIndex
+        );
+        const selection: Record<string, number> = timeDim
+          ? { [timeDim]: clampedTimestepIndex }
+          : {};
+        const safeMin =
+          rescaleMin ??
+          (typeof config.rescaleMin === "number" ? config.rescaleMin : null) ??
+          item.rasterMin ??
+          0;
+        const safeMax =
+          rescaleMax ??
+          (typeof config.rescaleMax === "number" ? config.rescaleMax : null) ??
+          item.rasterMax ??
+          1;
+        return buildZarrLayer({
+          node: zarrNode,
+          variable,
+          selection,
+          opacity,
+          rescaleMin: safeMin,
+          rescaleMax: safeMax,
+          colormapName,
+          colormapReversed,
+          id: timeDim
+            ? `zarr-layer-${item.id}-${variable}-${timeDim}-${activeTimestepIndex}`
+            : `zarr-layer-${item.id}-${variable}-static`,
+        });
+      }
+
       return [];
     }
 
@@ -310,6 +362,7 @@ export function useLayerBuilder({
     getLoadCallback,
     isCategorical,
     effectiveCategories,
+    zarrNode,
   ]);
 
   return { layers, tileUrl, geojson };

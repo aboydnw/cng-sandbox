@@ -15,6 +15,7 @@ describe("fetchAndInlineAsBase64", () => {
 
   it("throws on fetch failure", async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
-    await expect(fetchAndInlineAsBase64("https://example.com/missing.png")).rejects.toThrow();
+    await expect(fetchAndInlineAsBase64("https://example.com/missing.png"))
+      .rejects.toThrow(/404/);
   });
 });

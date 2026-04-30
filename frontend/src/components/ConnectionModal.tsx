@@ -169,7 +169,7 @@ export function ConnectionModal({
         ...(connectionType === "zarr" &&
           zarrConfig && {
             tile_type: "raster",
-            config: zarrConfig as unknown as Record<string, unknown>,
+            config: { ...zarrConfig },
           }),
       });
       onCreated(connection);

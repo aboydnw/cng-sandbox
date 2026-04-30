@@ -58,7 +58,7 @@ export function ZarrConnectionFields({
     if (!selected || !selected.stats) return;
     setMinStr(String(selected.stats.min));
     setMaxStr(String(selected.stats.max));
-  }, [variableName]);
+  }, [selected]);
 
   if (probe.variables.length === 0) {
     return (

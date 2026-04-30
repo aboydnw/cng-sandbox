@@ -81,24 +81,28 @@ function detectCrsWarning(attrs: Record<string, unknown>): string | null {
 
 async function decodeTimeValues(
   group: zarr.Group<zarr.Readable>,
-  timeDim: string
+  coordPath: string
 ): Promise<string[] | null> {
   try {
-    const arr = await zarr.open(group.resolve(timeDim), { kind: "array" });
+    const arr = await zarr.open(group.resolve(coordPath), { kind: "array" });
     const slab = (await zarr.get(arr, [null])) as { data: ArrayLike<number> };
     const units = arr.attrs.units;
     if (typeof units !== "string") return null;
-    const match = units.match(/(seconds|minutes|hours|days)\s+since\s+(.+)/i);
+    const match = units.match(/(second|minute|hour|day)s?\s+since\s+(.+)/i);
     if (!match) return null;
     const unit = match[1].toLowerCase();
-    const epoch = new Date(match[2]).getTime();
+    const rawEpoch = match[2].trim().replace(" ", "T");
+    const normalizedEpoch = /[zZ]|[+-]\d{2}:?\d{2}$/.test(rawEpoch)
+      ? rawEpoch
+      : `${rawEpoch}Z`;
+    const epoch = new Date(normalizedEpoch).getTime();
     if (Number.isNaN(epoch)) return null;
     const factor =
-      unit === "seconds"
+      unit === "second"
         ? 1000
-        : unit === "minutes"
+        : unit === "minute"
           ? 60_000
-          : unit === "hours"
+          : unit === "hour"
             ? 3_600_000
             : 86_400_000;
     const values: string[] = [];
@@ -165,11 +169,15 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
       const stats = extractStats(arr.attrs as Record<string, unknown>);
       let timeValues: string[] | null = null;
       if (timeDim && compatibility.kind === "ok") {
-        if (timeValuesCache.has(timeDim)) {
-          timeValues = timeValuesCache.get(timeDim) ?? null;
+        const parentPath = name.includes("/")
+          ? name.slice(0, name.lastIndexOf("/"))
+          : "";
+        const coordPath = parentPath ? `${parentPath}/${timeDim}` : timeDim;
+        if (timeValuesCache.has(coordPath)) {
+          timeValues = timeValuesCache.get(coordPath) ?? null;
         } else {
-          timeValues = await decodeTimeValues(root, timeDim);
-          timeValuesCache.set(timeDim, timeValues);
+          timeValues = await decodeTimeValues(root, coordPath);
+          timeValuesCache.set(coordPath, timeValues);
         }
       }
       const variable: ZarrVariable = {

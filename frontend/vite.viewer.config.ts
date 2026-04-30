@@ -1,12 +1,28 @@
 import { defineConfig, mergeConfig } from "vite";
+import type { Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { viteSingleFile } from "vite-plugin-singlefile";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import { writeFileSync } from "node:fs";
 import { sharedConfig } from "./vite.shared.config";
+
+function emitFileManifest(): Plugin {
+  return {
+    name: "viewer-file-manifest",
+    apply: "build",
+    writeBundle(_options, bundle) {
+      const files = Object.keys(bundle).sort();
+      writeFileSync(
+        join(__dirname, "public/viewer/manifest.json"),
+        JSON.stringify({ files }, null, 2)
+      );
+    },
+  };
+}
 
 export default defineConfig(
   mergeConfig(sharedConfig, {
-    plugins: [react(), viteSingleFile()],
+    plugins: [react(), viteSingleFile(), emitFileManifest()],
     // Disable static-file copying so fonts/thumbnails/logo from public/ don't
     // get duplicated into public/viewer/.
     publicDir: false,
@@ -23,5 +39,5 @@ export default defineConfig(
       cssCodeSplit: false,
       target: "esnext",
     },
-  }),
+  })
 );

@@ -26,7 +26,8 @@ export default defineConfig(
           },
         },
         "/raster": {
-          target: process.env.RASTER_TILER_PROXY_TARGET || "http://localhost:8082",
+          target:
+            process.env.RASTER_TILER_PROXY_TARGET || "http://localhost:8082",
           rewrite: (path: string) => path.replace(/^\/raster/, ""),
           configure: (proxy) => {
             proxy.on("proxyRes", (proxyRes) => {
@@ -36,7 +37,8 @@ export default defineConfig(
           },
         },
         "/vector": {
-          target: process.env.VECTOR_TILER_PROXY_TARGET || "http://localhost:8083",
+          target:
+            process.env.VECTOR_TILER_PROXY_TARGET || "http://localhost:8083",
           rewrite: (path: string) => path.replace(/^\/vector/, ""),
           configure: (proxy) => {
             proxy.on("proxyRes", (proxyRes) => {
@@ -87,5 +89,5 @@ export default defineConfig(
         },
       },
     },
-  }),
+  })
 );

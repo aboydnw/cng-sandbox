@@ -44,7 +44,58 @@ function getConnectionDataType(conn: Connection): "raster" | "vector" {
   return "raster";
 }
 
+interface ZarrConfigShape {
+  variable?: string;
+  timeDim?: string | null;
+  timeValues?: string[] | null;
+  rescaleMin?: number | null;
+  rescaleMax?: number | null;
+}
+
+interface ParsedZarrFields {
+  isTemporal: boolean;
+  timesteps: { datetime: string; index: number }[];
+  rasterMin: number | null;
+  rasterMax: number | null;
+}
+
+function parseZarrConfig(
+  config: Record<string, unknown> | null | undefined
+): ParsedZarrFields {
+  if (!config) {
+    return {
+      isTemporal: false,
+      timesteps: [],
+      rasterMin: null,
+      rasterMax: null,
+    };
+  }
+  const c = config as ZarrConfigShape;
+  const hasTime = !!c.timeDim;
+  const timeValues = Array.isArray(c.timeValues) ? c.timeValues : [];
+  const timesteps =
+    hasTime && timeValues.length > 0
+      ? timeValues.map((datetime, index) => ({ datetime, index }))
+      : [];
+  return {
+    isTemporal: hasTime && timesteps.length > 0,
+    timesteps,
+    rasterMin: typeof c.rescaleMin === "number" ? c.rescaleMin : null,
+    rasterMax: typeof c.rescaleMax === "number" ? c.rescaleMax : null,
+  };
+}
+
 export function connectionToMapItem(conn: Connection): MapItem {
+  const isZarr = conn.connection_type === "zarr";
+  const zarrFields = isZarr
+    ? parseZarrConfig(conn.config)
+    : {
+        isTemporal: false,
+        timesteps: [] as { datetime: string; index: number }[],
+        rasterMin: null,
+        rasterMax: null,
+      };
+
   return {
     id: conn.id,
     name: conn.name,
@@ -54,20 +105,20 @@ export function connectionToMapItem(conn: Connection): MapItem {
     bounds: conn.bounds,
     minZoom: conn.min_zoom,
     maxZoom: conn.max_zoom,
-    bandCount: conn.band_count,
+    bandCount: isZarr ? 1 : conn.band_count,
     bandNames: null,
     colorInterpretation: null,
     dtype: null,
-    rasterMin: null,
-    rasterMax: null,
+    rasterMin: zarrFields.rasterMin,
+    rasterMax: zarrFields.rasterMax,
     isCategorical: conn.is_categorical,
     categories: conn.categories,
     cogUrl: conn.connection_type === "cog" ? conn.url : null,
     crs: null,
     rescale: conn.rescale,
     parquetUrl: null,
-    isTemporal: false,
-    timesteps: [],
+    isTemporal: zarrFields.isTemporal,
+    timesteps: zarrFields.timesteps,
     renderMode: conn.render_mode ?? null,
     preferredColormap: conn.preferred_colormap ?? null,
     preferredColormapReversed: conn.preferred_colormap_reversed ?? null,

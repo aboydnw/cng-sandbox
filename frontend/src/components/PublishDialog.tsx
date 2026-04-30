@@ -73,8 +73,8 @@ export function PublishDialog({
     } finally {
       if (archivalAbortRef.current === controller) {
         archivalAbortRef.current = null;
+        setArchivalProgress({ open: false, current: 0, total: 0 });
       }
-      setArchivalProgress({ open: false, current: 0, total: 0 });
     }
   }
 

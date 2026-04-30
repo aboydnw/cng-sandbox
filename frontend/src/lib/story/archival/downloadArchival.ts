@@ -28,6 +28,10 @@ export async function downloadArchivalHtml(
   const a = document.createElement("a");
   a.href = url;
   a.download = `${slugify(storyTitle) || "story"}.html`;
+  if (signal?.aborted) {
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    throwIfAborted(signal);
+  }
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }

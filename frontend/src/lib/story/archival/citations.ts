@@ -9,19 +9,21 @@ export function buildCitationBlock(config: CngRcConfig): string {
   const layers = Object.values(config.layers);
   if (layers.length === 0) return "";
 
-  const rows = layers.map((layer) =>
-    `
+  const rows = layers.map((layer) => {
+    const linkParts: string[] = [];
+    const sourcePart = urlPart(layer.source_url, "Source");
+    if (sourcePart) linkParts.push(sourcePart);
+    const cngPart = urlPart(layer.cng_url, "CNG mirror");
+    if (cngPart) linkParts.push(cngPart);
+    const links = linkParts.join(" &middot; ");
+    return `
     <li>
       <strong>${escapeHtml(layer.label ?? "(unnamed layer)")}</strong>
       ${layer.attribution ? ` — ${escapeHtml(layer.attribution)}` : ""}
-      <br />
-      <small>
-        ${urlPart(layer.source_url, "Source")}
-        ${layer.cng_url ? ` &middot; ${urlPart(layer.cng_url, "CNG mirror")}` : ""}
-      </small>
+      ${links ? `<br /><small>${links}</small>` : ""}
     </li>
-  `.trim()
-  );
+  `.trim();
+  });
 
   return `
 <section class="citations">

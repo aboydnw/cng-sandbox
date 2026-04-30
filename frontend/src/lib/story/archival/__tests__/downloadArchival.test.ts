@@ -60,7 +60,7 @@ describe("downloadArchivalHtml", () => {
 
   it("aborts when the supplied signal fires", async () => {
     const controller = new AbortController();
-    const fetchMock = vi.fn().mockImplementation(async (_, opts) => {
+    const fetchMock = vi.fn().mockImplementation(async () => {
       controller.abort();
       return {
         ok: true,

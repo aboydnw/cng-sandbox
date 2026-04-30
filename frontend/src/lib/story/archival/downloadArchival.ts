@@ -13,8 +13,6 @@ export async function downloadArchivalHtml(
       signal,
     }
   );
-    signal,
-  });
   if (!response.ok)
     throw new Error(`Failed to load config: ${response.status}`);
   const config = (await response.json()) as CngRcConfig;

@@ -68,6 +68,28 @@ export function ConnectionModal({
     null
   );
 
+  const runZarrProbe = useCallback(async (probeUrl: string) => {
+    setProbeMetadata(null);
+    setZarrProbe(null);
+    setZarrConfig(null);
+    setProbeWarning(null);
+    setProbing(true);
+    try {
+      const probe = await probeZarr(probeUrl);
+      setZarrProbe(probe);
+    } catch (e) {
+      setZarrProbe(null);
+      const msg = e instanceof Error ? e.message : String(e);
+      setProbeWarning(
+        msg === ZARR_NOT_CONSOLIDATED
+          ? msg
+          : `Could not open Zarr store. ${msg}`
+      );
+    } finally {
+      setProbing(false);
+    }
+  }, []);
+
   // Auto-detect type and name when URL changes
   const handleUrlBlur = useCallback(async () => {
     if (!url) return;
@@ -103,26 +125,11 @@ export function ConnectionModal({
         setProbing(false);
       }
     } else if (detected === "zarr") {
-      setProbeMetadata(null);
-      setProbing(true);
-      try {
-        const probe = await probeZarr(url);
-        setZarrProbe(probe);
-      } catch (e) {
-        setZarrProbe(null);
-        const msg = e instanceof Error ? e.message : String(e);
-        setProbeWarning(
-          msg === ZARR_NOT_CONSOLIDATED
-            ? msg
-            : `Could not open Zarr store. ${msg}`
-        );
-      } finally {
-        setProbing(false);
-      }
+      await runZarrProbe(url);
     } else {
       setProbeMetadata(null);
     }
-  }, [url, name]);
+  }, [url, name, runZarrProbe]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -269,8 +276,12 @@ export function ConnectionModal({
             <select
               value={connectionType ?? ""}
               onChange={(e) => {
-                setConnectionType(e.target.value as ConnectionType);
+                const next = e.target.value as ConnectionType;
+                setConnectionType(next);
                 setAutoDetected(false);
+                if (next === "zarr" && url && !zarrProbe && !probing) {
+                  void runZarrProbe(url);
+                }
               }}
               style={{
                 width: "100%",

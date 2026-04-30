@@ -100,6 +100,12 @@ export function InlineConnectionForm({
 
   const handleSave = useCallback(async () => {
     if (!url.trim() || !connectionType) return;
+    if (connectionType === "zarr") {
+      setError(
+        "Zarr connections must be created from the full Connection modal."
+      );
+      return;
+    }
     setSaving(true);
     setError(null);
 

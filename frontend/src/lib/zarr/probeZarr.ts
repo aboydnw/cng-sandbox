@@ -152,6 +152,7 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
 
   const variables: ZarrVariable[] = [];
   let crsWarning: string | null = null;
+  const timeValuesCache = new Map<string, string[] | null>();
 
   for (const entry of arrayEntries) {
     const name = entry.path.replace(/^\//, "");
@@ -162,6 +163,15 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
       const compatibility = classifyVariable(arr.shape, dimNames);
       const timeDim = inferTimeDim(dimNames);
       const stats = extractStats(arr.attrs as Record<string, unknown>);
+      let timeValues: string[] | null = null;
+      if (timeDim && compatibility.kind === "ok") {
+        if (timeValuesCache.has(timeDim)) {
+          timeValues = timeValuesCache.get(timeDim) ?? null;
+        } else {
+          timeValues = await decodeTimeValues(root, timeDim);
+          timeValuesCache.set(timeDim, timeValues);
+        }
+      }
       const variable: ZarrVariable = {
         name,
         shape: arr.shape,
@@ -170,10 +180,7 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
         attrs: arr.attrs as Record<string, unknown>,
         stats,
         timeDim,
-        timeValues:
-          timeDim && compatibility.kind === "ok"
-            ? await decodeTimeValues(root, timeDim)
-            : null,
+        timeValues,
         compatibility,
       };
       variables.push(variable);

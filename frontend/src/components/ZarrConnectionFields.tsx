@@ -26,6 +26,12 @@ export function ZarrConnectionFields({
     initial?.stats ? String(initial.stats.max) : ""
   );
 
+  useEffect(() => {
+    setVariableName(initial?.name ?? "");
+    setMinStr(initial?.stats ? String(initial.stats.min) : "");
+    setMaxStr(initial?.stats ? String(initial.stats.max) : "");
+  }, [initial]);
+
   const selected = probe.variables.find((v) => v.name === variableName) ?? null;
 
   useEffect(() => {

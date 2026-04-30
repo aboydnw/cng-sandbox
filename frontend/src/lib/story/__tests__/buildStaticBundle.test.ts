@@ -73,6 +73,16 @@ describe("buildAndDownloadBundle", () => {
     );
   });
 
+  it("rejects when the manifest is malformed", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ files: "not-an-array" }),
+    });
+    await expect(buildAndDownloadBundle("s1", "Test Story")).rejects.toThrow(
+      /Invalid viewer manifest/
+    );
+  });
+
   it("zips viewer files (renamed to index.html) + cng-rc.json", async () => {
     await buildAndDownloadBundle("s1", "Test Story");
 

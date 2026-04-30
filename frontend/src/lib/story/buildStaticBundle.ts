@@ -9,15 +9,18 @@ export async function buildAndDownloadBundle(
   storyId: string,
   storyTitle: string
 ): Promise<void> {
-  const manifest = await fetch("/viewer/manifest.json")
+  const manifestJson = await fetch("/viewer/manifest.json")
     .then(assertOk)
-    .then((r) => r.json() as Promise<ViewerManifest>);
+    .then((r) => r.json());
+  const manifest = parseViewerManifest(manifestJson);
 
   const fileFetches = manifest.files.map(async (name) => {
     const response = await fetch(`/viewer/${name}`).then(assertOk);
     return [name, await response.arrayBuffer()] as const;
   });
-  const configFetch = fetch(`/api/stories/${storyId}/export/config`)
+  const configFetch = fetch(
+    `/api/stories/${encodeURIComponent(storyId)}/export/config`
+  )
     .then(assertOk)
     .then((r) => r.json());
 
@@ -50,4 +53,16 @@ export async function buildAndDownloadBundle(
 async function assertOk(r: Response): Promise<Response> {
   if (!r.ok) throw new Error(`Request failed: ${r.status}`);
   return r;
+}
+
+function parseViewerManifest(value: unknown): ViewerManifest {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    Array.isArray((value as { files?: unknown }).files) &&
+    (value as { files: unknown[] }).files.every((f) => typeof f === "string")
+  ) {
+    return value as ViewerManifest;
+  }
+  throw new Error("Invalid viewer manifest format");
 }

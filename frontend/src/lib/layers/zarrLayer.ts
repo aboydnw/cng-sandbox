@@ -83,11 +83,20 @@ export function buildZarrLayer({
     });
 
     const lutTexture = device.createTexture({
+      dimension: "2d-array",
       data: lut,
       format: "rgba8unorm",
       width: 256,
       height: 1,
-      sampler: { minFilter: "nearest", magFilter: "nearest" },
+      depth: 1,
+      mipLevels: 1,
+      sampler: {
+        minFilter: "linear",
+        magFilter: "linear",
+        addressModeU: "clamp-to-edge",
+        addressModeV: "clamp-to-edge",
+        addressModeW: "clamp-to-edge",
+      },
     });
 
     return { texture, lutTexture, width, height };

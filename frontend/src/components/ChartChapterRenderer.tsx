@@ -142,6 +142,7 @@ export function ChartChapterRenderer({
     void load();
     return () => {
       cancelled = true;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [chapter.chart, isEditor]);
 

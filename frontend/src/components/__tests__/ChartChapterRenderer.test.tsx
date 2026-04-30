@@ -100,3 +100,42 @@ describe("ChartChapterRenderer (reader mode)", () => {
     expect(types).not.toContain("slider");
   });
 });
+
+describe("ChartChapterRenderer (editor mode)", () => {
+  beforeEach(() => {
+    vi.mocked(charts.fetchCsvRows).mockResolvedValue(ROWS);
+    vi.mocked(charts.fetchCsvRowsByAssetId).mockResolvedValue(ROWS);
+  });
+
+  it("does not filter rows when onRangeChange is provided", async () => {
+    const onRangeChange = vi.fn();
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <ChartChapterRenderer
+          chapter={makeChapter({ x_min: 2015, x_max: 2020 })}
+          chapterIndex={0}
+          onRangeChange={onRangeChange}
+        />
+      </ChakraProvider>
+    );
+    const el = await waitFor(() => screen.getByTestId("echarts"));
+    const opt = JSON.parse(el.getAttribute("data-option")!);
+    expect(opt.series[0].data).toHaveLength(4);
+  });
+
+  it("includes the slider dataZoom in editor mode", async () => {
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <ChartChapterRenderer
+          chapter={makeChapter()}
+          chapterIndex={0}
+          onRangeChange={() => {}}
+        />
+      </ChakraProvider>
+    );
+    const el = await waitFor(() => screen.getByTestId("echarts"));
+    const opt = JSON.parse(el.getAttribute("data-option")!);
+    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    expect(types).toContain("slider");
+  });
+});

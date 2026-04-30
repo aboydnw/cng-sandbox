@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Box, Heading, Spinner, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import type { ChartChapter } from "../lib/story";
@@ -63,15 +63,24 @@ function filterRowsByRange(
 interface ChartChapterRendererProps {
   chapter: ChartChapter;
   chapterIndex: number;
+  onRangeChange?: (range: {
+    x_min: number | string | null;
+    x_max: number | string | null;
+  }) => void;
 }
 
 export function ChartChapterRenderer({
   chapter,
   chapterIndex,
+  onRangeChange,
 }: ChartChapterRendererProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [option, setOption] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartRef = useRef<any>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isEditor = !!onRangeChange;
 
   useEffect(() => {
     let cancelled = false;
@@ -91,15 +100,20 @@ export function ChartChapterRenderer({
             ? await fetchCsvRowsByAssetId(source.asset_id)
             : await fetchCsvRows(source.url);
           if (cancelled) return;
-          const filteredRows = filterRowsByRange(
-            rows,
-            viz.x_field,
-            viz.x_min,
-            viz.x_max
-          );
-          setOption(
-            buildOptionFromCsvRows(filteredRows, viz, { interactive: false })
-          );
+          const rowsForOption = isEditor
+            ? rows
+            : filterRowsByRange(rows, viz.x_field, viz.x_min, viz.x_max);
+          const built = buildOptionFromCsvRows(rowsForOption, viz, {
+            interactive: isEditor,
+          });
+          if (isEditor && viz.x_min != null && viz.x_max != null) {
+            built.dataZoom = built.dataZoom.map((dz: { type: string }) =>
+              dz.type === "slider" || dz.type === "inside"
+                ? { ...dz, startValue: viz.x_min, endValue: viz.x_max }
+                : dz
+            );
+          }
+          setOption(built);
         } else if (source.kind === "dataset_timeseries") {
           const points = await fetchTimeseries(
             source.dataset_id,
@@ -129,7 +143,53 @@ export function ChartChapterRenderer({
     return () => {
       cancelled = true;
     };
-  }, [chapter.chart]);
+  }, [chapter.chart, isEditor]);
+
+  function handleDataZoom() {
+    if (!onRangeChange) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const inst = chartRef.current?.getEchartsInstance();
+      if (!inst) return;
+      const dz = inst.getOption().dataZoom?.[0];
+      if (!dz) return;
+
+      const { source, viz } = chapter.chart;
+      if (source.kind !== "csv") return;
+
+      const startValue = dz.startValue;
+      const endValue = dz.endValue;
+      const startPct = typeof dz.start === "number" ? dz.start : 0;
+      const endPct = typeof dz.end === "number" ? dz.end : 100;
+
+      const isFullRange = startPct <= 0.01 && endPct >= 99.99;
+      if (isFullRange) {
+        onRangeChange({ x_min: null, x_max: null });
+        return;
+      }
+
+      if (startValue != null && endValue != null) {
+        onRangeChange({
+          x_min: startValue as number | string,
+          x_max: endValue as number | string,
+        });
+        return;
+      }
+      // Fallback for category axis: derive labels from data and percent slice.
+      const labels = source.columns.includes(viz.x_field)
+        ? // pull labels from the chart's xAxis data:
+          (inst.getOption().xAxis?.[0]?.data as (string | number)[]) ?? []
+        : [];
+      if (labels.length > 0) {
+        const lo = Math.floor((startPct / 100) * (labels.length - 1));
+        const hi = Math.ceil((endPct / 100) * (labels.length - 1));
+        onRangeChange({
+          x_min: String(labels[Math.max(0, lo)]),
+          x_max: String(labels[Math.min(labels.length - 1, hi)]),
+        });
+      }
+    }, 300);
+  }
 
   return (
     <Box maxW="800px" mx="auto" py={12} px={6}>
@@ -152,8 +212,11 @@ export function ChartChapterRenderer({
         ) : option ? (
           <Suspense fallback={<Spinner />}>
             <ReactECharts
+              ref={chartRef}
               option={option}
               style={{ height: 400, width: "100%" }}
+              onEvents={isEditor ? { datazoom: handleDataZoom } : undefined}
+              notMerge={true}
             />
           </Suspense>
         ) : (

@@ -266,20 +266,23 @@ export function useLayerBuilder({
         const selection: Record<string, number | null> = timeDim
           ? { [timeDim]: activeTimestepIndex }
           : {};
-        const effMin =
+        const safeMin =
           rescaleMin ??
-          (typeof config.rescaleMin === "number" ? config.rescaleMin : null);
-        const effMax =
+          (typeof config.rescaleMin === "number" ? config.rescaleMin : null) ??
+          item.rasterMin ??
+          0;
+        const safeMax =
           rescaleMax ??
-          (typeof config.rescaleMax === "number" ? config.rescaleMax : null);
-        if (effMin == null || effMax == null) return [];
+          (typeof config.rescaleMax === "number" ? config.rescaleMax : null) ??
+          item.rasterMax ??
+          1;
         return buildZarrLayer({
           node: zarrNode,
           variable,
           selection,
           opacity,
-          rescaleMin: effMin,
-          rescaleMax: effMax,
+          rescaleMin: safeMin,
+          rescaleMax: safeMax,
           colormapName,
           colormapReversed,
           id: timeDim

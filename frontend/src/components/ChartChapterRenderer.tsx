@@ -14,6 +14,52 @@ import {
 
 const ReactECharts = lazy(() => import("echarts-for-react"));
 
+function filterRowsByRange(
+  rows: Record<string, unknown>[],
+  xField: string,
+  xMin: number | string | null | undefined,
+  xMax: number | string | null | undefined
+): Record<string, unknown>[] {
+  if (xMin == null && xMax == null) return rows;
+
+  const isNumeric = typeof xMin === "number" || typeof xMax === "number";
+  const isDateString =
+    typeof xMin === "string" &&
+    typeof xMax === "string" &&
+    !Number.isNaN(Date.parse(xMin)) &&
+    !Number.isNaN(Date.parse(xMax));
+
+  let filtered: Record<string, unknown>[];
+  if (isNumeric) {
+    const lo = typeof xMin === "number" ? xMin : -Infinity;
+    const hi = typeof xMax === "number" ? xMax : Infinity;
+    filtered = rows.filter((r) => {
+      const v = r[xField];
+      return typeof v === "number" && v >= lo && v <= hi;
+    });
+  } else if (isDateString) {
+    const lo = Date.parse(xMin as string);
+    const hi = Date.parse(xMax as string);
+    filtered = rows.filter((r) => {
+      const v = r[xField];
+      if (typeof v !== "string") return false;
+      const t = Date.parse(v);
+      return Number.isFinite(t) && t >= lo && t <= hi;
+    });
+  } else {
+    // Category axis: keep rows whose label appears between the saved labels in source order.
+    const labels = rows.map((r) => String(r[xField]));
+    const startIdx = xMin == null ? 0 : labels.indexOf(String(xMin));
+    const endIdx = xMax == null ? labels.length - 1 : labels.lastIndexOf(String(xMax));
+    if (startIdx < 0 || endIdx < 0 || startIdx > endIdx) return rows;
+    const allowed = new Set(labels.slice(startIdx, endIdx + 1));
+    filtered = rows.filter((r) => allowed.has(String(r[xField])));
+  }
+
+  if (filtered.length === 0) return rows;
+  return filtered;
+}
+
 interface ChartChapterRendererProps {
   chapter: ChartChapter;
   chapterIndex: number;
@@ -45,7 +91,15 @@ export function ChartChapterRenderer({
             ? await fetchCsvRowsByAssetId(source.asset_id)
             : await fetchCsvRows(source.url);
           if (cancelled) return;
-          setOption(buildOptionFromCsvRows(rows, viz));
+          const filteredRows = filterRowsByRange(
+            rows,
+            viz.x_field,
+            viz.x_min,
+            viz.x_max
+          );
+          setOption(
+            buildOptionFromCsvRows(filteredRows, viz, { interactive: false })
+          );
         } else if (source.kind === "dataset_timeseries") {
           const points = await fetchTimeseries(
             source.dataset_id,

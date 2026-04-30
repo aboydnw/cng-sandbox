@@ -62,14 +62,8 @@ describe("buildAndDownloadBundle", () => {
     }) as never;
     global.URL.revokeObjectURL = vi.fn();
 
-    vi.spyOn(document, "createElement").mockImplementation(
-      () =>
-        ({
-          click: vi.fn(),
-          href: "",
-          download: "",
-        }) as unknown as HTMLAnchorElement
-    );
+    const HTMLAnchor = window.HTMLAnchorElement.prototype;
+    vi.spyOn(HTMLAnchor, "click").mockImplementation(() => {});
   });
 
   it("rejects when a fetch fails", async () => {

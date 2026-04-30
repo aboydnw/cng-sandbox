@@ -38,8 +38,13 @@ export async function buildAndDownloadBundle(
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = `${slugifyStoryTitle(storyTitle)}.zip`;
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  // Defer revocation so Safari's download manager can read the blob first.
+  // WebKit bugs #211234 and #236692 break downloads if the URL is revoked
+  // synchronously after click().
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 async function assertOk(r: Response): Promise<Response> {

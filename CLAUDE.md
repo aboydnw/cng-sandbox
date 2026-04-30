@@ -138,7 +138,7 @@ cd frontend && npx vitest run
 
 ### Implementation gotchas
 
-Non-obvious behaviors (tile URL absolute-vs-relative, client-side COG rendering pipeline, pixel inspector tooltip modes, Chakra v3 Portal requirement, Plausible CSP coupling, viewer build target and static-bundle export, iframe embeds, etc.) are catalogued in [docs/frontend-gotchas.md](docs/frontend-gotchas.md). Read before editing anything in `frontend/src/lib/layers/`, `frontend/src/hooks/`, or the map/story components.
+Non-obvious behaviors (tile URL absolute-vs-relative, client-side COG rendering pipeline, pixel inspector tooltip modes, Chakra v3 Portal requirement, Plausible CSP coupling, viewer build target and static-bundle export, iframe embeds, chart range persistence, etc.) are catalogued in [docs/frontend-gotchas.md](docs/frontend-gotchas.md). Read before editing anything in `frontend/src/lib/layers/`, `frontend/src/hooks/`, or the map/story components.
 
 ## Ingestion Service
 

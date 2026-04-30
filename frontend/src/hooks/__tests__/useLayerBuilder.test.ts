@@ -6,6 +6,12 @@ vi.mock("../../lib/layers/cogLayer", () => ({
   buildCogLayerPaletted: vi.fn(() => []),
 }));
 
+import { buildZarrLayer } from "../../lib/layers/zarrLayer";
+
+vi.mock("../../lib/layers/zarrLayer", () => ({
+  buildZarrLayer: vi.fn(() => [{ id: "mock-zarr-layer" }]),
+}));
+
 import { renderHook } from "@testing-library/react";
 import { useLayerBuilder } from "../useLayerBuilder";
 import type { MapItem, Dataset, Connection } from "../../types";
@@ -404,5 +410,201 @@ describe("useLayerBuilder — COG connection client render", () => {
     expect(opts.categories).toEqual([
       { value: 1, color: "#00ff00", label: "A edited" },
     ]);
+  });
+});
+
+describe("useLayerBuilder zarr connections", () => {
+  const buildZarrLayerMock = vi.mocked(buildZarrLayer);
+
+  function zarrItem(
+    config: Record<string, unknown> | null,
+    overrides: Partial<import("../../types").MapItem> = {}
+  ): import("../../types").MapItem {
+    const conn = {
+      id: "z1",
+      name: "z",
+      url: "https://example.com/x.zarr",
+      connection_type: "zarr",
+      config,
+      bounds: null,
+      min_zoom: null,
+      max_zoom: null,
+      tile_type: "raster",
+      band_count: 1,
+      rescale: null,
+      workspace_id: null,
+      is_categorical: false,
+      categories: null,
+      tile_url: null,
+      render_path: "client",
+      conversion_status: null,
+      conversion_error: null,
+      feature_count: null,
+      file_size: null,
+      is_shared: false,
+      preferred_colormap: null,
+      preferred_colormap_reversed: null,
+      created_at: "2026-01-01T00:00:00Z",
+    } as unknown as import("../../types").Connection;
+    return {
+      id: "z1",
+      name: "z",
+      source: "connection",
+      dataType: "raster",
+      tileUrl: "",
+      bounds: null,
+      minZoom: null,
+      maxZoom: null,
+      bandCount: 1,
+      bandNames: null,
+      colorInterpretation: null,
+      dtype: null,
+      rasterMin: null,
+      rasterMax: null,
+      isCategorical: false,
+      categories: null,
+      cogUrl: null,
+      crs: null,
+      rescale: null,
+      parquetUrl: null,
+      isTemporal: false,
+      timesteps: [],
+      renderMode: "client",
+      preferredColormap: null,
+      preferredColormapReversed: null,
+      dataset: null,
+      connection: conn,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    buildZarrLayerMock.mockClear();
+  });
+
+  it("returns [] when zarrNode is null", () => {
+    const item = zarrItem({ variable: "t2m", rescaleMin: 0, rescaleMax: 1 });
+    const { result } = renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 0,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 0,
+        rescaleMax: 1,
+        colormapReversed: false,
+        zarrNode: null,
+      })
+    );
+    expect(result.current.layers).toEqual([]);
+    expect(buildZarrLayerMock).not.toHaveBeenCalled();
+  });
+
+  it("calls buildZarrLayer with empty selection for a 2D variable", () => {
+    const item = zarrItem({ variable: "elev", rescaleMin: 0, rescaleMax: 100 });
+    const fakeNode = { __isGroup: true } as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 0.8,
+        colormapName: "plasma",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 0,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 0,
+        rescaleMax: 100,
+        colormapReversed: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeNode as any,
+      })
+    );
+    expect(buildZarrLayerMock).toHaveBeenCalledTimes(1);
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.node).toBe(fakeNode);
+    expect(call.variable).toBe("elev");
+    expect(call.selection).toEqual({});
+    expect(call.colormapName).toBe("plasma");
+    expect(call.colormapReversed).toBe(false);
+    expect(call.rescaleMin).toBe(0);
+    expect(call.rescaleMax).toBe(100);
+    expect(call.opacity).toBe(0.8);
+  });
+
+  it("uses { [timeDim]: activeTimestepIndex } when config has a timeDim", () => {
+    const item = zarrItem({
+      variable: "t2m",
+      timeDim: "time",
+      timeValues: ["a", "b", "c"],
+      rescaleMin: 200,
+      rescaleMax: 320,
+    });
+    const fakeNode = {} as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 2,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 200,
+        rescaleMax: 320,
+        colormapReversed: true,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeNode as any,
+      })
+    );
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.selection).toEqual({ time: 2 });
+    expect(call.colormapReversed).toBe(true);
+  });
+
+  it("falls back to props rescale when config rescale is missing", () => {
+    const item = zarrItem({ variable: "t2m" });
+    const fakeNode = {} as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 0,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 1,
+        rescaleMax: 9,
+        colormapReversed: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeNode as any,
+      })
+    );
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.rescaleMin).toBe(1);
+    expect(call.rescaleMax).toBe(9);
   });
 });

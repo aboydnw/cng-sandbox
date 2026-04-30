@@ -83,6 +83,16 @@ describe("buildAndDownloadBundle", () => {
     );
   });
 
+  it("rejects when the manifest is missing viewer.html", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ files: ["chunk-abc.js"] }),
+    });
+    await expect(buildAndDownloadBundle("s1", "Test Story")).rejects.toThrow(
+      /missing viewer\.html/
+    );
+  });
+
   it("zips viewer files (renamed to index.html) + cng-rc.json", async () => {
     await buildAndDownloadBundle("s1", "Test Story");
 

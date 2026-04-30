@@ -13,6 +13,9 @@ export async function buildAndDownloadBundle(
     .then(assertOk)
     .then((r) => r.json());
   const manifest = parseViewerManifest(manifestJson);
+  if (!manifest.files.includes("viewer.html")) {
+    throw new Error("Invalid viewer manifest: missing viewer.html");
+  }
 
   const fileFetches = manifest.files.map(async (name) => {
     const response = await fetch(`/viewer/${name}`).then(assertOk);

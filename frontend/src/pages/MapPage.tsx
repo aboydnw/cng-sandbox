@@ -31,6 +31,7 @@ import {
 import { useColorScale, MapLegend } from "../lib/maptool";
 import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
+import { useZarrNode } from "../hooks/useZarrNode";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
 import { detectCadence } from "../utils/temporal";
@@ -73,6 +74,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     isExpired,
     refresh,
   } = useMapData(id, isConnectionRoute);
+
+  const zarrState = useZarrNode(item);
 
   // Redirect on expiry
   useEffect(() => {
@@ -202,8 +205,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const bytesTransferred = useTileTransferSize(transferPrefixes);
 
   // --- Temporal ---
-  const ds = item?.dataset;
-  const frameCount = ds?.timesteps?.length ?? 0;
+  const frameCount = item?.timesteps?.length ?? 0;
   const gapIndices = useMemo(() => new Set<number>(), []);
 
   const loadedRef = useRef<Set<number>>(new Set());
@@ -229,14 +231,14 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     setLoadedCount(0);
   }, [item?.id]);
 
-  const isPreloaded = !ds?.is_temporal || loadedCount >= frameCount;
+  const isPreloaded = !item?.isTemporal || loadedCount >= frameCount;
 
   const cadence = useMemo(
     () =>
-      ds?.is_temporal
-        ? detectCadence(ds.timesteps.map((t) => t.datetime))
+      item?.isTemporal
+        ? detectCadence(item.timesteps.map((t) => t.datetime))
         : ("irregular" as const),
-    [ds]
+    [item]
   );
 
   const animation = useTemporalAnimation(
@@ -247,7 +249,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   );
 
   const preloadProgress =
-    ds?.is_temporal && animation.isAnimateMode && !isPreloaded
+    item?.isTemporal && animation.isAnimateMode && !isPreloaded
       ? { current: loadedCount, total: frameCount }
       : null;
 
@@ -276,13 +278,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const mapRef = useRef<any>(null);
   const exportHook = useTemporalExport(
     deckRef,
-    ds?.timesteps ?? [],
+    item?.timesteps ?? [],
     gapIndices,
     speedMs
   );
 
   useEffect(() => {
-    if (ds?.is_temporal) {
+    if (item?.isTemporal) {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -292,7 +294,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
         { replace: true }
       );
     }
-  }, [animation.activeIndex, ds?.is_temporal, setSearchParams]);
+  }, [animation.activeIndex, item?.isTemporal, setSearchParams]);
 
   // --- Local is_shared (optimistic update from ShareButton) ---
   const [localIsShared, setLocalIsShared] = useState<boolean | null>(null);
@@ -415,6 +417,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     rescaleMax: controls.rescaleMax,
     colormapReversed: controls.colormapReversed,
     effectiveCategories,
+    zarrNode: zarrState.node,
   });
 
   // --- Color scale for legend ---
@@ -452,8 +455,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     };
   }, [item?.dataType, controls.renderMode]);
 
-  const activeTimestepIso = ds?.is_temporal
-    ? (ds.timesteps[animation.activeIndex]?.datetime ?? null)
+  const activeTimestepIso = item?.isTemporal
+    ? (item.timesteps[animation.activeIndex]?.datetime ?? null)
     : null;
 
   const snapshotFilename = buildSnapshotFilename({
@@ -559,6 +562,39 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 )}
               </Box>
             )}
+            {zarrState.isLoading && (
+              <Box
+                position="absolute"
+                top={4}
+                left={4}
+                bg="bg.subtle"
+                borderWidth="1px"
+                borderColor="brand.border"
+                px={3}
+                py={2}
+                fontSize="sm"
+                zIndex={10}
+              >
+                Opening Zarr store…
+              </Box>
+            )}
+            {zarrState.error && (
+              <Box
+                position="absolute"
+                top={4}
+                left={4}
+                bg="red.subtle"
+                borderWidth="1px"
+                borderColor="red.border"
+                color="red.fg"
+                px={3}
+                py={2}
+                fontSize="sm"
+                zIndex={10}
+              >
+                Couldn&apos;t open Zarr store: {zarrState.error}
+              </Box>
+            )}
             <UnifiedMap
               ref={deckRef}
               mapRef={mapRef}
@@ -650,10 +686,10 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   </Box>
                 )}
 
-              {ds?.is_temporal && controls.renderMode !== "client" && (
+              {item?.isTemporal && controls.renderMode !== "client" && (
                 <Box data-snapshot-overlay>
                   <TemporalControls
-                    timesteps={ds.timesteps}
+                    timesteps={item.timesteps}
                     activeIndex={animation.activeIndex}
                     onIndexChange={(index) => {
                       animation.setActiveIndex(index);
@@ -668,7 +704,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                       }
                     }}
                     onNext={() => {
-                      if (animation.activeIndex < ds.timesteps.length - 1) {
+                      if (animation.activeIndex < item.timesteps.length - 1) {
                         animation.setActiveIndex(animation.activeIndex + 1);
                         if (animation.isAnimateMode)
                           animation.exitAnimateMode();

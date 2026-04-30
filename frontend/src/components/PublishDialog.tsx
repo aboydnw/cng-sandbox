@@ -22,6 +22,8 @@ import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
 import { downloadStoryConfig } from "../lib/story/exportConfig";
 import { buildAndDownloadBundle } from "../lib/story/buildStaticBundle";
+import { downloadArchivalHtml } from "../lib/story/archival/downloadArchival";
+import { ArchivalProgress } from "./ArchivalProgress";
 import { EmbedSnippet } from "./EmbedSnippet";
 
 interface PublishDialogProps {
@@ -42,6 +44,28 @@ export function PublishDialog({
   const [published, setPublished] = useState(story.published);
   const [copied, setCopied] = useState(false);
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const [archivalProgress, setArchivalProgress] = useState<{
+    open: boolean;
+    current: number;
+    total: number;
+  }>({ open: false, current: 0, total: 0 });
+
+  async function handleArchival() {
+    setArchivalProgress({ open: true, current: 0, total: 1 });
+    try {
+      await downloadArchivalHtml(
+        story.id,
+        story.title,
+        (current, total) => {
+          setArchivalProgress({ open: true, current, total });
+        },
+      );
+    } catch (err) {
+      console.error("Failed to download archival HTML", err);
+    } finally {
+      setArchivalProgress({ open: false, current: 0, total: 0 });
+    }
+  }
 
   const incompleteChapters = story.chapters.filter(
     (ch) => !ch.narrative.trim()
@@ -70,11 +94,17 @@ export function PublishDialog({
   }
 
   return (
-    <DialogRoot
-      open={open}
-      onOpenChange={(e) => !e.open && handleClose()}
-      size="md"
-    >
+    <>
+      <ArchivalProgress
+        open={archivalProgress.open}
+        current={archivalProgress.current}
+        total={archivalProgress.total}
+      />
+      <DialogRoot
+        open={open}
+        onOpenChange={(e) => !e.open && handleClose()}
+        size="md"
+      >
       <Portal>
         <DialogBackdrop />
         <DialogPositioner>
@@ -268,6 +298,20 @@ export function PublishDialog({
                       Self-contained viewer + config. Upload anywhere static
                       files can be served.
                     </Text>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      mt={3}
+                      onClick={() => {
+                        void handleArchival();
+                      }}
+                    >
+                      Download archival HTML
+                    </Button>
+                    <Text fontSize="xs" color="fg.muted" mt={1}>
+                      Single self-contained file. Maps and charts inlined as
+                      images. Suitable for Zenodo and long-term archives.
+                    </Text>
                     <Box mt={4}>
                       <EmbedSnippet
                         viewerOrigin={
@@ -309,5 +353,6 @@ export function PublishDialog({
         </DialogPositioner>
       </Portal>
     </DialogRoot>
+    </>
   );
 }

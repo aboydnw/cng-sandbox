@@ -72,7 +72,9 @@ function parseZarrConfig(
   }
   const c = config as ZarrConfigShape;
   const hasTime = !!c.timeDim;
-  const timeValues = Array.isArray(c.timeValues) ? c.timeValues : [];
+  const timeValues = Array.isArray(c.timeValues)
+    ? c.timeValues.filter((v): v is string => typeof v === "string")
+    : [];
   const timesteps =
     hasTime && timeValues.length > 0
       ? timeValues.map((datetime, index) => ({ datetime, index }))

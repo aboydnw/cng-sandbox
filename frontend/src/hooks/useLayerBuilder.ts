@@ -282,7 +282,9 @@ export function useLayerBuilder({
           rescaleMax: effMax,
           colormapName,
           colormapReversed,
-          id: `zarr-layer-${item.id}-${variable}-${timeDim ?? "static"}-${activeTimestepIndex}`,
+          id: timeDim
+            ? `zarr-layer-${item.id}-${variable}-${timeDim}-${activeTimestepIndex}`
+            : `zarr-layer-${item.id}-${variable}-static`,
         });
       }
 

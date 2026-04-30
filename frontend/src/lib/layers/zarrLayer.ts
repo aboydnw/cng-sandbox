@@ -46,6 +46,33 @@ export function buildZarrLayer({
 }: ZarrLayerOptions): Layer[] {
   const range = rescaleMax - rescaleMin || 1;
   const lut = buildContinuousLut(colormapName, colormapReversed);
+  const lutTextureByDevice = new WeakMap<object, unknown>();
+
+  const getOrCreateLutTexture = (device: {
+    createTexture: (opts: unknown) => unknown;
+  }): unknown => {
+    const key = device as unknown as object;
+    const cached = lutTextureByDevice.get(key);
+    if (cached) return cached;
+    const created = device.createTexture({
+      dimension: "2d-array",
+      data: lut,
+      format: "rgba8unorm",
+      width: 256,
+      height: 1,
+      depth: 1,
+      mipLevels: 1,
+      sampler: {
+        minFilter: "linear",
+        magFilter: "linear",
+        addressModeU: "clamp-to-edge",
+        addressModeV: "clamp-to-edge",
+        addressModeW: "clamp-to-edge",
+      },
+    });
+    lutTextureByDevice.set(key, created);
+    return created;
+  };
 
   const getTileData = async (
     arr: zarr.Array<zarr.DataType, zarr.Readable>,
@@ -82,22 +109,7 @@ export function buildZarrLayer({
       sampler: { minFilter: "nearest", magFilter: "nearest" },
     });
 
-    const lutTexture = device.createTexture({
-      dimension: "2d-array",
-      data: lut,
-      format: "rgba8unorm",
-      width: 256,
-      height: 1,
-      depth: 1,
-      mipLevels: 1,
-      sampler: {
-        minFilter: "linear",
-        magFilter: "linear",
-        addressModeU: "clamp-to-edge",
-        addressModeV: "clamp-to-edge",
-        addressModeW: "clamp-to-edge",
-      },
-    });
+    const lutTexture = getOrCreateLutTexture(device);
 
     return { texture, lutTexture, width, height };
   };

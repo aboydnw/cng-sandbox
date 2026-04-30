@@ -237,6 +237,7 @@ const BASE_CONNECTION: Connection = {
   is_shared: false,
   preferred_colormap: null,
   preferred_colormap_reversed: null,
+  config: null,
 };
 
 describe("buildLayersForChapter — connection COG rescale and colormap_reversed", () => {

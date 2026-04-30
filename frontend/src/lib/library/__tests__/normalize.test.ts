@@ -76,6 +76,7 @@ function makeConnection(overrides: Partial<Connection> = {}): Connection {
     is_shared: false,
     preferred_colormap: null,
     preferred_colormap_reversed: null,
+    config: null,
     created_at: "2026-04-02T00:00:00Z",
     ...overrides,
   } as Connection;

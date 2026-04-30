@@ -3,12 +3,16 @@ import type { ConnectionType } from "../../types";
 export function detectConnectionType(url: string): ConnectionType | null {
   // Strip query string for extension matching
   const path = url.split("?")[0].toLowerCase();
+  const trimmed = path.replace(/\/$/, "");
 
-  if (path.endsWith(".tif") || path.endsWith(".tiff")) {
+  if (trimmed.endsWith(".tif") || trimmed.endsWith(".tiff")) {
     return "cog";
   }
-  if (path.endsWith(".pmtiles")) {
+  if (trimmed.endsWith(".pmtiles")) {
     return "pmtiles";
+  }
+  if (trimmed.endsWith(".zarr")) {
+    return "zarr";
   }
   if (url.includes("{z}") && url.includes("{x}") && url.includes("{y}")) {
     if (path.endsWith(".mvt") || path.endsWith(".pbf")) {

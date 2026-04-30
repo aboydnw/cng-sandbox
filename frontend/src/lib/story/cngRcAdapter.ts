@@ -76,6 +76,7 @@ function synthesizeConnection(
     is_shared: false,
     preferred_colormap: layer.render.colormap,
     preferred_colormap_reversed: null,
+    config: null,
     created_at: "",
   };
 }

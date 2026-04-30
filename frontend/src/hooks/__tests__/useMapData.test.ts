@@ -91,6 +91,7 @@ const MOCK_CONNECTION: Connection = {
   render_mode: null,
   preferred_colormap: null,
   preferred_colormap_reversed: null,
+  config: null,
 };
 
 beforeEach(() => {

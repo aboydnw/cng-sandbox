@@ -47,6 +47,24 @@ describe("detectConnectionType", () => {
       )
     ).toBe("cog");
   });
+
+  it("detects .zarr as zarr", () => {
+    expect(detectConnectionType("https://data.source.coop/store.zarr")).toBe(
+      "zarr"
+    );
+  });
+
+  it("detects .zarr/ trailing slash as zarr", () => {
+    expect(
+      detectConnectionType("https://data.source.coop/dynamical/v0.1.0.zarr/")
+    ).toBe("zarr");
+  });
+
+  it("detects .zarr with query string as zarr", () => {
+    expect(
+      detectConnectionType("https://data.source.coop/store.zarr?token=abc")
+    ).toBe("zarr");
+  });
 });
 
 describe("extractNameFromUrl", () => {

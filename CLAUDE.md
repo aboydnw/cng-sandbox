@@ -21,7 +21,7 @@ All services run in Docker. The frontend proxies all API and tiler requests thro
 
 Dense reference material lives under [docs/](docs/) and should be read only when the task touches that area:
 
-- [docs/frontend-gotchas.md](docs/frontend-gotchas.md) — tile URLs, client-side COG rendering, EPSG resolver, pixel inspector, snapshots, GeoParquet, Chakra v3, analytics, portable story config (iframe embeds). Read before touching `frontend/src/`.
+- [docs/frontend-gotchas.md](docs/frontend-gotchas.md) — tile URLs, client-side COG rendering, EPSG resolver, pixel inspector, snapshots, GeoParquet, Chakra v3, analytics, portable story config (iframe embeds), zarr connections. Read before touching `frontend/src/`.
 - [docs/api-reference.md](docs/api-reference.md) — full ingestion API surface. Read before adding/changing any `/api/*` endpoint or frontend-backend contract.
 - [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, Caddy auth model, CSP, tile caching. Read before prod changes.
 - [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.
@@ -138,7 +138,7 @@ cd frontend && npx vitest run
 
 ### Implementation gotchas
 
-Non-obvious behaviors (tile URL absolute-vs-relative, client-side COG rendering pipeline, pixel inspector tooltip modes, Chakra v3 Portal requirement, Plausible CSP coupling, viewer build target and static-bundle export, iframe embeds, chart range persistence, etc.) are catalogued in [docs/frontend-gotchas.md](docs/frontend-gotchas.md). Read before editing anything in `frontend/src/lib/layers/`, `frontend/src/hooks/`, or the map/story components.
+Non-obvious behaviors (tile URL absolute-vs-relative, client-side COG rendering pipeline, pixel inspector tooltip modes, Chakra v3 Portal requirement, Plausible CSP coupling, viewer build target and static-bundle export, iframe embeds, chart range persistence, zarr connections, etc.) are catalogued in [docs/frontend-gotchas.md](docs/frontend-gotchas.md). Read before editing anything in `frontend/src/lib/layers/`, `frontend/src/hooks/`, `frontend/src/lib/zarr/`, or the map/story components.
 
 ## Ingestion Service
 

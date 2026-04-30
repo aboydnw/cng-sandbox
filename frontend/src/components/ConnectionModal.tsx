@@ -12,8 +12,15 @@ import {
   probeCOG,
 } from "../lib/connections";
 import type { ProbeMetadata } from "../lib/connections";
+import { probeZarr, ZARR_NOT_CONSOLIDATED } from "../lib/zarr/probeZarr";
+import type { ZarrProbeResult } from "../lib/zarr/probeZarr";
+import { ZarrConnectionFields } from "./ZarrConnectionFields";
 import { connectionsApi } from "../lib/api";
-import type { ConnectionType, Connection } from "../types";
+import type {
+  ConnectionType,
+  Connection,
+  ZarrConnectionConfig,
+} from "../types";
 
 const TYPE_LABELS: Record<ConnectionType, string> = {
   cog: "COG",
@@ -21,6 +28,7 @@ const TYPE_LABELS: Record<ConnectionType, string> = {
   xyz_raster: "XYZ Raster Tiles",
   xyz_vector: "XYZ Vector Tiles",
   geoparquet: "Remote GeoParquet",
+  zarr: "Zarr",
 };
 
 const ALL_TYPES: ConnectionType[] = [
@@ -28,6 +36,7 @@ const ALL_TYPES: ConnectionType[] = [
   "pmtiles",
   "xyz_raster",
   "xyz_vector",
+  "zarr",
 ];
 
 interface ConnectionModalProps {
@@ -54,11 +63,39 @@ export function ConnectionModal({
   );
   const [error, setError] = useState<string | null>(null);
   const [probeWarning, setProbeWarning] = useState<string | null>(null);
+  const [zarrProbe, setZarrProbe] = useState<ZarrProbeResult | null>(null);
+  const [zarrConfig, setZarrConfig] = useState<ZarrConnectionConfig | null>(
+    null
+  );
+
+  const runZarrProbe = useCallback(async (probeUrl: string) => {
+    setProbeMetadata(null);
+    setZarrProbe(null);
+    setZarrConfig(null);
+    setProbeWarning(null);
+    setProbing(true);
+    try {
+      const probe = await probeZarr(probeUrl);
+      setZarrProbe(probe);
+    } catch (e) {
+      setZarrProbe(null);
+      const msg = e instanceof Error ? e.message : String(e);
+      setProbeWarning(
+        msg === ZARR_NOT_CONSOLIDATED
+          ? msg
+          : `Could not open Zarr store. ${msg}`
+      );
+    } finally {
+      setProbing(false);
+    }
+  }, []);
 
   // Auto-detect type and name when URL changes
   const handleUrlBlur = useCallback(async () => {
     if (!url) return;
     setProbeWarning(null);
+    setZarrProbe(null);
+    setZarrConfig(null);
     const detected = detectConnectionType(url);
     if (detected) {
       setConnectionType(detected);
@@ -87,10 +124,12 @@ export function ConnectionModal({
       } finally {
         setProbing(false);
       }
+    } else if (detected === "zarr") {
+      await runZarrProbe(url);
     } else {
       setProbeMetadata(null);
     }
-  }, [url, name]);
+  }, [url, name, runZarrProbe]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -104,6 +143,8 @@ export function ConnectionModal({
       setProbeMetadata(null);
       setProbeWarning(null);
       setError(null);
+      setZarrProbe(null);
+      setZarrConfig(null);
     }
   }, [isOpen]);
 
@@ -132,6 +173,11 @@ export function ConnectionModal({
           !probeMetadata && { tile_type: "raster" }),
         ...(connectionType === "xyz_raster" && { tile_type: "raster" }),
         ...(connectionType === "xyz_vector" && { tile_type: "vector" }),
+        ...(connectionType === "zarr" &&
+          zarrConfig && {
+            tile_type: "raster",
+            config: { ...zarrConfig },
+          }),
       });
       onCreated(connection);
       onClose();
@@ -144,7 +190,13 @@ export function ConnectionModal({
 
   if (!isOpen) return null;
 
-  const canSave = !!url && !!name && !!connectionType && !saving && !probing;
+  const canSave =
+    !!url &&
+    !!name &&
+    !!connectionType &&
+    !saving &&
+    !probing &&
+    (connectionType !== "zarr" || !!zarrConfig);
 
   return (
     <Box
@@ -224,8 +276,12 @@ export function ConnectionModal({
             <select
               value={connectionType ?? ""}
               onChange={(e) => {
-                setConnectionType(e.target.value as ConnectionType);
+                const next = e.target.value as ConnectionType;
+                setConnectionType(next);
                 setAutoDetected(false);
+                if (next === "zarr" && url && !zarrProbe && !probing) {
+                  void runZarrProbe(url);
+                }
               }}
               style={{
                 width: "100%",
@@ -271,6 +327,13 @@ export function ConnectionModal({
             <Text fontSize="13px" color="orange.500">
               {probeWarning}
             </Text>
+          )}
+
+          {connectionType === "zarr" && zarrProbe && !probing && (
+            <ZarrConnectionFields
+              probe={zarrProbe}
+              onConfigChange={setZarrConfig}
+            />
           )}
 
           {error && (

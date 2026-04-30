@@ -258,6 +258,7 @@ function makeConnectionItem(overrides: Partial<MapItem> = {}): MapItem {
     is_shared: false,
     preferred_colormap: null,
     preferred_colormap_reversed: null,
+    config: null,
   };
   return makeItem({
     source: "connection",

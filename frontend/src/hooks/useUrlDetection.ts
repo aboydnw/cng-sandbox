@@ -7,7 +7,8 @@ export type UrlRoute =
   | "parquet"
   | "cog"
   | "convert-url"
-  | "discover";
+  | "discover"
+  | "zarr";
 
 export interface UrlDetectionResult {
   route: UrlRoute;
@@ -78,6 +79,17 @@ export async function detectUrlRoute(
       format: "pmtiles",
       isCog: false,
       sizeBytes: probe.size_bytes,
+    };
+  }
+
+  // Zarr (no probe; consolidated metadata fetched in the modal)
+  if (pathEndsWith(url, ".zarr") || pathEndsWith(url, ".zarr/")) {
+    return {
+      route: "zarr",
+      url,
+      format: "zarr",
+      isCog: false,
+      sizeBytes: null,
     };
   }
 

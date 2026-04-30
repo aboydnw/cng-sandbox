@@ -128,4 +128,101 @@ describe("buildOptionFromCsvRows", () => {
       "first",
     ]);
   });
+
+  it("uses tight axis bounds for numeric x columns (no padding to round numbers)", () => {
+    const rows = [
+      { Year: 2010, v: 1 },
+      { Year: 2015, v: 5 },
+      { Year: 2020, v: 9 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "Year",
+      y_fields: ["v"],
+    });
+    expect(opt.xAxis.type).toBe("value");
+    expect(opt.xAxis.min).toBe("dataMin");
+    expect(opt.xAxis.max).toBe("dataMax");
+  });
+
+  it("uses tight axis bounds for date-string x columns", () => {
+    const rows = [
+      { date: "2020-01-01", v: 1 },
+      { date: "2020-12-01", v: 2 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "date",
+      y_fields: ["v"],
+    });
+    expect(opt.xAxis.type).toBe("time");
+    expect(opt.xAxis.min).toBe("dataMin");
+    expect(opt.xAxis.max).toBe("dataMax");
+  });
+
+  it("does not set min/max on category x axes", () => {
+    const rows = [
+      { name: "alpha", v: 1 },
+      { name: "beta", v: 2 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "bar",
+      x_field: "name",
+      y_fields: ["v"],
+    });
+    expect(opt.xAxis.type).toBe("category");
+    expect(opt.xAxis.min).toBeUndefined();
+    expect(opt.xAxis.max).toBeUndefined();
+  });
+
+  it("formats integer x values without thousand separators", () => {
+    const rows = [
+      { Year: 2010, v: 1 },
+      { Year: 2015, v: 2 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "Year",
+      y_fields: ["v"],
+    });
+    expect(opt.xAxis.axisLabel.formatter(2015)).toBe("2015");
+    expect(opt.xAxis.axisLabel.formatter(2015.5)).toBe("2016");
+  });
+
+  it("does not add an integer formatter for non-integer numeric x values", () => {
+    const rows = [
+      { x: 0.1, v: 1 },
+      { x: 0.5, v: 2 },
+    ];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "x",
+      y_fields: ["v"],
+    });
+    expect(opt.xAxis.axisLabel).toBeUndefined();
+  });
+
+  it("includes the slider dataZoom by default (editor mode)", () => {
+    const rows = [{ x: 1, v: 1 }];
+    const opt = buildOptionFromCsvRows(rows, {
+      kind: "line",
+      x_field: "x",
+      y_fields: ["v"],
+    });
+    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    expect(types).toContain("slider");
+    expect(types).toContain("inside");
+  });
+
+  it("omits the slider dataZoom when interactive=false (reader mode)", () => {
+    const rows = [{ x: 1, v: 1 }];
+    const opt = buildOptionFromCsvRows(
+      rows,
+      { kind: "line", x_field: "x", y_fields: ["v"] },
+      { interactive: false }
+    );
+    const types = opt.dataZoom.map((d: { type: string }) => d.type);
+    expect(types).not.toContain("slider");
+    expect(types).toContain("inside");
+  });
 });

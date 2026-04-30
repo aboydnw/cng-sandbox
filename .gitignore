@@ -1,5 +1,7 @@
 node_modules/
 dist/
+frontend/public/viewer/
+frontend/public/.vite/
 .venv/
 *.egg-info/
 __pycache__/

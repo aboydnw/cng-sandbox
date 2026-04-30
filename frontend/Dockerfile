@@ -7,7 +7,7 @@ RUN yarn install --immutable
 COPY . .
 ARG VITE_VIEWER_ORIGIN
 ENV VITE_VIEWER_ORIGIN=$VITE_VIEWER_ORIGIN
-RUN npx vite build
+RUN yarn build
 
 # --- Dev: hot-reloading Vite dev server for local development ---
 FROM node:20 AS dev
@@ -17,7 +17,8 @@ COPY package.json yarn.lock .yarnrc.yml ./
 RUN yarn install
 COPY src/ ./src/
 COPY index.html ./
-COPY vite.config.ts ./
+COPY viewer.html ./
+COPY vite.config.ts vite.shared.config.ts vite.viewer.config.ts ./
 COPY tsconfig.json ./
 COPY public/ ./public/
 EXPOSE 5185

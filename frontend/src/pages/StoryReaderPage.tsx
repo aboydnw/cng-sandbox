@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
-import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { Flex, Text } from "@chakra-ui/react";
 import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
-import { StoryRenderer } from "../components/StoryRenderer";
+import { StoryReaderInner } from "./StoryReaderInner";
 
 import {
   getStoryFromServer,
@@ -12,7 +12,6 @@ import {
 } from "../lib/story";
 import { loadPortableConfig } from "../lib/story/loadPortableConfig";
 import { cngRcToStory } from "../lib/story/cngRcAdapter";
-import { BugReportLink } from "../components/BugReportLink";
 import type { Story } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import { connectionsApi } from "../lib/api";
@@ -177,36 +176,12 @@ export default function StoryReaderPage({
   if (!story) return null;
 
   return (
-    <Box h="100vh" display="flex" flexDirection="column">
-      {!embed && (
-        <Flex
-          h="48px"
-          px={5}
-          align="center"
-          borderBottom="1px solid"
-          borderColor="gray.200"
-          bg="white"
-          flexShrink={0}
-        >
-          <Heading size="sm" fontWeight={600} color="gray.800">
-            {story.title}
-          </Heading>
-          {!shared && (
-            <BugReportLink storyId={story.id} datasetIds={story.dataset_ids} />
-          )}
-          <Text ml="auto" fontSize="xs" color="gray.500">
-            Made with CNG Sandbox
-          </Text>
-        </Flex>
-      )}
-
-      <Box flex={1} overflowY="auto">
-        <StoryRenderer
-          story={story}
-          datasetMap={datasetMap}
-          connectionMap={connectionMap}
-        />
-      </Box>
-    </Box>
+    <StoryReaderInner
+      story={story}
+      datasetMap={datasetMap}
+      connectionMap={connectionMap}
+      embed={embed}
+      shared={shared}
+    />
   );
 }

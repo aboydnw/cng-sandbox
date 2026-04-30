@@ -86,6 +86,10 @@ function inferXAxisType(
   return "category";
 }
 
+export interface BuildCsvOptionOpts {
+  interactive?: boolean;
+}
+
 export function buildOptionFromCsvRows(
   rows: Record<string, unknown>[],
   viz: Pick<
@@ -97,7 +101,8 @@ export function buildOptionFromCsvRows(
     | "x_label"
     | "y_label"
     | "y_scale"
-  >
+  >,
+  opts: BuildCsvOptionOpts = {}
 ): EChartsOption {
   const seriesField = viz.series_field || null;
   const yField = viz.y_fields[0];
@@ -131,9 +136,45 @@ export function buildOptionFromCsvRows(
     }));
   }
 
+  const xAxisType = inferXAxisType(rows, viz.x_field);
+  const xValues = rows.map((r) => r[viz.x_field]);
+  const allIntegerX =
+    xAxisType === "value" &&
+    xValues.length > 0 &&
+    xValues.every((v) => typeof v === "number" && Number.isInteger(v));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const xAxis: any = { type: xAxisType, name: viz.x_label ?? "" };
+  if (xAxisType === "value" || xAxisType === "time") {
+    xAxis.min = "dataMin";
+    xAxis.max = "dataMax";
+  }
+  if (allIntegerX) {
+    xAxis.axisLabel = {
+      formatter: (v: number) => String(Math.round(v)),
+    };
+  }
+
   const showLegend = series.length > 1;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tooltip: any = { trigger: "axis", axisPointer: { type: "cross" } };
+  if (allIntegerX) {
+    tooltip.axisPointer.label = {
+      formatter: (params: { value: number }) =>
+        String(Math.round(params.value)),
+    };
+  }
+
+  const interactive = opts.interactive ?? true;
+  const dataZoom: { type: string; height?: number; bottom?: number }[] = [
+    { type: "inside" },
+  ];
+  if (interactive) {
+    dataZoom.push({ type: "slider", height: 20, bottom: 10 });
+  }
+
   return {
-    tooltip: { trigger: "axis", axisPointer: { type: "cross" } },
+    tooltip,
     toolbox: COMMON_TOOLBOX,
     legend: showLegend ? { top: 0 } : undefined,
     grid: {
@@ -142,12 +183,12 @@ export function buildOptionFromCsvRows(
       top: showLegend ? 50 : 30,
       bottom: 60,
     },
-    xAxis: { type: inferXAxisType(rows, viz.x_field), name: viz.x_label ?? "" },
+    xAxis,
     yAxis: {
       type: viz.y_scale === "log" ? "log" : "value",
       name: viz.y_label ?? "",
     },
-    dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 10 }],
+    dataZoom,
     series,
   };
 }

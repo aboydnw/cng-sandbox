@@ -6,7 +6,8 @@
   "packageManager": "yarn@4.13.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "yarn build:viewer && tsc && vite build",
+    "build:viewer": "vite build --config vite.viewer.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -39,6 +40,7 @@
     "echarts-for-react": "^3.0.6",
     "gif.js": "^0.2.0",
     "html-to-image": "^1.11.13",
+    "jszip": "^3.10.1",
     "lerc": "^4.0.4",
     "maplibre-gl": "^5.23.0",
     "mp4-muxer": "^5.2.2",
@@ -72,6 +74,7 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.8",
+    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.4"
   }
 }

@@ -7,7 +7,7 @@ RUN yarn install --immutable
 COPY . .
 ARG VITE_VIEWER_ORIGIN
 ENV VITE_VIEWER_ORIGIN=$VITE_VIEWER_ORIGIN
-RUN npx vite build
+RUN yarn build
 
 # --- Dev: hot-reloading Vite dev server for local development ---
 FROM node:20 AS dev

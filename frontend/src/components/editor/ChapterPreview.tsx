@@ -6,9 +6,10 @@ import { ChartChapterRenderer } from "../ChartChapterRenderer";
 
 interface ChapterPreviewProps {
   chapter: Chapter;
+  onChange?: (next: Chapter) => void;
 }
 
-export function ChapterPreview({ chapter }: ChapterPreviewProps) {
+export function ChapterPreview({ chapter, onChange }: ChapterPreviewProps) {
   if (chapter.type === "prose") {
     return <ProseChapter chapter={chapter} chapterIndex={chapter.order} />;
   }
@@ -24,7 +25,22 @@ export function ChapterPreview({ chapter }: ChapterPreviewProps) {
   }
   if (chapter.type === "chart") {
     return (
-      <ChartChapterRenderer chapter={chapter} chapterIndex={chapter.order} />
+      <ChartChapterRenderer
+        chapter={chapter}
+        chapterIndex={chapter.order}
+        onRangeChange={
+          onChange
+            ? (range) =>
+                onChange({
+                  ...chapter,
+                  chart: {
+                    ...chapter.chart,
+                    viz: { ...chapter.chart.viz, ...range },
+                  },
+                })
+            : undefined
+        }
+      />
     );
   }
   return null;

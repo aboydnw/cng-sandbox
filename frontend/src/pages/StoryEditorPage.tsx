@@ -411,7 +411,9 @@ export default function StoryEditorPage() {
           </Box>
         ) : (
           <Box flex={1} overflowY="auto" bg="gray.50">
-            {activeChapter && <ChapterPreview chapter={activeChapter} />}
+            {activeChapter && (
+              <ChapterPreview chapter={activeChapter} onChange={updateChapter} />
+            )}
           </Box>
         )}
 

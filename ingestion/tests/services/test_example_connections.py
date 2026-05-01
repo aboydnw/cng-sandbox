@@ -105,6 +105,70 @@ def test_seed_skips_when_url_type_pair_already_present(db_session_factory):
         session.close()
 
 
+def test_seed_skips_when_pair_already_present_as_user_owned_row(db_session_factory):
+    """Pre-existing user-owned connection with the same (url, type) blocks seeding."""
+    from src.services import example_connections
+
+    session = db_session_factory()
+    try:
+        session.add(
+            ConnectionRow(
+                id="user-owned",
+                name="User connection",
+                url="https://example.org/sample.zarr",
+                connection_type="zarr",
+                workspace_id="userABCD",
+                is_example=False,
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    with patch.object(example_connections, "EXAMPLE_CONNECTIONS", _sample_seeds()):
+        example_connections.seed_example_connections(db_session_factory)
+
+    session = db_session_factory()
+    try:
+        rows = session.query(ConnectionRow).all()
+        assert len(rows) == 1
+        assert rows[0].id == "user-owned"
+        assert rows[0].is_example is False
+    finally:
+        session.close()
+
+
+def test_seed_skips_duplicate_url_type_pair_within_same_run(db_session_factory):
+    """Two seeds with the same (url, connection_type) only insert one row."""
+    from src.services import example_connections
+
+    seeds = [
+        example_connections.ExampleConnectionSeed(
+            name="First",
+            url="https://example.org/dup.zarr",
+            connection_type="zarr",
+            config={"variable": "t"},
+        ),
+        example_connections.ExampleConnectionSeed(
+            name="Second",
+            url="https://example.org/dup.zarr",
+            connection_type="zarr",
+            config={"variable": "t"},
+        ),
+    ]
+
+    with patch.object(example_connections, "EXAMPLE_CONNECTIONS", seeds):
+        example_connections.seed_example_connections(db_session_factory)
+
+    session = db_session_factory()
+    try:
+        rows = session.query(ConnectionRow).all()
+        assert len(rows) == 1
+        assert rows[0].name == "First"
+    finally:
+        session.close()
+
+
 def test_seed_example_connections_is_wired_into_lifespan():
     """Verify _default_lifespan in app.py launches the example-connections seeder."""
     import inspect

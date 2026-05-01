@@ -149,9 +149,7 @@ def example_zarr_row(db_session):
         workspace_id=None,
         is_example=True,
         is_categorical=True,
-        categories_json=json.dumps(
-            [{"value": 1, "label": "old", "color": "#abcdef"}]
-        ),
+        categories_json=json.dumps([{"value": 1, "label": "old", "color": "#abcdef"}]),
         config={"variable": "t2m"},
     )
     db_session.add(row)

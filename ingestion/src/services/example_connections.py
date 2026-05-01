@@ -45,17 +45,18 @@ class ExampleConnectionSeed:
 EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = []
 
 
-def _existing_example_keys(
+def _existing_connection_keys(
     db_session_factory: sessionmaker,
 ) -> set[tuple[str, str]]:
-    """Return {(url, connection_type)} for rows already tagged is_example=True."""
+    """Return {(url, connection_type)} for every ConnectionRow.
+
+    We dedupe against ALL existing rows (not just `is_example=True`) so that
+    a pre-existing user-owned connection with the same `(url, connection_type)`
+    is not duplicated as an example row.
+    """
     session = db_session_factory()
     try:
-        rows = (
-            session.query(ConnectionRow)
-            .filter(ConnectionRow.is_example.is_(True))
-            .all()
-        )
+        rows = session.query(ConnectionRow).all()
         return {(r.url, r.connection_type) for r in rows}
     finally:
         session.close()
@@ -64,14 +65,15 @@ def _existing_example_keys(
 def seed_example_connections(db_session_factory: sessionmaker) -> None:
     """Insert every entry in `EXAMPLE_CONNECTIONS` not already present.
 
-    Idempotent: a `(url, connection_type)` pair already present as
-    `is_example=True` is skipped. Errors on individual seeds are logged
-    but do not abort the rest of the batch.
+    Idempotent: a `(url, connection_type)` pair already present in the
+    `connections` table is skipped, regardless of whether the existing row
+    is an example row or a workspace-owned row. Errors on individual seeds
+    are logged but do not abort the rest of the batch.
     """
     if not EXAMPLE_CONNECTIONS:
         logger.info("No example connections defined; skipping seed")
         return
-    existing = _existing_example_keys(db_session_factory)
+    existing = _existing_connection_keys(db_session_factory)
     session = db_session_factory()
     try:
         for seed in EXAMPLE_CONNECTIONS:
@@ -100,11 +102,10 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
                 )
                 session.add(row)
                 session.commit()
+                existing.add(key)
                 logger.info("registered example connection: %s", seed.name)
             except Exception:
                 session.rollback()
-                logger.exception(
-                    "Failed to register example connection: %s", seed.name
-                )
+                logger.exception("Failed to register example connection: %s", seed.name)
     finally:
         session.close()

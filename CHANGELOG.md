@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.32.0](https://github.com/aboydnw/cng-sandbox/compare/v1.31.1...v1.32.0) (2026-05-01)
+
+
+### Features
+
+* **zarr:** decimate large time axes during probe ([#400](https://github.com/aboydnw/cng-sandbox/issues/400)) ([06b5d27](https://github.com/aboydnw/cng-sandbox/commit/06b5d274bea3de6102ea4b7fce7594d8d90010a1))
+* **zarr:** manual variable path fallback for non-consolidated stores ([#394](https://github.com/aboydnw/cng-sandbox/issues/394)) ([d677ab0](https://github.com/aboydnw/cng-sandbox/commit/d677ab0a2bbbecd29fd848765dd54ce57229f8eb))
+
 ## [1.31.1](https://github.com/aboydnw/cng-sandbox/compare/v1.31.0...v1.31.1) (2026-05-01)
 
 

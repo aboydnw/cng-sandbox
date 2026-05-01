@@ -98,6 +98,11 @@ def _probe_zarr_timesteps(
 
     stride = max(1, math.ceil(shape / max_steps))
     needed_indices = list(range(0, shape, stride))
+    if shape and needed_indices[-1] != shape - 1:
+        if len(needed_indices) >= max_steps:
+            needed_indices[-1] = shape - 1
+        else:
+            needed_indices.append(shape - 1)
 
     chunk_to_indices: dict[int, list[int]] = defaultdict(list)
     for idx in needed_indices:

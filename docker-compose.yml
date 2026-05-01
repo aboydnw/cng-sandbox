@@ -132,6 +132,7 @@ services:
       retries: 5
 
   ingestion:
+    image: ghcr.io/aboydnw/cng-sandbox/ingestion:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: ingestion/Dockerfile
@@ -204,6 +205,7 @@ services:
         condition: service_healthy
 
   frontend-build:
+    image: ghcr.io/aboydnw/cng-sandbox/frontend-build:${IMAGE_TAG:-latest}
     build:
       context: frontend
       target: builder
@@ -216,8 +218,7 @@ services:
     command: ["sh", "-c", "rm -rf /dist/* && cp -a /app/dist/. /dist/"]
 
   caddy:
-    build:
-      context: caddy
+    image: caddy:2.11.2
     restart: unless-stopped
     profiles:
       - prod

@@ -1,4 +1,14 @@
 {$SITE_ADDRESS} {
+	# Maintenance page shown during the brief deploy restart window when
+	# upstream containers (ingestion, tilers) return 502/503. The
+	# meta-refresh polls every 15s so the page updates itself once the
+	# new container is healthy.
+	handle_errors 502 503 {
+		header Content-Type "text/html; charset=utf-8"
+		header Cache-Control "no-cache"
+		respond `<!doctype html><html><head><title>Deploying</title><meta http-equiv="refresh" content="15"></head><body style="font-family:sans-serif;max-width:400px;margin:100px auto;text-align:center"><h1>Deploying…</h1><p>A new version is rolling out. This page will refresh automatically.</p></body></html>` 503
+	}
+
 	# Baseline security headers applied to every response. HSTS is safe to
 	# enable globally because Caddy auto-redirects HTTP→HTTPS. The CSP is
 	# permissive on connect-src/img-src because the app fetches user-supplied
@@ -168,6 +178,15 @@
 }
 
 {$VIEWER_SITE_ADDRESS} {
+	# Maintenance page shown during the brief deploy restart window. The
+	# viewer doesn't proxy to backend services, but Caddy itself can
+	# briefly 502/503 when its own container restarts.
+	handle_errors 502 503 {
+		header Content-Type "text/html; charset=utf-8"
+		header Cache-Control "no-cache"
+		respond `<!doctype html><html><head><title>Deploying</title><meta http-equiv="refresh" content="15"></head><body style="font-family:sans-serif;max-width:400px;margin:100px auto;text-align:center"><h1>Deploying…</h1><p>A new version is rolling out. This page will refresh automatically.</p></body></html>` 503
+	}
+
 	# Embed viewer subdomain. Same SPA bundle as the main site, but:
 	#   * no basic auth — viewer is public by design
 	#   * CSP allows frame-ancestors '*' so the iframe can be embedded

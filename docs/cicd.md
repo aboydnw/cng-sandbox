@@ -10,11 +10,17 @@ All changes go through PRs. Branch protection requires `backend`, `frontend`, `d
 
 Releases are managed by [release-please](https://github.com/googleapis/release-please). It watches `main` for conventional commits (`feat:`, `fix:`, etc.) and maintains an open Release PR with a changelog and version bump.
 
-**To release:** Merge the Release PR. This triggers auto-deploy to the Hetzner VM.
+**To release:** Merge the Release PR. This triggers a build-and-push step that publishes the `ingestion` and `frontend-build` images to `ghcr.io/aboydnw/cng-sandbox/*` (tagged `:latest` and `:vX.Y.Z`), then auto-deploys to the Hetzner VM.
 
-**Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions to deploy without creating a release.
+**Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions. This rebuilds and republishes the images, then redeploys without creating a release.
 
 **Version:** Tracked in `version.txt` (managed by release-please, don't edit manually).
+
+## Deploy mechanics (GHCR-based)
+
+The `release-please` workflow has three jobs that run in order: `release-please` (manages the Release PR), `build-and-push` (builds and pushes images to GHCR), and `deploy` (SSHes to the Hetzner VM and runs `docker compose --profile prod pull && up -d`). Because the VM pulls pre-built images instead of building locally, deploys take ~30-60s instead of several minutes and use far less VM CPU/RAM.
+
+Caddy uses the upstream `caddy:2` image directly (no custom Dockerfile). During the brief restart window when ingestion or the tilers cycle, Caddy's `handle_errors 502 503` block serves a self-refreshing maintenance page (`Caddyfile`) so users see "Deploying…" instead of a raw error.
 
 ## GitHub App for Release-Please (optional)
 
@@ -33,7 +39,7 @@ Dependabot is configured via `.github/dependabot.yml` to open weekly PRs for:
 - GitHub Actions
 - npm dependencies in `frontend/`
 - uv dependencies in `ingestion/` and `mcp/`
-- Docker base images in `caddy/`, `frontend/`, and `ingestion/`
+- Docker base images in `frontend/` and `ingestion/`
 
 Minor and patch updates are grouped per ecosystem to limit PR noise; major updates open as individual PRs so they get reviewed on their own. Each ecosystem uses a 7-day cooldown so Dependabot skips versions released in the last week (reduces exposure to compromised fresh releases). Dependabot PRs go through the same CI checks as any other PR. Review and merge them like normal feature PRs — release-please will fold the resulting `chore(deps):` commits into the next release changelog.
 

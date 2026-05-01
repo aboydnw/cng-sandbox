@@ -44,9 +44,19 @@ Both must be present before running `docker compose --profile prod up -d --build
 
 ## Start
 
+For the initial deploy on a fresh VM (or any time you want to build images locally):
+
 ```bash
 docker compose --profile prod up -d --build
 ```
+
+For routine redeploys, pull pre-built images from GHCR instead of rebuilding on the VM:
+
+```bash
+docker compose --profile prod pull && docker compose --profile prod up -d
+```
+
+This is what the `release-please` workflow runs over SSH after a release PR is merged. The `ingestion` and `frontend-build` images are published to `ghcr.io/aboydnw/cng-sandbox/*` by the `build-and-push` job before the deploy step runs. Caddy uses the upstream `caddy:2` image directly, so it's pulled from Docker Hub.
 
 ## Verify
 
@@ -59,6 +69,7 @@ docker compose --profile prod up -d --build
 - `docker compose up` (without `--profile prod`) still runs local dev without Caddy
 - Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
+- During the brief restart window when ingestion or the tilers cycle, Caddy's `handle_errors 502 503` block serves a small self-refreshing "Deploying…" page (meta-refresh every 15s) so users don't see a raw 502/503. The same handler is wired up for both the main host and the `viewer.<domain>` subdomain
 - Caddy applies baseline security headers to every response (HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`). The CSP allows `'wasm-unsafe-eval'` for DuckDB-WASM, whitelists `https://static.cloudflareinsights.com` (Cloudflare Web Analytics beacon) and `https://plausible.io` (Plausible analytics tracker) on `script-src`, and is permissive on `connect-src`/`img-src` to accommodate user-supplied tile URLs and the CARTO basemap. Story video chapters embed YouTube and Vimeo iframes, so `frame-src` lists `https://www.youtube.com`, `https://www.youtube-nocookie.com`, and `https://player.vimeo.com`. When adding any new third-party script or iframe origin, update both the `Caddyfile` CSP and this note
 
 ### EPSG resolution

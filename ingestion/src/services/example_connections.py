@@ -14,11 +14,16 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import struct
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import httpx
+import zstandard
 from sqlalchemy.orm import sessionmaker
 
 from src.models.connection import ConnectionRow
@@ -40,9 +45,85 @@ class ExampleConnectionSeed:
     tile_type: str | None = None
     preferred_colormap: str | None = None
     preferred_colormap_reversed: bool | None = None
+    zarr_time_dim: str | None = None
+    zarr_max_steps: int = 5000
 
 
-EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = []
+EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
+    ExampleConnectionSeed(
+        name="IMERG Final Precipitation",
+        url="https://data.source.coop/bkr/imerg/imerg_final.zarr",
+        connection_type="zarr",
+        bounds=[-180.0, -90.0, 180.0, 90.0],
+        config={
+            "variable": "precipitation",
+            "timeDim": "time",
+            "rescaleMin": 0,
+            "rescaleMax": 30,
+        },
+        preferred_colormap="blues",
+        zarr_time_dim="time",
+    ),
+]
+
+
+def _probe_zarr_timesteps(
+    url: str,
+    time_dim: str,
+    max_steps: int = 5000,
+) -> list[dict[str, Any]]:
+    """Fetch and decimate a zarr v3 time coordinate.
+
+    Downloads only the chunks needed for the decimated indices (typically
+    ~8 HTTP requests for a 473k-element time axis with chunk_shape=59167).
+    Assumes int64 little-endian data encoded with zstd compression.
+
+    Returns a list of {datetime: ISO8601, index: int} dicts sorted by index.
+    Raises on any network or decode error.
+    """
+    base = url.rstrip("/")
+    meta = (
+        httpx.get(f"{base}/{time_dim}/zarr.json", timeout=30.0)
+        .raise_for_status()
+        .json()
+    )
+
+    shape: int = meta["shape"][0]
+    chunk_shape: int = meta["chunk_grid"]["configuration"]["chunk_shape"][0]
+    units: str = meta["attributes"]["units"]
+
+    epoch_str = units.split("since", 1)[-1].strip()
+    epoch = datetime.fromisoformat(epoch_str).replace(tzinfo=UTC)
+
+    stride = max(1, math.ceil(shape / max_steps))
+    needed_indices = list(range(0, shape, stride))
+
+    chunk_to_indices: dict[int, list[int]] = defaultdict(list)
+    for idx in needed_indices:
+        chunk_to_indices[idx // chunk_shape].append(idx)
+
+    dctx = zstandard.ZstdDecompressor()
+    results: list[dict[str, Any]] = []
+
+    for chunk_idx in sorted(chunk_to_indices):
+        chunk_url = f"{base}/{time_dim}/c/{chunk_idx}"
+        resp = httpx.get(chunk_url, timeout=60.0)
+        resp.raise_for_status()
+        raw = dctx.decompress(resp.content)
+
+        n_elements = len(raw) // 8
+        values = struct.unpack_from(f"<{n_elements}q", raw)
+
+        for idx in chunk_to_indices[chunk_idx]:
+            local_idx = idx - chunk_idx * chunk_shape
+            ns = values[local_idx]
+            dt = epoch + timedelta(microseconds=ns // 1000)
+            results.append(
+                {"datetime": dt.strftime("%Y-%m-%dT%H:%M:%SZ"), "index": idx}
+            )
+
+    results.sort(key=lambda x: x["index"])
+    return results
 
 
 def _existing_connection_keys(
@@ -69,6 +150,10 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
     `connections` table is skipped, regardless of whether the existing row
     is an example row or a workspace-owned row. Errors on individual seeds
     are logged but do not abort the rest of the batch.
+
+    For seeds with `zarr_time_dim` set, the time coordinate is fetched from
+    the remote store at startup and decimated to `zarr_max_steps` entries.
+    If the probe fails, that seed is skipped with a warning.
     """
     if not EXAMPLE_CONNECTIONS:
         logger.info("No example connections defined; skipping seed")
@@ -83,6 +168,26 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
                     "example connection already present, skipping: %s", seed.name
                 )
                 continue
+
+            config: dict[str, Any] = dict(seed.config)
+
+            if seed.zarr_time_dim:
+                try:
+                    logger.info(
+                        "probing zarr time axis for %s (%s)…", seed.name, seed.url
+                    )
+                    timesteps = _probe_zarr_timesteps(
+                        seed.url, seed.zarr_time_dim, seed.zarr_max_steps
+                    )
+                    config["timesteps"] = timesteps
+                    logger.info("probed %d timesteps for %s", len(timesteps), seed.name)
+                except Exception:
+                    logger.exception(
+                        "Failed to probe zarr time axis for %s; skipping seed",
+                        seed.name,
+                    )
+                    continue
+
             try:
                 row = ConnectionRow(
                     id=str(uuid.uuid4()),
@@ -95,7 +200,7 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
                     tile_type=seed.tile_type,
                     workspace_id=None,
                     is_example=True,
-                    config=seed.config or None,
+                    config=config or None,
                     preferred_colormap=seed.preferred_colormap,
                     preferred_colormap_reversed=seed.preferred_colormap_reversed,
                     created_at=datetime.now(UTC),

@@ -115,3 +115,22 @@ def test_seed_example_connections_is_wired_into_lifespan():
     assert "_seed_example_connections" in source, (
         "_default_lifespan must launch _seed_example_connections as a startup task"
     )
+
+
+def test_curated_zarr_seed_is_well_formed():
+    """Sanity check the live EXAMPLE_CONNECTIONS list before deploy."""
+    from src.services.example_connections import EXAMPLE_CONNECTIONS
+
+    if not EXAMPLE_CONNECTIONS:
+        pytest.skip("No curated connections — seed mechanism shipped empty")
+
+    for seed in EXAMPLE_CONNECTIONS:
+        assert seed.name
+        assert seed.url.startswith("https://")
+        assert seed.connection_type in {"zarr", "cog", "pmtiles", "xyz_raster"}
+        if seed.connection_type == "zarr":
+            assert "variable" in seed.config
+            if "timeDim" in seed.config:
+                assert isinstance(seed.config.get("timeValues"), list)
+            if "rescaleMin" in seed.config:
+                assert seed.config["rescaleMin"] < seed.config["rescaleMax"]

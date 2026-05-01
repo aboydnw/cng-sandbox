@@ -86,7 +86,8 @@ export type ConnectionType =
 export interface ZarrConnectionConfig {
   variable: string;
   timeDim?: string | null;
-  timeValues?: string[] | null;
+  /** Decoded time coord values with their actual zarr indices. Decimated when huge. */
+  timesteps?: { datetime: string; index: number }[] | null;
   rescaleMin: number;
   rescaleMax: number;
 }

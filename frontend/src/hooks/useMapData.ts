@@ -47,6 +47,8 @@ function getConnectionDataType(conn: Connection): "raster" | "vector" {
 interface ZarrConfigShape {
   variable?: string;
   timeDim?: string | null;
+  timesteps?: { datetime: string; index: number }[] | null;
+  /** Legacy field — older saved connections stored a flat string array. */
   timeValues?: string[] | null;
   rescaleMin?: number | null;
   rescaleMax?: number | null;
@@ -72,13 +74,26 @@ function parseZarrConfig(
   }
   const c = config as ZarrConfigShape;
   const hasTime = !!c.timeDim;
-  const timeValues = Array.isArray(c.timeValues)
-    ? c.timeValues.filter((v): v is string => typeof v === "string")
-    : [];
-  const timesteps =
-    hasTime && timeValues.length > 0
-      ? timeValues.map((datetime, index) => ({ datetime, index }))
+  const parsedTimesteps = Array.isArray(c.timesteps)
+    ? c.timesteps.filter(
+        (t): t is { datetime: string; index: number } =>
+          !!t &&
+          typeof t.datetime === "string" &&
+          typeof t.index === "number" &&
+          Number.isInteger(t.index) &&
+          t.index >= 0
+      )
+    : null;
+  const legacyTimesteps =
+    parsedTimesteps === null && Array.isArray(c.timeValues)
+      ? c.timeValues
+          .map((datetime, index) => ({ datetime, index }))
+          .filter(
+            (t): t is { datetime: string; index: number } =>
+              typeof t.datetime === "string"
+          )
       : [];
+  const timesteps = parsedTimesteps ?? legacyTimesteps;
   return {
     isTemporal: hasTime && timesteps.length > 0,
     timesteps,

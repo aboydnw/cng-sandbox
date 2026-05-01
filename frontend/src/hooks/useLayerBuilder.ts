@@ -268,8 +268,9 @@ export function useLayerBuilder({
           Math.max(activeTimestepIndex, 0),
           maxTimestepIndex
         );
+        const slotTimestep = item.timesteps?.[clampedTimestepIndex];
         const selection: Record<string, number> = timeDim
-          ? { [timeDim]: clampedTimestepIndex }
+          ? { [timeDim]: slotTimestep?.index ?? clampedTimestepIndex }
           : {};
         const safeMin =
           rescaleMin ??
@@ -291,7 +292,7 @@ export function useLayerBuilder({
           colormapName,
           colormapReversed,
           id: timeDim
-            ? `zarr-layer-${item.id}-${variable}-${timeDim}-${activeTimestepIndex}`
+            ? `zarr-layer-${item.id}-${variable}-${timeDim}-${slotTimestep?.index ?? clampedTimestepIndex}`
             : `zarr-layer-${item.id}-${variable}-static`,
         });
       }

@@ -130,6 +130,77 @@ describe("probeZarr", () => {
       ZARR_NOT_CONSOLIDATED
     );
   });
+
+  it("decimates time coords longer than MAX_TIME_STEPS_DECODED", async () => {
+    const TOTAL = 12000;
+    const consolidated = {
+      zarr_format: 3,
+      node_type: "group",
+      attributes: {},
+      consolidated_metadata: {
+        kind: "inline",
+        must_understand: false,
+        metadata: {
+          "": { zarr_format: 3, node_type: "group", attributes: {} },
+          rain: {
+            zarr_format: 3,
+            node_type: "array",
+            attributes: { valid_min: 0, valid_max: 100 },
+            shape: [TOTAL, 10, 10],
+            data_type: "float32",
+            dimension_names: ["time", "lat", "lon"],
+            chunk_grid: {
+              name: "regular",
+              configuration: { chunk_shape: [1, 10, 10] },
+            },
+            chunk_key_encoding: {
+              name: "default",
+              configuration: { separator: "/" },
+            },
+            codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+            fill_value: 0,
+          },
+          time: {
+            zarr_format: 3,
+            node_type: "array",
+            attributes: { units: "hours since 2020-01-01T00:00:00Z" },
+            shape: [TOTAL],
+            data_type: "int64",
+            dimension_names: ["time"],
+            chunk_grid: {
+              name: "regular",
+              configuration: { chunk_shape: [TOTAL] },
+            },
+            chunk_key_encoding: {
+              name: "default",
+              configuration: { separator: "/" },
+            },
+            codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+            fill_value: 0,
+          },
+        },
+      },
+    };
+    const timeBuf = new BigInt64Array(TOTAL);
+    for (let i = 0; i < TOTAL; i++) timeBuf[i] = BigInt(i);
+
+    mockFetch.mockImplementation(async (request: Request) => {
+      if (request.url.endsWith("/zarr.json"))
+        return mockZarrJsonResponse(consolidated);
+      if (request.url.endsWith("/time/c/0"))
+        return new Response(timeBuf.buffer, { status: 200 });
+      return new Response("not found", { status: 404 });
+    });
+
+    const result = await probeZarr("https://example.com/store.zarr");
+    const rain = result.variables.find((v) => v.name === "rain");
+    expect(rain).toBeDefined();
+    expect(rain!.timesteps).not.toBeNull();
+    expect(rain!.timesteps!.length).toBeLessThanOrEqual(5001);
+    expect(rain!.timesteps!.length).toBeGreaterThan(2000);
+    expect(rain!.timesteps![0].index).toBe(0);
+    expect(rain!.timesteps![rain!.timesteps!.length - 1].index).toBe(TOTAL - 1);
+  });
 });
 
 describe("probeZarrSingleArray", () => {

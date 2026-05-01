@@ -268,6 +268,15 @@ def _migrate_schema(engine):
                 raise
         try:
             conn.execute(
+                text("ALTER TABLE connections ADD COLUMN geozarr_attrs JSONB")
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
+        try:
+            conn.execute(
                 text(
                     "ALTER TABLE connections ADD COLUMN is_example BOOLEAN "
                     "NOT NULL DEFAULT FALSE"

@@ -49,6 +49,7 @@ class ConnectionRow(Base):
     preferred_colormap = Column(String, nullable=True)
     preferred_colormap_reversed = Column(Boolean, nullable=True)
     config = Column(JSON, nullable=True)
+    geozarr_attrs = Column(JSON, nullable=True)
 
     def to_dict(self) -> dict:
         """Convert to the Connection API response format."""
@@ -86,4 +87,5 @@ class ConnectionRow(Base):
                 else bool(self.preferred_colormap_reversed)
             ),
             "config": self.config,
+            "geozarr_attrs": self.geozarr_attrs,
         }

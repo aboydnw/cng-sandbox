@@ -6,7 +6,7 @@ import { extractStats, type VariableStats } from "./zarrStats";
 export const ZARR_NOT_CONSOLIDATED =
   "This Zarr store does not include consolidated metadata. " +
   "CNG sandbox needs `.zmetadata` (v2) or a `consolidated_metadata` block in " +
-  "`zarr.json` (v3) to enumerate variables. Manual variable entry is on the roadmap.";
+  "`zarr.json` (v3) to enumerate variables. Enter a variable path below to probe a single array directly.";
 
 export type ZarrCompatibility =
   | { kind: "ok" }

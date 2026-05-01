@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.31.0](https://github.com/aboydnw/cng-sandbox/compare/v1.30.2...v1.31.0) (2026-05-01)
+
+
+### Features
+
+* example zarr connection seed + is_example on connections ([#393](https://github.com/aboydnw/cng-sandbox/issues/393)) ([6155ce4](https://github.com/aboydnw/cng-sandbox/commit/6155ce48a450f1eefa3f6be20939e32be7bd6ad9))
+* **frontend:** archival HTML export for stories ([#392](https://github.com/aboydnw/cng-sandbox/issues/392)) ([84d4503](https://github.com/aboydnw/cng-sandbox/commit/84d450302ad69f11fffc1dc6b58a319b171ab7bb))
+* **frontend:** render saved zarr connections on the map ([#391](https://github.com/aboydnw/cng-sandbox/issues/391)) ([2c2b68e](https://github.com/aboydnw/cng-sandbox/commit/2c2b68e993453723e8875120d8d6105ff3135ddb))
+* **frontend:** split Library into Data and Stories pages ([#380](https://github.com/aboydnw/cng-sandbox/issues/380)) ([72c43aa](https://github.com/aboydnw/cng-sandbox/commit/72c43aa1b92f6478f7e000baf44dbe8d497366ff))
+* **frontend:** zarr connection modal + variable picker ([#390](https://github.com/aboydnw/cng-sandbox/issues/390)) ([0554320](https://github.com/aboydnw/cng-sandbox/commit/05543202d9bfbf622192590ec3693e58fcd7e0c0))
+* **frontend:** zarr renderer spike (dev-only) ([#385](https://github.com/aboydnw/cng-sandbox/issues/385)) ([0a57219](https://github.com/aboydnw/cng-sandbox/commit/0a57219eefb8bab51c67c7b7d2e872f89401db05))
+* iframe embed for portable stories ([#386](https://github.com/aboydnw/cng-sandbox/issues/386)) ([264de67](https://github.com/aboydnw/cng-sandbox/commit/264de67eff5da11243eea52b3dd58855846f6ad3))
+* **ingestion:** zarr connection type + /api/zarr-proxy ([#387](https://github.com/aboydnw/cng-sandbox/issues/387)) ([79b5d7d](https://github.com/aboydnw/cng-sandbox/commit/79b5d7ddb778fe344aaa14e607cbbffaa38e66b7))
+* static HTML/JS bundle export for stories ([#389](https://github.com/aboydnw/cng-sandbox/issues/389)) ([957f06f](https://github.com/aboydnw/cng-sandbox/commit/957f06f6793a33abb6e348757def90751f7291da))
+* **stories:** long-format CSVs + proxy R2 fetch (CORS fix) ([#384](https://github.com/aboydnw/cng-sandbox/issues/384)) ([a01458b](https://github.com/aboydnw/cng-sandbox/commit/a01458bc554bb420505e384089b7d7a18ae1263f))
+* story config (cng-rc.json) export ([#382](https://github.com/aboydnw/cng-sandbox/issues/382)) ([2e0e444](https://github.com/aboydnw/cng-sandbox/commit/2e0e444c74c0a17d0ac31e4c614a2d02b9c896de))
+
+
+### Bug Fixes
+
+* **stories:** polish CSV chart axis bounds, year labels, saved range ([#388](https://github.com/aboydnw/cng-sandbox/issues/388)) ([8bd4b80](https://github.com/aboydnw/cng-sandbox/commit/8bd4b80421f7c2d9a7662446ba5766996304df20))
+* **stories:** repair empty line charts ([#383](https://github.com/aboydnw/cng-sandbox/issues/383)) ([91b21b1](https://github.com/aboydnw/cng-sandbox/commit/91b21b12a1a601e7f641d55019e7028965bad5ac))
+
 ## [1.30.2](https://github.com/aboydnw/cng-sandbox/compare/v1.30.1...v1.30.2) (2026-04-28)
 
 

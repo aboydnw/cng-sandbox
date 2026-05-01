@@ -549,7 +549,11 @@ describe("useLayerBuilder zarr connections", () => {
       {
         variable: "t2m",
         timeDim: "time",
-        timeValues: ["a", "b", "c"],
+        timesteps: [
+          { datetime: "a", index: 0 },
+          { datetime: "b", index: 1 },
+          { datetime: "c", index: 2 },
+        ],
         rescaleMin: 200,
         rescaleMax: 320,
       },
@@ -594,7 +598,10 @@ describe("useLayerBuilder zarr connections", () => {
       {
         variable: "t2m",
         timeDim: "time",
-        timeValues: ["a", "b"],
+        timesteps: [
+          { datetime: "a", index: 0 },
+          { datetime: "b", index: 1 },
+        ],
       },
       {
         isTemporal: true,
@@ -657,5 +664,54 @@ describe("useLayerBuilder zarr connections", () => {
     const call = buildZarrLayerMock.mock.calls[0][0];
     expect(call.rescaleMin).toBe(1);
     expect(call.rescaleMax).toBe(9);
+  });
+
+  it("passes item.timesteps[slot].index as the zarr time selection (decimated mode)", () => {
+    const item = zarrItem(
+      {
+        variable: "rain",
+        timeDim: "time",
+        timesteps: [
+          { datetime: "2020-01-01T00:00:00.000Z", index: 0 },
+          { datetime: "2020-01-08T00:00:00.000Z", index: 7 },
+          { datetime: "2020-01-15T00:00:00.000Z", index: 14 },
+        ],
+        rescaleMin: 0,
+        rescaleMax: 100,
+      },
+      {
+        isTemporal: true,
+        timesteps: [
+          { datetime: "2020-01-01T00:00:00.000Z", index: 0 },
+          { datetime: "2020-01-08T00:00:00.000Z", index: 7 },
+          { datetime: "2020-01-15T00:00:00.000Z", index: 14 },
+        ],
+      }
+    );
+    const fakeNode = {} as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 1,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 0,
+        rescaleMax: 100,
+        colormapReversed: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeNode as any,
+      })
+    );
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.selection).toEqual({ time: 7 });
+    expect(call.id).toBe("zarr-layer-z1-rain-time-7");
   });
 });

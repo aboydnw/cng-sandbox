@@ -403,12 +403,15 @@ describe("connectionToMapItem", () => {
       expect(item.rasterMax).toBe(320);
     });
 
-    it("flags isTemporal=true and builds timesteps when timeValues are present", () => {
+    it("flags isTemporal=true and builds timesteps when timesteps are present", () => {
       const item = connectionToMapItem(
         makeZarrConn({
           variable: "t2m",
           timeDim: "time",
-          timeValues: ["2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z"],
+          timesteps: [
+            { datetime: "2024-01-01T00:00:00Z", index: 0 },
+            { datetime: "2024-01-02T00:00:00Z", index: 1 },
+          ],
           rescaleMin: 200,
           rescaleMax: 320,
         })
@@ -417,6 +420,28 @@ describe("connectionToMapItem", () => {
       expect(item.timesteps).toEqual([
         { datetime: "2024-01-01T00:00:00Z", index: 0 },
         { datetime: "2024-01-02T00:00:00Z", index: 1 },
+      ]);
+    });
+
+    it("uses zarr indices from decimated timesteps as the temporal slot indices", () => {
+      const item = connectionToMapItem(
+        makeZarrConn({
+          variable: "rain",
+          timeDim: "time",
+          timesteps: [
+            { datetime: "2020-01-01T00:00:00.000Z", index: 0 },
+            { datetime: "2020-01-08T00:00:00.000Z", index: 7 },
+            { datetime: "2020-01-15T00:00:00.000Z", index: 14 },
+          ],
+          rescaleMin: 0,
+          rescaleMax: 100,
+        })
+      );
+      expect(item.isTemporal).toBe(true);
+      expect(item.timesteps).toEqual([
+        { datetime: "2020-01-01T00:00:00.000Z", index: 0 },
+        { datetime: "2020-01-08T00:00:00.000Z", index: 7 },
+        { datetime: "2020-01-15T00:00:00.000Z", index: 14 },
       ]);
     });
 

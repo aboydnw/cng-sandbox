@@ -47,7 +47,7 @@ function getConnectionDataType(conn: Connection): "raster" | "vector" {
 interface ZarrConfigShape {
   variable?: string;
   timeDim?: string | null;
-  timeValues?: string[] | null;
+  timesteps?: { datetime: string; index: number }[] | null;
   rescaleMin?: number | null;
   rescaleMax?: number | null;
 }
@@ -72,13 +72,12 @@ function parseZarrConfig(
   }
   const c = config as ZarrConfigShape;
   const hasTime = !!c.timeDim;
-  const timeValues = Array.isArray(c.timeValues)
-    ? c.timeValues.filter((v): v is string => typeof v === "string")
+  const timesteps = Array.isArray(c.timesteps)
+    ? c.timesteps.filter(
+        (t): t is { datetime: string; index: number } =>
+          !!t && typeof t.datetime === "string" && typeof t.index === "number"
+      )
     : [];
-  const timesteps =
-    hasTime && timeValues.length > 0
-      ? timeValues.map((datetime, index) => ({ datetime, index }))
-      : [];
   return {
     isTemporal: hasTime && timesteps.length > 0,
     timesteps,

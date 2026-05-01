@@ -79,6 +79,12 @@ export function ZarrConnectionFields({
     maxStr.trim() !== "" &&
     Number(minStr) >= Number(maxStr);
 
+  const timeDimAxisLength = (() => {
+    if (!selected?.timeDim) return null;
+    const idx = selected.dimNames.indexOf(selected.timeDim);
+    return idx >= 0 ? (selected.shape[idx] ?? null) : null;
+  })();
+
   return (
     <Flex direction="column" gap={3}>
       <Field.Root>
@@ -111,14 +117,9 @@ export function ZarrConnectionFields({
             Time dimension: <b>{selected.timeDim}</b>
             {selected.timesteps
               ? ` (${selected.timesteps.length} steps${
-                  selected.shape[
-                    selected.dimNames.indexOf(selected.timeDim)
-                  ] !== selected.timesteps.length
-                    ? `, sampled from ${
-                        selected.shape[
-                          selected.dimNames.indexOf(selected.timeDim)
-                        ]
-                      }`
+                  timeDimAxisLength != null &&
+                  timeDimAxisLength !== selected.timesteps.length
+                    ? `, sampled from ${timeDimAxisLength}`
                     : ""
                 })`
               : " (raw indices — time decoding unavailable)"}

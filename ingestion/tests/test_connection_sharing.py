@@ -119,3 +119,20 @@ def test_anonymous_can_stream_shared_connection(app, db_session):
     anon = TestClient(app)
     with anon.stream("GET", "/api/connections/c1/stream") as resp:
         assert resp.status_code == 200
+
+
+def test_can_read_connection_returns_true_for_is_example(db_session):
+    from src.services import sharing
+
+    row = ConnectionRow(
+        id="ex-1",
+        name="example zarr",
+        url="https://example.org/data.zarr",
+        connection_type="zarr",
+        workspace_id=None,
+        is_example=True,
+    )
+    db_session.add(row)
+    db_session.commit()
+    assert sharing.can_read_connection(db_session, row, "any-workspace") is True
+    assert sharing.can_read_connection(db_session, row, "") is True

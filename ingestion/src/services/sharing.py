@@ -80,6 +80,8 @@ def can_read_connection(
     """Apply the public read policy to a connection row."""
     if row.workspace_id and workspace_id and row.workspace_id == workspace_id:
         return True
+    if row.is_example:
+        return True
     if row.is_shared:
         return True
     return is_connection_referenced_by_published_story(session, row.id)

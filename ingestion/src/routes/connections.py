@@ -104,9 +104,16 @@ async def list_connections(request: Request):
     validate_workspace_id(workspace_id)
     session = get_session(request)
     try:
+        from sqlalchemy import or_
+
         rows = (
             session.query(ConnectionRow)
-            .filter(ConnectionRow.workspace_id == workspace_id)
+            .filter(
+                or_(
+                    ConnectionRow.workspace_id == workspace_id,
+                    ConnectionRow.is_example.is_(True),
+                )
+            )
             .order_by(ConnectionRow.created_at.desc())
             .all()
         )

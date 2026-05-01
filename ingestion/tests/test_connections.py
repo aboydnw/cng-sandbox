@@ -779,6 +779,34 @@ def test_connection_row_is_example_defaults_false(client):
     assert body["is_example"] is False
 
 
+def test_list_connections_includes_example_rows_for_any_workspace(client, db_session):
+    from src.models.connection import ConnectionRow
+
+    db_session.add(
+        ConnectionRow(
+            id="seeded-zarr",
+            name="curated zarr",
+            url="https://example.org/curated.zarr",
+            connection_type="zarr",
+            workspace_id=None,
+            is_example=True,
+        )
+    )
+    db_session.commit()
+
+    from starlette.testclient import TestClient
+
+    fresh_client = TestClient(
+        client.app,
+        raise_server_exceptions=False,
+        headers={"X-Workspace-Id": "freshABC"},
+    )
+    response = fresh_client.get("/api/connections")
+    assert response.status_code == 200
+    body = response.json()
+    assert any(c["id"] == "seeded-zarr" and c["is_example"] for c in body)
+
+
 def test_connection_row_persists_config_dict(db_session):
     from src.models.connection import ConnectionRow
 

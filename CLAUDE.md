@@ -25,7 +25,7 @@ Dense reference material lives under [docs/](docs/) and should be read only when
 - [docs/api-reference.md](docs/api-reference.md) — full ingestion API surface. Read before adding/changing any `/api/*` endpoint or frontend-backend contract.
 - [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, Caddy auth model, CSP, tile caching. Read before prod changes.
 - [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.
-- [docs/example-data.md](docs/example-data.md) — `is_example` datasets/stories, source.coop seeding. Read before touching `src/services/example_*.py`.
+- [docs/example-data.md](docs/example-data.md) — `is_example` datasets/stories/connections, source.coop seeding. Read before touching `src/services/example_*.py`.
 - [docs/services.md](docs/services.md) — tipg/titiler-pgstac notes, GDAL+R2 env vars. Read before editing tiler env-vars in `docker-compose.yml` or debugging tile-rendering S3/GDAL config issues.
 
 ## Project Documentation
@@ -154,9 +154,9 @@ cd ingestion && uv run pytest -v
 
 Full endpoint catalog (uploads, jobs, datasets, stories, connections, remote discovery, misc) is in [docs/api-reference.md](docs/api-reference.md). Read before adding or modifying any `/api/*` route.
 
-### Example datasets and stories
+### Example datasets, stories, and connections
 
-On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
+On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list is intentionally empty until a vetted curated URL is added, so the task is a no-op on fresh deploys until then. Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
 
 ### Conversion pipeline
 

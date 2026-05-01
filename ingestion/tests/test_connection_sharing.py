@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from starlette.testclient import TestClient
 
 from src.models.connection import ConnectionRow
@@ -119,3 +120,87 @@ def test_anonymous_can_stream_shared_connection(app, db_session):
     anon = TestClient(app)
     with anon.stream("GET", "/api/connections/c1/stream") as resp:
         assert resp.status_code == 200
+
+
+def test_can_read_connection_returns_true_for_is_example(db_session):
+    from src.services import sharing
+
+    row = ConnectionRow(
+        id="ex-1",
+        name="example zarr",
+        url="https://example.org/data.zarr",
+        connection_type="zarr",
+        workspace_id=None,
+        is_example=True,
+    )
+    db_session.add(row)
+    db_session.commit()
+    assert sharing.can_read_connection(db_session, row, "any-workspace") is True
+    assert sharing.can_read_connection(db_session, row, "") is True
+
+
+@pytest.fixture
+def example_zarr_row(db_session):
+    row = ConnectionRow(
+        id="example-zarr-1",
+        name="example zarr",
+        url="https://example.org/data.zarr",
+        connection_type="zarr",
+        workspace_id=None,
+        is_example=True,
+        is_categorical=True,
+        categories_json=json.dumps([{"value": 1, "label": "old", "color": "#abcdef"}]),
+        config={"variable": "t2m"},
+    )
+    db_session.add(row)
+    db_session.commit()
+    return "example-zarr-1"
+
+
+def test_share_example_connection_returns_403(client, example_zarr_row):
+    response = client.patch(
+        f"/api/connections/{example_zarr_row}/share",
+        headers={"x-workspace-id": "wstestAB"},
+        json={"is_shared": True},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Example connections cannot be shared"
+
+
+def test_set_render_mode_on_example_connection_returns_403(client, example_zarr_row):
+    response = client.patch(
+        f"/api/connections/{example_zarr_row}/render-mode",
+        headers={"x-workspace-id": "wstestAB"},
+        json={"render_mode": "client"},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Example connections cannot be modified"
+
+
+def test_set_colormap_on_example_connection_returns_403(client, example_zarr_row):
+    response = client.patch(
+        f"/api/connections/{example_zarr_row}/colormap",
+        headers={"x-workspace-id": "wstestAB"},
+        json={"preferred_colormap": "viridis", "preferred_colormap_reversed": False},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Example connections cannot be modified"
+
+
+def test_set_categories_on_example_connection_returns_403(client, example_zarr_row):
+    response = client.patch(
+        f"/api/connections/{example_zarr_row}/categories",
+        headers={"x-workspace-id": "wstestAB"},
+        json=[{"value": 1, "label": "foo"}],
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Example connections cannot be modified"
+
+
+def test_delete_example_connection_returns_403(client, example_zarr_row):
+    response = client.delete(
+        f"/api/connections/{example_zarr_row}",
+        headers={"x-workspace-id": "wstestAB"},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Example connections cannot be modified"

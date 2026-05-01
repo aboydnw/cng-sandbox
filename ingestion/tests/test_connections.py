@@ -764,6 +764,49 @@ def test_create_cog_connection_file_size_none_when_content_length_negative(
     assert resp.json()["file_size"] is None
 
 
+def test_connection_row_is_example_defaults_false(client):
+    response = client.post(
+        "/api/connections",
+        json={
+            "name": "plain xyz",
+            "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "connection_type": "xyz_raster",
+            "tile_type": "raster",
+        },
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["is_example"] is False
+
+
+def test_list_connections_includes_example_rows_for_any_workspace(client, db_session):
+    from src.models.connection import ConnectionRow
+
+    db_session.add(
+        ConnectionRow(
+            id="seeded-zarr",
+            name="curated zarr",
+            url="https://example.org/curated.zarr",
+            connection_type="zarr",
+            workspace_id=None,
+            is_example=True,
+        )
+    )
+    db_session.commit()
+
+    from starlette.testclient import TestClient
+
+    fresh_client = TestClient(
+        client.app,
+        raise_server_exceptions=False,
+        headers={"X-Workspace-Id": "freshABC"},
+    )
+    response = fresh_client.get("/api/connections")
+    assert response.status_code == 200
+    body = response.json()
+    assert any(c["id"] == "seeded-zarr" and c["is_example"] for c in body)
+
+
 def test_connection_row_persists_config_dict(db_session):
     from src.models.connection import ConnectionRow
 

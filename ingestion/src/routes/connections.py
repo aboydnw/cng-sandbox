@@ -331,6 +331,10 @@ async def update_connection_category_labels(
         row = session.get(ConnectionRow, connection_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example connections cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if not row.is_categorical:
@@ -391,6 +395,10 @@ async def share_connection(
         row = session.get(ConnectionRow, connection_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example connections cannot be shared"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         row.is_shared = body.is_shared
@@ -412,6 +420,10 @@ async def set_connection_render_mode(
         row = session.get(ConnectionRow, connection_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example connections cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         reason = check_render_mode_allowed(row, body.render_mode)
@@ -442,6 +454,10 @@ async def set_connection_colormap(
         row = session.get(ConnectionRow, connection_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example connections cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         if not _connection_is_raster(row):
@@ -470,6 +486,10 @@ async def delete_connection(connection_id: str, request: Request):
         row = session.get(ConnectionRow, connection_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Connection not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example connections cannot be modified"
+            )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
         session.delete(row)

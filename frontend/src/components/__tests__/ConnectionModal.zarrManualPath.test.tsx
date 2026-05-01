@@ -69,6 +69,7 @@ describe("ConnectionModal — non-consolidated zarr fallback", () => {
         },
       ],
       crsWarning: null,
+      rootAttrs: null,
     });
 
     renderModal();

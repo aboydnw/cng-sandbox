@@ -55,6 +55,7 @@ export const connectionsApi = {
     band_count?: number | null;
     rescale?: string | null;
     config?: Record<string, unknown> | null;
+    geozarr_attrs?: Record<string, unknown> | null;
   }): Promise<Connection> {
     return workspaceFetch("/api/connections", {
       method: "POST",
@@ -126,6 +127,20 @@ export const connectionsApi = {
         preferred_colormap: payload.preferredColormap,
         preferred_colormap_reversed: payload.preferredColormapReversed,
       }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
+    });
+  },
+
+  setGeoZarrAttrs(
+    id: string,
+    geozarrAttrs: Record<string, unknown> | null
+  ): Promise<Connection> {
+    return workspaceFetch(`/api/connections/${id}/geozarr-attrs`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ geozarr_attrs: geozarrAttrs }),
     }).then(async (r) => {
       if (!r.ok) throw new Error(await readErrorDetail(r));
       return r.json();

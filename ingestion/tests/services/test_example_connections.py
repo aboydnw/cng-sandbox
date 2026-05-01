@@ -181,6 +181,33 @@ def test_seed_example_connections_is_wired_into_lifespan():
     )
 
 
+def test_imerg_seed_has_geozarr_attrs(monkeypatch, db_session_factory):
+    from src.services import example_connections
+
+    monkeypatch.setattr(
+        example_connections,
+        "_probe_zarr_timesteps",
+        lambda *args, **kwargs: [],
+    )
+    example_connections.seed_example_connections(db_session_factory)
+
+    session = db_session_factory()
+    try:
+        row = (
+            session.query(ConnectionRow)
+            .filter(ConnectionRow.url.like("%imerg_final.zarr%"))
+            .one()
+        )
+        assert row.geozarr_attrs == {
+            "spatial:dimensions": ["latitude", "longitude"],
+            "spatial:transform": [0.1, 0, -180, 0, -0.1, 90],
+            "spatial:shape": [1800, 3600],
+            "proj:code": "EPSG:4326",
+        }
+    finally:
+        session.close()
+
+
 def test_curated_zarr_seed_is_well_formed():
     """Sanity check the live EXAMPLE_CONNECTIONS list before deploy."""
     from src.services.example_connections import EXAMPLE_CONNECTIONS

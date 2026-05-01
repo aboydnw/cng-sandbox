@@ -309,6 +309,9 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     item?.connection?.is_shared ??
     false;
 
+  const itemIsExample =
+    item?.dataset?.is_example || item?.connection?.is_example || false;
+
   // --- Local categories (optimistic updates from editable legend) ---
   const [localCategories, setLocalCategories] = useState<
     { value: number; color: string; label: string }[] | null
@@ -798,21 +801,19 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               canMarkCategorical={
                 item?.source === "dataset" &&
                 !!item.dataset?.id &&
-                !item.dataset?.is_example &&
+                !itemIsExample &&
                 !item.dataset?.is_categorical
               }
               canMarkContinuous={
                 item?.source === "dataset" &&
                 !!item.dataset?.id &&
-                !item.dataset?.is_example &&
+                !itemIsExample &&
                 !!item.dataset?.is_categorical
               }
               onDatasetUpdated={refresh}
               shared={shared}
               savePreferredColormap={
-                !shared &&
-                item?.dataType === "raster" &&
-                !item?.dataset?.is_example
+                !shared && item?.dataType === "raster" && !itemIsExample
                   ? {
                       currentSavedColormap: item?.preferredColormap ?? null,
                       currentSavedReversed:

@@ -111,14 +111,17 @@ export default function DataPage() {
 
         {(() => {
           const exampleDatasets = datasets.filter((d) => d.is_example);
-          if (exampleDatasets.length === 0) return null;
+          const exampleConnections = connections.filter((c) => c.is_example);
+          if (exampleDatasets.length === 0 && exampleConnections.length === 0) {
+            return null;
+          }
           return (
             <Box mb={8}>
               <Heading size="md" color="gray.700" mb={3}>
-                Example datasets
+                Example data
               </Heading>
               <Text fontSize="13px" color="gray.500" mb={3}>
-                Public datasets shared with every workspace.
+                Public datasets and connections shared with every workspace.
               </Text>
               <Table.Root size="sm" tableLayout="fixed">
                 <Table.Header>
@@ -131,7 +134,7 @@ export default function DataPage() {
                 </Table.Header>
                 <Table.Body>
                   {exampleDatasets.map((ds) => (
-                    <Table.Row key={ds.id}>
+                    <Table.Row key={`dataset-${ds.id}`}>
                       <Table.Cell>
                         <Link to={workspacePath(`/map/${ds.id}`)}>
                           <Text
@@ -186,6 +189,70 @@ export default function DataPage() {
                       </Table.Cell>
                     </Table.Row>
                   ))}
+                  {exampleConnections.map((conn) => {
+                    const item = connectionToLibraryItem(conn);
+                    return (
+                      <Table.Row key={`connection-${conn.id}`}>
+                        <Table.Cell>
+                          <Link to={workspacePath(item.detailHref)}>
+                            <Text
+                              color="brand.orange"
+                              _hover={{ textDecoration: "underline" }}
+                              fontWeight={500}
+                              truncate
+                              title={conn.name}
+                            >
+                              {conn.name}
+                            </Text>
+                          </Link>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={600}
+                            textTransform="uppercase"
+                            color={
+                              item.type === "raster" ? "purple.600" : "teal.600"
+                            }
+                          >
+                            {item.type}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {item.source.href ? (
+                            <a
+                              href={item.source.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={item.source.label}
+                              style={{
+                                color: "var(--chakra-colors-gray-500)",
+                                fontSize: 13,
+                              }}
+                            >
+                              <Text
+                                fontSize="sm"
+                                color="gray.500"
+                                truncate
+                                title={item.source.label}
+                              >
+                                {item.source.label}
+                              </Text>
+                            </a>
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
+                              {item.source.label}
+                            </Text>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontSize="sm" color="gray.600">
+                            {conn.created_at ? timeAgo(conn.created_at) : "—"}
+                          </Text>
+                        </Table.Cell>
+                      </Table.Row>
+                    );
+                  })}
                 </Table.Body>
               </Table.Root>
             </Box>
@@ -209,7 +276,9 @@ export default function DataPage() {
               ...datasets
                 .filter((d) => !d.is_example)
                 .map(datasetToLibraryItem),
-              ...connections.map(connectionToLibraryItem),
+              ...connections
+                .filter((c) => !c.is_example)
+                .map(connectionToLibraryItem),
             ].sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1));
 
             if (userItems.length === 0) {

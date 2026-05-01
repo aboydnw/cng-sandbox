@@ -103,3 +103,15 @@ def test_seed_skips_when_url_type_pair_already_present(db_session_factory):
         assert rows[0].id == "pre-existing"
     finally:
         session.close()
+
+
+def test_seed_example_connections_is_wired_into_lifespan():
+    """Verify _default_lifespan in app.py launches the example-connections seeder."""
+    import inspect
+
+    from src import app as app_module
+
+    source = inspect.getsource(app_module._default_lifespan)
+    assert "_seed_example_connections" in source, (
+        "_default_lifespan must launch _seed_example_connections as a startup task"
+    )

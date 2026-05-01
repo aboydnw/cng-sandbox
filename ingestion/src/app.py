@@ -115,6 +115,16 @@ async def _seed_stories(app: FastAPI) -> None:
             )
 
 
+async def _seed_example_connections(app: FastAPI) -> None:
+    """Seed curated example connections on startup. Idempotent + best-effort."""
+    from src.services.example_connections import seed_example_connections
+
+    try:
+        seed_example_connections(app.state.db_session_factory)
+    except Exception:
+        logger.exception("Example connection seeding failed")
+
+
 async def _cleanup_expired(app):
     while True:
         await asyncio.sleep(6 * 3600)
@@ -305,11 +315,13 @@ async def _default_lifespan(app: FastAPI):
     expired_task = asyncio.create_task(_cleanup_expired(app))
     examples_task = asyncio.create_task(_register_examples(app))
     stories_task = asyncio.create_task(_seed_stories(app))
+    connections_task = asyncio.create_task(_seed_example_connections(app))
     yield
     cleanup_task.cancel()
     expired_task.cancel()
     examples_task.cancel()
     stories_task.cancel()
+    connections_task.cancel()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

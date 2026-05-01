@@ -4326,6 +4326,7 @@ __metadata:
     "@eslint/js": "npm:^10.0.1"
     "@geoarrow/deck.gl-layers": "npm:^0.3.1"
     "@luma.gl/core": "npm:^9.3.3"
+    "@luma.gl/engine": "npm:^9.3.2"
     "@phosphor-icons/react": "npm:^2.1.10"
     "@tanstack/react-query": "npm:^5.100.1"
     "@testing-library/dom": "npm:^10.4.1"

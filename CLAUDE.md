@@ -156,7 +156,7 @@ Full endpoint catalog (uploads, jobs, datasets, stories, connections, remote dis
 
 ### Example datasets, stories, and connections
 
-On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list is intentionally empty until a vetted curated URL is added, so the task is a no-op on fresh deploys until then. Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
+On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list currently ships one entry (IMERG Final Precipitation zarr). Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
 
 ### Conversion pipeline
 

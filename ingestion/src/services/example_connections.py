@@ -66,7 +66,7 @@ EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
         zarr_time_dim="time",
         geozarr_attrs={
             "spatial:dimensions": ["latitude", "longitude"],
-            "spatial:transform": [0.1, 0, -180, 0, -0.1, 90],
+            "spatial:transform": [0.1, 0, -180, 0, 0.1, -90],
             "spatial:shape": [1800, 3600],
             "proj:code": "EPSG:4326",
         },

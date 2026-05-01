@@ -200,7 +200,7 @@ def test_imerg_seed_has_geozarr_attrs(monkeypatch, db_session_factory):
         )
         assert row.geozarr_attrs == {
             "spatial:dimensions": ["latitude", "longitude"],
-            "spatial:transform": [0.1, 0, -180, 0, -0.1, 90],
+            "spatial:transform": [0.1, 0, -180, 0, 0.1, -90],
             "spatial:shape": [1800, 3600],
             "proj:code": "EPSG:4326",
         }

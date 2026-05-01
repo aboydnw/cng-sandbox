@@ -81,6 +81,7 @@ def _probe_zarr_timesteps(
     Returns a list of {datetime: ISO8601, index: int} dicts sorted by index.
     Raises on any network or decode error.
     """
+    max_steps = max(1, int(max_steps))
     base = url.rstrip("/")
     meta = (
         httpx.get(f"{base}/{time_dim}/zarr.json", timeout=30.0)

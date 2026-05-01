@@ -31,6 +31,7 @@ export function datasetToMapItem(ds: Dataset): MapItem {
     renderMode: ds.render_mode ?? null,
     preferredColormap: ds.preferred_colormap ?? null,
     preferredColormapReversed: ds.preferred_colormap_reversed ?? null,
+    geozarrAttrs: null,
     dataset: ds,
     connection: null,
   };
@@ -139,6 +140,7 @@ export function connectionToMapItem(conn: Connection): MapItem {
     renderMode: conn.render_mode ?? null,
     preferredColormap: conn.preferred_colormap ?? null,
     preferredColormapReversed: conn.preferred_colormap_reversed ?? null,
+    geozarrAttrs: conn.geozarr_attrs ?? null,
     dataset: null,
     connection: conn,
   };

@@ -54,6 +54,7 @@ const mockItem: MapItem = {
   renderMode: null,
   preferredColormap: null,
   preferredColormapReversed: null,
+  geozarrAttrs: null,
   dataset: null,
   connection: null,
 };

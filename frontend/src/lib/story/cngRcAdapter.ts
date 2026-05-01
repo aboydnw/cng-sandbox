@@ -77,6 +77,7 @@ function synthesizeConnection(
     preferred_colormap: layer.render.colormap,
     preferred_colormap_reversed: null,
     config: null,
+    geozarr_attrs: null,
     created_at: "",
   };
 }

@@ -257,6 +257,7 @@ const geoparquetConnection: Connection = {
   preferred_colormap: null,
   preferred_colormap_reversed: null,
   config: null,
+  geozarr_attrs: null,
 };
 
 describe("getConnectionStepContent (geoparquet)", () => {
@@ -297,6 +298,7 @@ describe("getConnectionStepContent (geoparquet)", () => {
       preferred_colormap: null,
       preferred_colormap_reversed: null,
       config: null,
+      geozarr_attrs: null,
     };
     const source = getConnectionStepContent(conn, 1);
     expect(source?.tools?.some((t) => /tippecanoe/i.test(t.name))).toBe(true);
@@ -331,6 +333,7 @@ function buildGeoParquetConn(overrides: Partial<Connection> = {}): Connection {
     preferred_colormap: null,
     preferred_colormap_reversed: null,
     config: null,
+    geozarr_attrs: null,
     ...overrides,
   };
 }

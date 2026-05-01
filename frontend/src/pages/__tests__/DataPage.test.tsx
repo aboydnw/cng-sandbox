@@ -32,6 +32,7 @@ const exampleConnection: Connection = {
   preferred_colormap: null,
   preferred_colormap_reversed: null,
   config: { variable: "tas", rescaleMin: 0, rescaleMax: 1 },
+  geozarr_attrs: null,
   created_at: "2026-04-01T00:00:00Z",
 };
 

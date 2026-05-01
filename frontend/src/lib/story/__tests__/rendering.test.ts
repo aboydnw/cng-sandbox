@@ -238,6 +238,7 @@ const BASE_CONNECTION: Connection = {
   preferred_colormap: null,
   preferred_colormap_reversed: null,
   config: null,
+  geozarr_attrs: null,
 };
 
 describe("buildLayersForChapter — connection COG rescale and colormap_reversed", () => {

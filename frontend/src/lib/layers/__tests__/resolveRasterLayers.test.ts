@@ -40,6 +40,7 @@ function continuousItem(overrides: Partial<MapItem> = {}): MapItem {
     renderMode: null,
     preferredColormap: null,
     preferredColormapReversed: null,
+    geozarrAttrs: null,
     dataset: { converted_file_size: 100 * 1024 * 1024 } as never,
     connection: null,
     ...overrides,

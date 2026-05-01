@@ -7,6 +7,7 @@ import {
 import * as zarr from "zarrita";
 import { buildContinuousLut } from "./continuousLut";
 import { createColormapLutTexture } from "./colormapLutTexture";
+import type { GeoZarrAttrs } from "../../types";
 
 export interface ZarrLayerOptions {
   node: zarr.Group<zarr.Readable> | zarr.Array<zarr.DataType, zarr.Readable>;
@@ -19,6 +20,8 @@ export interface ZarrLayerOptions {
   colormapReversed?: boolean;
   /** Used to scope the layer's id so React/deck.gl rebuild on item change. */
   id?: string;
+  /** Override for `group.attrs` when the store lacks GeoZarr metadata. */
+  geozarrAttrs?: GeoZarrAttrs | null;
 }
 
 interface ZarrTileData {
@@ -44,6 +47,7 @@ export function buildZarrLayer({
   colormapName,
   colormapReversed = false,
   id = "zarr-layer",
+  geozarrAttrs,
 }: ZarrLayerOptions): Layer[] {
   const range = rescaleMax - rescaleMin || 1;
   const lut = buildContinuousLut(colormapName, colormapReversed);
@@ -117,6 +121,7 @@ export function buildZarrLayer({
       opacity,
       getTileData,
       renderTile,
+      ...(geozarrAttrs ? { metadata: geozarrAttrs } : {}),
     } as any),
   ];
   /* eslint-enable @typescript-eslint/no-explicit-any */

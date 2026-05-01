@@ -90,14 +90,15 @@ jobs:
         env:
           TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
-          echo "Deploying ${TAG:-manual trigger}"
+          IMAGE_TAG="${TAG:-latest}"
+          echo "Deploying ${TAG:-manual trigger} (IMAGE_TAG=${IMAGE_TAG})"
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "cd ${{ secrets.DEPLOY_PATH }} && git checkout main && git pull origin main && docker compose --profile prod pull && docker compose --profile prod up -d"
+            "cd ${{ secrets.DEPLOY_PATH }} && git checkout main && git pull origin main && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod pull && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod up -d"
 
       - name: Verify deploy health
         run: |

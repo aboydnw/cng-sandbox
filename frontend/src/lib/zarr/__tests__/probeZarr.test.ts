@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { probeZarr, ZARR_NOT_CONSOLIDATED } from "../probeZarr";
+import {
+  probeZarr,
+  ZARR_NOT_CONSOLIDATED,
+  probeZarrSingleArray,
+} from "../probeZarr";
 import { _resetOriginCacheForTests } from "../zarrFetch";
 
 const V3_CONSOLIDATED = {
@@ -125,5 +129,94 @@ describe("probeZarr", () => {
     await expect(probeZarr("https://example.com/store.zarr")).rejects.toThrow(
       ZARR_NOT_CONSOLIDATED
     );
+  });
+});
+
+describe("probeZarrSingleArray", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    _resetOriginCacheForTests();
+    mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
+  });
+
+  it("opens a single named array without consolidated metadata", async () => {
+    const arrayJson = {
+      zarr_format: 3,
+      node_type: "array",
+      shape: [10, 360, 720],
+      data_type: "float32",
+      dimension_names: ["time", "latitude", "longitude"],
+      attributes: { valid_min: 0, valid_max: 100, units: "mm" },
+      chunk_grid: {
+        name: "regular",
+        configuration: { chunk_shape: [1, 360, 720] },
+      },
+      chunk_key_encoding: {
+        name: "default",
+        configuration: { separator: "/" },
+      },
+      codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+      fill_value: 0,
+    };
+    mockFetch.mockImplementation(async (request: Request) => {
+      if (request.url.endsWith("/precipitation/zarr.json"))
+        return mockZarrJsonResponse(arrayJson);
+      if (request.url.endsWith("/zarr.json"))
+        return new Response("not found", { status: 404 });
+      return new Response("not found", { status: 404 });
+    });
+
+    const result = await probeZarrSingleArray(
+      "https://example.com/store.zarr",
+      "precipitation"
+    );
+
+    expect(result.variables).toHaveLength(1);
+    expect(result.variables[0].name).toBe("precipitation");
+    expect(result.variables[0].compatibility.kind).toBe("ok");
+    expect(result.variables[0].stats).toEqual({ min: 0, max: 100 });
+  });
+
+  it("returns incompatible for a 1D array", async () => {
+    const arrayJson = {
+      zarr_format: 3,
+      node_type: "array",
+      shape: [10],
+      data_type: "float32",
+      dimension_names: ["time"],
+      attributes: {},
+      chunk_grid: { name: "regular", configuration: { chunk_shape: [10] } },
+      chunk_key_encoding: {
+        name: "default",
+        configuration: { separator: "/" },
+      },
+      codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+      fill_value: 0,
+    };
+    mockFetch.mockImplementation(async (request: Request) =>
+      request.url.endsWith("/series/zarr.json")
+        ? mockZarrJsonResponse(arrayJson)
+        : new Response("not found", { status: 404 })
+    );
+
+    const result = await probeZarrSingleArray(
+      "https://example.com/store.zarr",
+      "series"
+    );
+
+    expect(result.variables).toHaveLength(1);
+    expect(result.variables[0].compatibility.kind).toBe("incompatible");
+  });
+
+  it("throws a clear error when the path does not exist", async () => {
+    mockFetch.mockImplementation(
+      async () => new Response("not found", { status: 404 })
+    );
+
+    await expect(
+      probeZarrSingleArray("https://example.com/store.zarr", "missing")
+    ).rejects.toThrow(/not found/i);
   });
 });

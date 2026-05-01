@@ -117,6 +117,69 @@ async function decodeTimeValues(
   }
 }
 
+/**
+ * Opens a single named array within the zarr store at `url` and returns a
+ * one-variable `ZarrProbeResult`. Unlike `probeZarr`, this does NOT require
+ * consolidated metadata — it does a direct GET on the array's metadata file.
+ * Use this when the user has supplied a variable path manually after the
+ * consolidated probe failed.
+ *
+ * Throws if the path does not resolve to a zarr array.
+ */
+export async function probeZarrSingleArray(
+  url: string,
+  path: string
+): Promise<ZarrProbeResult> {
+  const store = createZarrStore(url);
+  const cleanPath = path.replace(/^\/+|\/+$/g, "");
+  if (!cleanPath) {
+    throw new Error("Variable path is required.");
+  }
+  let arr: zarr.Array<zarr.DataType, zarr.Readable>;
+  try {
+    const location = new zarr.Location(store, `/${cleanPath}` as `/${string}`);
+    arr = await zarr.open(location, { kind: "array" });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not open array at "${cleanPath}": ${msg}. Check the path and that the zarr store is publicly readable.`,
+      { cause: err }
+    );
+  }
+  const dimNames = (arr.dimensionNames ?? []).map((n) => n ?? "");
+  const compatibility = classifyVariable(arr.shape, dimNames);
+  const timeDim = inferTimeDim(dimNames);
+  const stats = extractStats(arr.attrs as Record<string, unknown>);
+
+  let timeValues: string[] | null = null;
+  if (timeDim && compatibility.kind === "ok") {
+    const parentPath = cleanPath.includes("/")
+      ? cleanPath.slice(0, cleanPath.lastIndexOf("/"))
+      : "";
+    const coordPath = parentPath ? `${parentPath}/${timeDim}` : timeDim;
+    try {
+      const root = await zarr.open(store, { kind: "group" });
+      timeValues = await decodeTimeValues(root, coordPath);
+    } catch {
+      timeValues = null;
+    }
+  }
+
+  const variable: ZarrVariable = {
+    name: cleanPath,
+    shape: arr.shape,
+    dimNames,
+    dtype: arr.dtype,
+    attrs: arr.attrs as Record<string, unknown>,
+    stats,
+    timeDim,
+    timeValues,
+    compatibility,
+  };
+  const crsWarning = detectCrsWarning(variable.attrs);
+  return { variables: [variable], crsWarning };
+}
+
 interface ContentEntry {
   path: string;
   kind: "array" | "group";

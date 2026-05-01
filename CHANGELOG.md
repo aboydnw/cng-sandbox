@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.1](https://github.com/aboydnw/cng-sandbox/compare/v1.31.0...v1.31.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* **frontend:** create paletted COG LUT as 2d-array texture ([#396](https://github.com/aboydnw/cng-sandbox/issues/396)) ([901b828](https://github.com/aboydnw/cng-sandbox/commit/901b828ae15d29f5d48dba851f2450c809b53c43))
+
 ## [1.31.0](https://github.com/aboydnw/cng-sandbox/compare/v1.30.2...v1.31.0) (2026-05-01)
 
 

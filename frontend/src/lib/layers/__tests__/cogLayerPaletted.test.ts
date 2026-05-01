@@ -192,4 +192,50 @@ describe("buildCogLayerPaletted with categories", () => {
       })
     );
   });
+
+  it("creates the LUT as a 2d-array texture for the Colormap GPU module", async () => {
+    const layers = buildCogLayerPaletted({
+      cogUrl: "/cog/example.tif",
+      opacity: 1,
+      categories: [{ value: 1, color: "#ff0000", label: "A" }],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getTileData = (layers[0] as any).props.getTileData;
+
+    const fakeTile = {
+      array: {
+        layout: "interleaved",
+        bands: [],
+        data: new Uint8Array([1, 0]),
+        width: 2,
+        height: 1,
+      },
+    };
+    const image = { fetchTile: vi.fn().mockResolvedValue(fakeTile) };
+    const device = {
+      createTexture: vi.fn().mockReturnValue({ mock: "tex" }),
+    };
+
+    await getTileData(image, {
+      device,
+      x: 0,
+      y: 0,
+      signal: new AbortController().signal,
+    });
+
+    // The LUT call is the second createTexture invocation; deck.gl-raster
+    // ≥0.6 needs `dimension: "2d-array"` here or the Colormap module samples
+    // black, blanking out every paletted COG tile.
+    const lutCall = device.createTexture.mock.calls.find(
+      ([opts]) => opts && (opts as { format?: string }).format === "rgba8unorm"
+    );
+    expect(lutCall).toBeDefined();
+    expect(lutCall![0]).toMatchObject({
+      dimension: "2d-array",
+      format: "rgba8unorm",
+      width: 256,
+      height: 1,
+      depth: 1,
+    });
+  });
 });

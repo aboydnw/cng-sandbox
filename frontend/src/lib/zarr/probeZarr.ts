@@ -12,6 +12,15 @@ export type ZarrCompatibility =
   | { kind: "ok" }
   | { kind: "incompatible"; reason: string };
 
+/** Above this length, the time coord is decimated to ~5000 evenly-spaced samples. */
+const MAX_TIME_STEPS_DECODED = 5000;
+
+export interface ZarrTimestep {
+  datetime: string;
+  /** Actual zarr time-coord index (NOT the position in this array). */
+  index: number;
+}
+
 export interface ZarrVariable {
   name: string;
   shape: number[];
@@ -21,8 +30,8 @@ export interface ZarrVariable {
   stats: VariableStats | null;
   /** Name of the time-like dim in `dimNames`, if any. */
   timeDim: string | null;
-  /** Decoded time-coord values (ISO strings) when probable. `null` otherwise. */
-  timeValues: string[] | null;
+  /** Decoded time-coord values. Decimated when the coord is huge. `null` when decoding failed. */
+  timesteps: ZarrTimestep[] | null;
   compatibility: ZarrCompatibility;
 }
 
@@ -82,10 +91,9 @@ function detectCrsWarning(attrs: Record<string, unknown>): string | null {
 async function decodeTimeValues(
   group: zarr.Group<zarr.Readable>,
   coordPath: string
-): Promise<string[] | null> {
+): Promise<ZarrTimestep[] | null> {
   try {
     const arr = await zarr.open(group.resolve(coordPath), { kind: "array" });
-    const slab = (await zarr.get(arr, [null])) as { data: ArrayLike<number> };
     const units = arr.attrs.units;
     if (typeof units !== "string") return null;
     const match = units.match(/(second|minute|hour|day)s?\s+since\s+(.+)/i);
@@ -105,13 +113,24 @@ async function decodeTimeValues(
           : unit === "hour"
             ? 3_600_000
             : 86_400_000;
-    const values: string[] = [];
-    for (let i = 0; i < slab.data.length; i++) {
-      values.push(
-        new Date(epoch + Number(slab.data[i]) * factor).toISOString()
-      );
+
+    const total = arr.shape[0];
+    const stride = Math.max(1, Math.ceil(total / MAX_TIME_STEPS_DECODED));
+    const indices: number[] = [];
+    for (let i = 0; i < total; i += stride) indices.push(i);
+    if (indices[indices.length - 1] !== total - 1) indices.push(total - 1);
+
+    const slab = (await zarr.get(arr, [null])) as { data: ArrayLike<number> };
+    const out: ZarrTimestep[] = [];
+    for (const idx of indices) {
+      out.push({
+        datetime: new Date(
+          epoch + Number(slab.data[idx]) * factor
+        ).toISOString(),
+        index: idx,
+      });
     }
-    return values;
+    return out;
   } catch {
     return null;
   }
@@ -151,7 +170,7 @@ export async function probeZarrSingleArray(
   const timeDim = inferTimeDim(dimNames);
   const stats = extractStats(arr.attrs as Record<string, unknown>);
 
-  let timeValues: string[] | null = null;
+  let timesteps: ZarrTimestep[] | null = null;
   if (timeDim && compatibility.kind === "ok") {
     const parentPath = cleanPath.includes("/")
       ? cleanPath.slice(0, cleanPath.lastIndexOf("/"))
@@ -159,9 +178,9 @@ export async function probeZarrSingleArray(
     const coordPath = parentPath ? `${parentPath}/${timeDim}` : timeDim;
     try {
       const root = await zarr.open(store, { kind: "group" });
-      timeValues = await decodeTimeValues(root, coordPath);
+      timesteps = await decodeTimeValues(root, coordPath);
     } catch {
-      timeValues = null;
+      timesteps = null;
     }
   }
 
@@ -173,7 +192,7 @@ export async function probeZarrSingleArray(
     attrs: arr.attrs as Record<string, unknown>,
     stats,
     timeDim,
-    timeValues,
+    timesteps,
     compatibility,
   };
   const crsWarning = detectCrsWarning(variable.attrs);
@@ -219,7 +238,7 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
 
   const variables: ZarrVariable[] = [];
   let crsWarning: string | null = null;
-  const timeValuesCache = new Map<string, string[] | null>();
+  const timestepsCache = new Map<string, ZarrTimestep[] | null>();
 
   for (const entry of arrayEntries) {
     const name = entry.path.replace(/^\//, "");
@@ -230,7 +249,7 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
       const compatibility = classifyVariable(arr.shape, dimNames);
       const timeDim = inferTimeDim(dimNames);
       const stats = extractStats(arr.attrs as Record<string, unknown>);
-      let timeValues: string[] | null = null;
+      let timesteps: ZarrTimestep[] | null = null;
       if (timeDim && compatibility.kind === "ok") {
         const parentPath = name.includes("/")
           ? name.slice(0, name.lastIndexOf("/"))
@@ -238,19 +257,19 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
         const scopedCoordPath = parentPath
           ? `${parentPath}/${timeDim}`
           : timeDim;
-        if (timeValuesCache.has(scopedCoordPath)) {
-          timeValues = timeValuesCache.get(scopedCoordPath) ?? null;
+        if (timestepsCache.has(scopedCoordPath)) {
+          timesteps = timestepsCache.get(scopedCoordPath) ?? null;
         } else {
-          timeValues = await decodeTimeValues(root, scopedCoordPath);
-          if (!timeValues && parentPath) {
-            if (timeValuesCache.has(timeDim)) {
-              timeValues = timeValuesCache.get(timeDim) ?? null;
+          timesteps = await decodeTimeValues(root, scopedCoordPath);
+          if (!timesteps && parentPath) {
+            if (timestepsCache.has(timeDim)) {
+              timesteps = timestepsCache.get(timeDim) ?? null;
             } else {
-              timeValues = await decodeTimeValues(root, timeDim);
-              timeValuesCache.set(timeDim, timeValues);
+              timesteps = await decodeTimeValues(root, timeDim);
+              timestepsCache.set(timeDim, timesteps);
             }
           }
-          timeValuesCache.set(scopedCoordPath, timeValues);
+          timestepsCache.set(scopedCoordPath, timesteps);
         }
       }
       const variable: ZarrVariable = {
@@ -261,7 +280,7 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
         attrs: arr.attrs as Record<string, unknown>,
         stats,
         timeDim,
-        timeValues,
+        timesteps,
         compatibility,
       };
       variables.push(variable);

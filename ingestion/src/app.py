@@ -117,10 +117,12 @@ async def _seed_stories(app: FastAPI) -> None:
 
 async def _seed_example_connections(app: FastAPI) -> None:
     """Seed curated example connections on startup. Idempotent + best-effort."""
+    import asyncio
+
     from src.services.example_connections import seed_example_connections
 
     try:
-        seed_example_connections(app.state.db_session_factory)
+        await asyncio.to_thread(seed_example_connections, app.state.db_session_factory)
     except Exception:
         logger.exception("Example connection seeding failed")
 

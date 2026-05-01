@@ -194,7 +194,7 @@ def test_curated_zarr_seed_is_well_formed():
         assert seed.connection_type in {"zarr", "cog", "pmtiles", "xyz_raster"}
         if seed.connection_type == "zarr":
             assert "variable" in seed.config
-            if "timeDim" in seed.config:
-                assert isinstance(seed.config.get("timeValues"), list)
+            if "timeDim" in seed.config and not seed.zarr_time_dim:
+                assert isinstance(seed.config.get("timesteps"), list)
             if "rescaleMin" in seed.config:
                 assert seed.config["rescaleMin"] < seed.config["rescaleMax"]

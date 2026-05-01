@@ -764,6 +764,21 @@ def test_create_cog_connection_file_size_none_when_content_length_negative(
     assert resp.json()["file_size"] is None
 
 
+def test_connection_row_is_example_defaults_false(client):
+    response = client.post(
+        "/api/connections",
+        json={
+            "name": "plain xyz",
+            "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "connection_type": "xyz_raster",
+            "tile_type": "raster",
+        },
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["is_example"] is False
+
+
 def test_connection_row_persists_config_dict(db_session):
     from src.models.connection import ConnectionRow
 

@@ -44,6 +44,7 @@ class ConnectionRow(Base):
     feature_count = Column(Integer, nullable=True)
     file_size = Column(BigInteger, nullable=True)
     is_shared = Column(Boolean, nullable=False, default=False)
+    is_example = Column(Boolean, nullable=False, default=False)
     render_mode = Column(String, nullable=True)
     preferred_colormap = Column(String, nullable=True)
     preferred_colormap_reversed = Column(Boolean, nullable=True)
@@ -76,6 +77,7 @@ class ConnectionRow(Base):
             "feature_count": self.feature_count,
             "file_size": self.file_size,
             "is_shared": bool(self.is_shared),
+            "is_example": bool(self.is_example),
             "render_mode": self.render_mode,
             "preferred_colormap": self.preferred_colormap,
             "preferred_colormap_reversed": (

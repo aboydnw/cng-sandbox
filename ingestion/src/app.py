@@ -254,6 +254,18 @@ def _migrate_schema(engine):
             conn.rollback()
             if not _is_duplicate_column(exc):
                 raise
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE connections ADD COLUMN is_example BOOLEAN "
+                    "NOT NULL DEFAULT FALSE"
+                )
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
         # Remove duplicate is_example rows before creating the unique index so
         # that deployments upgrading from a version without the index don't
         # fail. Keep the row with the lowest id for each duplicate title.

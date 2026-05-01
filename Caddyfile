@@ -1,3 +1,9 @@
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
 {$SITE_ADDRESS} {
 	# Maintenance page shown during the brief deploy restart window when
 	# upstream containers (ingestion, tilers) return 502/503. The

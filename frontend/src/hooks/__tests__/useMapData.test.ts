@@ -482,6 +482,26 @@ describe("connectionToMapItem", () => {
       ]);
     });
 
+    it("preserves original positions when legacy timeValues contain non-string holes", () => {
+      const item = connectionToMapItem(
+        makeZarrConn({
+          variable: "t2m",
+          timeDim: "time",
+          timeValues: [
+            "2024-01-01T00:00:00Z",
+            null as unknown as string,
+            "2024-01-03T00:00:00Z",
+          ],
+          rescaleMin: 200,
+          rescaleMax: 320,
+        })
+      );
+      expect(item.timesteps).toEqual([
+        { datetime: "2024-01-01T00:00:00Z", index: 0 },
+        { datetime: "2024-01-03T00:00:00Z", index: 2 },
+      ]);
+    });
+
     it("rejects timestep entries with non-integer or negative indices", () => {
       const item = connectionToMapItem(
         makeZarrConn({

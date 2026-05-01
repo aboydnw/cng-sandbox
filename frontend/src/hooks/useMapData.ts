@@ -87,8 +87,11 @@ function parseZarrConfig(
   const legacyTimesteps =
     parsedTimesteps === null && Array.isArray(c.timeValues)
       ? c.timeValues
-          .filter((v): v is string => typeof v === "string")
           .map((datetime, index) => ({ datetime, index }))
+          .filter(
+            (t): t is { datetime: string; index: number } =>
+              typeof t.datetime === "string"
+          )
       : [];
   const timesteps = parsedTimesteps ?? legacyTimesteps;
   return {

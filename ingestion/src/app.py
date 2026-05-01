@@ -115,6 +115,16 @@ async def _seed_stories(app: FastAPI) -> None:
             )
 
 
+async def _seed_example_connections(app: FastAPI) -> None:
+    """Seed curated example connections on startup. Idempotent + best-effort."""
+    from src.services.example_connections import seed_example_connections
+
+    try:
+        seed_example_connections(app.state.db_session_factory)
+    except Exception:
+        logger.exception("Example connection seeding failed")
+
+
 async def _cleanup_expired(app):
     while True:
         await asyncio.sleep(6 * 3600)
@@ -254,6 +264,18 @@ def _migrate_schema(engine):
             conn.rollback()
             if not _is_duplicate_column(exc):
                 raise
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE connections ADD COLUMN is_example BOOLEAN "
+                    "NOT NULL DEFAULT FALSE"
+                )
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
         # Remove duplicate is_example rows before creating the unique index so
         # that deployments upgrading from a version without the index don't
         # fail. Keep the row with the lowest id for each duplicate title.
@@ -293,11 +315,13 @@ async def _default_lifespan(app: FastAPI):
     expired_task = asyncio.create_task(_cleanup_expired(app))
     examples_task = asyncio.create_task(_register_examples(app))
     stories_task = asyncio.create_task(_seed_stories(app))
+    connections_task = asyncio.create_task(_seed_example_connections(app))
     yield
     cleanup_task.cancel()
     expired_task.cancel()
     examples_task.cancel()
     stories_task.cancel()
+    connections_task.cancel()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

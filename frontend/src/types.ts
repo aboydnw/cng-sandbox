@@ -112,6 +112,7 @@ export interface Connection {
   feature_count: number | null;
   file_size: number | null;
   is_shared: boolean;
+  is_example?: boolean;
   render_mode?: "client" | "server" | null;
   preferred_colormap: string | null;
   preferred_colormap_reversed: boolean | null;

@@ -162,7 +162,7 @@ export function MapSidePanel({
             datasetId={item.dataset.id}
             title={item.dataset.title ?? null}
             filename={item.dataset.filename}
-            editable={!item.dataset.is_example}
+            editable={!item.dataset.is_example && !item.connection?.is_example}
             onSaved={() => onDatasetUpdated()}
             fontSize="18px"
           />

@@ -218,7 +218,7 @@ services:
     command: ["sh", "-c", "rm -rf /dist/* && cp -a /app/dist/. /dist/"]
 
   caddy:
-    image: caddy:2
+    image: caddy:2.11.2
     restart: unless-stopped
     profiles:
       - prod

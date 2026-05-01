@@ -12,7 +12,11 @@ import {
   probeCOG,
 } from "../lib/connections";
 import type { ProbeMetadata } from "../lib/connections";
-import { probeZarr, ZARR_NOT_CONSOLIDATED } from "../lib/zarr/probeZarr";
+import {
+  probeZarr,
+  probeZarrSingleArray,
+  ZARR_NOT_CONSOLIDATED,
+} from "../lib/zarr/probeZarr";
 import type { ZarrProbeResult } from "../lib/zarr/probeZarr";
 import { ZarrConnectionFields } from "./ZarrConnectionFields";
 import { connectionsApi } from "../lib/api";
@@ -67,12 +71,18 @@ export function ConnectionModal({
   const [zarrConfig, setZarrConfig] = useState<ZarrConnectionConfig | null>(
     null
   );
+  const [manualPath, setManualPath] = useState("");
+  const [manualPathError, setManualPathError] = useState<string | null>(null);
+  const [tryingManualPath, setTryingManualPath] = useState(false);
 
   const runZarrProbe = useCallback(async (probeUrl: string) => {
     setProbeMetadata(null);
     setZarrProbe(null);
     setZarrConfig(null);
     setProbeWarning(null);
+    setManualPath("");
+    setManualPathError(null);
+    setTryingManualPath(false);
     setProbing(true);
     try {
       const probe = await probeZarr(probeUrl);
@@ -96,6 +106,9 @@ export function ConnectionModal({
     setProbeWarning(null);
     setZarrProbe(null);
     setZarrConfig(null);
+    setManualPath("");
+    setManualPathError(null);
+    setTryingManualPath(false);
     const detected = detectConnectionType(url);
     if (detected) {
       setConnectionType(detected);
@@ -145,6 +158,9 @@ export function ConnectionModal({
       setError(null);
       setZarrProbe(null);
       setZarrConfig(null);
+      setManualPath("");
+      setManualPathError(null);
+      setTryingManualPath(false);
     }
   }, [isOpen]);
 
@@ -189,6 +205,8 @@ export function ConnectionModal({
   }
 
   if (!isOpen) return null;
+
+  const nonConsolidated = probeWarning === ZARR_NOT_CONSOLIDATED;
 
   const canSave =
     !!url &&
@@ -327,6 +345,57 @@ export function ConnectionModal({
             <Text fontSize="13px" color="orange.500">
               {probeWarning}
             </Text>
+          )}
+
+          {nonConsolidated && (
+            <Flex direction="column" gap={2}>
+              <Box>
+                <Text fontSize="13px" fontWeight={600} color="gray.600" mb={1}>
+                  Manual variable path
+                </Text>
+                <Input
+                  size="sm"
+                  placeholder="Variable path (e.g. precipitation or group/var)"
+                  value={manualPath}
+                  onChange={(e) => setManualPath(e.target.value)}
+                />
+                <Text fontSize="12px" color="gray.500" mt={1}>
+                  Type the path to a single array inside the store. The probe
+                  will skip listing and open just that array.
+                </Text>
+              </Box>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!manualPath.trim() || tryingManualPath}
+                onClick={async () => {
+                  setTryingManualPath(true);
+                  setManualPathError(null);
+                  try {
+                    const result = await probeZarrSingleArray(
+                      url,
+                      manualPath.trim()
+                    );
+                    setZarrProbe(result);
+                    setProbeWarning(null);
+                  } catch (err) {
+                    setManualPathError(
+                      err instanceof Error ? err.message : String(err)
+                    );
+                  } finally {
+                    setTryingManualPath(false);
+                  }
+                }}
+                alignSelf="flex-start"
+              >
+                {tryingManualPath ? "Probing…" : "Try this path"}
+              </Button>
+              {manualPathError && (
+                <Text fontSize="13px" color="red.500">
+                  {manualPathError}
+                </Text>
+              )}
+            </Flex>
           )}
 
           {connectionType === "zarr" && zarrProbe && !probing && (

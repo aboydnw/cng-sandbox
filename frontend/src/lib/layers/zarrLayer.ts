@@ -6,6 +6,7 @@ import {
 } from "@developmentseed/deck.gl-raster/gpu-modules";
 import * as zarr from "zarrita";
 import { buildContinuousLut } from "./continuousLut";
+import { createColormapLutTexture } from "./colormapLutTexture";
 
 export interface ZarrLayerOptions {
   node: zarr.Group<zarr.Readable> | zarr.Array<zarr.DataType, zarr.Readable>;
@@ -54,22 +55,7 @@ export function buildZarrLayer({
     const key = device as unknown as object;
     const cached = lutTextureByDevice.get(key);
     if (cached) return cached;
-    const created = device.createTexture({
-      dimension: "2d-array",
-      data: lut,
-      format: "rgba8unorm",
-      width: 256,
-      height: 1,
-      depth: 1,
-      mipLevels: 1,
-      sampler: {
-        minFilter: "linear",
-        magFilter: "linear",
-        addressModeU: "clamp-to-edge",
-        addressModeV: "clamp-to-edge",
-        addressModeW: "clamp-to-edge",
-      },
-    });
+    const created = createColormapLutTexture(device, lut, "linear");
     lutTextureByDevice.set(key, created);
     return created;
   };

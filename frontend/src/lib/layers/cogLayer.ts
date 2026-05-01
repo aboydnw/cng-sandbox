@@ -6,6 +6,7 @@ import {
 } from "@developmentseed/deck.gl-raster/gpu-modules";
 import proj4 from "proj4";
 import { buildCategoricalLut, type LutCategory } from "./categoricalLut";
+import { createColormapLutTexture } from "./colormapLutTexture";
 import { cngEpsgResolver } from "./epsg/resolver";
 
 const ViridisColorize = {
@@ -159,25 +160,7 @@ export function buildCogLayerPaletted({
       sampler: { minFilter: "nearest", magFilter: "nearest" },
     });
 
-    // deck.gl-raster ≥0.6 expects the Colormap module's LUT as a 2d-array
-    // texture; a plain 2d texture sampler returns black, which made every
-    // categorical COG render fully dark after the 0.5→0.6 bump.
-    const lutTex = device.createTexture({
-      dimension: "2d-array",
-      data: lut,
-      format: "rgba8unorm",
-      width: 256,
-      height: 1,
-      depth: 1,
-      mipLevels: 1,
-      sampler: {
-        minFilter: "nearest",
-        magFilter: "nearest",
-        addressModeU: "clamp-to-edge",
-        addressModeV: "clamp-to-edge",
-        addressModeW: "clamp-to-edge",
-      },
-    });
+    const lutTex = createColormapLutTexture(device, lut, "nearest");
 
     // `raw` travels on the tile's data so the pixel inspector can sample it
     // without a separate cache. Keyed by tile identity, not by (x, y), so

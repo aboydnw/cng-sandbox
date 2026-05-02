@@ -82,7 +82,7 @@ export default function StoriesPage() {
                 {exampleStories.map((story) => (
                   <Table.Row key={story.id}>
                     <Table.Cell>
-                      <Link to={workspacePath(`/story/${story.id}`)}>
+                      <Link to={workspacePath(`/story/${story.id}/edit`)}>
                         <Text
                           color="brand.orange"
                           _hover={{ textDecoration: "underline" }}

@@ -517,7 +517,7 @@ async def set_connection_geozarr_attrs(
             raise HTTPException(status_code=403, detail="Forbidden")
         if row.connection_type != "zarr":
             raise HTTPException(
-                status_code=400,
+                status_code=422,
                 detail="geozarr_attrs only applies to zarr connections",
             )
         row.geozarr_attrs = body.geozarr_attrs

@@ -84,6 +84,8 @@ class ConnectionCreate(BaseModel):
                 "bounds must have exactly 4 elements [west, south, east, north]"
             )
         if self.geozarr_attrs is not None:
+            if self.connection_type != "zarr":
+                raise ValueError("geozarr_attrs only applies to zarr connections")
             validate_geozarr_attrs(self.geozarr_attrs)
 
 

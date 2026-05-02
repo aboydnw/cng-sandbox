@@ -28,14 +28,14 @@ const baseOpts = {
 describe("buildZarrLayer", () => {
   it("omits the metadata prop when geozarrAttrs is undefined", () => {
     const [layer] = buildZarrLayer(baseOpts);
-    // @ts-expect-error - test shim exposes mocked props
-    expect(layer.props.metadata).toBeUndefined();
+    const props = (layer as { props: Record<string, unknown> }).props;
+    expect(props).not.toHaveProperty("metadata");
   });
 
   it("omits the metadata prop when geozarrAttrs is null", () => {
     const [layer] = buildZarrLayer({ ...baseOpts, geozarrAttrs: null });
-    // @ts-expect-error - test shim exposes mocked props
-    expect(layer.props.metadata).toBeUndefined();
+    const props = (layer as { props: Record<string, unknown> }).props;
+    expect(props).not.toHaveProperty("metadata");
   });
 
   it("threads geozarrAttrs into the ZarrLayer metadata prop", () => {

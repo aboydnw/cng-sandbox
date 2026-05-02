@@ -27,9 +27,7 @@ def validate_geozarr_attrs(value: Any) -> None:
         or len(dims) != 2
         or not all(isinstance(d, str) and d for d in dims)
     ):
-        raise ValueError(
-            "spatial:dimensions must be a list of two non-empty strings"
-        )
+        raise ValueError("spatial:dimensions must be a list of two non-empty strings")
 
     transform = value["spatial:transform"]
     if (

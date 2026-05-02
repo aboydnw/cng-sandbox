@@ -35,10 +35,33 @@ const REQUIRED_GEOZARR_KEYS = [
   "proj:code",
 ] as const;
 
+const EPSG_RE = /^EPSG:\d+$/;
+
 function probeHasGeoZarrAttrs(probe: ZarrProbeResult | null): boolean {
   const attrs = probe?.rootAttrs;
   if (!attrs) return false;
-  return REQUIRED_GEOZARR_KEYS.every((k) => k in attrs);
+  if (!REQUIRED_GEOZARR_KEYS.every((k) => k in attrs)) return false;
+
+  const dims = attrs["spatial:dimensions"];
+  const transform = attrs["spatial:transform"];
+  const shape = attrs["spatial:shape"];
+  const code = attrs["proj:code"];
+
+  const dimsOk =
+    Array.isArray(dims) &&
+    dims.length === 2 &&
+    dims.every((d) => typeof d === "string" && d.length > 0);
+  const transformOk =
+    Array.isArray(transform) &&
+    transform.length === 6 &&
+    transform.every((n) => typeof n === "number" && Number.isFinite(n));
+  const shapeOk =
+    Array.isArray(shape) &&
+    shape.length === 2 &&
+    shape.every((n) => Number.isInteger(n) && n > 0);
+  const codeOk = typeof code === "string" && EPSG_RE.test(code);
+
+  return dimsOk && transformOk && shapeOk && codeOk;
 }
 
 const TYPE_LABELS: Record<ConnectionType, string> = {
@@ -214,7 +237,9 @@ export function ConnectionModal({
             config: { ...zarrConfig },
           }),
         ...(connectionType === "zarr" && geozarrAttrs
-          ? { geozarr_attrs: geozarrAttrs as unknown as Record<string, unknown> }
+          ? {
+              geozarr_attrs: geozarrAttrs as unknown as Record<string, unknown>,
+            }
           : {}),
       });
       onCreated(connection);

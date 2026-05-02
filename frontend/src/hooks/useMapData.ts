@@ -164,7 +164,9 @@ export function connectionToMapItem(conn: Connection): MapItem {
     renderMode: conn.render_mode ?? null,
     preferredColormap: conn.preferred_colormap ?? null,
     preferredColormapReversed: conn.preferred_colormap_reversed ?? null,
-    geozarrAttrs: isGeoZarrAttrs(conn.geozarr_attrs) ? conn.geozarr_attrs : null,
+    geozarrAttrs: isGeoZarrAttrs(conn.geozarr_attrs)
+      ? conn.geozarr_attrs
+      : null,
     dataset: null,
     connection: conn,
   };

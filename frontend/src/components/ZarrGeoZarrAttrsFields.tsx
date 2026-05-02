@@ -112,9 +112,7 @@ export function ZarrGeoZarrAttrsFields({
               value={dimsStr}
               onChange={(e) => setDimsStr(e.target.value)}
             />
-            <Field.HelperText>
-              Two dim names, comma-separated.
-            </Field.HelperText>
+            <Field.HelperText>Two dim names, comma-separated.</Field.HelperText>
           </Field.Root>
           <Field.Root>
             <Field.Label>spatial:transform (a, b, c, d, e, f)</Field.Label>

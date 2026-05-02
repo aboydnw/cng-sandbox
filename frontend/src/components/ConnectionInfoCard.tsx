@@ -45,9 +45,12 @@ export function ConnectionInfoCard({
     TYPE_SHORT[connection.connection_type] ?? connection.connection_type;
   const canEditOverride =
     connection.connection_type === "zarr" && !connection.is_example;
+  const [currentAttrs, setCurrentAttrs] = useState<GeoZarrAttrs | null>(
+    connection.geozarr_attrs
+  );
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [pendingAttrs, setPendingAttrs] = useState<GeoZarrAttrs | null>(
-    connection.geozarr_attrs
+    currentAttrs
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -60,6 +63,7 @@ export function ConnectionInfoCard({
         connection.id,
         pendingAttrs as Record<string, unknown> | null
       );
+      setCurrentAttrs(updated.geozarr_attrs);
       onConnectionUpdate?.(updated);
       setOverrideOpen(false);
     } catch (e) {
@@ -145,15 +149,16 @@ export function ConnectionInfoCard({
               variant="outline"
               onClick={() => {
                 setOverrideOpen(true);
-                setPendingAttrs(connection.geozarr_attrs);
+                setPendingAttrs(currentAttrs);
+                setSaveError(null);
               }}
             >
-              {connection.geozarr_attrs ? "Edit" : "Add"} GeoZarr override
+              {currentAttrs ? "Edit" : "Add"} GeoZarr override
             </Button>
           ) : (
             <Box>
               <ZarrGeoZarrAttrsFields
-                initialAttrs={connection.geozarr_attrs}
+                initialAttrs={currentAttrs}
                 storeHasGeoZarrAttrs={false}
                 onChange={setPendingAttrs}
               />
@@ -175,7 +180,10 @@ export function ConnectionInfoCard({
                 <Button
                   size="xs"
                   variant="ghost"
-                  onClick={() => setOverrideOpen(false)}
+                  onClick={() => {
+                    setOverrideOpen(false);
+                    setSaveError(null);
+                  }}
                 >
                   Cancel
                 </Button>

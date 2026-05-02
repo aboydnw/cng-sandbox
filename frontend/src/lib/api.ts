@@ -61,8 +61,8 @@ export const connectionsApi = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    }).then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
       return r.json();
     });
   },

@@ -1,8 +1,32 @@
 import { useState, useEffect, useCallback } from "react";
 import { connectionsApi, workspaceFetch } from "../lib/api";
 import { buildConnectionTileUrl } from "../lib/connections";
-import type { Dataset, Connection, MapItem } from "../types";
+import type { Dataset, Connection, GeoZarrAttrs, MapItem } from "../types";
 import { displayName } from "../utils/dataset";
+
+const EPSG_RE = /^EPSG:\d+$/;
+
+function isGeoZarrAttrs(value: unknown): value is GeoZarrAttrs {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  const dims = v["spatial:dimensions"];
+  const transform = v["spatial:transform"];
+  const shape = v["spatial:shape"];
+  const code = v["proj:code"];
+  return (
+    Array.isArray(dims) &&
+    dims.length === 2 &&
+    dims.every((d) => typeof d === "string" && d.length > 0) &&
+    Array.isArray(transform) &&
+    transform.length === 6 &&
+    transform.every((n) => typeof n === "number" && Number.isFinite(n)) &&
+    Array.isArray(shape) &&
+    shape.length === 2 &&
+    shape.every((n) => typeof n === "number" && Number.isInteger(n) && n > 0) &&
+    typeof code === "string" &&
+    EPSG_RE.test(code)
+  );
+}
 
 export function datasetToMapItem(ds: Dataset): MapItem {
   return {
@@ -140,7 +164,7 @@ export function connectionToMapItem(conn: Connection): MapItem {
     renderMode: conn.render_mode ?? null,
     preferredColormap: conn.preferred_colormap ?? null,
     preferredColormapReversed: conn.preferred_colormap_reversed ?? null,
-    geozarrAttrs: conn.geozarr_attrs ?? null,
+    geozarrAttrs: isGeoZarrAttrs(conn.geozarr_attrs) ? conn.geozarr_attrs : null,
     dataset: null,
     connection: conn,
   };

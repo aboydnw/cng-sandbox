@@ -19,54 +19,63 @@ def _make_session():
 
 def test_geozarr_attrs_persisted_and_serialized():
     session = _make_session()
-    attrs = {
-        "spatial:dimensions": ["latitude", "longitude"],
-        "spatial:transform": [0.1, 0, -180, 0, -0.1, 90],
-        "spatial:shape": [1800, 3600],
-        "proj:code": "EPSG:4326",
-    }
-    row = ConnectionRow(
-        id=str(uuid.uuid4()),
-        name="t",
-        url="https://example.com/x.zarr",
-        connection_type="zarr",
-        geozarr_attrs=attrs,
-        created_at=datetime.now(UTC),
-    )
-    session.add(row)
-    session.commit()
+    try:
+        attrs = {
+            "spatial:dimensions": ["latitude", "longitude"],
+            "spatial:transform": [0.1, 0, -180, 0, -0.1, 90],
+            "spatial:shape": [1800, 3600],
+            "proj:code": "EPSG:4326",
+        }
+        row = ConnectionRow(
+            id=str(uuid.uuid4()),
+            name="t",
+            url="https://example.com/x.zarr",
+            connection_type="zarr",
+            geozarr_attrs=attrs,
+            created_at=datetime.now(UTC),
+        )
+        session.add(row)
+        session.commit()
 
-    fetched = session.query(ConnectionRow).first()
-    assert fetched.geozarr_attrs == attrs
-    assert fetched.to_dict()["geozarr_attrs"] == attrs
+        fetched = session.query(ConnectionRow).first()
+        assert fetched.geozarr_attrs == attrs
+        assert fetched.to_dict()["geozarr_attrs"] == attrs
+    finally:
+        session.close()
 
 
 def test_geozarr_attrs_defaults_to_none():
     session = _make_session()
-    row = ConnectionRow(
-        id=str(uuid.uuid4()),
-        name="t",
-        url="https://example.com/x.zarr",
-        connection_type="zarr",
-        created_at=datetime.now(UTC),
-    )
-    session.add(row)
-    session.commit()
-    assert session.query(ConnectionRow).first().geozarr_attrs is None
-    assert session.query(ConnectionRow).first().to_dict()["geozarr_attrs"] is None
+    try:
+        row = ConnectionRow(
+            id=str(uuid.uuid4()),
+            name="t",
+            url="https://example.com/x.zarr",
+            connection_type="zarr",
+            created_at=datetime.now(UTC),
+        )
+        session.add(row)
+        session.commit()
+        assert session.query(ConnectionRow).first().geozarr_attrs is None
+        assert session.query(ConnectionRow).first().to_dict()["geozarr_attrs"] is None
+    finally:
+        session.close()
 
 
 def test_geozarr_attrs_unused_keys_ignored_by_orm():
     session = _make_session()
-    attrs = {"spatial:transform": [1, 2, 3, 4, 5, 6], "proj:code": "EPSG:4326"}
-    row = ConnectionRow(
-        id=str(uuid.uuid4()),
-        name="t",
-        url="https://example.com/x.zarr",
-        connection_type="zarr",
-        geozarr_attrs=json.loads(json.dumps(attrs)),
-        created_at=datetime.now(UTC),
-    )
-    session.add(row)
-    session.commit()
-    assert session.query(ConnectionRow).first().geozarr_attrs == attrs
+    try:
+        attrs = {"spatial:transform": [1, 2, 3, 4, 5, 6], "proj:code": "EPSG:4326"}
+        row = ConnectionRow(
+            id=str(uuid.uuid4()),
+            name="t",
+            url="https://example.com/x.zarr",
+            connection_type="zarr",
+            geozarr_attrs=json.loads(json.dumps(attrs)),
+            created_at=datetime.now(UTC),
+        )
+        session.add(row)
+        session.commit()
+        assert session.query(ConnectionRow).first().geozarr_attrs == attrs
+    finally:
+        session.close()

@@ -32,6 +32,12 @@ describe("buildZarrLayer", () => {
     expect(layer.props.metadata).toBeUndefined();
   });
 
+  it("omits the metadata prop when geozarrAttrs is null", () => {
+    const [layer] = buildZarrLayer({ ...baseOpts, geozarrAttrs: null });
+    // @ts-expect-error - test shim exposes mocked props
+    expect(layer.props.metadata).toBeUndefined();
+  });
+
   it("threads geozarrAttrs into the ZarrLayer metadata prop", () => {
     const attrs: GeoZarrAttrs = {
       "spatial:dimensions": ["latitude", "longitude"],

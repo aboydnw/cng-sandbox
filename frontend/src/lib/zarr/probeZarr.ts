@@ -198,7 +198,7 @@ export async function probeZarrSingleArray(
     compatibility,
   };
   const crsWarning = detectCrsWarning(variable.attrs);
-  let rootAttrs: Record<string, unknown> | null = null;
+  let rootAttrs: Record<string, unknown> | null;
   try {
     const root = await zarr.open(store, { kind: "group" });
     rootAttrs = root.attrs as Record<string, unknown>;

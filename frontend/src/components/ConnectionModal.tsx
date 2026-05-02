@@ -95,6 +95,7 @@ export function ConnectionModal({
     setProbeMetadata(null);
     setZarrProbe(null);
     setZarrConfig(null);
+    setGeozarrAttrs(null);
     setProbeWarning(null);
     setManualPath("");
     setManualPathError(null);
@@ -122,6 +123,7 @@ export function ConnectionModal({
     setProbeWarning(null);
     setZarrProbe(null);
     setZarrConfig(null);
+    setGeozarrAttrs(null);
     setManualPath("");
     setManualPathError(null);
     setTryingManualPath(false);
@@ -211,7 +213,7 @@ export function ConnectionModal({
             tile_type: "raster",
             config: { ...zarrConfig },
           }),
-        ...(geozarrAttrs
+        ...(connectionType === "zarr" && geozarrAttrs
           ? { geozarr_attrs: geozarrAttrs as unknown as Record<string, unknown> }
           : {}),
       });

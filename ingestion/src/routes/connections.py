@@ -145,6 +145,11 @@ async def create_connection(
             status_code=422,
             detail=f"Invalid tile_type: {body.tile_type}",
         )
+    if body.geozarr_attrs is not None and body.connection_type != "zarr":
+        raise HTTPException(
+            status_code=422,
+            detail="geozarr_attrs only applies to zarr connections",
+        )
 
     is_categorical = False
     categories_json = None

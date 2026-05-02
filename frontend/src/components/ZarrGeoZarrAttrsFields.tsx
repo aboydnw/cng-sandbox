@@ -92,12 +92,12 @@ export function ZarrGeoZarrAttrsFields({
         Advanced — GeoZarr metadata override
       </button>
       {storeHasGeoZarrAttrs && !open && (
-        <Text fontSize="12px" color="gray.500" mt={1}>
+        <Text fontSize="12px" color="brand.brown" mt={1}>
           This store already has GeoZarr metadata; override not needed.
         </Text>
       )}
       {!storeHasGeoZarrAttrs && (
-        <Text fontSize="12px" color="orange.700" mt={1}>
+        <Text fontSize="12px" color="brand.orange" mt={1}>
           This zarr store is missing GeoZarr metadata. Fill in all four fields
           or it won't render.
         </Text>

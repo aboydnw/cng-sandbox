@@ -2,7 +2,6 @@
 
 from starlette.testclient import TestClient
 
-
 GOOD_ATTRS = {
     "spatial:dimensions": ["latitude", "longitude"],
     "spatial:transform": [0.1, 0, -180, 0, -0.1, 90],
@@ -34,6 +33,19 @@ def test_post_rejects_malformed_geozarr_attrs(client):
             "url": "https://example.com/x.zarr",
             "connection_type": "zarr",
             "geozarr_attrs": bad,
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_post_rejects_geozarr_attrs_on_non_zarr(client):
+    resp = client.post(
+        "/api/connections",
+        json={
+            "name": "x",
+            "url": "https://example.com/x.tif",
+            "connection_type": "cog",
+            "geozarr_attrs": GOOD_ATTRS,
         },
     )
     assert resp.status_code == 422
@@ -77,10 +89,12 @@ def test_patch_sets_geozarr_attrs(client):
 
 def test_patch_clears_geozarr_attrs(client):
     cid = _create_zarr(client)
-    client.patch(
+    set_resp = client.patch(
         f"/api/connections/{cid}/geozarr-attrs",
         json={"geozarr_attrs": GOOD_ATTRS},
     )
+    assert set_resp.status_code == 200, set_resp.text
+    assert set_resp.json()["geozarr_attrs"] == GOOD_ATTRS
     resp = client.patch(
         f"/api/connections/{cid}/geozarr-attrs",
         json={"geozarr_attrs": None},

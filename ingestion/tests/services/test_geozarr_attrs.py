@@ -36,6 +36,9 @@ def test_rejects_bad_dimensions():
     bad["spatial:dimensions"] = ["lat", 7]
     with pytest.raises(ValueError):
         validate_geozarr_attrs(bad)
+    bad["spatial:dimensions"] = ["", "lon"]
+    with pytest.raises(ValueError):
+        validate_geozarr_attrs(bad)
 
 
 def test_rejects_bad_transform():
@@ -46,6 +49,9 @@ def test_rejects_bad_transform():
     bad["spatial:transform"] = [0.1, 0, -180, 0, -0.1, "x"]
     with pytest.raises(ValueError):
         validate_geozarr_attrs(bad)
+    bad["spatial:transform"] = [0.1, 0, -180, 0, -0.1, True]
+    with pytest.raises(ValueError):
+        validate_geozarr_attrs(bad)
 
 
 def test_rejects_bad_shape():
@@ -54,6 +60,15 @@ def test_rejects_bad_shape():
     with pytest.raises(ValueError):
         validate_geozarr_attrs(bad)
     bad["spatial:shape"] = [1800]
+    with pytest.raises(ValueError):
+        validate_geozarr_attrs(bad)
+    bad["spatial:shape"] = [0, 3600]
+    with pytest.raises(ValueError):
+        validate_geozarr_attrs(bad)
+    bad["spatial:shape"] = [-1, 3600]
+    with pytest.raises(ValueError):
+        validate_geozarr_attrs(bad)
+    bad["spatial:shape"] = [1800, False]
     with pytest.raises(ValueError):
         validate_geozarr_attrs(bad)
 

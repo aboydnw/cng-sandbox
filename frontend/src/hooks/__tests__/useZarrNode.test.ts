@@ -78,6 +78,7 @@ function makeZarrItem(url: string): MapItem {
     renderMode: "client",
     preferredColormap: null,
     preferredColormapReversed: null,
+    geozarrAttrs: null,
     dataset: null,
     connection: conn,
   };

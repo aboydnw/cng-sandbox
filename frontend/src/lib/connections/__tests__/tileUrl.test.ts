@@ -28,6 +28,7 @@ function makeConnection(overrides: Partial<Connection>): Connection {
     preferred_colormap: null,
     preferred_colormap_reversed: null,
     config: null,
+    geozarr_attrs: null,
     ...overrides,
   };
 }

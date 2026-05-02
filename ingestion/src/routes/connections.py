@@ -18,6 +18,7 @@ from src.rate_limit import limiter
 from src.services import geoparquet_to_pmtiles, sharing
 from src.services.categorical import detect_categories
 from src.services.colormap import ColormapPayload
+from src.services.geozarr_attrs import validate_geozarr_attrs
 from src.services.render_mode import RenderModePayload, check_render_mode_allowed
 from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
 from src.workspace import validate_workspace_id
@@ -75,12 +76,17 @@ class ConnectionCreate(BaseModel):
     rescale: str | None = None
     render_path: str | None = None  # "client" | "server"
     config: dict | None = None
+    geozarr_attrs: dict | None = None
 
     def model_post_init(self, __context):
         if self.bounds is not None and len(self.bounds) != 4:
             raise ValueError(
                 "bounds must have exactly 4 elements [west, south, east, north]"
             )
+        if self.geozarr_attrs is not None:
+            if self.connection_type != "zarr":
+                raise ValueError("geozarr_attrs only applies to zarr connections")
+            validate_geozarr_attrs(self.geozarr_attrs)
 
 
 async def _run_conversion_bg(connection_id: str, db_session_factory) -> None:
@@ -140,6 +146,11 @@ async def create_connection(
         raise HTTPException(
             status_code=422,
             detail=f"Invalid tile_type: {body.tile_type}",
+        )
+    if body.geozarr_attrs is not None and body.connection_type != "zarr":
+        raise HTTPException(
+            status_code=422,
+            detail="geozarr_attrs only applies to zarr connections",
         )
 
     is_categorical = False
@@ -232,6 +243,7 @@ async def create_connection(
             categories_json=categories_json,
             file_size=file_size,
             config=body.config,
+            geozarr_attrs=body.geozarr_attrs,
             created_at=datetime.now(UTC),
             render_path=render_path,
             conversion_status="pending" if is_server_conversion else None,
@@ -470,6 +482,45 @@ async def set_connection_colormap(
             row.preferred_colormap_reversed = None
         else:
             row.preferred_colormap_reversed = body.preferred_colormap_reversed
+        session.commit()
+        session.refresh(row)
+        return row.to_dict()
+    finally:
+        session.close()
+
+
+class GeoZarrAttrsPayload(BaseModel):
+    geozarr_attrs: dict | None = None
+
+
+@router.patch("/connections/{connection_id}/geozarr-attrs")
+async def set_connection_geozarr_attrs(
+    connection_id: str, body: GeoZarrAttrsPayload, request: Request
+):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    validate_workspace_id(workspace_id)
+    if body.geozarr_attrs is not None:
+        try:
+            validate_geozarr_attrs(body.geozarr_attrs)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    session = get_session(request)
+    try:
+        row = session.get(ConnectionRow, connection_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        if row.is_example:
+            raise HTTPException(
+                status_code=403, detail="Example connections cannot be modified"
+            )
+        if row.workspace_id != workspace_id:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        if row.connection_type != "zarr":
+            raise HTTPException(
+                status_code=422,
+                detail="geozarr_attrs only applies to zarr connections",
+            )
+        row.geozarr_attrs = body.geozarr_attrs
         session.commit()
         session.refresh(row)
         return row.to_dict()

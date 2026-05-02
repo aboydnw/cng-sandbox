@@ -294,6 +294,7 @@ export function useLayerBuilder({
           id: timeDim
             ? `zarr-layer-${item.id}-${variable}-${timeDim}-${slotTimestep?.index ?? clampedTimestepIndex}`
             : `zarr-layer-${item.id}-${variable}-static`,
+          geozarrAttrs: item.geozarrAttrs,
         });
       }
 

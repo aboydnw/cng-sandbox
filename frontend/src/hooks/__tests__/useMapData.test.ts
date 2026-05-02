@@ -92,6 +92,7 @@ const MOCK_CONNECTION: Connection = {
   preferred_colormap: null,
   preferred_colormap_reversed: null,
   config: null,
+  geozarr_attrs: null,
 };
 
 beforeEach(() => {
@@ -347,6 +348,42 @@ describe("connectionToMapItem", () => {
     });
     expect(item.preferredColormap).toBe("plasma");
     expect(item.preferredColormapReversed).toBe(true);
+  });
+
+  it("propagates a well-formed geozarr_attrs override", () => {
+    const attrs = {
+      "spatial:dimensions": ["latitude", "longitude"] as [string, string],
+      "spatial:transform": [0.1, 0, -180, 0, 0.1, -90] as [
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+      ],
+      "spatial:shape": [1800, 3600] as [number, number],
+      "proj:code": "EPSG:4326",
+    };
+    const item = connectionToMapItem({
+      ...MOCK_CONNECTION,
+      connection_type: "zarr",
+      geozarr_attrs: attrs,
+    });
+    expect(item.geozarrAttrs).toEqual(attrs);
+  });
+
+  it("normalizes a malformed geozarr_attrs to null", () => {
+    const item = connectionToMapItem({
+      ...MOCK_CONNECTION,
+      connection_type: "zarr",
+      geozarr_attrs: {
+        "spatial:dimensions": ["latitude"],
+        "spatial:transform": [0.1, 0, -180, 0, 0.1, -90],
+        "spatial:shape": [1800, 3600],
+        "proj:code": "EPSG:4326",
+      } as never,
+    });
+    expect(item.geozarrAttrs).toBeNull();
   });
 
   describe("connectionToMapItem zarr handling", () => {

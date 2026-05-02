@@ -30,6 +30,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     renderMode: null,
     preferredColormap: null,
     preferredColormapReversed: null,
+    geozarrAttrs: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -234,6 +235,7 @@ describe("useMapControls", () => {
         preferred_colormap: null,
         preferred_colormap_reversed: null,
         config: null,
+        geozarr_attrs: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -271,6 +273,7 @@ describe("useMapControls", () => {
         preferred_colormap: null,
         preferred_colormap_reversed: null,
         config: null,
+        geozarr_attrs: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -309,6 +312,7 @@ describe("useMapControls", () => {
         preferred_colormap: null,
         preferred_colormap_reversed: null,
         config: null,
+        geozarr_attrs: null,
       },
     });
     const { result } = renderHook(() => useMapControls(conn));
@@ -473,6 +477,7 @@ describe("client render size caps", () => {
       renderMode: null,
       preferredColormap: null,
       preferredColormapReversed: null,
+      geozarrAttrs: null,
       dataset: {
         id: "ds-1",
         filename: "large.tif",

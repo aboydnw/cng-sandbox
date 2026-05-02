@@ -47,6 +47,7 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     renderMode: null,
     preferredColormap: null,
     preferredColormapReversed: null,
+    geozarrAttrs: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -265,6 +266,7 @@ function makeConnectionItem(overrides: Partial<MapItem> = {}): MapItem {
     preferred_colormap: null,
     preferred_colormap_reversed: null,
     config: null,
+    geozarr_attrs: null,
   };
   return makeItem({
     source: "connection",
@@ -472,6 +474,7 @@ describe("useLayerBuilder zarr connections", () => {
       renderMode: "client",
       preferredColormap: null,
       preferredColormapReversed: null,
+      geozarrAttrs: null,
       dataset: null,
       connection: conn,
       ...overrides,

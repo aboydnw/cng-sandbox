@@ -1,5 +1,19 @@
 import type { Connection } from "../types";
 
+export interface CreateConnectionPayload {
+  name: string;
+  url: string;
+  connection_type: string;
+  bounds?: number[] | null;
+  min_zoom?: number | null;
+  max_zoom?: number | null;
+  tile_type?: string | null;
+  band_count?: number | null;
+  rescale?: string | null;
+  config?: Record<string, unknown> | null;
+  geozarr_attrs?: Record<string, unknown> | null;
+}
+
 async function readErrorDetail(r: Response): Promise<string> {
   try {
     const body = (await r.json()) as { detail?: string };
@@ -44,24 +58,13 @@ export const connectionsApi = {
     });
   },
 
-  create(body: {
-    name: string;
-    url: string;
-    connection_type: string;
-    bounds?: number[] | null;
-    min_zoom?: number | null;
-    max_zoom?: number | null;
-    tile_type?: string | null;
-    band_count?: number | null;
-    rescale?: string | null;
-    config?: Record<string, unknown> | null;
-  }): Promise<Connection> {
+  create(body: CreateConnectionPayload): Promise<Connection> {
     return workspaceFetch("/api/connections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    }).then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
       return r.json();
     });
   },
@@ -126,6 +129,20 @@ export const connectionsApi = {
         preferred_colormap: payload.preferredColormap,
         preferred_colormap_reversed: payload.preferredColormapReversed,
       }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
+    });
+  },
+
+  setGeoZarrAttrs(
+    id: string,
+    geozarrAttrs: Record<string, unknown> | null
+  ): Promise<Connection> {
+    return workspaceFetch(`/api/connections/${id}/geozarr-attrs`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ geozarr_attrs: geozarrAttrs }),
     }).then(async (r) => {
       if (!r.ok) throw new Error(await readErrorDetail(r));
       return r.json();

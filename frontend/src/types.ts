@@ -92,6 +92,13 @@ export interface ZarrConnectionConfig {
   rescaleMax: number;
 }
 
+export interface GeoZarrAttrs {
+  "spatial:dimensions": [string, string];
+  "spatial:transform": [number, number, number, number, number, number];
+  "spatial:shape": [number, number];
+  "proj:code": string;
+}
+
 export interface Connection {
   id: string;
   name: string;
@@ -118,6 +125,7 @@ export interface Connection {
   preferred_colormap: string | null;
   preferred_colormap_reversed: boolean | null;
   config: Record<string, unknown> | null;
+  geozarr_attrs: GeoZarrAttrs | null;
   created_at: string;
 }
 
@@ -201,6 +209,7 @@ export interface MapItem {
   renderMode: "client" | "server" | null;
   preferredColormap: string | null;
   preferredColormapReversed: boolean | null;
+  geozarrAttrs: GeoZarrAttrs | null;
   dataset: Dataset | null;
   connection: Connection | null;
 }

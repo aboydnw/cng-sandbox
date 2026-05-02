@@ -39,6 +39,8 @@ export interface ZarrProbeResult {
   variables: ZarrVariable[];
   /** Soft warning when a probable non-4326 CRS is detected on any variable. */
   crsWarning: string | null;
+  /** Plain `group.attrs` from the root group; used to detect GeoZarr metadata. */
+  rootAttrs: Record<string, unknown> | null;
 }
 
 const TIME_DIM_NAMES = new Set(["time", "t", "valid_time"]);
@@ -196,7 +198,14 @@ export async function probeZarrSingleArray(
     compatibility,
   };
   const crsWarning = detectCrsWarning(variable.attrs);
-  return { variables: [variable], crsWarning };
+  let rootAttrs: Record<string, unknown> | null;
+  try {
+    const root = await zarr.open(store, { kind: "group" });
+    rootAttrs = root.attrs as Record<string, unknown>;
+  } catch {
+    rootAttrs = null;
+  }
+  return { variables: [variable], crsWarning, rootAttrs };
 }
 
 interface ContentEntry {
@@ -293,5 +302,9 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
     }
   }
 
-  return { variables, crsWarning };
+  return {
+    variables,
+    crsWarning,
+    rootAttrs: root.attrs as Record<string, unknown>,
+  };
 }

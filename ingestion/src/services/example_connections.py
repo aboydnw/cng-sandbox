@@ -47,6 +47,7 @@ class ExampleConnectionSeed:
     preferred_colormap_reversed: bool | None = None
     zarr_time_dim: str | None = None
     zarr_max_steps: int = 5000
+    geozarr_attrs: dict[str, Any] | None = None
 
 
 EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
@@ -63,6 +64,12 @@ EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
         },
         preferred_colormap="blues",
         zarr_time_dim="time",
+        geozarr_attrs={
+            "spatial:dimensions": ["latitude", "longitude"],
+            "spatial:transform": [0.1, 0, -180, 0, 0.1, -90],
+            "spatial:shape": [1800, 3600],
+            "proj:code": "EPSG:4326",
+        },
     ),
 ]
 
@@ -207,6 +214,7 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
                     workspace_id=None,
                     is_example=True,
                     config=config or None,
+                    geozarr_attrs=seed.geozarr_attrs,
                     preferred_colormap=seed.preferred_colormap,
                     preferred_colormap_reversed=seed.preferred_colormap_reversed,
                     created_at=datetime.now(UTC),

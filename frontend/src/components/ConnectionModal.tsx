@@ -19,12 +19,50 @@ import {
 } from "../lib/zarr/probeZarr";
 import type { ZarrProbeResult } from "../lib/zarr/probeZarr";
 import { ZarrConnectionFields } from "./ZarrConnectionFields";
+import { ZarrGeoZarrAttrsFields } from "./ZarrGeoZarrAttrsFields";
 import { connectionsApi } from "../lib/api";
 import type {
   ConnectionType,
   Connection,
+  GeoZarrAttrs,
   ZarrConnectionConfig,
 } from "../types";
+
+const REQUIRED_GEOZARR_KEYS = [
+  "spatial:dimensions",
+  "spatial:transform",
+  "spatial:shape",
+  "proj:code",
+] as const;
+
+const EPSG_RE = /^EPSG:\d+$/;
+
+function probeHasGeoZarrAttrs(probe: ZarrProbeResult | null): boolean {
+  const attrs = probe?.rootAttrs;
+  if (!attrs) return false;
+  if (!REQUIRED_GEOZARR_KEYS.every((k) => k in attrs)) return false;
+
+  const dims = attrs["spatial:dimensions"];
+  const transform = attrs["spatial:transform"];
+  const shape = attrs["spatial:shape"];
+  const code = attrs["proj:code"];
+
+  const dimsOk =
+    Array.isArray(dims) &&
+    dims.length === 2 &&
+    dims.every((d) => typeof d === "string" && d.length > 0);
+  const transformOk =
+    Array.isArray(transform) &&
+    transform.length === 6 &&
+    transform.every((n) => typeof n === "number" && Number.isFinite(n));
+  const shapeOk =
+    Array.isArray(shape) &&
+    shape.length === 2 &&
+    shape.every((n) => Number.isInteger(n) && n > 0);
+  const codeOk = typeof code === "string" && EPSG_RE.test(code);
+
+  return dimsOk && transformOk && shapeOk && codeOk;
+}
 
 const TYPE_LABELS: Record<ConnectionType, string> = {
   cog: "COG",
@@ -71,6 +109,7 @@ export function ConnectionModal({
   const [zarrConfig, setZarrConfig] = useState<ZarrConnectionConfig | null>(
     null
   );
+  const [geozarrAttrs, setGeozarrAttrs] = useState<GeoZarrAttrs | null>(null);
   const [manualPath, setManualPath] = useState("");
   const [manualPathError, setManualPathError] = useState<string | null>(null);
   const [tryingManualPath, setTryingManualPath] = useState(false);
@@ -79,6 +118,7 @@ export function ConnectionModal({
     setProbeMetadata(null);
     setZarrProbe(null);
     setZarrConfig(null);
+    setGeozarrAttrs(null);
     setProbeWarning(null);
     setManualPath("");
     setManualPathError(null);
@@ -106,6 +146,7 @@ export function ConnectionModal({
     setProbeWarning(null);
     setZarrProbe(null);
     setZarrConfig(null);
+    setGeozarrAttrs(null);
     setManualPath("");
     setManualPathError(null);
     setTryingManualPath(false);
@@ -158,6 +199,7 @@ export function ConnectionModal({
       setError(null);
       setZarrProbe(null);
       setZarrConfig(null);
+      setGeozarrAttrs(null);
       setManualPath("");
       setManualPathError(null);
       setTryingManualPath(false);
@@ -194,6 +236,11 @@ export function ConnectionModal({
             tile_type: "raster",
             config: { ...zarrConfig },
           }),
+        ...(connectionType === "zarr" && geozarrAttrs
+          ? {
+              geozarr_attrs: geozarrAttrs as unknown as Record<string, unknown>,
+            }
+          : {}),
       });
       onCreated(connection);
       onClose();
@@ -402,6 +449,14 @@ export function ConnectionModal({
             <ZarrConnectionFields
               probe={zarrProbe}
               onConfigChange={setZarrConfig}
+            />
+          )}
+
+          {connectionType === "zarr" && zarrProbe && !probing && (
+            <ZarrGeoZarrAttrsFields
+              initialAttrs={null}
+              storeHasGeoZarrAttrs={probeHasGeoZarrAttrs(zarrProbe)}
+              onChange={setGeozarrAttrs}
             />
           )}
 

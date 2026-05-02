@@ -127,7 +127,7 @@ def test_patch_rejects_non_zarr_connection(client):
         f"/api/connections/{cid}/geozarr-attrs",
         json={"geozarr_attrs": GOOD_ATTRS},
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 422
 
 
 def test_patch_rejects_other_workspace(client, app):

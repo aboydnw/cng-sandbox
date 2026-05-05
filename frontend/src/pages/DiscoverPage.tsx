@@ -157,6 +157,7 @@ export default function DiscoverPage() {
           </Text>
         </Box>
       </Box>
+      <Footer />
     </Box>
   );
 }
@@ -319,7 +320,6 @@ function CatalogCard({
           )}
         </Flex>
       </Box>
-      <Footer />
     </Box>
   );
 }

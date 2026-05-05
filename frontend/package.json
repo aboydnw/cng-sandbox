@@ -70,10 +70,10 @@
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.2.0",
     "eslint-plugin-react": "^7.37.0",
-    "jsdom": "^29.0.2",
+    "jsdom": "^29.1.0",
     "prettier": "^3.8.2",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.2",
+    "typescript-eslint": "^8.59.1",
     "vite": "^8.0.10",
     "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.5"

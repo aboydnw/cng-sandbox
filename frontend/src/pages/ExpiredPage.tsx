@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
 
 export default function ExpiredPage() {
@@ -70,6 +71,7 @@ export default function ExpiredPage() {
           </Button>
         </Flex>
       </Flex>
+      <Footer />
     </Box>
   );
 }

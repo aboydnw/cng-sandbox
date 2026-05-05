@@ -11,6 +11,7 @@ import {
   type CatalogEntry,
 } from "../lib/discoverCatalog";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
+import { Footer } from "../components/Footer";
 
 const PAGE_BG = "#fafaf8";
 const CARD_BG = "#ffffff";
@@ -318,6 +319,7 @@ function CatalogCard({
           )}
         </Flex>
       </Box>
+      <Footer />
     </Box>
   );
 }

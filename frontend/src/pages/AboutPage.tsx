@@ -7,6 +7,7 @@ import {
   ArrowRight,
 } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 
 const PIPELINE_STEPS = [
   {
@@ -262,6 +263,7 @@ export default function AboutPage() {
           </Text>
         </Box>
       </Box>
+      <Footer />
     </Box>
   );
 }

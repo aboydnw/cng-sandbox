@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
 import { ProgressTracker } from "../components/ProgressTracker";
@@ -458,6 +459,8 @@ export default function UploadPage() {
           setConnectionError(null);
         }}
       />
+
+      <Footer />
     </Flex>
   );
 }

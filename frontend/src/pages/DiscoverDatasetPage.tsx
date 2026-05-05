@@ -8,6 +8,7 @@ import { config } from "../config";
 import type { Dataset } from "../types";
 import { getCatalogEntry, listingUrlForSlug } from "../lib/discoverCatalog";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
+import { Footer } from "../components/Footer";
 
 const PAGE_BG = "#fafaf8";
 const BORDER = "#e8e6e1";
@@ -60,6 +61,7 @@ export default function DiscoverDatasetPage() {
             Back to discover
           </Link>
         </Box>
+        <Footer />
       </Box>
     );
   }
@@ -351,6 +353,7 @@ export default function DiscoverDatasetPage() {
           </Box>
         </Flex>
       </Box>
+      <Footer />
     </Box>
   );
 }

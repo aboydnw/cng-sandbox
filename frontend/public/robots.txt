@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /w/
+Disallow: /api/
+Disallow: /raster/
+Disallow: /vector/
+Disallow: /cog/
+
+Sitemap: https://storytelling.developmentseed.org/sitemap.xml

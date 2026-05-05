@@ -171,6 +171,13 @@
 			not path /gif.worker.js
 			not path /fonts/*
 			not path /thumbnails/*
+			not path /robots.txt
+			not path /sitemap.xml
+			not path /og-image.png
+			not path /site.webmanifest
+			not path /apple-touch-icon.png
+			not path /icon-192.png
+			not path /icon-512.png
 			not path_regexp ^/(map/.+|story/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/embed)?/?)$
 		}
 		route {

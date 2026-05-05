@@ -15,9 +15,7 @@ describe("index.html head metadata", () => {
   });
 
   it("declares a meta description", () => {
-    expect(HTML).toMatch(
-      /<meta\s+name="description"\s+content="[^"]{40,}"/
-    );
+    expect(HTML).toMatch(/<meta\s+name="description"\s+content="[^"]{40,}"/);
   });
 
   it("declares a canonical URL", () => {

@@ -8,7 +8,7 @@ const SECURITY_MAILTO = "mailto:security@developmentseed.org";
 const DS_URL = "https://developmentseed.org/";
 
 const linkStyle = {
-  color: "var(--chakra-colors-gray-600)",
+  color: "var(--chakra-colors-brand-textSecondary)",
   fontSize: "var(--chakra-fontSizes-sm)",
   textDecoration: "none",
 };
@@ -28,7 +28,7 @@ export function Footer() {
       gap={6}
       flexWrap="wrap"
     >
-      <Text fontSize="sm" color="gray.600">
+      <Text fontSize="sm" color="brand.textSecondary">
         Built by{" "}
         <a
           href={DS_URL}

@@ -1,15 +1,25 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { describe, it, expect } from "vitest";
 import { system } from "../../theme";
+import { WorkspaceProvider } from "../../hooks/useWorkspace";
 import { Footer } from "../Footer";
 
 function renderFooter() {
   return render(
     <ChakraProvider value={system}>
-      <MemoryRouter>
-        <Footer />
+      <MemoryRouter initialEntries={["/w/test-workspace"]}>
+        <Routes>
+          <Route
+            path="/w/:workspaceId/*"
+            element={
+              <WorkspaceProvider>
+                <Footer />
+              </WorkspaceProvider>
+            }
+          />
+        </Routes>
       </MemoryRouter>
     </ChakraProvider>
   );
@@ -26,10 +36,10 @@ describe("Footer", () => {
     expect(link.getAttribute("rel")).toContain("noopener");
   });
 
-  it("links to the About page", () => {
+  it("links to the workspace-scoped About page", () => {
     renderFooter();
     const link = screen.getByRole("link", { name: /about/i });
-    expect(link.getAttribute("href")).toBe("/about");
+    expect(link.getAttribute("href")).toBe("/w/test-workspace/about");
   });
 
   it("links to the security mailto", () => {

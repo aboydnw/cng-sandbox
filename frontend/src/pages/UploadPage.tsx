@@ -332,7 +332,7 @@ export default function UploadPage() {
   );
 
   return (
-    <Flex direction="column" h="100vh" bg="white" overflow="hidden">
+    <Flex direction="column" minH="100vh" bg="white">
       <Header />
       <HomepageHero />
 

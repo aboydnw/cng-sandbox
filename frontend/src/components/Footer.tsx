@@ -1,6 +1,7 @@
 import { Flex, Text } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { GithubLogo } from "@phosphor-icons/react";
+import { useWorkspace } from "../hooks/useWorkspace";
 
 const GITHUB_URL = "https://github.com/aboydnw/cng-sandbox";
 const SECURITY_MAILTO = "mailto:security@developmentseed.org";
@@ -13,6 +14,7 @@ const linkStyle = {
 };
 
 export function Footer() {
+  const { workspacePath } = useWorkspace();
   return (
     <Flex
       as="footer"
@@ -42,7 +44,7 @@ export function Footer() {
         </a>
       </Text>
       <Flex align="center" gap={5}>
-        <Link to="/about" style={linkStyle}>
+        <Link to={workspacePath("/about")} style={linkStyle}>
           About
         </Link>
         <a

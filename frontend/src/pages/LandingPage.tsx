@@ -1,16 +1,29 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
 import { ArrowRight, Rocket } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { generateWorkspaceId } from "../hooks/useWorkspace";
+import {
+  generateWorkspaceId,
+  WORKSPACE_STORAGE_KEY,
+} from "../hooks/useWorkspace";
 
-const STORAGE_KEY = "myWorkspaceId";
+const STORAGE_KEY = WORKSPACE_STORAGE_KEY;
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const switching = searchParams.get("switch") === "1";
   const [enteredId, setEnteredId] = useState("");
+
+  useEffect(() => {
+    if (switching) return;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      navigate(`/w/${stored}/`, { replace: true });
+    }
+  }, [switching, navigate]);
 
   const createWorkspace = () => {
     const id = generateWorkspaceId();
@@ -60,10 +73,10 @@ export default function LandingPage() {
             CNG Sandbox
           </Heading>
           <Text color="gray.700" fontSize="md" lineHeight="tall" mb={8}>
-            A playground for the cloud-native geospatial stack. Upload a
-            GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5 file and watch it get
-            converted, tiled, and rendered as an interactive map &mdash; in
-            seconds, in your browser.
+            Build interactive maps and stories from open geospatial data. Pull
+            from curated source.coop datasets, connect to other open data
+            sources, or upload your own files to see them tiled and visualized
+            in cloud-native formats.
           </Text>
 
           <Button
@@ -75,7 +88,7 @@ export default function LandingPage() {
             w="full"
             mb={4}
           >
-            Create a new workspace
+            Start Building
           </Button>
 
           <Box

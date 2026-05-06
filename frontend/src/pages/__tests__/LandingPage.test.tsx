@@ -10,10 +10,10 @@ function WorkspaceTarget() {
   return <div data-testid="workspace-target" data-workspace-id={workspaceId} />;
 }
 
-function renderLanding() {
+function renderLanding(initialEntry: string = "/") {
   return render(
     <ChakraProvider value={system}>
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/w/:workspaceId/*" element={<WorkspaceTarget />} />
@@ -34,15 +34,31 @@ describe("LandingPage", () => {
       screen.getByRole("heading", { name: /CNG Sandbox/ })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/cloud-native geospatial|upload.*GeoTIFF/i)
+      screen.getByText(/interactive maps and stories|source\.coop/i)
     ).toBeTruthy();
   });
 
   it("creates a new workspace when the primary CTA is clicked", () => {
     renderLanding();
-    const cta = screen.getByRole("button", { name: /create.*workspace/i });
+    const cta = screen.getByRole("button", { name: /start building/i });
     fireEvent.click(cta);
     expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+  });
+
+  it("auto-redirects to a stored workspace when one exists in localStorage", () => {
+    localStorage.setItem("myWorkspaceId", "stored123");
+    renderLanding();
+    const target = screen.getByTestId("workspace-target");
+    expect(target).toHaveAttribute("data-workspace-id", "stored123");
+  });
+
+  it("does not auto-redirect when ?switch=1 is set, even if a workspace is stored", () => {
+    localStorage.setItem("myWorkspaceId", "stored123");
+    renderLanding("/?switch=1");
+    expect(screen.queryByTestId("workspace-target")).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: /CNG Sandbox/ })
+    ).toBeInTheDocument();
   });
 
   it("navigates to an existing workspace when the user submits an ID", () => {

@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { sharedConfig } from "./vite.shared.config";
 
 const appVersion = readFileSync(
-  resolve(__dirname, "..", "version.txt"),
+  resolve(__dirname, "version.txt"),
   "utf8"
 ).trim();
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.1](https://github.com/aboydnw/cng-sandbox/compare/v2.1.0...v2.1.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* **deploy:** move version.txt into frontend so Docker build can read it ([#428](https://github.com/aboydnw/cng-sandbox/issues/428)) ([bea4eb3](https://github.com/aboydnw/cng-sandbox/commit/bea4eb3cfc00f60fdfc20dc1e70c5fa2fae68ef0))
+
+## [2.1.0](https://github.com/aboydnw/cng-sandbox/compare/v2.0.0...v2.1.0) (2026-05-06)
+
+
+### Features
+
+* **frontend:** refresh About page copy and pin Footer to bottom ([#426](https://github.com/aboydnw/cng-sandbox/issues/426)) ([da61afa](https://github.com/aboydnw/cng-sandbox/commit/da61afaf3c68ae77f86343901be3f43e11e90360))
+
 ## [2.0.0](https://github.com/aboydnw/cng-sandbox/compare/v1.32.0...v2.0.0) (2026-05-06)
 
 

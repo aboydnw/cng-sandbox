@@ -42,7 +42,7 @@ export default function DiscoverDatasetPage() {
 
   if (!entry) {
     return (
-      <Box minH="100vh" bg={PAGE_BG} color={TEXT}>
+      <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
         <DiscoverHeader />
         <Box maxW="1100px" mx="auto" px={6} py={16} textAlign="center">
           <Heading fontSize="28px" fontWeight={600} mb={2}>
@@ -62,7 +62,7 @@ export default function DiscoverDatasetPage() {
           </Link>
         </Box>
         <Footer />
-      </Box>
+      </Flex>
     );
   }
 
@@ -81,7 +81,7 @@ export default function DiscoverDatasetPage() {
   };
 
   return (
-    <Box minH="100vh" bg={PAGE_BG} color={TEXT}>
+    <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
       <DiscoverHeader />
 
       <Box maxW="1100px" mx="auto" px={6} pt={8} pb={20}>
@@ -354,7 +354,7 @@ export default function DiscoverDatasetPage() {
         </Flex>
       </Box>
       <Footer />
-    </Box>
+    </Flex>
   );
 }
 

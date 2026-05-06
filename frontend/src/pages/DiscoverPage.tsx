@@ -58,7 +58,7 @@ export default function DiscoverPage() {
   };
 
   return (
-    <Box minH="100vh" bg={PAGE_BG} color={TEXT}>
+    <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
       <DiscoverHeader />
 
       <Box maxW="1100px" mx="auto" px={6} pt={10} pb={6}>
@@ -158,7 +158,7 @@ export default function DiscoverPage() {
         </Box>
       </Box>
       <Footer />
-    </Box>
+    </Flex>
   );
 }
 

@@ -24,6 +24,8 @@ COPY public/ ./public/
 EXPOSE 5185
 CMD ["npx", "vite", "--host"]
 
-# --- Prod: static files only, served by Caddy ---
-FROM scratch AS prod
-COPY --from=builder /app/dist /dist
+# --- Prod-export: tiny image holding only built static assets, used by the
+# frontend-build compose service to copy files into the shared volume. Alpine
+# is used (rather than scratch) so the compose `command` has a shell. ---
+FROM alpine:3 AS prod-export
+COPY --from=builder /app/dist /build

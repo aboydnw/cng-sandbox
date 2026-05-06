@@ -56,6 +56,8 @@ export function datasetToMapItem(ds: Dataset): MapItem {
     preferredColormap: ds.preferred_colormap ?? null,
     preferredColormapReversed: ds.preferred_colormap_reversed ?? null,
     geozarrAttrs: null,
+    zarrExtraDim: null,
+    zarrExtraIndex: null,
     dataset: ds,
     connection: null,
   };
@@ -75,6 +77,8 @@ interface ZarrConfigShape {
   timesteps?: { datetime: string; index: number }[] | null;
   /** Legacy field — older saved connections stored a flat string array. */
   timeValues?: string[] | null;
+  extraDim?: string | null;
+  extraIndex?: number | null;
   rescaleMin?: number | null;
   rescaleMax?: number | null;
 }
@@ -84,6 +88,8 @@ interface ParsedZarrFields {
   timesteps: { datetime: string; index: number }[];
   rasterMin: number | null;
   rasterMax: number | null;
+  extraDim: string | null;
+  extraIndex: number | null;
 }
 
 function parseZarrConfig(
@@ -95,6 +101,8 @@ function parseZarrConfig(
       timesteps: [],
       rasterMin: null,
       rasterMax: null,
+      extraDim: null,
+      extraIndex: null,
     };
   }
   const c = config as ZarrConfigShape;
@@ -119,11 +127,22 @@ function parseZarrConfig(
           )
       : [];
   const timesteps = parsedTimesteps ?? legacyTimesteps;
+  const validExtraDim =
+    typeof c.extraDim === "string" && c.extraDim.length > 0 ? c.extraDim : null;
+  const validExtraIndex =
+    typeof c.extraIndex === "number" &&
+    Number.isInteger(c.extraIndex) &&
+    c.extraIndex >= 0
+      ? c.extraIndex
+      : null;
+  const hasValidExtra = validExtraDim !== null && validExtraIndex !== null;
   return {
     isTemporal: hasTime && timesteps.length > 0,
     timesteps,
     rasterMin: typeof c.rescaleMin === "number" ? c.rescaleMin : null,
     rasterMax: typeof c.rescaleMax === "number" ? c.rescaleMax : null,
+    extraDim: hasValidExtra ? validExtraDim : null,
+    extraIndex: hasValidExtra ? validExtraIndex : null,
   };
 }
 
@@ -136,6 +155,8 @@ export function connectionToMapItem(conn: Connection): MapItem {
         timesteps: [] as { datetime: string; index: number }[],
         rasterMin: null,
         rasterMax: null,
+        extraDim: null,
+        extraIndex: null,
       };
 
   return {
@@ -167,6 +188,8 @@ export function connectionToMapItem(conn: Connection): MapItem {
     geozarrAttrs: isGeoZarrAttrs(conn.geozarr_attrs)
       ? conn.geozarr_attrs
       : null,
+    zarrExtraDim: zarrFields.extraDim,
+    zarrExtraIndex: zarrFields.extraIndex,
     dataset: null,
     connection: conn,
   };

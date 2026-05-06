@@ -79,6 +79,8 @@ function makeZarrItem(url: string): MapItem {
     preferredColormap: null,
     preferredColormapReversed: null,
     geozarrAttrs: null,
+    zarrExtraDim: null,
+    zarrExtraIndex: null,
     dataset: null,
     connection: conn,
   };

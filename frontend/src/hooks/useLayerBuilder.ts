@@ -275,6 +275,9 @@ export function useLayerBuilder({
         const selection: Record<string, number> = timeDim
           ? { [timeDim]: slotTimestep?.index ?? clampedTimestepIndex }
           : {};
+        if (item.zarrExtraDim != null && item.zarrExtraIndex != null) {
+          selection[item.zarrExtraDim] = item.zarrExtraIndex;
+        }
         const safeMin =
           rescaleMin ??
           (typeof config.rescaleMin === "number" ? config.rescaleMin : null) ??
@@ -296,8 +299,8 @@ export function useLayerBuilder({
           colormapName,
           colormapReversed,
           id: timeDim
-            ? `zarr-layer-${item.id}-${variable}-${timeDim}-${slotTimestep?.index ?? clampedTimestepIndex}`
-            : `zarr-layer-${item.id}-${variable}-static`,
+            ? `zarr-layer-${item.id}-${variable}-${timeDim}-${slotTimestep?.index ?? clampedTimestepIndex}-${item.zarrExtraDim ?? "noextra"}-${item.zarrExtraIndex ?? 0}`
+            : `zarr-layer-${item.id}-${variable}-static-${item.zarrExtraDim ?? "noextra"}-${item.zarrExtraIndex ?? 0}`,
           geozarrAttrs: item.geozarrAttrs,
         });
       }

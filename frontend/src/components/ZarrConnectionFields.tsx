@@ -25,11 +25,13 @@ export function ZarrConnectionFields({
   const [maxStr, setMaxStr] = useState<string>(
     initial?.stats ? String(initial.stats.max) : ""
   );
+  const [extraIndex, setExtraIndex] = useState<number>(0);
 
   useEffect(() => {
     setVariableName(initial?.name ?? "");
     setMinStr(initial?.stats ? String(initial.stats.min) : "");
     setMaxStr(initial?.stats ? String(initial.stats.max) : "");
+    setExtraIndex(0);
   }, [initial]);
 
   const selected = probe.variables.find((v) => v.name === variableName) ?? null;
@@ -55,16 +57,27 @@ export function ZarrConnectionFields({
       variable: selected.name,
       timeDim: selected.timeDim,
       timesteps: selected.timesteps,
+      extraDim: selected.extraDim,
+      extraIndex: selected.extraDim ? extraIndex : null,
       rescaleMin: minNum,
       rescaleMax: maxNum,
     });
-  }, [selected, minStr, maxStr, onConfigChange]);
+  }, [selected, minStr, maxStr, extraIndex, onConfigChange]);
 
   useEffect(() => {
     if (!selected || !selected.stats) return;
     setMinStr(String(selected.stats.min));
     setMaxStr(String(selected.stats.max));
   }, [selected]);
+
+  useEffect(() => {
+    const labels = selected?.extraLabels;
+    if (!labels?.length) {
+      setExtraIndex(0);
+      return;
+    }
+    setExtraIndex((current) => Math.min(current, labels.length - 1));
+  }, [selected?.name, selected?.extraLabels]);
 
   if (probe.variables.length === 0) {
     return (
@@ -126,6 +139,34 @@ export function ZarrConnectionFields({
           </Field.HelperText>
         )}
       </Field.Root>
+
+      {selected?.extraDim && selected.extraLabels && (
+        <Field.Root>
+          <Field.Label>{selected.extraDim}</Field.Label>
+          <select
+            aria-label={selected.extraDim}
+            value={extraIndex}
+            onChange={(e) => setExtraIndex(Number(e.target.value))}
+            style={{
+              width: "100%",
+              fontSize: "14px",
+              padding: "6px 8px",
+              borderRadius: "6px",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            {selected.extraLabels.map((label, idx) => (
+              <option key={idx} value={idx}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <Field.HelperText>
+            Pick the {selected.extraDim} index to render. The selection is fixed
+            for this connection — to compare two indices, save two connections.
+          </Field.HelperText>
+        </Field.Root>
+      )}
 
       <Flex gap={3}>
         <Field.Root invalid={minMaxInvalid} flex={1}>

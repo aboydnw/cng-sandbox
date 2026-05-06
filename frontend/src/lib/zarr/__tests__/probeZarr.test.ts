@@ -97,19 +97,20 @@ describe("probeZarr", () => {
   });
 
   it("flags variables with too many dims as incompatible", async () => {
-    const fourD = JSON.parse(JSON.stringify(V3_CONSOLIDATED));
-    fourD.consolidated_metadata.metadata.temperature_2m.shape = [
-      10, 5, 360, 720,
+    const fiveD = JSON.parse(JSON.stringify(V3_CONSOLIDATED));
+    fiveD.consolidated_metadata.metadata.temperature_2m.shape = [
+      10, 5, 3, 360, 720,
     ];
-    fourD.consolidated_metadata.metadata.temperature_2m.dimension_names = [
+    fiveD.consolidated_metadata.metadata.temperature_2m.dimension_names = [
       "time",
       "level",
+      "ensemble",
       "latitude",
       "longitude",
     ];
     mockFetch.mockImplementation(async (request: Request) => {
       if (request.url.endsWith("/zarr.json"))
-        return mockZarrJsonResponse(fourD);
+        return mockZarrJsonResponse(fiveD);
       return new Response(null, { status: 404 });
     });
 
@@ -117,7 +118,7 @@ describe("probeZarr", () => {
     const tempVar = result.variables.find((v) => v.name === "temperature_2m");
     expect(tempVar?.compatibility.kind).toBe("incompatible");
     if (tempVar?.compatibility.kind === "incompatible") {
-      expect(tempVar.compatibility.reason).toMatch(/extra dimensions/i);
+      expect(tempVar.compatibility.reason).toMatch(/5 dimensions/i);
     }
   });
 
@@ -200,6 +201,139 @@ describe("probeZarr", () => {
     expect(rain!.timesteps!.length).toBeGreaterThan(2000);
     expect(rain!.timesteps![0].index).toBe(0);
     expect(rain!.timesteps![rain!.timesteps!.length - 1].index).toBe(TOTAL - 1);
+  });
+
+  it("recognizes 4D (time, band, y, x) and decodes band labels", async () => {
+    const consolidated = {
+      zarr_format: 3,
+      node_type: "group",
+      attributes: {},
+      consolidated_metadata: {
+        kind: "inline",
+        must_understand: false,
+        metadata: {
+          "": { zarr_format: 3, node_type: "group", attributes: {} },
+          reflectance: {
+            zarr_format: 3,
+            node_type: "array",
+            attributes: { valid_min: 0, valid_max: 1 },
+            shape: [4, 3, 100, 100],
+            data_type: "float32",
+            dimension_names: ["time", "band", "y", "x"],
+            chunk_grid: {
+              name: "regular",
+              configuration: { chunk_shape: [1, 1, 100, 100] },
+            },
+            chunk_key_encoding: {
+              name: "default",
+              configuration: { separator: "/" },
+            },
+            codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+            fill_value: 0,
+          },
+          time: {
+            zarr_format: 3,
+            node_type: "array",
+            attributes: { units: "days since 2024-01-01T00:00:00Z" },
+            shape: [4],
+            data_type: "int64",
+            dimension_names: ["time"],
+            chunk_grid: {
+              name: "regular",
+              configuration: { chunk_shape: [4] },
+            },
+            chunk_key_encoding: {
+              name: "default",
+              configuration: { separator: "/" },
+            },
+            codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+            fill_value: 0,
+          },
+          band: {
+            zarr_format: 3,
+            node_type: "array",
+            attributes: {},
+            shape: [3],
+            data_type: "int32",
+            dimension_names: ["band"],
+            chunk_grid: {
+              name: "regular",
+              configuration: { chunk_shape: [3] },
+            },
+            chunk_key_encoding: {
+              name: "default",
+              configuration: { separator: "/" },
+            },
+            codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+            fill_value: 0,
+          },
+        },
+      },
+    };
+    const timeBuf = new BigInt64Array([0n, 1n, 2n, 3n]);
+    const bandBuf = new Int32Array([2, 3, 4]);
+
+    mockFetch.mockImplementation(async (request: Request) => {
+      if (request.url.endsWith("/zarr.json"))
+        return mockZarrJsonResponse(consolidated);
+      if (request.url.endsWith("/time/c/0"))
+        return new Response(timeBuf.buffer, { status: 200 });
+      if (request.url.endsWith("/band/c/0"))
+        return new Response(bandBuf.buffer, { status: 200 });
+      return new Response("not found", { status: 404 });
+    });
+
+    const result = await probeZarr("https://example.com/store.zarr");
+    const v = result.variables.find((x) => x.name === "reflectance");
+    expect(v).toBeDefined();
+    expect(v!.compatibility.kind).toBe("ok");
+    expect(v!.extraDim).toBe("band");
+    expect(v!.extraLabels).toEqual(["2", "3", "4"]);
+  });
+
+  it("rejects a 4D variable when the extra dim has > 256 entries", async () => {
+    const consolidated = {
+      zarr_format: 3,
+      node_type: "group",
+      attributes: {},
+      consolidated_metadata: {
+        kind: "inline",
+        must_understand: false,
+        metadata: {
+          "": { zarr_format: 3, node_type: "group", attributes: {} },
+          spectra: {
+            zarr_format: 3,
+            node_type: "array",
+            attributes: {},
+            shape: [2, 500, 100, 100],
+            data_type: "float32",
+            dimension_names: ["time", "channel", "y", "x"],
+            chunk_grid: {
+              name: "regular",
+              configuration: { chunk_shape: [1, 1, 100, 100] },
+            },
+            chunk_key_encoding: {
+              name: "default",
+              configuration: { separator: "/" },
+            },
+            codecs: [{ name: "bytes", configuration: { endian: "little" } }],
+            fill_value: 0,
+          },
+        },
+      },
+    };
+    mockFetch.mockImplementation(async (request: Request) =>
+      request.url.endsWith("/zarr.json")
+        ? mockZarrJsonResponse(consolidated)
+        : new Response("not found", { status: 404 })
+    );
+    const result = await probeZarr("https://example.com/store.zarr");
+    const v = result.variables.find((x) => x.name === "spectra");
+    expect(v).toBeDefined();
+    expect(v!.compatibility.kind).toBe("incompatible");
+    if (v!.compatibility.kind === "incompatible") {
+      expect(v!.compatibility.reason).toMatch(/500/);
+    }
   });
 });
 

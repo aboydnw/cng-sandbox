@@ -8,7 +8,8 @@ import {
 import { useParams, Navigate, useLocation } from "react-router-dom";
 import { setWorkspaceId } from "../lib/api";
 
-const STORAGE_KEY = "myWorkspaceId";
+export const WORKSPACE_STORAGE_KEY = "myWorkspaceId";
+const STORAGE_KEY = WORKSPACE_STORAGE_KEY;
 
 export function generateWorkspaceId(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";

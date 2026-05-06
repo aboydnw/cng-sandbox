@@ -1,9 +1,14 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { MemoryRouter, Routes, Route, useParams } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { describe, it, expect, beforeEach } from "vitest";
 import { system } from "../../theme";
 import LandingPage from "../LandingPage";
+
+function WorkspaceTarget() {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
+  return <div data-testid="workspace-target" data-workspace-id={workspaceId} />;
+}
 
 function renderLanding() {
   return render(
@@ -11,10 +16,7 @@ function renderLanding() {
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route
-            path="/w/:workspaceId/*"
-            element={<div data-testid="workspace-target" />}
-          />
+          <Route path="/w/:workspaceId/*" element={<WorkspaceTarget />} />
         </Routes>
       </MemoryRouter>
     </ChakraProvider>
@@ -58,7 +60,10 @@ describe("LandingPage", () => {
     fireEvent.change(input, { target: { value: "  abc12345  " } });
     const goBtn = screen.getByRole("button", { name: /open|go|enter/i });
     fireEvent.click(goBtn);
-    expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+    expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+      "data-workspace-id",
+      "abc12345"
+    );
   });
 
   it("does not navigate when the entered workspace ID is empty", () => {

@@ -70,6 +70,14 @@ vi.mock("../pages/AboutPage", () => ({
   default: () => <div data-testid="about-page" />,
 }));
 
+vi.mock("../hooks/useWorkspace", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../hooks/useWorkspace")>();
+  return {
+    ...actual,
+    WorkspaceRedirect: () => <div data-testid="workspace-redirect" />,
+  };
+});
+
 test("/ renders LandingPage (no auto-redirect to a workspace)", () => {
   renderApp("/");
   expect(screen.getByTestId("landing-page")).toBeInTheDocument();
@@ -86,6 +94,6 @@ test("/w/:workspaceId/ still renders the workspace UploadPage", () => {
 });
 
 test("unknown public path falls through to WorkspaceRedirect", () => {
-  const { container } = renderApp("/data");
-  expect(container.innerHTML.length).toBeGreaterThan(0);
+  renderApp("/data");
+  expect(screen.getByTestId("workspace-redirect")).toBeInTheDocument();
 });

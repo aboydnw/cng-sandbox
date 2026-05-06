@@ -13,11 +13,8 @@ export default function LandingPage() {
   const [enteredId, setEnteredId] = useState("");
 
   const createWorkspace = () => {
-    const existing = localStorage.getItem(STORAGE_KEY);
-    const id = existing ?? generateWorkspaceId();
-    if (!existing) {
-      localStorage.setItem(STORAGE_KEY, id);
-    }
+    const id = generateWorkspaceId();
+    localStorage.setItem(STORAGE_KEY, id);
     navigate(`/w/${id}/`);
   };
 
@@ -50,7 +47,11 @@ export default function LandingPage() {
             mx="auto"
             mb={5}
           >
-            <Rocket size={32} weight="duotone" color="#CF3F02" />
+            <Rocket
+              size={32}
+              weight="duotone"
+              color="var(--chakra-colors-brand-orange)"
+            />
           </Flex>
 
           <Heading size="xl" color="brand.brown" mb={3}>

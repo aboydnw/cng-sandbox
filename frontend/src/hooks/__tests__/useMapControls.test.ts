@@ -31,6 +31,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     preferredColormap: null,
     preferredColormapReversed: null,
     geozarrAttrs: null,
+    zarrExtraDim: null,
+    zarrExtraIndex: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -478,6 +480,8 @@ describe("client render size caps", () => {
       preferredColormap: null,
       preferredColormapReversed: null,
       geozarrAttrs: null,
+      zarrExtraDim: null,
+      zarrExtraIndex: null,
       dataset: {
         id: "ds-1",
         filename: "large.tif",

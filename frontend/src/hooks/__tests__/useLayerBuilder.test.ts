@@ -48,6 +48,8 @@ function makeItem(overrides: Partial<MapItem> = {}): MapItem {
     preferredColormap: null,
     preferredColormapReversed: null,
     geozarrAttrs: null,
+    zarrExtraDim: null,
+    zarrExtraIndex: null,
     dataset: null,
     connection: null,
     ...overrides,
@@ -475,6 +477,8 @@ describe("useLayerBuilder zarr connections", () => {
       preferredColormap: null,
       preferredColormapReversed: null,
       geozarrAttrs: null,
+      zarrExtraDim: null,
+      zarrExtraIndex: null,
       dataset: null,
       connection: conn,
       ...overrides,
@@ -715,7 +719,49 @@ describe("useLayerBuilder zarr connections", () => {
     );
     const call = buildZarrLayerMock.mock.calls[0][0];
     expect(call.selection).toEqual({ time: 7 });
-    expect(call.id).toBe("zarr-layer-z1-rain-time-7");
+    expect(call.id).toBe("zarr-layer-z1-rain-time-7-noextra-0");
+  });
+
+  it("includes extraDim in the zarr selection when set on the MapItem", () => {
+    const item = zarrItem(
+      {
+        variable: "reflectance",
+        timeDim: "time",
+        extraDim: "band",
+        extraIndex: 2,
+        rescaleMin: 0,
+        rescaleMax: 1,
+      },
+      {
+        zarrExtraDim: "band",
+        zarrExtraIndex: 2,
+      }
+    );
+    const fakeNode = {} as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 0,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 0,
+        rescaleMax: 1,
+        colormapReversed: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeNode as any,
+      })
+    );
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.selection).toEqual({ time: 0, band: 2 });
+    expect(call.id).toBe("zarr-layer-z1-reflectance-time-0-band-2");
   });
 
   it("omits variable when zarrNode is a pre-opened Array (single-resolution case)", () => {

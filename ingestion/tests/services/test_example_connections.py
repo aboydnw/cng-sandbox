@@ -225,3 +225,27 @@ def test_curated_zarr_seed_is_well_formed():
                 assert isinstance(seed.config.get("timesteps"), list)
             if "rescaleMin" in seed.config:
                 assert seed.config["rescaleMin"] < seed.config["rescaleMax"]
+            if "extraDim" in seed.config:
+                assert isinstance(seed.config["extraDim"], str)
+                assert isinstance(seed.config.get("extraIndex"), int)
+
+
+def test_ftw_predictions_seed_has_inlined_4d_config():
+    """The Fields of The World seed must inline timesteps and pin a band."""
+    from src.services.example_connections import EXAMPLE_CONNECTIONS
+
+    ftw = next((s for s in EXAMPLE_CONNECTIONS if "ftw/global-data" in s.url), None)
+    if ftw is None:
+        pytest.skip("Fields of The World seed not present")
+
+    assert ftw.zarr_time_dim is None
+    assert ftw.config["variable"] == "variables"
+    assert ftw.config["timeDim"] == "time"
+    assert ftw.config["extraDim"] == "band"
+    assert ftw.config["extraIndex"] == 1
+    timesteps = ftw.config["timesteps"]
+    assert len(timesteps) == 2
+    assert timesteps[0]["index"] == 0
+    assert timesteps[-1]["index"] == 1
+    assert ftw.geozarr_attrs is not None
+    assert ftw.geozarr_attrs["proj:code"] == "EPSG:4326"

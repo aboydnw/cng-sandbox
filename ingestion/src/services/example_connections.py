@@ -6,8 +6,12 @@ across restarts: the `(url, connection_type)` pair is the seed key, so
 re-runs skip already-present rows. Mirrors the pattern in
 `example_datasets.py` / `example_stories.py`.
 
-The list of curated connections is intentionally short at MVP (one zarr
-store). Add new entries to `EXAMPLE_CONNECTIONS` to grow the seed.
+Add new entries to `EXAMPLE_CONNECTIONS` to grow the seed. Seeds that set
+`zarr_time_dim` get their time axis probed at startup via
+`_probe_zarr_timesteps`, which assumes the time coord is `int64` nanoseconds
+since an ISO epoch (matches IMERG and MRMS-style stores). Seeds with other
+time units (e.g. "days since 2024-01-01") must skip the probe by leaving
+`zarr_time_dim` unset and inline `timesteps` in `config` instead.
 """
 
 from __future__ import annotations
@@ -68,6 +72,38 @@ EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
             "spatial:dimensions": ["latitude", "longitude"],
             "spatial:transform": [0.1, 0, -180, 0, 0.1, -90],
             "spatial:shape": [1800, 3600],
+            "proj:code": "EPSG:4326",
+        },
+    ),
+    ExampleConnectionSeed(
+        name="Fields of The World — global field predictions",
+        url="https://data.source.coop/ftw/global-data/predictions/zarr/alpha/global.zarr",
+        connection_type="zarr",
+        bounds=[-180.0, -56.93171310991181, 180.00005391686943, 83.748345],
+        config={
+            "variable": "variables",
+            "timeDim": "time",
+            "timesteps": [
+                {"datetime": "2024-01-01T00:00:00Z", "index": 0},
+                {"datetime": "2025-01-01T00:00:00Z", "index": 1},
+            ],
+            "extraDim": "band",
+            "extraIndex": 1,
+            "rescaleMin": 0,
+            "rescaleMax": 1,
+        },
+        preferred_colormap="greens",
+        geozarr_attrs={
+            "spatial:dimensions": ["y", "x"],
+            "spatial:transform": [
+                8.98311982e-05,
+                0.0,
+                -180.0,
+                0.0,
+                -8.98311982e-05,
+                83.748345,
+            ],
+            "spatial:shape": [1566049, 4007517],
             "proj:code": "EPSG:4326",
         },
     ),

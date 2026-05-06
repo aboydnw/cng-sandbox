@@ -78,7 +78,7 @@ Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tile
 
 ## Production Deployment
 
-Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing HTTPS and selective basic auth. Full deploy steps, auth model (which paths are public vs gated), CSP rules, and tile caching are in [docs/production-deployment.md](docs/production-deployment.md) — read before any prod change.
+Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing HTTPS. The whole site is public (no basic-auth gate). Full deploy steps, CSP rules, and tile caching are in [docs/production-deployment.md](docs/production-deployment.md) — read before any prod change.
 
 ## CI/CD
 

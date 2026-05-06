@@ -17,7 +17,7 @@ All paths are public. `AUTH_USER` and `AUTH_PASSWORD_HASH` are no longer consume
 
 Edit `.env` on the VM and fill in the deployment variables:
 
-```
+```dotenv
 SITE_ADDRESS=cngsandbox.org
 ```
 

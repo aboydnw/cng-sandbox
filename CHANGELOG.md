@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.0.0](https://github.com/aboydnw/cng-sandbox/compare/v1.32.0...v2.0.0) (2026-05-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deploy:** anyone with the URL can now reach the upload form, story editor, and write API endpoints. Workspaces remain privacy-by-obscurity.
+
+### Features
+
+* **deploy:** remove Caddy basic-auth gate ([#424](https://github.com/aboydnw/cng-sandbox/issues/424)) ([e5e0bf7](https://github.com/aboydnw/cng-sandbox/commit/e5e0bf7b43efedb2b78922a1b904111577a0cb94))
+* **frontend:** add global footer with attribution and key links ([#421](https://github.com/aboydnw/cng-sandbox/issues/421)) ([eb3dbb6](https://github.com/aboydnw/cng-sandbox/commit/eb3dbb6c644a5b1d1fab83a612dbbe564f33a70b))
+* **frontend:** add Privacy & data section to About page ([#422](https://github.com/aboydnw/cng-sandbox/issues/422)) ([64d1cec](https://github.com/aboydnw/cng-sandbox/commit/64d1cecfc1b0961439ea9d2c8503820e84a9d5d8))
+* **frontend:** HTML metadata + reputation files ([#420](https://github.com/aboydnw/cng-sandbox/issues/420)) ([861d6eb](https://github.com/aboydnw/cng-sandbox/commit/861d6eba01730d2121e6ab6f4897bbe3b939ac3d))
+* **frontend:** landing page replaces auto-redirect; expose public /about ([#423](https://github.com/aboydnw/cng-sandbox/issues/423)) ([69b198d](https://github.com/aboydnw/cng-sandbox/commit/69b198d21cd278d3240c9cb183199ae1566458cf))
+* **ingestion:** seed IMERG Final as example zarr connection ([#404](https://github.com/aboydnw/cng-sandbox/issues/404)) ([266192f](https://github.com/aboydnw/cng-sandbox/commit/266192f23740c46f983cdad8cdaf3d4829256c87))
+* **zarr:** GeoZarr attrs override for non-conformant zarr stores ([#414](https://github.com/aboydnw/cng-sandbox/issues/414)) ([d486371](https://github.com/aboydnw/cng-sandbox/commit/d4863712d5ea892aa5b1d65a50547d2538809f81))
+* zero-downtime deploys via GHCR pre-built images ([#406](https://github.com/aboydnw/cng-sandbox/issues/406)) ([f44e452](https://github.com/aboydnw/cng-sandbox/commit/f44e4521afc9e933dea27908886ebaceeccc0b6a))
+
+
+### Bug Fixes
+
+* **caddy:** disable HTTP/3 to prevent QUIC failures on restrictive networks ([638a1bc](https://github.com/aboydnw/cng-sandbox/commit/638a1bc5263b70cd3045a25467424baf6d75d103))
+* **frontend:** link example stories to edit page ([#415](https://github.com/aboydnw/cng-sandbox/issues/415)) ([f078359](https://github.com/aboydnw/cng-sandbox/commit/f078359ca6e17cbf76bf596a75761d6ac9504c80))
+
 ## [1.32.0](https://github.com/aboydnw/cng-sandbox/compare/v1.31.1...v1.32.0) (2026-05-01)
 
 

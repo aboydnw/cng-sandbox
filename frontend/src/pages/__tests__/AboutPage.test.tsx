@@ -66,4 +66,22 @@ describe("AboutPage", () => {
     );
     expect(footerLink).toBeTruthy();
   });
+
+  it("renders the privacy & data section", () => {
+    renderAbout();
+    expect(screen.getByText("Privacy & data")).toBeTruthy();
+    expect(screen.getByText(/Plausible/)).toBeTruthy();
+    expect(
+      screen.getByText(/no account system|don't ask for your email/i)
+    ).toBeTruthy();
+  });
+
+  it("links security reports to the security mailto", () => {
+    renderAbout();
+    const links = screen.getAllByRole("link");
+    const mailto = links.find((el) =>
+      el.getAttribute("href")?.startsWith("mailto:security@")
+    );
+    expect(mailto).toBeTruthy();
+  });
 });

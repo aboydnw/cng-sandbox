@@ -257,6 +257,103 @@ export default function AboutPage() {
           </Box>
         </Box>
 
+        <Box mb={10}>
+          <Heading size="md" color="gray.700" mb={2}>
+            Privacy & data
+          </Heading>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            CNG Sandbox is a public demo. Here is how we treat the data you
+            upload and the activity you generate while using the site.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Your uploads
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            Files you upload are stored under a workspace ID generated for you.
+            Anyone with your workspace link can see the data in that workspace.
+            Don't upload anything you wouldn't want a stranger with the link to
+            see.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Workspaces
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            Workspaces and their data don't expire automatically today. We may
+            clean up unused workspaces in the future, with notice. To delete
+            your workspace on demand, email{" "}
+            <a
+              href="mailto:security@developmentseed.org"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              security@developmentseed.org
+            </a>
+            .
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Analytics
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            We use{" "}
+            <a
+              href="https://plausible.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              Plausible Analytics
+            </a>
+            , which is privacy-friendly and does not use cookies,
+            fingerprinting, or persistent identifiers. We track aggregate page
+            views and events; we do not see who you are.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Account &amp; login
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            There is no account system. We don't ask for your email, name, or
+            any other personal information.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Source code &amp; security reports
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall">
+            The full source for this site is open on{" "}
+            <a
+              href="https://github.com/aboydnw/cng-sandbox"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              GitHub
+            </a>
+            . Security reports:{" "}
+            <a
+              href="mailto:security@developmentseed.org"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              security@developmentseed.org
+            </a>
+            .
+          </Text>
+        </Box>
+
         <Box mb={8}>
           <Text color="gray.500" fontSize="sm">
             v1.15.1

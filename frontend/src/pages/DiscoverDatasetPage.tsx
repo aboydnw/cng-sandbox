@@ -8,6 +8,7 @@ import { config } from "../config";
 import type { Dataset } from "../types";
 import { getCatalogEntry, listingUrlForSlug } from "../lib/discoverCatalog";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
+import { Footer } from "../components/Footer";
 
 const PAGE_BG = "#fafaf8";
 const BORDER = "#e8e6e1";
@@ -41,7 +42,7 @@ export default function DiscoverDatasetPage() {
 
   if (!entry) {
     return (
-      <Box minH="100vh" bg={PAGE_BG} color={TEXT}>
+      <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
         <DiscoverHeader />
         <Box maxW="1100px" mx="auto" px={6} py={16} textAlign="center">
           <Heading fontSize="28px" fontWeight={600} mb={2}>
@@ -60,7 +61,8 @@ export default function DiscoverDatasetPage() {
             Back to discover
           </Link>
         </Box>
-      </Box>
+        <Footer />
+      </Flex>
     );
   }
 
@@ -79,7 +81,7 @@ export default function DiscoverDatasetPage() {
   };
 
   return (
-    <Box minH="100vh" bg={PAGE_BG} color={TEXT}>
+    <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
       <DiscoverHeader />
 
       <Box maxW="1100px" mx="auto" px={6} pt={8} pb={20}>
@@ -351,7 +353,8 @@ export default function DiscoverDatasetPage() {
           </Box>
         </Flex>
       </Box>
-    </Box>
+      <Footer />
+    </Flex>
   );
 }
 

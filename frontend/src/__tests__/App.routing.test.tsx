@@ -35,10 +35,6 @@ vi.mock("../pages/ExpiredPage", () => ({
   default: () => <div data-testid="expired-page" />,
 }));
 
-vi.mock("../components/WelcomeToast", () => ({
-  WelcomeToast: () => null,
-}));
-
 function renderApp(route: string) {
   return render(
     <ChakraProvider value={defaultSystem}>
@@ -64,4 +60,40 @@ test("/map/connection/:id renders MapPage with shared=true", () => {
 test("/story/:id renders StoryReaderPage", () => {
   renderApp("/story/test-story-id");
   expect(screen.getByTestId("story-reader")).toBeInTheDocument();
+});
+
+vi.mock("../pages/LandingPage", () => ({
+  default: () => <div data-testid="landing-page" />,
+}));
+
+vi.mock("../pages/AboutPage", () => ({
+  default: () => <div data-testid="about-page" />,
+}));
+
+vi.mock("../hooks/useWorkspace", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../hooks/useWorkspace")>();
+  return {
+    ...actual,
+    WorkspaceRedirect: () => <div data-testid="workspace-redirect" />,
+  };
+});
+
+test("/ renders LandingPage (no auto-redirect to a workspace)", () => {
+  renderApp("/");
+  expect(screen.getByTestId("landing-page")).toBeInTheDocument();
+});
+
+test("/about renders the public AboutPage without a workspace", () => {
+  renderApp("/about");
+  expect(screen.getByTestId("about-page")).toBeInTheDocument();
+});
+
+test("/w/:workspaceId/ still renders the workspace UploadPage", () => {
+  renderApp("/w/abc12345/");
+  expect(screen.getByTestId("upload-page")).toBeInTheDocument();
+});
+
+test("unknown public path falls through to WorkspaceRedirect", () => {
+  renderApp("/data");
+  expect(screen.getByTestId("workspace-redirect")).toBeInTheDocument();
 });

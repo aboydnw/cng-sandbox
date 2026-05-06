@@ -11,6 +11,7 @@ import {
   type CatalogEntry,
 } from "../lib/discoverCatalog";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
+import { Footer } from "../components/Footer";
 
 const PAGE_BG = "#fafaf8";
 const CARD_BG = "#ffffff";
@@ -57,7 +58,7 @@ export default function DiscoverPage() {
   };
 
   return (
-    <Box minH="100vh" bg={PAGE_BG} color={TEXT}>
+    <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
       <DiscoverHeader />
 
       <Box maxW="1100px" mx="auto" px={6} pt={10} pb={6}>
@@ -156,7 +157,8 @@ export default function DiscoverPage() {
           </Text>
         </Box>
       </Box>
-    </Box>
+      <Footer />
+    </Flex>
   );
 }
 

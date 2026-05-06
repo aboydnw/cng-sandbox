@@ -1,21 +1,16 @@
 import { Link } from "react-router-dom";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Button, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
 
 export default function ExpiredPage() {
   const { workspacePath } = useWorkspace();
 
   return (
-    <Box minH="100vh" bg="white">
+    <Flex direction="column" minH="100vh" bg="white">
       <Header />
-      <Flex
-        direction="column"
-        align="center"
-        justify="center"
-        h="calc(100vh - 56px)"
-        px={8}
-      >
+      <Flex direction="column" align="center" justify="center" flex="1" px={8}>
         <Flex
           align="center"
           justify="center"
@@ -70,6 +65,7 @@ export default function ExpiredPage() {
           </Button>
         </Flex>
       </Flex>
-    </Box>
+      <Footer />
+    </Flex>
   );
 }

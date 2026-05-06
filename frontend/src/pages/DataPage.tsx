@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
@@ -95,7 +96,7 @@ export default function DataPage() {
   }, []);
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Flex justify="space-between" align="center" mb={6}>
@@ -390,6 +391,7 @@ export default function DataPage() {
           })()
         )}
       </Box>
-    </Box>
+      <Footer />
+    </Flex>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import type { Story } from "../lib/story/types";
@@ -48,7 +49,7 @@ export default function StoriesPage() {
   const userStories = stories.filter((s) => !s.is_example);
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Flex justify="space-between" align="center" mb={6}>
@@ -201,6 +202,7 @@ export default function StoriesPage() {
           </Table.Root>
         )}
       </Box>
-    </Box>
+      <Footer />
+    </Flex>
   );
 }

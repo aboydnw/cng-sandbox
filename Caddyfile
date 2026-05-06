@@ -99,19 +99,10 @@
 		}
 	}
 
-	# API: auth required for writes and for workspace-listing reads.
-	# Individual resource reads (GET /api/{datasets,connections,stories}/{id})
-	# and /api/proxy, /api/health stay public so shared /map and /story URLs
-	# can load without a password prompt.
-	#
-	# flush_interval -1 enables SSE streaming (upload progress, conversion
-	# jobs). 15GB body + 30min timeouts accommodate large raster uploads
-	# and multi-minute gdalwarp reprojections.
+	# API: fully public. flush_interval -1 enables SSE streaming (upload
+	# progress, conversion jobs). 15GB body + 30min timeouts accommodate
+	# large raster uploads and multi-minute gdalwarp reprojections.
 	handle /api/* {
-		@apiNeedsAuth `({method} != 'GET' && {method} != 'HEAD') || {path}.matches('^/api/(datasets|connections|stories)/?$')`
-		basic_auth @apiNeedsAuth {
-			{$AUTH_USER} {$AUTH_PASSWORD_HASH}
-		}
 		request_body {
 			max_size 15GB
 		}
@@ -124,14 +115,8 @@
 		}
 	}
 
-	# Frontend: serve static files from the production build.
-	#
-	# Auth model: shared /map and /story reader URLs are public so anyone
-	# with the link can view them. The rest of the SPA (upload, library,
-	# discover, story editor, workspace-scoped routes) is gated behind basic
-	# auth at this layer so the password prompt appears up front instead of
-	# surprising the user mid-flow. /assets/* must stay public or the SPA
-	# bundle can't load.
+	# Frontend: serve static files from the production build. The whole
+	# SPA is public — there is no basic-auth gate.
 	#
 	# Cache policy: hashed assets (/assets/*) are immutable and cached
 	# for 1 year. index.html must always be revalidated so browsers
@@ -146,40 +131,8 @@
 		@notAssets not path /assets/*
 		header @notAssets Cache-Control "no-cache"
 
-		# Auth required for any SPA path that isn't /assets/* or a public
-		# shared view. Public shared views: /map/* (including
-		# /map/connection/*) and /story/:id plus /story/:id/embed where
-		# :id is a UUID. Matching the UUID shape explicitly keeps
-		# /story/new (the editor's "create" route) and /story/:id/edit
-		# behind auth without needing a regex lookahead (Go's RE2 engine
-		# doesn't support them).
-		#
-		# The route block forces basic_auth to run before try_files. In
-		# Caddy's default directive ordering, try_files rewrites the URI
-		# to /index.html before basic_auth evaluates its matcher — which
-		# would make every SPA fallback look like /index.html and break
-		# the public-path carve-out. route preserves written order.
-		# Public static files in the frontend's public/ dir must be listed
-		# here so they don't trigger a basic-auth prompt when a shared /map
-		# or /story page references them. Browsers also auto-request
-		# /favicon.ico — if that returns 401 the dialog pops up even
-		# though the SPA shell loaded fine.
-		@spaNeedsAuth {
-			not path /assets/*
-			not path /favicon.ico
-			not path /logo.svg
-			not path /gif.worker.js
-			not path /fonts/*
-			not path /thumbnails/*
-			not path_regexp ^/(map/.+|story/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(/embed)?/?)$
-		}
-		route {
-			basic_auth @spaNeedsAuth {
-				{$AUTH_USER} {$AUTH_PASSWORD_HASH}
-			}
-			try_files {path} /index.html
-			file_server
-		}
+		try_files {path} /index.html
+		file_server
 	}
 }
 

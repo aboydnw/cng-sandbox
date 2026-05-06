@@ -7,6 +7,7 @@ import {
   ArrowRight,
 } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
 
 const PIPELINE_STEPS = [
   {
@@ -96,7 +97,7 @@ const OPEN_SOURCE_STACK = [
 
 export default function AboutPage() {
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Box mb={10}>
@@ -256,12 +257,112 @@ export default function AboutPage() {
           </Box>
         </Box>
 
+        <Box mb={10}>
+          <Heading size="md" color="gray.700" mb={2}>
+            Privacy & data
+          </Heading>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            CNG Sandbox is a public demo. Here is how we treat the data you
+            upload and the activity you generate while using the site.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Your uploads
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            Files you upload are stored under a workspace ID generated for you.
+            To protect from data storage costs, datasets have an expiration
+            policy of 30 days from the time of upload. If you would like to
+            explore a more permanent data storage solution, please reach out to{" "}
+            <a
+              href="mailto:info@developmentseed.org"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              info@developmentseed.org
+            </a>
+            .
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Workspaces
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            You are automatically assigned a unique workspace code. This allows
+            you to share your work with collaborators, but only if you directly
+            share the URL or workspace ID with them. Workspaces do not
+            automatically expire, although uploaded datasets inside workspaces
+            will expire to the policy listed above.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Analytics
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            We use{" "}
+            <a
+              href="https://plausible.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              Plausible Analytics
+            </a>
+            , which is privacy-friendly and does not use cookies,
+            fingerprinting, or persistent identifiers. We track aggregate page
+            views and events; we do not see who you are.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Account &amp; login
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            There is no account system. We don't ask for your email, name, or
+            any other personal information.
+          </Text>
+
+          <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
+            Source code
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall">
+            The full source for this site is open on{" "}
+            <a
+              href="https://github.com/aboydnw/cng-sandbox"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              GitHub
+            </a>
+            .
+          </Text>
+        </Box>
+
         <Box mb={8}>
           <Text color="gray.500" fontSize="sm">
-            v1.15.1
+            <a
+              href="https://github.com/aboydnw/cng-sandbox/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              v{__APP_VERSION__}
+            </a>
           </Text>
         </Box>
       </Box>
-    </Box>
+      <Footer />
+    </Flex>
   );
 }

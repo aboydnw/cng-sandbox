@@ -66,4 +66,30 @@ describe("AboutPage", () => {
     );
     expect(footerLink).toBeTruthy();
   });
+
+  it("renders the privacy & data section", () => {
+    renderAbout();
+    expect(screen.getByText("Privacy & data")).toBeTruthy();
+    expect(screen.getByText(/Plausible/)).toBeTruthy();
+    expect(
+      screen.getByText(/no account system|don't ask for your email/i)
+    ).toBeTruthy();
+  });
+
+  it("links the uploads policy to the info mailto", () => {
+    renderAbout();
+    const links = screen.getAllByRole("link");
+    const mailto = links.find(
+      (el) => el.getAttribute("href") === "mailto:info@developmentseed.org"
+    );
+    expect(mailto).toBeTruthy();
+  });
+
+  it("links the version to the GitHub releases page", () => {
+    renderAbout();
+    const link = screen.getByText(new RegExp(`^v${__APP_VERSION__}$`));
+    expect(link.closest("a")?.getAttribute("href")).toBe(
+      "https://github.com/aboydnw/cng-sandbox/releases"
+    );
+  });
 });

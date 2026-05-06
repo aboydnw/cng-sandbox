@@ -717,4 +717,37 @@ describe("useLayerBuilder zarr connections", () => {
     expect(call.selection).toEqual({ time: 7 });
     expect(call.id).toBe("zarr-layer-z1-rain-time-7");
   });
+
+  it("omits variable when zarrNode is a pre-opened Array (single-resolution case)", () => {
+    const item = zarrItem({
+      variable: "precipitation",
+      rescaleMin: 0,
+      rescaleMax: 30,
+    });
+    const fakeArray = { shape: [10, 1800, 3600] } as unknown;
+    renderHook(() =>
+      useLayerBuilder({
+        item,
+        renderMode: "server",
+        canClientRender: false,
+        opacity: 1,
+        colormapName: "viridis",
+        effectiveBand: "rgb",
+        isSingleBand: true,
+        isMultiBand: false,
+        isCategorical: false,
+        activeTimestepIndex: 0,
+        getLoadCallback: () => () => {},
+        arrowTable: null,
+        rescaleMin: 0,
+        rescaleMax: 30,
+        colormapReversed: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        zarrNode: fakeArray as any,
+      })
+    );
+    const call = buildZarrLayerMock.mock.calls[0][0];
+    expect(call.node).toBe(fakeArray);
+    expect(call.variable).toBeUndefined();
+  });
 });

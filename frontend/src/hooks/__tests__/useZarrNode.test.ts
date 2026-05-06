@@ -157,6 +157,49 @@ describe("useZarrNode", () => {
     await waitFor(() => expect(result.current.node).toBe(b));
   });
 
+  it("opens variable as an array when config.variable is set and the path is an array", async () => {
+    const { open } = await importMocks();
+    const root = {
+      __isGroup: true,
+      resolve: vi.fn((path: string) => ({ __resolved: path })),
+    };
+    const arrayNode = { __isArray: true, shape: [10, 1800, 3600] };
+    open.mockResolvedValueOnce(root).mockResolvedValueOnce(arrayNode);
+
+    const item = makeZarrItem("https://example.com/imerg.zarr");
+    item.connection!.config = { variable: "precipitation" };
+
+    const { result } = renderHook(() => useZarrNode(item));
+    await waitFor(() => {
+      expect(result.current.node).toBe(arrayNode);
+    });
+    expect(root.resolve).toHaveBeenCalledWith("precipitation");
+    expect(open).toHaveBeenLastCalledWith(
+      { __resolved: "precipitation" },
+      { kind: "array" }
+    );
+  });
+
+  it("falls back to the root group when variable resolution fails (multiscale group case)", async () => {
+    const { open } = await importMocks();
+    const root = {
+      __isGroup: true,
+      resolve: vi.fn(() => ({})),
+    };
+    open
+      .mockResolvedValueOnce(root)
+      .mockRejectedValueOnce(new Error("not an array"));
+
+    const item = makeZarrItem("https://example.com/multiscale.zarr");
+    item.connection!.config = { variable: "var0" };
+
+    const { result } = renderHook(() => useZarrNode(item));
+    await waitFor(() => {
+      expect(result.current.node).toBe(root);
+    });
+    expect(result.current.error).toBeNull();
+  });
+
   it("ignores stale results when a new URL supersedes an in-flight open", async () => {
     const { open } = await importMocks();
     let resolveA: (v: unknown) => void = () => {};

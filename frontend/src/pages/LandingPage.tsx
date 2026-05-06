@@ -43,7 +43,9 @@ export default function LandingPage() {
             w="64px"
             h="64px"
             borderRadius="full"
-            bg="orange.50"
+            bg="brand.bgSubtle"
+            border="1px solid"
+            borderColor="brand.border"
             mx="auto"
             mb={5}
           >

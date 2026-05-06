@@ -14,7 +14,7 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 **Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions. This rebuilds and republishes the images, then redeploys without creating a release.
 
-**Version:** Tracked in `version.txt` (managed by release-please, don't edit manually).
+**Version:** Tracked in `frontend/version.txt` (managed by release-please, don't edit manually).
 
 ## Deploy mechanics (GHCR-based)
 

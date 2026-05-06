@@ -23,7 +23,7 @@ Dense reference material lives under [docs/](docs/) and should be read only when
 
 - [docs/frontend-gotchas.md](docs/frontend-gotchas.md) — tile URLs, client-side COG rendering, EPSG resolver, pixel inspector, snapshots, GeoParquet, Chakra v3, analytics, portable story config (iframe embeds), zarr connections. Read before touching `frontend/src/`.
 - [docs/api-reference.md](docs/api-reference.md) — full ingestion API surface. Read before adding/changing any `/api/*` endpoint or frontend-backend contract.
-- [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, Caddy auth model, CSP, tile caching. Read before prod changes.
+- [docs/production-deployment.md](docs/production-deployment.md) — Hetzner deploy, CSP, tile caching. Read before prod changes.
 - [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.
 - [docs/example-data.md](docs/example-data.md) — `is_example` datasets/stories/connections, source.coop seeding. Read before touching `src/services/example_*.py`.
 - [docs/services.md](docs/services.md) — tipg/titiler-pgstac notes, GDAL+R2 env vars. Read before editing tiler env-vars in `docker-compose.yml` or debugging tile-rendering S3/GDAL config issues.
@@ -78,7 +78,7 @@ Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tile
 
 ## Production Deployment
 
-Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing HTTPS and selective basic auth. Full deploy steps, auth model (which paths are public vs gated), CSP rules, and tile caching are in [docs/production-deployment.md](docs/production-deployment.md) — read before any prod change.
+Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing HTTPS. The whole site is public (no basic-auth gate). Full deploy steps, CSP rules, and tile caching are in [docs/production-deployment.md](docs/production-deployment.md) — read before any prod change.
 
 ## CI/CD
 

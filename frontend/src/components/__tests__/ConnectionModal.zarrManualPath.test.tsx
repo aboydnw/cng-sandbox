@@ -65,6 +65,8 @@ describe("ConnectionModal — non-consolidated zarr fallback", () => {
           stats: { min: 0, max: 100 },
           timeDim: "time",
           timesteps: null,
+          extraDim: null,
+          extraLabels: null,
           compatibility: { kind: "ok" },
         },
       ],

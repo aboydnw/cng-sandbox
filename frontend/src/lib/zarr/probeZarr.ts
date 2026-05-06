@@ -32,6 +32,10 @@ export interface ZarrVariable {
   timeDim: string | null;
   /** Decoded time-coord values. Decimated when the coord is huge. `null` when decoding failed. */
   timesteps: ZarrTimestep[] | null;
+  /** Name of a recognized non-spatial, non-time dim, if any. */
+  extraDim: string | null;
+  /** Decoded labels for the extra dim (e.g. ["B02","B03","B04"]). Falls back to ["0","1",...]. */
+  extraLabels: string[] | null;
   compatibility: ZarrCompatibility;
 }
 
@@ -44,10 +48,27 @@ export interface ZarrProbeResult {
 }
 
 const TIME_DIM_NAMES = new Set(["time", "t", "valid_time"]);
+const EXTRA_DIM_NAMES = new Set([
+  "band",
+  "level",
+  "channel",
+  "depth",
+  "z",
+  "pressure",
+  "height",
+]);
+const MAX_EXTRA_DIM_LENGTH = 256;
 
 function inferTimeDim(dimNames: string[]): string | null {
   for (const name of dimNames) {
     if (TIME_DIM_NAMES.has(name.toLowerCase())) return name;
+  }
+  return null;
+}
+
+function inferExtraDim(dimNames: string[]): string | null {
+  for (const n of dimNames) {
+    if (EXTRA_DIM_NAMES.has(n.toLowerCase())) return n;
   }
   return null;
 }
@@ -63,24 +84,68 @@ function classifyVariable(
     };
   }
   if (shape.length === 2) return { kind: "ok" };
+
+  const timeDim = inferTimeDim(dimNames);
+  const extraDim = inferExtraDim(dimNames);
+
   if (shape.length === 3) {
-    if (inferTimeDim(dimNames) !== null) return { kind: "ok" };
+    if (timeDim) return { kind: "ok" };
+    if (extraDim) {
+      const len = shape[dimNames.indexOf(extraDim)];
+      if (len > MAX_EXTRA_DIM_LENGTH) {
+        return {
+          kind: "incompatible",
+          reason: `Extra dim "${extraDim}" has ${len} entries (> ${MAX_EXTRA_DIM_LENGTH}). Continuous third axes aren't supported.`,
+        };
+      }
+      return { kind: "ok" };
+    }
     return {
       kind: "incompatible",
-      reason: `Variable has 3 dimensions but the extra one (${
-        dimNames.find(
-          (n) =>
-            !["x", "y", "lat", "lon", "latitude", "longitude"].includes(
-              n.toLowerCase()
-            )
-        ) ?? dimNames[0]
-      }) is not recognized as a time dimension. Multidimensional Zarr support is on the roadmap.`,
+      reason: `Variable has 3 dimensions but the extra one is not recognized as a time or band/level dimension.`,
     };
   }
+
+  if (shape.length === 4) {
+    if (timeDim && extraDim) {
+      const len = shape[dimNames.indexOf(extraDim)];
+      if (len > MAX_EXTRA_DIM_LENGTH) {
+        return {
+          kind: "incompatible",
+          reason: `Extra dim "${extraDim}" has ${len} entries (> ${MAX_EXTRA_DIM_LENGTH}).`,
+        };
+      }
+      return { kind: "ok" };
+    }
+    return {
+      kind: "incompatible",
+      reason: `Variable has 4 dimensions (${dimNames.join(", ")}); need both a time dim and one band/level/channel-like dim.`,
+    };
+  }
+
   return {
     kind: "incompatible",
-    reason: `Variable has ${shape.length} dimensions (${dimNames.join(", ")}); only 2D + optional time are supported at MVP. Extra dimensions beyond time/lat/lon are not yet handled.`,
+    reason: `Variable has ${shape.length} dimensions (${dimNames.join(", ")}); 2D + optional time + optional band is the limit.`,
   };
+}
+
+async function decodeExtraLabels(
+  group: zarr.Group<zarr.Readable>,
+  coordPath: string,
+  fallbackLength: number
+): Promise<string[]> {
+  try {
+    const arr = await zarr.open(group.resolve(coordPath), { kind: "array" });
+    const slab = (await zarr.get(arr, [null])) as { data: ArrayLike<unknown> };
+    const out: string[] = [];
+    for (let i = 0; i < slab.data.length; i++) {
+      const v = slab.data[i];
+      out.push(typeof v === "string" ? v : String(v));
+    }
+    return out;
+  } catch {
+    return Array.from({ length: fallbackLength }, (_, i) => String(i));
+  }
 }
 
 function detectCrsWarning(attrs: Record<string, unknown>): string | null {
@@ -170,20 +235,34 @@ export async function probeZarrSingleArray(
   const dimNames = (arr.dimensionNames ?? []).map((n) => n ?? "");
   const compatibility = classifyVariable(arr.shape, dimNames);
   const timeDim = inferTimeDim(dimNames);
+  const extraDim = inferExtraDim(dimNames);
   const stats = extractStats(arr.attrs as Record<string, unknown>);
 
+  const parentPath = cleanPath.includes("/")
+    ? cleanPath.slice(0, cleanPath.lastIndexOf("/"))
+    : "";
+  let root: zarr.Group<zarr.Readable> | null = null;
+  try {
+    root = await zarr.open(store, { kind: "group" });
+  } catch {
+    root = null;
+  }
+
   let timesteps: ZarrTimestep[] | null = null;
-  if (timeDim && compatibility.kind === "ok") {
-    const parentPath = cleanPath.includes("/")
-      ? cleanPath.slice(0, cleanPath.lastIndexOf("/"))
-      : "";
+  if (timeDim && compatibility.kind === "ok" && root) {
     const coordPath = parentPath ? `${parentPath}/${timeDim}` : timeDim;
     try {
-      const root = await zarr.open(store, { kind: "group" });
       timesteps = await decodeTimeValues(root, coordPath);
     } catch {
       timesteps = null;
     }
+  }
+
+  let extraLabels: string[] | null = null;
+  if (extraDim && compatibility.kind === "ok" && root) {
+    const extraLen = arr.shape[dimNames.indexOf(extraDim)];
+    const coordPath = parentPath ? `${parentPath}/${extraDim}` : extraDim;
+    extraLabels = await decodeExtraLabels(root, coordPath, extraLen);
   }
 
   const variable: ZarrVariable = {
@@ -195,16 +274,12 @@ export async function probeZarrSingleArray(
     stats,
     timeDim,
     timesteps,
+    extraDim,
+    extraLabels,
     compatibility,
   };
   const crsWarning = detectCrsWarning(variable.attrs);
-  let rootAttrs: Record<string, unknown> | null;
-  try {
-    const root = await zarr.open(store, { kind: "group" });
-    rootAttrs = root.attrs as Record<string, unknown>;
-  } catch {
-    rootAttrs = null;
-  }
+  const rootAttrs = root ? (root.attrs as Record<string, unknown>) : null;
   return { variables: [variable], crsWarning, rootAttrs };
 }
 
@@ -257,12 +332,13 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
       const dimNames = (arr.dimensionNames ?? []).map((n) => n ?? "");
       const compatibility = classifyVariable(arr.shape, dimNames);
       const timeDim = inferTimeDim(dimNames);
+      const extraDim = inferExtraDim(dimNames);
       const stats = extractStats(arr.attrs as Record<string, unknown>);
+      const parentPath = name.includes("/")
+        ? name.slice(0, name.lastIndexOf("/"))
+        : "";
       let timesteps: ZarrTimestep[] | null = null;
       if (timeDim && compatibility.kind === "ok") {
-        const parentPath = name.includes("/")
-          ? name.slice(0, name.lastIndexOf("/"))
-          : "";
         const scopedCoordPath = parentPath
           ? `${parentPath}/${timeDim}`
           : timeDim;
@@ -281,6 +357,12 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
           timestepsCache.set(scopedCoordPath, timesteps);
         }
       }
+      let extraLabels: string[] | null = null;
+      if (extraDim && compatibility.kind === "ok") {
+        const extraLen = arr.shape[dimNames.indexOf(extraDim)];
+        const coordPath = parentPath ? `${parentPath}/${extraDim}` : extraDim;
+        extraLabels = await decodeExtraLabels(root, coordPath, extraLen);
+      }
       const variable: ZarrVariable = {
         name,
         shape: arr.shape,
@@ -290,6 +372,8 @@ export async function probeZarr(url: string): Promise<ZarrProbeResult> {
         stats,
         timeDim,
         timesteps,
+        extraDim,
+        extraLabels,
         compatibility,
       };
       variables.push(variable);

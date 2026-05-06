@@ -2,7 +2,7 @@ import { Flex, Text } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useState, useCallback } from "react";
-import { useWorkspace } from "../hooks/useWorkspace";
+import { useOptionalWorkspace } from "../hooks/useWorkspace";
 
 interface HeaderProps {
   children?: ReactNode;
@@ -10,15 +10,21 @@ interface HeaderProps {
 }
 
 export function Header({ children, showWorkspace = true }: HeaderProps) {
-  const { workspaceId, workspacePath } = useWorkspace();
+  const workspace = useOptionalWorkspace();
   const [copied, setCopied] = useState(false);
 
+  const homeHref = workspace ? workspace.workspacePath("/") : "/";
+  const dataHref = workspace ? workspace.workspacePath("/data") : null;
+  const storiesHref = workspace ? workspace.workspacePath("/stories") : null;
+  const aboutHref = workspace ? workspace.workspacePath("/about") : "/about";
+
   const copyWorkspaceUrl = useCallback(() => {
-    const url = `${window.location.origin}/w/${workspaceId}`;
+    if (!workspace) return;
+    const url = `${window.location.origin}/w/${workspace.workspaceId}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [workspaceId]);
+  }, [workspace]);
 
   return (
     <Flex
@@ -32,10 +38,7 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
       borderColor="brand.border"
     >
       <Flex align="center" gap={6} flexShrink={0}>
-        <Link
-          to={workspacePath("/")}
-          style={{ textDecoration: "none", flexShrink: 0 }}
-        >
+        <Link to={homeHref} style={{ textDecoration: "none", flexShrink: 0 }}>
           <Flex align="center" gap={3} flexShrink={0}>
             <img
               src="/logo.svg"
@@ -54,27 +57,31 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
             </Text>
           </Flex>
         </Link>
-        <Link to={workspacePath("/data")} style={{ textDecoration: "none" }}>
-          <Text
-            fontSize="sm"
-            fontWeight={500}
-            color="brand.brown"
-            _hover={{ color: "brand.orange" }}
-          >
-            Data
-          </Text>
-        </Link>
-        <Link to={workspacePath("/stories")} style={{ textDecoration: "none" }}>
-          <Text
-            fontSize="sm"
-            fontWeight={500}
-            color="brand.brown"
-            _hover={{ color: "brand.orange" }}
-          >
-            Stories
-          </Text>
-        </Link>
-        <Link to={workspacePath("/about")} style={{ textDecoration: "none" }}>
+        {dataHref && (
+          <Link to={dataHref} style={{ textDecoration: "none" }}>
+            <Text
+              fontSize="sm"
+              fontWeight={500}
+              color="brand.brown"
+              _hover={{ color: "brand.orange" }}
+            >
+              Data
+            </Text>
+          </Link>
+        )}
+        {storiesHref && (
+          <Link to={storiesHref} style={{ textDecoration: "none" }}>
+            <Text
+              fontSize="sm"
+              fontWeight={500}
+              color="brand.brown"
+              _hover={{ color: "brand.orange" }}
+            >
+              Stories
+            </Text>
+          </Link>
+        )}
+        <Link to={aboutHref} style={{ textDecoration: "none" }}>
           <Text
             fontSize="sm"
             fontWeight={500}
@@ -85,7 +92,7 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
           </Text>
         </Link>
       </Flex>
-      {showWorkspace && (
+      {showWorkspace && workspace && (
         <Flex
           align="center"
           gap={1}
@@ -99,7 +106,9 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
           fontSize="xs"
           color="gray.500"
         >
-          <Text>{copied ? "Copied!" : `Workspace ${workspaceId}`}</Text>
+          <Text>
+            {copied ? "Copied!" : `Workspace ${workspace.workspaceId}`}
+          </Text>
         </Flex>
       )}
       {children && (

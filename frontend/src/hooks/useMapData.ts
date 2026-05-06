@@ -127,13 +127,22 @@ function parseZarrConfig(
           )
       : [];
   const timesteps = parsedTimesteps ?? legacyTimesteps;
+  const validExtraDim =
+    typeof c.extraDim === "string" && c.extraDim.length > 0 ? c.extraDim : null;
+  const validExtraIndex =
+    typeof c.extraIndex === "number" &&
+    Number.isInteger(c.extraIndex) &&
+    c.extraIndex >= 0
+      ? c.extraIndex
+      : null;
+  const hasValidExtra = validExtraDim !== null && validExtraIndex !== null;
   return {
     isTemporal: hasTime && timesteps.length > 0,
     timesteps,
     rasterMin: typeof c.rescaleMin === "number" ? c.rescaleMin : null,
     rasterMax: typeof c.rescaleMax === "number" ? c.rescaleMax : null,
-    extraDim: typeof c.extraDim === "string" ? c.extraDim : null,
-    extraIndex: typeof c.extraIndex === "number" ? c.extraIndex : null,
+    extraDim: hasValidExtra ? validExtraDim : null,
+    extraIndex: hasValidExtra ? validExtraIndex : null,
   };
 }
 

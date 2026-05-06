@@ -241,7 +241,7 @@ export async function probeZarrSingleArray(
   const parentPath = cleanPath.includes("/")
     ? cleanPath.slice(0, cleanPath.lastIndexOf("/"))
     : "";
-  let root: zarr.Group<zarr.Readable> | null = null;
+  let root: zarr.Group<zarr.Readable> | null;
   try {
     root = await zarr.open(store, { kind: "group" });
   } catch {

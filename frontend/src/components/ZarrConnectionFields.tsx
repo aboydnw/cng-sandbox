@@ -70,6 +70,15 @@ export function ZarrConnectionFields({
     setMaxStr(String(selected.stats.max));
   }, [selected]);
 
+  useEffect(() => {
+    const labels = selected?.extraLabels;
+    if (!labels?.length) {
+      setExtraIndex(0);
+      return;
+    }
+    setExtraIndex((current) => Math.min(current, labels.length - 1));
+  }, [selected?.name, selected?.extraLabels]);
+
   if (probe.variables.length === 0) {
     return (
       <Text fontSize="13px" color="red.500">

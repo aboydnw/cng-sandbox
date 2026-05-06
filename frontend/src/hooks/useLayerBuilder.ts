@@ -37,7 +37,10 @@ interface UseLayerBuilderOptions {
     | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onVectorClick?: (info: any) => void;
-  zarrNode?: zarr.Group<zarr.Readable> | null;
+  zarrNode?:
+    | zarr.Group<zarr.Readable>
+    | zarr.Array<zarr.DataType, zarr.Readable>
+    | null;
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -282,9 +285,10 @@ export function useLayerBuilder({
           (typeof config.rescaleMax === "number" ? config.rescaleMax : null) ??
           item.rasterMax ??
           1;
+        const isArrayNode = "shape" in zarrNode;
         return buildZarrLayer({
           node: zarrNode,
-          variable,
+          variable: isArrayNode ? undefined : variable,
           selection,
           opacity,
           rescaleMin: safeMin,

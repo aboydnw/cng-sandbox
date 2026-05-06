@@ -88,6 +88,10 @@ export interface ZarrConnectionConfig {
   timeDim?: string | null;
   /** Decoded time coord values with their actual zarr indices. Decimated when huge. */
   timesteps?: { datetime: string; index: number }[] | null;
+  /** Name of a recognized band/level/channel dim, if the variable has one. */
+  extraDim?: string | null;
+  /** Index into the extra dim (0-based, persisted at save time). */
+  extraIndex?: number | null;
   rescaleMin: number;
   rescaleMax: number;
 }
@@ -210,6 +214,8 @@ export interface MapItem {
   preferredColormap: string | null;
   preferredColormapReversed: boolean | null;
   geozarrAttrs: GeoZarrAttrs | null;
+  zarrExtraDim: string | null;
+  zarrExtraIndex: number | null;
   dataset: Dataset | null;
   connection: Connection | null;
 }

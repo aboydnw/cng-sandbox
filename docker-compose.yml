@@ -215,7 +215,7 @@ services:
       - prod
     volumes:
       - frontend_dist:/dist
-    command: ["sh", "-c", "rm -rf /dist/* && cp -a /build/. /dist/"]
+    command: ["sh", "-c", "find /dist -mindepth 1 -delete && cp -a /build/. /dist/"]
 
   caddy:
     image: caddy:2.11.2

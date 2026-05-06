@@ -4,7 +4,7 @@ import { GithubLogo } from "@phosphor-icons/react";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 
 const GITHUB_URL = "https://github.com/aboydnw/cng-sandbox";
-const SECURITY_MAILTO = "mailto:security@developmentseed.org";
+const CONTACT_URL = "https://developmentseed.org/contact/";
 const DS_URL = "https://developmentseed.org/";
 
 const linkStyle = {
@@ -19,6 +19,7 @@ export function Footer() {
   return (
     <Flex
       as="footer"
+      mt="auto"
       align="center"
       justify="space-between"
       px={6}
@@ -63,8 +64,13 @@ export function Footer() {
           <GithubLogo size={16} weight="duotone" />
           GitHub
         </a>
-        <a href={SECURITY_MAILTO} style={linkStyle}>
-          Security
+        <a
+          href={CONTACT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={linkStyle}
+        >
+          Contact Us
         </a>
       </Flex>
     </Flex>

@@ -76,12 +76,20 @@ describe("AboutPage", () => {
     ).toBeTruthy();
   });
 
-  it("links security reports to the security mailto", () => {
+  it("links the uploads policy to the info mailto", () => {
     renderAbout();
     const links = screen.getAllByRole("link");
-    const mailto = links.find((el) =>
-      el.getAttribute("href")?.startsWith("mailto:security@")
+    const mailto = links.find(
+      (el) => el.getAttribute("href") === "mailto:info@developmentseed.org"
     );
     expect(mailto).toBeTruthy();
+  });
+
+  it("links the version to the GitHub releases page", () => {
+    renderAbout();
+    const link = screen.getByText(new RegExp(`^v${__APP_VERSION__}$`));
+    expect(link.closest("a")?.getAttribute("href")).toBe(
+      "https://github.com/aboydnw/cng-sandbox/releases"
+    );
   });
 });

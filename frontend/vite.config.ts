@@ -1,10 +1,20 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineConfig, mergeConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { sharedConfig } from "./vite.shared.config";
 
+const appVersion = readFileSync(
+  resolve(__dirname, "..", "version.txt"),
+  "utf8"
+).trim();
+
 export default defineConfig(
   mergeConfig(sharedConfig, {
     plugins: [react()],
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+    },
     build: {
       target: "esnext",
     },

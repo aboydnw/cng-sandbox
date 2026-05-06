@@ -42,12 +42,14 @@ describe("Footer", () => {
     expect(link.getAttribute("href")).toBe("/w/test-workspace/about");
   });
 
-  it("links to the security mailto", () => {
+  it("links to the Development Seed contact page", () => {
     renderFooter();
-    const link = screen.getByRole("link", { name: /security/i });
+    const link = screen.getByRole("link", { name: /contact us/i });
     expect(link.getAttribute("href")).toBe(
-      "mailto:security@developmentseed.org"
+      "https://developmentseed.org/contact/"
     );
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
   });
 
   it("credits Development Seed", () => {

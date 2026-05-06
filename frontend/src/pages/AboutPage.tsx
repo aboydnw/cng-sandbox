@@ -97,7 +97,7 @@ const OPEN_SOURCE_STACK = [
 
 export default function AboutPage() {
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Box mb={10}>
@@ -271,28 +271,30 @@ export default function AboutPage() {
           </Text>
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
             Files you upload are stored under a workspace ID generated for you.
-            Anyone with your workspace link can see the data in that workspace.
-            Don't upload anything you wouldn't want a stranger with the link to
-            see.
+            To protect from data storage costs, datasets have an expiration
+            policy of 30 days from the time of upload. If you would like to
+            explore a more permanent data storage solution, please reach out to{" "}
+            <a
+              href="mailto:info@developmentseed.org"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              info@developmentseed.org
+            </a>
+            .
           </Text>
 
           <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
             Workspaces
           </Text>
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
-            Workspaces and their data don't expire automatically today. We may
-            clean up unused workspaces in the future, with notice. To delete
-            your workspace on demand, email{" "}
-            <a
-              href="mailto:security@developmentseed.org"
-              style={{
-                color: "var(--chakra-colors-brand-orange)",
-                fontWeight: 600,
-              }}
-            >
-              security@developmentseed.org
-            </a>
-            .
+            You are automatically assigned a unique workspace code. This allows
+            you to share your work with collaborators, but only if you directly
+            share the URL or workspace ID with them. Workspaces do not
+            automatically expire, although uploaded datasets inside workspaces
+            will expire to the policy listed above.
           </Text>
 
           <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
@@ -325,7 +327,7 @@ export default function AboutPage() {
           </Text>
 
           <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
-            Source code &amp; security reports
+            Source code
           </Text>
           <Text color="gray.700" fontSize="sm" lineHeight="tall">
             The full source for this site is open on{" "}
@@ -340,27 +342,27 @@ export default function AboutPage() {
             >
               GitHub
             </a>
-            . Security reports:{" "}
-            <a
-              href="mailto:security@developmentseed.org"
-              style={{
-                color: "var(--chakra-colors-brand-orange)",
-                fontWeight: 600,
-              }}
-            >
-              security@developmentseed.org
-            </a>
             .
           </Text>
         </Box>
 
         <Box mb={8}>
           <Text color="gray.500" fontSize="sm">
-            v1.15.1
+            <a
+              href="https://github.com/aboydnw/cng-sandbox/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              v{__APP_VERSION__}
+            </a>
           </Text>
         </Box>
       </Box>
       <Footer />
-    </Box>
+    </Flex>
   );
 }

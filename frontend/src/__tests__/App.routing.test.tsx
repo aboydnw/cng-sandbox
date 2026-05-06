@@ -35,10 +35,6 @@ vi.mock("../pages/ExpiredPage", () => ({
   default: () => <div data-testid="expired-page" />,
 }));
 
-vi.mock("../components/WelcomeToast", () => ({
-  WelcomeToast: () => null,
-}));
-
 function renderApp(route: string) {
   return render(
     <ChakraProvider value={defaultSystem}>

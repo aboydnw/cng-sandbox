@@ -175,47 +175,111 @@ def _probe_zarr_timesteps(
     return results
 
 
-def _existing_connection_keys(
+def _existing_connection_rows(
     db_session_factory: sessionmaker,
-) -> set[tuple[str, str]]:
-    """Return {(url, connection_type)} for every ConnectionRow.
+) -> dict[tuple[str, str], ConnectionRow]:
+    """Return {(url, connection_type): row} for every ConnectionRow.
 
-    We dedupe against ALL existing rows (not just `is_example=True`) so that
-    a pre-existing user-owned connection with the same `(url, connection_type)`
+    We index ALL existing rows (not just `is_example=True`) so that a
+    pre-existing user-owned connection with the same `(url, connection_type)`
     is not duplicated as an example row.
     """
     session = db_session_factory()
     try:
         rows = session.query(ConnectionRow).all()
-        return {(r.url, r.connection_type) for r in rows}
+        return {(r.url, r.connection_type): r for r in rows}
     finally:
         session.close()
 
 
+_BACKFILLABLE_FIELDS: tuple[tuple[str, str], ...] = (
+    ("geozarr_attrs", "geozarr_attrs"),
+    ("preferred_colormap", "preferred_colormap"),
+    ("preferred_colormap_reversed", "preferred_colormap_reversed"),
+    ("rescale", "rescale"),
+    ("band_count", "band_count"),
+    ("tile_type", "tile_type"),
+)
+
+
+def _backfill_existing_example_row(
+    session, row: ConnectionRow, seed: ExampleConnectionSeed
+) -> bool:
+    """Fill curated fields that are NULL on an `is_example=True` row from `seed`.
+
+    Returns True if any field was changed. Operator-set values (already non-NULL)
+    are left alone, and `config` / `name` are never touched (they may carry
+    runtime-probed timesteps or curator edits). User-owned rows must be filtered
+    by the caller before invoking.
+    """
+    changed = False
+    for row_attr, seed_attr in _BACKFILLABLE_FIELDS:
+        seed_value = getattr(seed, seed_attr)
+        if seed_value is None:
+            continue
+        if getattr(row, row_attr) is None:
+            setattr(row, row_attr, seed_value)
+            changed = True
+    if row.bounds_json is None and seed.bounds:
+        row.bounds_json = json.dumps(seed.bounds)
+        changed = True
+    if changed:
+        session.commit()
+    return changed
+
+
 def seed_example_connections(db_session_factory: sessionmaker) -> None:
-    """Insert every entry in `EXAMPLE_CONNECTIONS` not already present.
+    """Insert missing example connections and backfill curated fields on existing ones.
 
-    Idempotent: a `(url, connection_type)` pair already present in the
-    `connections` table is skipped, regardless of whether the existing row
-    is an example row or a workspace-owned row. Errors on individual seeds
-    are logged but do not abort the rest of the batch.
+    For each entry in `EXAMPLE_CONNECTIONS`:
 
-    For seeds with `zarr_time_dim` set, the time coordinate is fetched from
-    the remote store at startup and decimated to `zarr_max_steps` entries.
-    If the probe fails, that seed is skipped with a warning.
+    - If no row exists for `(url, connection_type)`: insert a fresh `is_example=True`
+      row, probing remote timesteps first when `zarr_time_dim` is set.
+    - If an `is_example=True` row already exists: backfill curated metadata
+      (`geozarr_attrs`, `preferred_colormap`, `bounds`, etc.) into any field that is
+      currently NULL. This catches rows seeded before a curated field was added to
+      the seed entry. `config` and `name` are never overwritten — they may hold
+      runtime-probed timesteps or operator edits. No remote probe is issued for
+      existing rows.
+    - If a user-owned row exists for the same key: leave it untouched.
+
+    Errors on individual seeds are logged but do not abort the rest of the batch.
     """
     if not EXAMPLE_CONNECTIONS:
         logger.info("No example connections defined; skipping seed")
         return
-    existing = _existing_connection_keys(db_session_factory)
+    existing = _existing_connection_rows(db_session_factory)
     session = db_session_factory()
     try:
         for seed in EXAMPLE_CONNECTIONS:
             key = (seed.url, seed.connection_type)
-            if key in existing:
-                logger.info(
-                    "example connection already present, skipping: %s", seed.name
-                )
+            existing_row = existing.get(key)
+            if existing_row is not None:
+                if not existing_row.is_example:
+                    logger.info(
+                        "user-owned connection exists for %s; leaving untouched",
+                        seed.name,
+                    )
+                    continue
+                row = session.get(ConnectionRow, existing_row.id)
+                if row is None:
+                    continue
+                try:
+                    if _backfill_existing_example_row(session, row, seed):
+                        logger.info(
+                            "backfilled curated fields on example connection: %s",
+                            seed.name,
+                        )
+                    else:
+                        logger.info(
+                            "example connection already present, skipping: %s",
+                            seed.name,
+                        )
+                except Exception:
+                    session.rollback()
+                    logger.exception(
+                        "Failed to backfill example connection: %s", seed.name
+                    )
                 continue
 
             config: dict[str, Any] = dict(seed.config)
@@ -257,7 +321,7 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
                 )
                 session.add(row)
                 session.commit()
-                existing.add(key)
+                existing[key] = row
                 logger.info("registered example connection: %s", seed.name)
             except Exception:
                 session.rollback()

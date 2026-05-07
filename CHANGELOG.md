@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.0](https://github.com/aboydnw/cng-sandbox/compare/v2.1.1...v2.2.0) (2026-05-06)
+
+
+### Features
+
+* **connections:** seed Fields of The World as a 4D zarr example ([#434](https://github.com/aboydnw/cng-sandbox/issues/434)) ([7463d79](https://github.com/aboydnw/cng-sandbox/commit/7463d79819628a7678dcec6de6a184dc61b4c821))
+* **frontend:** refocus landing on storytelling, add workspace switcher menu ([#430](https://github.com/aboydnw/cng-sandbox/issues/430)) ([05d8d17](https://github.com/aboydnw/cng-sandbox/commit/05d8d177e86f914e0a9f8aba5242971c24e39926))
+* **zarr:** band/level picker for 4D zarr stores ([#433](https://github.com/aboydnw/cng-sandbox/issues/433)) ([22f1b5c](https://github.com/aboydnw/cng-sandbox/commit/22f1b5cf0952bfea14e4e59f48b98c8b9afa37bf))
+
+
+### Bug Fixes
+
+* **frontend:** pre-open single-array zarr variables to render IMERG ([#432](https://github.com/aboydnw/cng-sandbox/issues/432)) ([1af949c](https://github.com/aboydnw/cng-sandbox/commit/1af949c5761bded35223cba9eb0b4677000aecc5))
+
 ## [2.1.1](https://github.com/aboydnw/cng-sandbox/compare/v2.1.0...v2.1.1) (2026-05-06)
 
 

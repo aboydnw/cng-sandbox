@@ -15,8 +15,10 @@ import {
   groupChaptersIntoBlocks,
   buildLayersForChapter,
 } from "../lib/story/rendering";
+import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
+import type { ZarrNode } from "../hooks/useZarrNode";
 
 function ScrollytellingBlock({
   chapters,
@@ -115,10 +117,21 @@ function ScrollytellingBlock({
     });
   }, [activeIndex, chapters]);
 
+  const activeChapter = chapters[activeIndex];
+  const activeConnId = activeChapter?.layer_config?.connection_id ?? null;
+  const activeConn = activeConnId ? (connectionMap?.get(activeConnId) ?? null) : null;
+  const zarrNode = useStoryZarrNode(activeConn);
+  const zarrNodeMap = useMemo<Map<string, ZarrNode>>(() => {
+    if (activeConnId && zarrNode) {
+      return new Map([[activeConnId, zarrNode]]);
+    }
+    return new Map();
+  }, [activeConnId, zarrNode]);
+
   const { layers, renderMetadata } = useMemo(
     () =>
-      buildLayersForChapter(chapters[activeIndex], datasetMap, connectionMap),
-    [datasetMap, connectionMap, activeIndex, chapters]
+      buildLayersForChapter(chapters[activeIndex], datasetMap, connectionMap, zarrNodeMap),
+    [datasetMap, connectionMap, activeIndex, chapters, zarrNodeMap]
   );
 
   const handleCameraChange = useCallback((c: CameraState) => {
@@ -126,7 +139,6 @@ function ScrollytellingBlock({
     setTransitionDuration(undefined);
   }, []);
 
-  const activeChapter = chapters[activeIndex];
   const hasConnection =
     activeChapter?.layer_config?.connection_id &&
     connectionMap?.has(activeChapter.layer_config.connection_id);

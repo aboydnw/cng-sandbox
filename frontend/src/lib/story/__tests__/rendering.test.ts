@@ -12,6 +12,11 @@ vi.mock("../../connections", () => ({
     conn.url,
 }));
 
+const mockZarrLayer = vi.fn(() => [{ id: "zarr-layer" }]);
+vi.mock("../../layers/zarrLayer", () => ({
+  buildZarrLayer: (...args: unknown[]) => mockZarrLayer(...args),
+}));
+
 import { buildLayersForChapter } from "../rendering";
 import { createChapter } from "../types";
 import type { Dataset, Connection } from "../../../types";
@@ -323,6 +328,118 @@ describe("buildLayersForChapter — connection COG rescale and colormap_reversed
       layers[0] as unknown as { props: { data: string } }
     ).props.data;
     expect(tileUrl).toContain("colormap_name=plasma_r");
+  });
+});
+
+const ZARR_CONNECTION: Connection = {
+  ...BASE_CONNECTION,
+  id: "zarr-1",
+  name: "Test Zarr",
+  url: "https://example.com/store.zarr",
+  connection_type: "zarr",
+  tile_type: null,
+  band_count: null,
+  rescale: null,
+  config: {
+    variable: "precipitation",
+    timeDim: "time",
+    timesteps: [{ index: 0 }, { index: 1 }, { index: 2 }],
+    extraDim: null,
+    extraIndex: null,
+    rescaleMin: 0,
+    rescaleMax: 100,
+  },
+};
+
+describe("buildLayersForChapter — zarr connection", () => {
+  it("returns empty layers when zarrNodeMap is not provided", () => {
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "",
+        connection_id: "zarr-1",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "positron",
+      },
+    });
+    const { layers } = buildLayersForChapter(
+      chapter,
+      new Map(),
+      new Map([["zarr-1", ZARR_CONNECTION]])
+    );
+    expect(layers).toHaveLength(0);
+  });
+
+  it("returns empty layers when node is not in zarrNodeMap", () => {
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "",
+        connection_id: "zarr-1",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "positron",
+      },
+    });
+    const fakeNode = { store: {} } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
+    const { layers } = buildLayersForChapter(
+      chapter,
+      new Map(),
+      new Map([["zarr-1", ZARR_CONNECTION]]),
+      new Map([["other-id", fakeNode]])
+    );
+    expect(layers).toHaveLength(0);
+  });
+
+  it("returns empty layers when connection has no variable in config", () => {
+    const noVarConn: Connection = {
+      ...ZARR_CONNECTION,
+      config: { timeDim: "time" },
+    };
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "",
+        connection_id: "zarr-1",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "positron",
+      },
+    });
+    const fakeNode = { store: {} } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
+    const { layers } = buildLayersForChapter(
+      chapter,
+      new Map(),
+      new Map([["zarr-1", noVarConn]]),
+      new Map([["zarr-1", fakeNode]])
+    );
+    expect(layers).toHaveLength(0);
+  });
+
+  it("calls buildZarrLayer with correct params when node is provided", () => {
+    mockZarrLayer.mockClear();
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "",
+        connection_id: "zarr-1",
+        colormap: "plasma",
+        opacity: 0.7,
+        basemap: "positron",
+        timestep: 1,
+      },
+    });
+    const fakeNode = { store: {} } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
+    const { layers } = buildLayersForChapter(
+      chapter,
+      new Map(),
+      new Map([["zarr-1", ZARR_CONNECTION]]),
+      new Map([["zarr-1", fakeNode]])
+    );
+    expect(layers.length).toBeGreaterThan(0);
+    expect(mockZarrLayer).toHaveBeenCalledOnce();
+    const callArgs = mockZarrLayer.mock.calls[0][0] as Record<string, unknown>;
+    expect(callArgs.variable).toBe("precipitation");
+    expect(callArgs.colormapName).toBe("plasma");
+    expect(callArgs.opacity).toBe(0.7);
+    expect((callArgs.selection as Record<string, number>).time).toBe(1);
   });
 });
 

@@ -27,6 +27,7 @@ interface VectorLayerOptions {
   maxZoom?: number;
   onHover?: (info: any) => void;
   onClick?: (info: any) => void;
+  getFillColor?: ((feature: any) => [number, number, number, number]) | [number, number, number, number];
 }
 
 export function buildVectorLayer({
@@ -38,6 +39,7 @@ export function buildVectorLayer({
   maxZoom,
   onHover,
   onClick,
+  getFillColor,
 }: VectorLayerOptions) {
   const baseConfig = {
     id,
@@ -54,7 +56,7 @@ export function buildVectorLayer({
     pickable: true,
     autoHighlight: true,
     highlightColor: [255, 255, 255, 60] as [number, number, number, number],
-    getFillColor: FILL_COLOR,
+    getFillColor: getFillColor ?? FILL_COLOR,
     getLineColor: LINE_COLOR,
     getLineWidth: 1.5,
     lineWidthMinPixels: 1,

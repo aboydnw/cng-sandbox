@@ -19,6 +19,23 @@ import type {
 } from "./types";
 import type { Dataset, Connection } from "../../types";
 
+function makePcaRgbFillColor(
+  colorProperty: string
+): (feature: { properties: Record<string, unknown> | null }) => [number, number, number, number] {
+  return (feature) => {
+    const val = feature?.properties?.[colorProperty];
+    if (Array.isArray(val) && val.length >= 3) {
+      return [
+        Math.round(Math.max(0, Math.min(1, val[0] as number)) * 255),
+        Math.round(Math.max(0, Math.min(1, val[1] as number)) * 255),
+        Math.round(Math.max(0, Math.min(1, val[2] as number)) * 255),
+        200,
+      ];
+    }
+    return [128, 128, 128, 200];
+  };
+}
+
 export type ContentBlock =
   | {
       type: "scrollytelling";
@@ -152,6 +169,9 @@ export function buildLayersForChapter(
             opacity: lc.opacity,
             minZoom: conn.min_zoom ?? undefined,
             maxZoom: conn.max_zoom ?? undefined,
+            ...(lc.color_mode === "rgb" && lc.color_property
+              ? { getFillColor: makePcaRgbFillColor(lc.color_property) }
+              : {}),
           }),
         ],
       };
@@ -179,6 +199,9 @@ export function buildLayersForChapter(
             opacity: lc.opacity,
             minZoom: conn.min_zoom ?? undefined,
             maxZoom: conn.max_zoom ?? undefined,
+            ...(lc.color_mode === "rgb" && lc.color_property
+              ? { getFillColor: makePcaRgbFillColor(lc.color_property) }
+              : {}),
           }),
         ],
       };
@@ -252,6 +275,9 @@ export function buildLayersForChapter(
         opacity: lc.opacity,
         minZoom: ds.min_zoom ?? undefined,
         maxZoom: ds.max_zoom ?? undefined,
+        ...(lc.color_mode === "rgb" && lc.color_property
+          ? { getFillColor: makePcaRgbFillColor(lc.color_property) }
+          : {}),
       }),
     ],
   };

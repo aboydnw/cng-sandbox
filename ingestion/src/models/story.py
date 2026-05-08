@@ -49,6 +49,8 @@ class LayerConfigPayload(BaseModel):
     rescale_min: float | None = None
     rescale_max: float | None = None
     colormap_reversed: bool | None = None
+    color_property: str | None = None
+    color_mode: Literal["rgb"] | None = None
 
 
 class _BaseChapter(BaseModel):

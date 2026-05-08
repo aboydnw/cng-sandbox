@@ -20,6 +20,7 @@ _SUPPORTED_EXTENSIONS = {
     ".nc4",
     ".h5",
     ".hdf5",
+    ".parquet",
 }
 
 

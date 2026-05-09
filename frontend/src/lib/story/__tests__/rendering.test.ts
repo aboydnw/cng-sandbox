@@ -380,7 +380,9 @@ describe("buildLayersForChapter — zarr connection", () => {
         basemap: "positron",
       },
     });
-    const fakeNode = { store: {} } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
+    const fakeNode = {
+      store: {},
+    } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
     const { layers } = buildLayersForChapter(
       chapter,
       new Map(),
@@ -404,7 +406,9 @@ describe("buildLayersForChapter — zarr connection", () => {
         basemap: "positron",
       },
     });
-    const fakeNode = { store: {} } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
+    const fakeNode = {
+      store: {},
+    } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
     const { layers } = buildLayersForChapter(
       chapter,
       new Map(),
@@ -426,7 +430,9 @@ describe("buildLayersForChapter — zarr connection", () => {
         timestep: 1,
       },
     });
-    const fakeNode = { store: {} } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
+    const fakeNode = {
+      store: {},
+    } as unknown as import("../../../hooks/useZarrNode").ZarrNode;
     const { layers } = buildLayersForChapter(
       chapter,
       new Map(),

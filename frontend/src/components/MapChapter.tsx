@@ -50,8 +50,9 @@ export function MapChapter({
   const { layers, renderMetadata } = useMemo(() => {
     if (connection) {
       const connMap = new Map([[connection.id, connection]]);
-      const zarrNodeMap =
-        zarrNode ? new Map([[connection.id, zarrNode]]) : new Map();
+      const zarrNodeMap = zarrNode
+        ? new Map([[connection.id, zarrNode]])
+        : new Map();
       return buildLayersForChapter(
         chapter,
         new Map() as Map<string, Dataset | null>,

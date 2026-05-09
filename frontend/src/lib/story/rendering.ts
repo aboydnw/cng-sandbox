@@ -23,7 +23,9 @@ import type { ZarrNode } from "../../hooks/useZarrNode";
 
 function makePcaRgbFillColor(
   colorProperty: string
-): (feature: { properties: Record<string, unknown> | null }) => [number, number, number, number] {
+): (feature: {
+  properties: Record<string, unknown> | null;
+}) => [number, number, number, number] {
   return (feature) => {
     const val = feature?.properties?.[colorProperty];
     if (Array.isArray(val) && val.length >= 3) {
@@ -213,15 +215,19 @@ export function buildLayersForChapter(
     if (conn.connection_type === "zarr") {
       const node = zarrNodeMap?.get(lc.connection_id);
       if (!node) return { layers: [] };
-      const zarrConfig = (conn.config as {
-        variable?: string;
-        timeDim?: string | null;
-        timesteps?: Array<{ index: number }> | null;
-        extraDim?: string | null;
-        extraIndex?: number | null;
-        rescaleMin?: number | null;
-        rescaleMax?: number | null;
-      } | null | undefined) ?? {};
+      const zarrConfig =
+        (conn.config as
+          | {
+              variable?: string;
+              timeDim?: string | null;
+              timesteps?: Array<{ index: number }> | null;
+              extraDim?: string | null;
+              extraIndex?: number | null;
+              rescaleMin?: number | null;
+              rescaleMax?: number | null;
+            }
+          | null
+          | undefined) ?? {};
       const variable = zarrConfig.variable;
       if (!variable) return { layers: [] };
       const timeDim = zarrConfig.timeDim ?? null;
@@ -241,8 +247,18 @@ export function buildLayersForChapter(
           variable: isArrayNode ? undefined : variable,
           selection,
           opacity: lc.opacity,
-          rescaleMin: lc.rescale_min ?? (typeof zarrConfig.rescaleMin === "number" ? zarrConfig.rescaleMin : null) ?? 0,
-          rescaleMax: lc.rescale_max ?? (typeof zarrConfig.rescaleMax === "number" ? zarrConfig.rescaleMax : null) ?? 1,
+          rescaleMin:
+            lc.rescale_min ??
+            (typeof zarrConfig.rescaleMin === "number"
+              ? zarrConfig.rescaleMin
+              : null) ??
+            0,
+          rescaleMax:
+            lc.rescale_max ??
+            (typeof zarrConfig.rescaleMax === "number"
+              ? zarrConfig.rescaleMax
+              : null) ??
+            1,
           colormapName: lc.colormap,
           colormapReversed: lc.colormap_reversed ?? false,
           id: `zarr-story-${lc.connection_id}`,

@@ -119,7 +119,9 @@ function ScrollytellingBlock({
 
   const activeChapter = chapters[activeIndex];
   const activeConnId = activeChapter?.layer_config?.connection_id ?? null;
-  const activeConn = activeConnId ? (connectionMap?.get(activeConnId) ?? null) : null;
+  const activeConn = activeConnId
+    ? (connectionMap?.get(activeConnId) ?? null)
+    : null;
   const zarrNode = useStoryZarrNode(activeConn);
   const zarrNodeMap = useMemo<Map<string, ZarrNode>>(() => {
     if (activeConnId && zarrNode) {
@@ -130,7 +132,12 @@ function ScrollytellingBlock({
 
   const { layers, renderMetadata } = useMemo(
     () =>
-      buildLayersForChapter(chapters[activeIndex], datasetMap, connectionMap, zarrNodeMap),
+      buildLayersForChapter(
+        chapters[activeIndex],
+        datasetMap,
+        connectionMap,
+        zarrNodeMap
+      ),
     [datasetMap, connectionMap, activeIndex, chapters, zarrNodeMap]
   );
 

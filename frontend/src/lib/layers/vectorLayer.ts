@@ -27,7 +27,9 @@ interface VectorLayerOptions {
   maxZoom?: number;
   onHover?: (info: any) => void;
   onClick?: (info: any) => void;
-  getFillColor?: ((feature: any) => [number, number, number, number]) | [number, number, number, number];
+  getFillColor?:
+    | ((feature: any) => [number, number, number, number])
+    | [number, number, number, number];
 }
 
 export function buildVectorLayer({

@@ -12,9 +12,9 @@ vi.mock("../../connections", () => ({
     conn.url,
 }));
 
-const mockZarrLayer = vi.fn(() => [{ id: "zarr-layer" }]);
+const mockZarrLayer = vi.fn((_opts: unknown) => [{ id: "zarr-layer" }]);
 vi.mock("../../layers/zarrLayer", () => ({
-  buildZarrLayer: (...args: unknown[]) => mockZarrLayer(...args),
+  buildZarrLayer: (opts: unknown) => mockZarrLayer(opts),
 }));
 
 import { buildLayersForChapter } from "../rendering";
@@ -441,7 +441,10 @@ describe("buildLayersForChapter — zarr connection", () => {
     );
     expect(layers.length).toBeGreaterThan(0);
     expect(mockZarrLayer).toHaveBeenCalledOnce();
-    const callArgs = mockZarrLayer.mock.calls[0][0] as Record<string, unknown>;
+    const callArgs = mockZarrLayer.mock.calls[0][0] as unknown as Record<
+      string,
+      unknown
+    >;
     expect(callArgs.variable).toBe("precipitation");
     expect(callArgs.colormapName).toBe("plasma");
     expect(callArgs.opacity).toBe(0.7);

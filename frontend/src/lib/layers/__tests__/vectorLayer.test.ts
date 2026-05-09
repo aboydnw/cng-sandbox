@@ -49,7 +49,7 @@ describe("buildVectorLayer", () => {
   });
 
   it("uses custom getFillColor when provided", () => {
-    const customFill = (f: unknown) => [255, 0, 0, 200] as [number, number, number, number];
+    const customFill = (_f: unknown) => [255, 0, 0, 200] as [number, number, number, number];
     const layer = buildVectorLayer({
       tileUrl: "/vector/collections/public.sandbox_abc123/tiles/{z}/{x}/{y}",
       isPMTiles: false,

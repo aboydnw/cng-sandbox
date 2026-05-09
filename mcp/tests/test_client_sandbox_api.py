@@ -92,3 +92,23 @@ async def test_validate_layer_config(sandbox_api_url, mock_http_client):
     client = SandboxAPIClient(api_url=sandbox_api_url, http_client=mock_http_client)
     result = await client.validate_layer_config(dataset_id="ds_1", colormap="viridis", rescale_min=0, rescale_max=100)
     assert result["valid"] is True
+
+
+@pytest.mark.asyncio
+async def test_create_connection(sandbox_api_url, mock_http_client):
+    expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
+    mock_http_client.post = AsyncMock(return_value=_make_response(expected))
+    client = SandboxAPIClient(
+        api_url=sandbox_api_url, workspace_id="ws12345x", http_client=mock_http_client
+    )
+    result = await client.create_connection(
+        name="Test Zarr",
+        url="s3://example/zarr/",
+        connection_type="zarr",
+    )
+    assert result["id"] == "conn_123"
+    mock_http_client.post.assert_called_once()
+    call_kwargs = mock_http_client.post.call_args[1]
+    assert call_kwargs["json"]["name"] == "Test Zarr"
+    assert call_kwargs["json"]["connection_type"] == "zarr"
+    assert call_kwargs["headers"] == {"X-Workspace-Id": "ws12345x"}

@@ -378,6 +378,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.stories import router as stories_router
     from src.routes.story_assets import router as story_assets_router
     from src.routes.upload import router as upload_router
+    from src.routes.validation import router as validation_router
     from src.routes.zarr_proxy import router as zarr_proxy_router
 
     app.include_router(upload_router)
@@ -393,6 +394,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(connect_source_coop_router)
     app.include_router(inspect_router)
     app.include_router(zarr_proxy_router)
+    app.include_router(validation_router)
 
     return app
 

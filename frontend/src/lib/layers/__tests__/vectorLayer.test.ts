@@ -47,4 +47,25 @@ describe("buildVectorLayer", () => {
     });
     expect(layer.props.loadOptions).toEqual({ worker: false });
   });
+
+  it("uses custom getFillColor when provided", () => {
+    const customFill = (_f: unknown) =>
+      [255, 0, 0, 200] as [number, number, number, number];
+    const layer = buildVectorLayer({
+      tileUrl: "/vector/collections/public.sandbox_abc123/tiles/{z}/{x}/{y}",
+      isPMTiles: false,
+      opacity: 1,
+      getFillColor: customFill,
+    });
+    expect(layer.props.getFillColor).toBe(customFill);
+  });
+
+  it("falls back to default fill color when getFillColor is not provided", () => {
+    const layer = buildVectorLayer({
+      tileUrl: "/vector/collections/public.sandbox_abc123/tiles/{z}/{x}/{y}",
+      isPMTiles: false,
+      opacity: 1,
+    });
+    expect(Array.isArray(layer.props.getFillColor)).toBe(true);
+  });
 });

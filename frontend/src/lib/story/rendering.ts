@@ -4,6 +4,7 @@ import {
   buildVectorLayer,
   isPMTilesDataset,
 } from "../layers";
+import { buildZarrLayer } from "../layers/zarrLayer";
 import { buildConnectionTileUrl } from "../connections";
 import { resolveRasterLayers } from "../layers/resolveRasterLayers";
 import { datasetToMapItem, connectionToMapItem } from "../../hooks/useMapData";
@@ -18,6 +19,26 @@ import type {
   ChartChapter,
 } from "./types";
 import type { Dataset, Connection } from "../../types";
+import type { ZarrNode } from "../../hooks/useZarrNode";
+
+function makePcaRgbFillColor(
+  colorProperty: string
+): (feature: {
+  properties: Record<string, unknown> | null;
+}) => [number, number, number, number] {
+  return (feature) => {
+    const val = feature?.properties?.[colorProperty];
+    if (Array.isArray(val) && val.length >= 3) {
+      return [
+        Math.round(Math.max(0, Math.min(1, val[0] as number)) * 255),
+        Math.round(Math.max(0, Math.min(1, val[1] as number)) * 255),
+        Math.round(Math.max(0, Math.min(1, val[2] as number)) * 255),
+        200,
+      ];
+    }
+    return [128, 128, 128, 200];
+  };
+}
 
 export type ContentBlock =
   | {
@@ -97,7 +118,8 @@ export interface ChapterLayerResult {
 export function buildLayersForChapter(
   chapter: Chapter,
   datasetMap: Map<string, Dataset | null>,
-  connectionMap?: Map<string, Connection>
+  connectionMap?: Map<string, Connection>,
+  zarrNodeMap?: Map<string, ZarrNode>
 ): ChapterLayerResult {
   if (!isMapBoundChapter(chapter)) return { layers: [] };
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
@@ -152,6 +174,9 @@ export function buildLayersForChapter(
             opacity: lc.opacity,
             minZoom: conn.min_zoom ?? undefined,
             maxZoom: conn.max_zoom ?? undefined,
+            ...(lc.color_mode === "rgb" && lc.color_property
+              ? { getFillColor: makePcaRgbFillColor(lc.color_property) }
+              : {}),
           }),
         ],
       };
@@ -179,8 +204,66 @@ export function buildLayersForChapter(
             opacity: lc.opacity,
             minZoom: conn.min_zoom ?? undefined,
             maxZoom: conn.max_zoom ?? undefined,
+            ...(lc.color_mode === "rgb" && lc.color_property
+              ? { getFillColor: makePcaRgbFillColor(lc.color_property) }
+              : {}),
           }),
         ],
+      };
+    }
+
+    if (conn.connection_type === "zarr") {
+      const node = zarrNodeMap?.get(lc.connection_id);
+      if (!node) return { layers: [] };
+      const zarrConfig =
+        (conn.config as
+          | {
+              variable?: string;
+              timeDim?: string | null;
+              timesteps?: Array<{ index: number }> | null;
+              extraDim?: string | null;
+              extraIndex?: number | null;
+              rescaleMin?: number | null;
+              rescaleMax?: number | null;
+            }
+          | null
+          | undefined) ?? {};
+      const variable = zarrConfig.variable;
+      if (!variable) return { layers: [] };
+      const timeDim = zarrConfig.timeDim ?? null;
+      const selection: Record<string, number> = {};
+      if (timeDim) {
+        const tsIdx = lc.timestep ?? 0;
+        const slot = zarrConfig.timesteps?.[tsIdx];
+        selection[timeDim] = slot?.index ?? tsIdx;
+      }
+      if (zarrConfig.extraDim != null && zarrConfig.extraIndex != null) {
+        selection[zarrConfig.extraDim] = zarrConfig.extraIndex;
+      }
+      const isArrayNode = "shape" in node;
+      return {
+        layers: buildZarrLayer({
+          node,
+          variable: isArrayNode ? undefined : variable,
+          selection,
+          opacity: lc.opacity,
+          rescaleMin:
+            lc.rescale_min ??
+            (typeof zarrConfig.rescaleMin === "number"
+              ? zarrConfig.rescaleMin
+              : null) ??
+            0,
+          rescaleMax:
+            lc.rescale_max ??
+            (typeof zarrConfig.rescaleMax === "number"
+              ? zarrConfig.rescaleMax
+              : null) ??
+            1,
+          colormapName: lc.colormap,
+          colormapReversed: lc.colormap_reversed ?? false,
+          id: `zarr-story-${lc.connection_id}`,
+          geozarrAttrs: conn.geozarr_attrs ?? undefined,
+        }),
       };
     }
 
@@ -252,6 +335,9 @@ export function buildLayersForChapter(
         opacity: lc.opacity,
         minZoom: ds.min_zoom ?? undefined,
         maxZoom: ds.max_zoom ?? undefined,
+        ...(lc.color_mode === "rgb" && lc.color_property
+          ? { getFillColor: makePcaRgbFillColor(lc.color_property) }
+          : {}),
       }),
     ],
   };

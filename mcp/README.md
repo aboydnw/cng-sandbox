@@ -66,6 +66,20 @@ Modify an existing story.
 ### read_connections
 List external tile source connections.
 
+### create_connection
+Create a new external tile source connection.
+**Input**:
+- `name` (string)
+- `url` (string)
+- `connection_type` (string): one of `zarr`, `cog`, `pmtiles`, `xyz`, `geoparquet`
+- `bounds` (array, optional): `[west, south, east, north]`
+- `min_zoom` / `max_zoom` (integer, optional)
+- `tile_type` (string, optional): tile image format (e.g. `png`, `webp`)
+- `band_count` (integer, optional)
+- `rescale` (string, optional): range as `"min,max"`
+- `config` (object, optional): additional tiler config
+- `geozarr_attrs` (object, optional): GeoZarr-spec attributes
+
 ### validate_layer_config
 Check if a layer configuration is valid before creating a chapter.
 **Input**: `dataset_id`, `colormap`, optional `rescale_min`/`rescale_max`

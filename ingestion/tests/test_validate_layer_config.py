@@ -1,7 +1,5 @@
 """Tests for POST /api/validate-layer-config."""
 
-import pytest
-
 
 def test_validate_layer_config_missing_dataset(client):
     resp = client.post(

@@ -47,8 +47,12 @@ async def create_connection_tool(
     geozarr_attrs: Optional[dict[str, Any]] = None,
 ) -> TextContent:
     """Create a new external tile source connection."""
-    if not name:
+    if not name or not name.strip():
         return TextContent(type="text", text="Error: name is required.")
+    if not url or not url.strip():
+        return TextContent(type="text", text="Error: url is required.")
+    if not connection_type or not connection_type.strip():
+        return TextContent(type="text", text="Error: connection_type is required.")
     conn = await client.create_connection(
         name=name,
         url=url,

@@ -20,7 +20,7 @@ class ValidateLayerConfigBody(BaseModel):
 @router.post("/validate-layer-config")
 def validate_layer_config(body: ValidateLayerConfigBody, request: Request):
     """Check that a dataset exists and colormap is non-empty before creating a story chapter."""
-    if not body.colormap:
+    if not body.colormap or not body.colormap.strip():
         return {"valid": False, "error": "colormap is required"}
     workspace_id = request.headers.get("x-workspace-id", "")
     session = get_session(request)

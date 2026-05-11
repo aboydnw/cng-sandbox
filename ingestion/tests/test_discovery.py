@@ -55,6 +55,11 @@ class TestExtractFileLinks:
         results = extract_file_links(html, "http://example.com/")
         assert len(results) == 1
 
+    def test_parquet_links_are_discovered(self):
+        html = '<a href="/data/iowa_stats.parquet">iowa_stats.parquet</a>'
+        results = extract_file_links(html, "https://example.com/")
+        assert any(r.filename.endswith(".parquet") for r in results)
+
     def test_returns_empty_for_no_geospatial_files(self):
         html = '<html><body><a href="readme.md">readme</a></body></html>'
         results = extract_file_links(html, "http://example.com/")

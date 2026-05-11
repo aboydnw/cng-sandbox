@@ -8,6 +8,7 @@ import type { MapChapter as MapChapterType } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
 import { buildLayersForChapter } from "../lib/story/rendering";
+import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
 
@@ -44,13 +45,19 @@ export function MapChapter({
     setCamera(c);
   }, []);
 
+  const zarrNode = useStoryZarrNode(connection ?? null);
+
   const { layers, renderMetadata } = useMemo(() => {
     if (connection) {
       const connMap = new Map([[connection.id, connection]]);
+      const zarrNodeMap = zarrNode
+        ? new Map([[connection.id, zarrNode]])
+        : new Map();
       return buildLayersForChapter(
         chapter,
         new Map() as Map<string, Dataset | null>,
-        connMap
+        connMap,
+        zarrNodeMap
       );
     }
 
@@ -65,7 +72,7 @@ export function MapChapter({
     };
     const datasetMap = new Map<string, Dataset | null>([[dataset.id, dataset]]);
     return buildLayersForChapter(interactiveChapter, datasetMap, undefined);
-  }, [dataset, connection, chapter, activeTimestepIndex]);
+  }, [dataset, connection, chapter, activeTimestepIndex, zarrNode]);
 
   return (
     <Box maxW="900px" mx="auto" px={8} py={12}>

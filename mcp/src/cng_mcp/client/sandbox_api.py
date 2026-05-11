@@ -73,6 +73,50 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def create_connection(
+        self,
+        name: str,
+        url: str,
+        connection_type: str,
+        bounds: Optional[list[float]] = None,
+        min_zoom: Optional[int] = None,
+        max_zoom: Optional[int] = None,
+        tile_type: Optional[str] = None,
+        band_count: Optional[int] = None,
+        rescale: Optional[str] = None,
+        config: Optional[dict[str, Any]] = None,
+        geozarr_attrs: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        """Create a new external tile source connection."""
+        payload: dict[str, Any] = {
+            "name": name,
+            "url": url,
+            "connection_type": connection_type,
+        }
+        if bounds is not None:
+            payload["bounds"] = bounds
+        if min_zoom is not None:
+            payload["min_zoom"] = min_zoom
+        if max_zoom is not None:
+            payload["max_zoom"] = max_zoom
+        if tile_type is not None:
+            payload["tile_type"] = tile_type
+        if band_count is not None:
+            payload["band_count"] = band_count
+        if rescale is not None:
+            payload["rescale"] = rescale
+        if config is not None:
+            payload["config"] = config
+        if geozarr_attrs is not None:
+            payload["geozarr_attrs"] = geozarr_attrs
+        response = await self.http_client.post(
+            f"{self.api_url}/api/connections",
+            json=payload,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def validate_layer_config(
         self,
         dataset_id: str,

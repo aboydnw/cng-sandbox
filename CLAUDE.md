@@ -175,8 +175,6 @@ For tipg, titiler-pgstac, and GDAL+R2 env-var configuration, see [docs/services.
 
 Wraps the ingestion API as MCP tools (datasets, stories, connections, validation) for Claude Desktop/Code. Source in `mcp/src/cng_mcp/`. See [mcp/README.md](mcp/README.md) for tools, resources, server config, and client examples.
 
-`validate_layer_config` calls `POST /api/validate-layer-config`, which does not yet exist on the ingestion service.
-
 ### Running tests
 
 ```bash

@@ -17,6 +17,7 @@ from cng_mcp.tools import (
     create_story_tool,
     update_story_tool,
     read_connections_tool,
+    create_connection_tool,
     validate_layer_config_tool,
 )
 from cng_mcp.resources import (
@@ -75,6 +76,34 @@ TOOL_DEFINITIONS = [
         name="read_connections",
         description="List external tile source connections (COG, PMTiles, XYZ URLs).",
         inputSchema={"type": "object", "properties": {}, "required": []},
+    ),
+    Tool(
+        name="create_connection",
+        description="Create a new external tile source connection (zarr, cog, pmtiles, xyz, geoparquet).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Display name for the connection"},
+                "url": {"type": "string", "description": "URL or S3 URI for the tile source"},
+                "connection_type": {
+                    "type": "string",
+                    "description": "One of: zarr, cog, pmtiles, xyz, geoparquet",
+                },
+                "bounds": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "description": "[west, south, east, north] bounding box",
+                },
+                "min_zoom": {"type": "integer"},
+                "max_zoom": {"type": "integer"},
+                "tile_type": {"type": "string", "description": "Tile image format (e.g. png, webp)"},
+                "band_count": {"type": "integer"},
+                "rescale": {"type": "string", "description": "Rescale range as 'min,max'"},
+                "config": {"type": "object", "description": "Additional tiler config"},
+                "geozarr_attrs": {"type": "object", "description": "GeoZarr-spec attributes"},
+            },
+            "required": ["name", "url", "connection_type"],
+        },
     ),
     Tool(
         name="validate_layer_config",
@@ -144,6 +173,21 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
             )]
         if name == "read_connections":
             return [await read_connections_tool(client)]
+        if name == "create_connection":
+            return [await create_connection_tool(
+                client,
+                name=arguments["name"],
+                url=arguments["url"],
+                connection_type=arguments["connection_type"],
+                bounds=arguments.get("bounds"),
+                min_zoom=arguments.get("min_zoom"),
+                max_zoom=arguments.get("max_zoom"),
+                tile_type=arguments.get("tile_type"),
+                band_count=arguments.get("band_count"),
+                rescale=arguments.get("rescale"),
+                config=arguments.get("config"),
+                geozarr_attrs=arguments.get("geozarr_attrs"),
+            )]
         if name == "validate_layer_config":
             return [await validate_layer_config_tool(
                 client,

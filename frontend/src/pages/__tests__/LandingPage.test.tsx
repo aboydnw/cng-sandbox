@@ -1,9 +1,13 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, useParams } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { system } from "../../theme";
 import LandingPage from "../LandingPage";
+
+vi.mock("../../lib/story/api", () => ({
+  listExampleStoriesFromServer: vi.fn().mockResolvedValue([]),
+}));
 
 function WorkspaceTarget() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -26,23 +30,70 @@ function renderLanding(initialEntry: string = "/") {
 describe("LandingPage", () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.clearAllMocks();
   });
 
-  it("renders the project title and description", () => {
+  it("renders the open-source demo eyebrow and pitch headline", () => {
     renderLanding();
     expect(
-      screen.getByRole("heading", { name: /CNG Sandbox/ })
+      screen.getByText(/open-source demo · by development seed/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/interactive maps and stories|source\.coop/i)
-    ).toBeTruthy();
+      screen.getByRole("heading", { name: /tell stories with cloud-native/i })
+    ).toBeInTheDocument();
   });
 
-  it("creates a new workspace when the primary CTA is clicked", () => {
+  it("renders the 'not a hosted product' framing", () => {
     renderLanding();
-    const cta = screen.getByRole("button", { name: /start building/i });
-    fireEvent.click(cta);
+    expect(screen.getByText(/not a hosted product/i)).toBeInTheDocument();
+  });
+
+  it("renders two equal CTAs — Start a story and View on GitHub", () => {
+    renderLanding();
+    expect(
+      screen.getByRole("button", { name: /start a story/i })
+    ).toBeInTheDocument();
+    const githubCta = screen.getByRole("link", { name: /view on github/i });
+    expect(githubCta.getAttribute("href")).toBe(
+      "https://github.com/aboydnw/cng-sandbox"
+    );
+  });
+
+  it("'Start a story' creates a workspace and navigates to it", () => {
+    renderLanding();
+    fireEvent.click(screen.getByRole("button", { name: /start a story/i }));
     expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+  });
+
+  it("renders example story cards fetched from the public endpoint", async () => {
+    const { listExampleStoriesFromServer } =
+      await import("../../lib/story/api");
+    (
+      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([
+      {
+        id: "ex-1",
+        title: "IMERG precipitation",
+        chapters: [],
+        is_example: true,
+        published: true,
+        dataset_id: null,
+        dataset_ids: [],
+        description: null,
+      },
+    ]);
+    renderLanding();
+    await waitFor(() => {
+      expect(screen.getByText(/imerg precipitation/i)).toBeInTheDocument();
+    });
+  });
+
+  it("renders the footer band with Contact and GitHub blocks", () => {
+    renderLanding();
+    expect(
+      screen.getByText(/want to build this for real/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/all code on github/i)).toBeInTheDocument();
   });
 
   it("auto-redirects to a stored workspace when one exists in localStorage", () => {
@@ -56,9 +107,6 @@ describe("LandingPage", () => {
     localStorage.setItem("myWorkspaceId", "stored123");
     renderLanding("/?switch=1");
     expect(screen.queryByTestId("workspace-target")).toBeNull();
-    expect(
-      screen.getByRole("heading", { name: /CNG Sandbox/ })
-    ).toBeInTheDocument();
   });
 
   it("navigates to an existing workspace when the user submits an ID", () => {
@@ -89,11 +137,5 @@ describe("LandingPage", () => {
     const goBtn = screen.getByRole("button", { name: /open|go|enter/i });
     fireEvent.click(goBtn);
     expect(screen.queryByTestId("workspace-target")).toBeNull();
-  });
-
-  it("links to the About page", () => {
-    renderLanding();
-    const link = screen.getByRole("link", { name: /learn more/i });
-    expect(link.getAttribute("href")).toBe("/about");
   });
 });

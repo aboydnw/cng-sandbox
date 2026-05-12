@@ -35,6 +35,14 @@ export async function listStoriesFromServer(): Promise<Story[]> {
   return resp.json();
 }
 
+export async function listExampleStoriesFromServer(): Promise<Story[]> {
+  const resp = await fetch(`${BASE}/examples`);
+  if (!resp.ok) {
+    throw new Error(`Failed to list example stories: ${resp.status}`);
+  }
+  return (await resp.json()) as Story[];
+}
+
 export async function saveStoryToServer(story: Story): Promise<Story> {
   const resp = await workspaceFetch(`${BASE}/${story.id}`, {
     method: "PATCH",

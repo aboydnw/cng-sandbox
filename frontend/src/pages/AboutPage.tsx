@@ -5,6 +5,7 @@ import {
   GridFour,
   GlobeHemisphereWest,
   ArrowRight,
+  ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
@@ -145,6 +146,25 @@ export default function AboutPage() {
             >
               cloudnativegeo.org
             </a>
+          </Text>
+        </Box>
+
+        <Box mb={10}>
+          <Heading size="md" color="gray.700" mb={2}>
+            What this is — and what it isn&apos;t
+          </Heading>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            CNG Sandbox is an open-source demo of cloud-native geospatial
+            storytelling, built by Development Seed. It exists to show
+            what&apos;s possible when you wire COGs, GeoParquet, Zarr, and STAC
+            together with a modern web stack — not to be the platform you run
+            your team on.
+          </Text>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            Concretely: no SLA, no production support, no account or auth
+            guarantees, and uploaded data expires after 30 days. The whole stack
+            is open source — fork it, host it, or get in touch if you want
+            something production-grade.
           </Text>
         </Box>
 
@@ -344,6 +364,80 @@ export default function AboutPage() {
             </a>
             .
           </Text>
+        </Box>
+
+        <Box mb={10}>
+          <Heading size="md" color="gray.700" mb={2}>
+            How to engage further
+          </Heading>
+          <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
+            Want to dig into the code, host your own copy, or talk about a
+            production engagement? Here&apos;s where to start.
+          </Text>
+          <Box as="ul" pl={5} color="gray.700" fontSize="sm" lineHeight="tall">
+            <Box as="li" mb={2}>
+              <a
+                href="https://github.com/aboydnw/cng-sandbox"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "var(--chakra-colors-brand-orange)",
+                  fontWeight: 600,
+                }}
+              >
+                <ArrowSquareOut
+                  size={14}
+                  weight="bold"
+                  style={{
+                    display: "inline",
+                    marginRight: 4,
+                    verticalAlign: "text-bottom",
+                  }}
+                  aria-hidden="true"
+                />
+                CNG Sandbox on GitHub
+              </a>{" "}
+              — the full source for this site.
+            </Box>
+            <Box as="li" mb={2}>
+              <a
+                href="https://github.com/developmentseed"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "var(--chakra-colors-brand-orange)",
+                  fontWeight: 600,
+                }}
+              >
+                <ArrowSquareOut
+                  size={14}
+                  weight="bold"
+                  style={{
+                    display: "inline",
+                    marginRight: 4,
+                    verticalAlign: "text-bottom",
+                  }}
+                  aria-hidden="true"
+                />
+                developmentseed on GitHub
+              </a>{" "}
+              — titiler, tipg, stac-fastapi, and other CNG building blocks.
+            </Box>
+            <Box as="li" mb={2}>
+              <a
+                href="https://developmentseed.org/contact"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "var(--chakra-colors-brand-orange)",
+                  fontWeight: 600,
+                }}
+              >
+                Contact Development Seed
+              </a>{" "}
+              — for production geospatial platform work.
+            </Box>
+          </Box>
         </Box>
 
         <Box mb={8}>

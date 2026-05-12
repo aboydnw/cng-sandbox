@@ -54,3 +54,9 @@ export async function deleteStoryFromServer(id: string): Promise<void> {
   const resp = await workspaceFetch(`${BASE}/${id}`, { method: "DELETE" });
   if (!resp.ok) throw new Error(`Failed to delete story: ${resp.status}`);
 }
+
+export async function forkStoryOnServer(id: string): Promise<Story> {
+  const resp = await workspaceFetch(`${BASE}/${id}/fork`, { method: "POST" });
+  if (!resp.ok) throw new Error(`Failed to fork story: ${resp.status}`);
+  return resp.json();
+}

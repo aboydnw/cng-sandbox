@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
+import {
+  listStoriesFromServer,
+  deleteStoryFromServer,
+  forkStoryOnServer,
+} from "../lib/story/api";
 import type { Story } from "../lib/story/types";
 import { ExampleStoryCard } from "../components/ExampleStoryCard";
 
@@ -37,9 +41,28 @@ function timeAgo(dateStr: string): string {
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
+  const navigate = useNavigate();
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
+  const cloneInFlightRef = useRef(false);
+
+  const handleCloneExample = useCallback(
+    async (story: Story) => {
+      if (cloneInFlightRef.current) return;
+      cloneInFlightRef.current = true;
+      setCloningId(story.id);
+      try {
+        const forked = await forkStoryOnServer(story.id);
+        navigate(workspacePath(`/story/${forked.id}/edit`));
+      } catch {
+        cloneInFlightRef.current = false;
+        setCloningId(null);
+      }
+    },
+    [navigate, workspacePath]
+  );
 
   useEffect(() => {
     listStoriesFromServer()
@@ -193,7 +216,8 @@ export default function StoriesPage() {
                 title={story.title}
                 chapterCount={story.chapters.length}
                 dataType={inferDataType(story)}
-                href={workspacePath(`/story/${story.id}/edit`)}
+                onClick={() => handleCloneExample(story)}
+                loading={cloningId === story.id}
                 compact={userStories.length > 0}
               />
             ))}

@@ -1,11 +1,11 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { Link } from "react-router-dom";
 
 export interface ExampleStoryCardProps {
   title: string;
   chapterCount: number;
   dataType: string;
-  href: string;
+  onClick: () => void;
+  loading?: boolean;
   compact?: boolean;
 }
 
@@ -29,45 +29,65 @@ export function ExampleStoryCard({
   title,
   chapterCount,
   dataType,
-  href,
+  onClick,
+  loading = false,
   compact = false,
 }: ExampleStoryCardProps) {
   const subtitle = `${dataType} · ${chapterCount} ${
     chapterCount === 1 ? "chapter" : "chapters"
   }`;
+  const handleClick = () => {
+    if (loading) return;
+    onClick();
+  };
   return (
-    <Link to={href} style={{ textDecoration: "none" }}>
-      <Flex
-        direction="column"
-        border="1px solid"
-        borderColor="brand.border"
-        borderRadius="6px"
-        overflow="hidden"
-        bg="white"
-        _hover={{ borderColor: "brand.orange" }}
-        transition="border-color 0.15s"
+    <Box
+      asChild
+      bg="white"
+      border="1px solid"
+      borderColor="brand.border"
+      borderRadius="6px"
+      overflow="hidden"
+      cursor={loading ? "wait" : "pointer"}
+      opacity={loading ? 0.7 : 1}
+      _hover={loading ? undefined : { borderColor: "brand.orange" }}
+      transition="border-color 0.15s, opacity 0.15s"
+    >
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        aria-busy={loading || undefined}
+        style={{
+          padding: 0,
+          margin: 0,
+          textAlign: "left",
+          font: "inherit",
+        }}
       >
-        <Box
-          h={compact ? "46px" : "90px"}
-          style={{ background: gradientForTitle(title) }}
-        />
-        <Box px={3} py={2}>
-          <Text
-            fontWeight={600}
-            fontSize={compact ? "12px" : "14px"}
-            color="brand.brown"
-            truncate
-            title={title}
-          >
-            {title}
-          </Text>
-          {!compact && (
-            <Text fontSize="11px" color="gray.500" mt={1}>
-              {subtitle}
+        <Flex direction="column">
+          <Box
+            h={compact ? "46px" : "90px"}
+            style={{ background: gradientForTitle(title) }}
+          />
+          <Box px={3} py={2}>
+            <Text
+              fontWeight={600}
+              fontSize={compact ? "12px" : "14px"}
+              color="brand.brown"
+              truncate
+              title={title}
+            >
+              {title}
             </Text>
-          )}
-        </Box>
-      </Flex>
-    </Link>
+            {!compact && (
+              <Text fontSize="11px" color="gray.500" mt={1}>
+                {loading ? "Cloning into your workspace…" : subtitle}
+              </Text>
+            )}
+          </Box>
+        </Flex>
+      </button>
+    </Box>
   );
 }

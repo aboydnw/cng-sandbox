@@ -1,11 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  MemoryRouter,
-  Route,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
@@ -20,11 +15,7 @@ vi.mock("../../lib/story/api", () => ({
 import App from "../../App";
 import StoriesPage from "../StoriesPage";
 
-function LocationProbe({
-  onLocation,
-}: {
-  onLocation: (path: string) => void;
-}) {
+function LocationProbe({ onLocation }: { onLocation: (path: string) => void }) {
   const loc = useLocation();
   onLocation(loc.pathname);
   return null;

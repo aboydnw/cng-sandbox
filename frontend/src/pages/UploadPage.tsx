@@ -11,10 +11,9 @@ import { VariablePicker } from "../components/VariablePicker";
 import { DuplicateWarning } from "../components/DuplicateWarning";
 import { BugReportModal } from "../components/BugReportModal";
 import { VisualizeDataCardContent } from "../components/VisualizeDataCardContent";
-import { BuildStoryCardContent } from "../components/BuildStoryCardContent";
 import { InlineConnectionForm } from "../components/InlineConnectionForm";
 import { GeoParquetPreviewModal } from "../components/GeoParquetPreviewModal";
-import { FolderOpen, GlobeHemisphereWest } from "@phosphor-icons/react";
+import { FolderOpen } from "@phosphor-icons/react";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetValidation } from "../hooks/useGeoParquetValidation";
@@ -56,9 +55,6 @@ export default function UploadPage() {
     size: "",
   });
   const [mode, setMode] = useState<PageMode>("initial");
-  const [activeCard, setActiveCard] = useState<"none" | "visualize" | "story">(
-    "none"
-  );
   const [reportOpen, setReportOpen] = useState(false);
   const [xyzPickerUrl, setXyzPickerUrl] = useState<string | null>(null);
   const [parquetPreviewUrl, setParquetPreviewUrl] = useState<string | null>(
@@ -268,22 +264,13 @@ export default function UploadPage() {
     setReportOpen(true);
   }, []);
 
-  const visualizeCardExpanded =
-    activeCard === "visualize" && mode !== "initial";
-  const storyExpanded = activeCard === "story" && mode === "initial";
+  const visualizeCardExpanded = mode !== "initial";
 
   const handleVisualizeCardClick = useCallback(() => {
-    setActiveCard("visualize");
     setMode("upload-idle");
   }, []);
 
-  const handleStoryCardClick = useCallback(() => {
-    setActiveCard("story");
-    setMode("initial");
-  }, []);
-
   const handleCollapse = useCallback(() => {
-    setActiveCard("none");
     setMode("initial");
   }, []);
 
@@ -341,13 +328,11 @@ export default function UploadPage() {
         px={8}
         pb={4}
         pt={3}
-        maxW="900px"
+        maxW="560px"
         mx="auto"
         w="100%"
-        align={{ base: "stretch", md: "flex-start" }}
-        direction={{ base: "column", md: "row" }}
+        direction="column"
       >
-        {/* Left card: Visualize data */}
         <PathCard
           icon={<FolderOpen size={36} />}
           title="Visualize data"
@@ -355,7 +340,7 @@ export default function UploadPage() {
           ctaLabel="Explore data"
           onClick={handleVisualizeCardClick}
           expanded={visualizeCardExpanded}
-          faded={!visualizeCardExpanded && storyExpanded}
+          faded={false}
           onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
         >
           <Box
@@ -397,37 +382,6 @@ export default function UploadPage() {
               )}
             </>
           )}
-        </PathCard>
-
-        {/* Right card: Build a story */}
-        <PathCard
-          icon={<GlobeHemisphereWest size={36} />}
-          title="Build a story"
-          description="Create a storytelling narrative with your data or from our public library"
-          ctaLabel="Start building"
-          onClick={handleStoryCardClick}
-          expanded={storyExpanded}
-          faded={!storyExpanded && visualizeCardExpanded}
-          onCollapse={storyExpanded ? handleCollapse : undefined}
-        >
-          <Box
-            as="ul"
-            mb={5}
-            pl={4}
-            fontSize="13px"
-            color="brand.textSecondary"
-            lineHeight={1.8}
-            listStyleType="disc"
-          >
-            <li>Combine maps, text, and media into a shareable narrative</li>
-            <li>Add datasets from your workspace or our public library</li>
-            <li>Publish a live URL anyone can view</li>
-            <li>
-              Data is hosted for 30 days — map layers may stop loading after
-              that, but the story URL stays accessible
-            </li>
-          </Box>
-          <BuildStoryCardContent />
         </PathCard>
       </Flex>
 

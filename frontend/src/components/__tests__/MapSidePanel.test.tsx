@@ -8,8 +8,8 @@ vi.mock("../DataSwitcher", () => ({
   DataSwitcher: () => <div data-testid="data-switcher" />,
 }));
 
-vi.mock("../StoryCTABanner", () => ({
-  StoryCTABanner: () => <div>Tell a story with this data</div>,
+vi.mock("../SaveAsStoryChapter", () => ({
+  SaveAsStoryChapter: () => <div>Save as story chapter</div>,
 }));
 
 vi.mock("../RasterSidebarControls", () => ({
@@ -107,12 +107,12 @@ function renderWithProviders(ui: React.ReactElement) {
 
 test("normal mode shows story CTA", () => {
   renderWithProviders(<MapSidePanel {...defaultProps} />);
-  expect(screen.getByText(/tell a story/i)).toBeInTheDocument();
+  expect(screen.getByText(/save as story chapter/i)).toBeInTheDocument();
 });
 
 test("shared mode hides story CTA", () => {
   renderWithProviders(<MapSidePanel {...defaultProps} shared />);
-  expect(screen.queryByText(/tell a story/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/save as story chapter/i)).not.toBeInTheDocument();
 });
 
 test("normal mode shows DataSwitcher", () => {

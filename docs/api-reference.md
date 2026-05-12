@@ -41,6 +41,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 - `POST /api/stories` — Create a story with chapters linking to datasets
 - `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it).
+- `GET /api/stories/examples` — Public list of example stories (`is_example=True`); no `X-Workspace-Id` header required. Used by the public landing page to render the example carousel without provisioning a workspace.
 - `GET /api/stories/{id}` — Get a story by ID
 - `PATCH /api/stories/{id}` — Update a story; returns 403 if the story is an example (`is_example=True`)
 - `POST /api/stories/{id}/fork` — Fork a story (clones chapters/metadata into a new story owned by the caller's workspace with `published=False` and `is_example=False`)

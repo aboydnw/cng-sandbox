@@ -7,6 +7,7 @@ import {
   Check,
   SpinnerGap,
   CaretDown,
+  DownloadSimple,
 } from "@phosphor-icons/react";
 import { useTooltipDismiss } from "../hooks/useTooltipDismiss";
 import { useStoryEditor } from "../hooks/useStoryEditor";
@@ -17,6 +18,7 @@ import { VideoChapterEditor } from "../components/editor/VideoChapterEditor";
 import { UploadModal } from "../components/UploadModal";
 import { ConnectionModal } from "../components/ConnectionModal";
 import { PublishDialog } from "../components/PublishDialog";
+import { ExportDialog } from "../components/ExportDialog";
 import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
@@ -110,6 +112,7 @@ export default function StoryEditorPage() {
   } = useStoryEditor();
 
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const activeDatasetTimesteps = useMemo(() => {
     if (!activeChapter || !isMapBoundChapter(activeChapter)) return undefined;
@@ -204,6 +207,16 @@ export default function StoryEditorPage() {
               </Text>
             </Flex>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            borderColor="brand.orange"
+            color="brand.orange"
+            _hover={{ bg: "brand.bgSubtle" }}
+            onClick={() => setExportDialogOpen(true)}
+          >
+            <DownloadSimple size={14} weight="bold" /> Export
+          </Button>
           <Flex align="center">
             <Button
               size="sm"
@@ -504,6 +517,11 @@ export default function StoryEditorPage() {
         shareUrl={`${window.location.origin}/story/${story.id}`}
         onPublish={handlePublish}
         onClose={() => setPublishDialogOpen(false)}
+      />
+      <ExportDialog
+        open={exportDialogOpen}
+        story={story}
+        onClose={() => setExportDialogOpen(false)}
       />
     </Box>
   );

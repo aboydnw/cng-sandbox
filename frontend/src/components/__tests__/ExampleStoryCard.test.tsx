@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { describe, it, expect } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
 import { ExampleStoryCard } from "../ExampleStoryCard";
@@ -8,9 +8,7 @@ import { ExampleStoryCard } from "../ExampleStoryCard";
 function renderCard(props: React.ComponentProps<typeof ExampleStoryCard>) {
   return render(
     <ChakraProvider value={system}>
-      <MemoryRouter>
-        <ExampleStoryCard {...props} />
-      </MemoryRouter>
+      <ExampleStoryCard {...props} />
     </ChakraProvider>
   );
 }
@@ -21,7 +19,7 @@ describe("ExampleStoryCard", () => {
       title: "Arctic ice loss",
       chapterCount: 4,
       dataType: "Raster",
-      href: "/w/x/story/abc/edit",
+      onClick: () => {},
     });
     expect(screen.getByText("Arctic ice loss")).toBeInTheDocument();
   });
@@ -31,20 +29,36 @@ describe("ExampleStoryCard", () => {
       title: "Arctic ice loss",
       chapterCount: 4,
       dataType: "Raster",
-      href: "/w/x/story/abc/edit",
+      onClick: () => {},
     });
     expect(screen.getByText(/raster · 4 chapters/i)).toBeInTheDocument();
   });
 
-  it("links to the given href", () => {
+  it("calls onClick when the card is activated", async () => {
+    const handler = vi.fn();
     renderCard({
-      title: "T",
-      chapterCount: 1,
-      dataType: "Vector",
-      href: "/w/x/story/abc/edit",
+      title: "Arctic ice loss",
+      chapterCount: 4,
+      dataType: "Raster",
+      onClick: handler,
     });
-    const link = screen.getByRole("link", { name: /t/i });
-    expect(link.getAttribute("href")).toBe("/w/x/story/abc/edit");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /arctic ice loss/i }));
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call onClick when loading=true", async () => {
+    const handler = vi.fn();
+    renderCard({
+      title: "Arctic ice loss",
+      chapterCount: 4,
+      dataType: "Raster",
+      onClick: handler,
+      loading: true,
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /arctic ice loss/i }));
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it("uses singular 'chapter' when chapterCount is 1", () => {
@@ -52,7 +66,7 @@ describe("ExampleStoryCard", () => {
       title: "T",
       chapterCount: 1,
       dataType: "Vector",
-      href: "/x",
+      onClick: () => {},
     });
     expect(screen.getByText(/vector · 1 chapter$/i)).toBeInTheDocument();
   });

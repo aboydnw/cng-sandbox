@@ -1,3 +1,4 @@
+import { workspaceFetch } from "../../api";
 import type { CngRcConfig } from "../cngRcTypes";
 import { buildArchivalHtml } from "./buildArchivalHtml";
 
@@ -7,7 +8,7 @@ export async function downloadArchivalHtml(
   onProgress?: (current: number, total: number) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const response = await fetch(
+  const response = await workspaceFetch(
     `/api/stories/${encodeURIComponent(storyId)}/export/config`,
     {
       signal,

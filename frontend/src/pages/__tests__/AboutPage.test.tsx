@@ -92,4 +92,26 @@ describe("AboutPage", () => {
       "https://github.com/aboydnw/cng-sandbox/releases"
     );
   });
+
+  it("renders the 'What this is — and what it isn't' section", () => {
+    renderAbout();
+    expect(
+      screen.getByRole("heading", { name: /what this is/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/no SLA/i)).toBeInTheDocument();
+    expect(screen.getByText(/no production support/i)).toBeInTheDocument();
+  });
+
+  it("renders the 'How to engage further' section", () => {
+    renderAbout();
+    expect(
+      screen.getByRole("heading", { name: /how to engage further/i })
+    ).toBeInTheDocument();
+    const contactLink = screen.getByRole("link", {
+      name: /contact development seed/i,
+    });
+    expect(contactLink.getAttribute("href")).toBe(
+      "https://developmentseed.org/contact"
+    );
+  });
 });

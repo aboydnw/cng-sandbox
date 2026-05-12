@@ -110,6 +110,21 @@ async def list_stories(request: Request):
         session.close()
 
 
+@router.get("/stories/examples")
+async def list_example_stories(request: Request):
+    session = get_session(request)
+    try:
+        rows = (
+            session.query(StoryRow)
+            .filter(StoryRow.is_example.is_(True))
+            .order_by(StoryRow.created_at.desc())
+            .all()
+        )
+        return [_row_to_response(r) for r in rows]
+    finally:
+        session.close()
+
+
 @router.get("/stories/{story_id}")
 async def get_story(story_id: str, request: Request):
     workspace_id = request.headers.get("x-workspace-id", "")

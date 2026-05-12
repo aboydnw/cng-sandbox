@@ -277,6 +277,46 @@ def test_fork_regular_story_from_other_workspace(client, db_session):
     assert forked["title"] == "Regular"
 
 
+def test_list_examples_returns_examples_without_workspace_header(app, db_session):
+    from fastapi.testclient import TestClient
+
+    now = datetime.now(UTC)
+    db_session.add(
+        StoryRow(
+            id="public-example",
+            title="Public Example",
+            chapters_json="[]",
+            published=True,
+            created_at=now,
+            updated_at=now,
+            workspace_id="system",
+            is_example=True,
+        )
+    )
+    db_session.add(
+        StoryRow(
+            id="private-non-example",
+            title="Private",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id="someone-else",
+            is_example=False,
+        )
+    )
+    db_session.commit()
+
+    anon_client = TestClient(app, raise_server_exceptions=False)
+    resp = anon_client.get("/api/stories/examples")
+    assert resp.status_code == 200
+    rows = resp.json()
+    ids = {r["id"] for r in rows}
+    assert "public-example" in ids
+    assert "private-non-example" not in ids
+    assert all(r["is_example"] is True for r in rows)
+
+
 def test_list_stories_includes_example_rows_from_other_workspaces(client, db_session):
     now = datetime.now(UTC)
     caller_ws = "testABCD"  # matches the client fixture header

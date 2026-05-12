@@ -63,6 +63,35 @@ describe("Workspace routing", () => {
   });
 });
 
+import { listStoriesFromServer } from "../../lib/story/api";
+
+describe("StoriesPage example-story cards", () => {
+  it("renders example stories as ExampleStoryCard links, not as table rows", async () => {
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      {
+        id: "ex-1",
+        title: "Arctic ice loss",
+        chapters: [{}, {}, {}, {}],
+        is_example: true,
+        published: true,
+        updated_at: new Date().toISOString(),
+      } as any,
+    ]);
+    renderStoriesPage();
+    const link = await screen.findByRole("link", { name: /arctic ice loss/i });
+    expect(link.getAttribute("href")).toBe("/w/test-workspace/story/ex-1/edit");
+    expect(screen.queryByText("Chapters")).toBeNull();
+  });
+
+  it("renders 'No example stories available.' when no examples come back", async () => {
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+    renderStoriesPage();
+    expect(
+      await screen.findByText(/no example stories available\./i)
+    ).toBeInTheDocument();
+  });
+});
+
 describe("StoriesPage layout", () => {
   it("renders a 'Quick map' link in the header pointing to /quick-map", async () => {
     renderStoriesPage();

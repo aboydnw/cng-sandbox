@@ -7,6 +7,22 @@ import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import type { Story } from "../lib/story/types";
+import { ExampleStoryCard } from "../components/ExampleStoryCard";
+
+function inferDataType(story: Story): string {
+  const types = new Set<string>();
+  for (const ch of story.chapters) {
+    const t = (ch as { type?: string }).type;
+    if (t === "map") types.add("Map");
+    if (t === "chart") types.add("Chart");
+    if (t === "image") types.add("Image");
+    if (t === "video") types.add("Video");
+    if (t === "prose") types.add("Prose");
+  }
+  if (types.size === 0) return "Story";
+  if (types.size === 1) return Array.from(types)[0];
+  return "Mixed";
+}
 
 function timeAgo(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -163,44 +179,25 @@ export default function StoriesPage() {
             No example stories available.
           </Text>
         ) : (
-          <Table.Root size="sm" tableLayout="fixed">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>Name</Table.ColumnHeader>
-                <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
-                <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {exampleStories.map((story) => (
-                <Table.Row key={story.id}>
-                  <Table.Cell>
-                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
-                      <Text
-                        color="brand.orange"
-                        _hover={{ textDecoration: "underline" }}
-                        fontWeight={500}
-                        truncate
-                        title={story.title}
-                      >
-                        {story.title}
-                      </Text>
-                    </Link>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontSize="sm" color="gray.600">
-                      {story.chapters.length}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontSize="sm" color="gray.600">
-                      {story.updated_at ? timeAgo(story.updated_at) : "—"}
-                    </Text>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
+          <Box
+            display="grid"
+            gridTemplateColumns={{
+              base: "1fr",
+              md: "repeat(3, 1fr)",
+            }}
+            gap={3}
+          >
+            {exampleStories.map((story) => (
+              <ExampleStoryCard
+                key={story.id}
+                title={story.title}
+                chapterCount={story.chapters.length}
+                dataType={inferDataType(story)}
+                href={workspacePath(`/story/${story.id}/edit`)}
+                compact={userStories.length > 0}
+              />
+            ))}
+          </Box>
         )}
       </Box>
       <Footer />

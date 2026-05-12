@@ -20,11 +20,9 @@ import {
 import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
-import { downloadStoryConfig } from "../lib/story/exportConfig";
-import { buildAndDownloadBundle } from "../lib/story/buildStaticBundle";
-import { downloadArchivalHtml } from "../lib/story/archival/downloadArchival";
+import { useArchivalDownload } from "../lib/story/useArchivalDownload";
 import { ArchivalProgress } from "./ArchivalProgress";
-import { EmbedSnippet } from "./EmbedSnippet";
+import { ExportSection } from "./ExportSection";
 
 interface PublishDialogProps {
   open: boolean;
@@ -44,45 +42,11 @@ export function PublishDialog({
   const [published, setPublished] = useState(story.published);
   const [copied, setCopied] = useState(false);
   const urlInputRef = useRef<HTMLInputElement>(null);
-  const [archivalProgress, setArchivalProgress] = useState<{
-    open: boolean;
-    current: number;
-    total: number;
-  }>({ open: false, current: 0, total: 0 });
-  const archivalAbortRef = useRef<AbortController | null>(null);
-
-  async function handleArchival() {
-    archivalAbortRef.current?.abort();
-    const controller = new AbortController();
-    archivalAbortRef.current = controller;
-    setArchivalProgress({ open: true, current: 0, total: 1 });
-    try {
-      await downloadArchivalHtml(
-        story.id,
-        story.title,
-        (current, total) => {
-          if (controller.signal.aborted) return;
-          setArchivalProgress({ open: true, current, total });
-        },
-        controller.signal
-      );
-    } catch (err) {
-      if ((err as { name?: string })?.name !== "AbortError") {
-        console.error("Failed to download archival HTML", err);
-      }
-    } finally {
-      if (archivalAbortRef.current === controller) {
-        archivalAbortRef.current = null;
-        setArchivalProgress({ open: false, current: 0, total: 0 });
-      }
-    }
-  }
-
-  function handleCancelArchival() {
-    archivalAbortRef.current?.abort();
-    archivalAbortRef.current = null;
-    setArchivalProgress({ open: false, current: 0, total: 0 });
-  }
+  const {
+    progress: archivalProgress,
+    handleArchival,
+    handleCancelArchival,
+  } = useArchivalDownload(story.id, story.title);
 
   const incompleteChapters = story.chapters.filter(
     (ch) => !ch.narrative.trim()
@@ -266,83 +230,12 @@ export function PublishDialog({
                         </Button>
                       </Flex>
                     </Box>
-                    <Box mt={6}>
-                      <Text
-                        fontSize="xs"
-                        fontWeight={600}
-                        color="gray.500"
-                        mb={1.5}
-                        textTransform="uppercase"
-                        letterSpacing="wider"
-                      >
-                        Export
-                      </Text>
-                      <Text fontSize="sm" color="fg.muted" mb={3}>
-                        Download a portable representation of this story.
-                      </Text>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          void downloadStoryConfig(story.id, story.title).catch(
-                            (err) => {
-                              console.error(
-                                "Failed to download story config",
-                                err
-                              );
-                            }
-                          );
-                        }}
-                      >
-                        Download story config (cng-rc.json)
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        mt={3}
-                        onClick={() => {
-                          void buildAndDownloadBundle(
-                            story.id,
-                            story.title
-                          ).catch((err) => {
-                            console.error(
-                              "Failed to download static bundle",
-                              err
-                            );
-                          });
-                        }}
-                      >
-                        Download static bundle (.zip)
-                      </Button>
-                      <Text fontSize="xs" color="fg.muted" mt={1}>
-                        Self-contained viewer + config. Upload anywhere static
-                        files can be served.
-                      </Text>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        mt={3}
-                        onClick={() => {
-                          void handleArchival();
-                        }}
-                      >
-                        Download archival HTML
-                      </Button>
-                      <Text fontSize="xs" color="fg.muted" mt={1}>
-                        Single self-contained file. Maps and charts inlined as
-                        images. Suitable for Zenodo and long-term archives.
-                      </Text>
-                      <Box mt={4}>
-                        <EmbedSnippet
-                          viewerOrigin={
-                            import.meta.env.VITE_VIEWER_ORIGIN ??
-                            window.location.origin
-                          }
-                          storyId={story.id}
-                          configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
-                        />
-                      </Box>
-                    </Box>
+                    <ExportSection
+                      story={story}
+                      onArchival={() => {
+                        void handleArchival();
+                      }}
+                    />
                   </Flex>
                 )}
               </DialogBody>

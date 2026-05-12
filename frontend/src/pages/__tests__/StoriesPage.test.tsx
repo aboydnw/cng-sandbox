@@ -64,6 +64,7 @@ describe("Workspace routing", () => {
 });
 
 import { listStoriesFromServer } from "../../lib/story/api";
+import type { Story } from "../../lib/story/types";
 
 describe("StoriesPage example-story cards", () => {
   it("renders example stories as ExampleStoryCard links, not as table rows", async () => {
@@ -75,7 +76,7 @@ describe("StoriesPage example-story cards", () => {
         is_example: true,
         published: true,
         updated_at: new Date().toISOString(),
-      } as any,
+      } as unknown as Story,
     ]);
     renderStoriesPage();
     const link = await screen.findByRole("link", { name: /arctic ice loss/i });

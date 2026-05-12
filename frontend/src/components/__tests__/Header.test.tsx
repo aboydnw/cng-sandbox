@@ -78,6 +78,47 @@ describe("Header (public, no workspace)", () => {
   });
 });
 
+describe("Header nav order", () => {
+  it("renders Stories before Data in the nav", () => {
+    renderWithProviders(<Header />);
+    const stories = screen.getByRole("link", { name: /^stories$/i });
+    const data = screen.getByRole("link", { name: /^data$/i });
+    const cmp = stories.compareDocumentPosition(data);
+    expect(cmp & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe("Header utility links", () => {
+  it("renders a GitHub link pointing at the cng-sandbox repo", () => {
+    renderWithProviders(<Header />);
+    const link = screen.getByRole("link", { name: /github/i });
+    expect(link.getAttribute("href")).toBe(
+      "https://github.com/aboydnw/cng-sandbox"
+    );
+    expect(link.getAttribute("target")).toBe("_blank");
+  });
+
+  it("renders a Contact link pointing at the DevSeed info mailto", () => {
+    renderWithProviders(<Header />);
+    const link = screen.getByRole("link", { name: /contact/i });
+    expect(link.getAttribute("href")).toBe("mailto:info@developmentseed.org");
+  });
+
+  it("renders the GitHub and Contact links on the public (no-workspace) header too", () => {
+    render(
+      <ChakraProvider value={system}>
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route path="/" element={<Header />} />
+          </Routes>
+        </MemoryRouter>
+      </ChakraProvider>
+    );
+    expect(screen.getByRole("link", { name: /github/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /contact/i })).toBeInTheDocument();
+  });
+});
+
 describe("Header workspace menu", () => {
   beforeEach(() => {
     localStorage.clear();

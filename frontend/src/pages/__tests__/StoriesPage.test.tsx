@@ -84,7 +84,9 @@ describe("StoriesPage example-story cards", () => {
   });
 
   it("renders 'No example stories available.' when no examples come back", async () => {
-    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      []
+    );
     renderStoriesPage();
     expect(
       await screen.findByText(/no example stories available\./i)

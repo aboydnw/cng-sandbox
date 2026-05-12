@@ -80,18 +80,6 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
             </Text>
           </Flex>
         </Link>
-        {dataHref && (
-          <Link to={dataHref} style={{ textDecoration: "none" }}>
-            <Text
-              fontSize="sm"
-              fontWeight={500}
-              color="brand.brown"
-              _hover={{ color: "brand.orange" }}
-            >
-              Data
-            </Text>
-          </Link>
-        )}
         {storiesHref && (
           <Link to={storiesHref} style={{ textDecoration: "none" }}>
             <Text
@@ -101,6 +89,18 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
               _hover={{ color: "brand.orange" }}
             >
               Stories
+            </Text>
+          </Link>
+        )}
+        {dataHref && (
+          <Link to={dataHref} style={{ textDecoration: "none" }}>
+            <Text
+              fontSize="sm"
+              fontWeight={500}
+              color="brand.brown"
+              _hover={{ color: "brand.orange" }}
+            >
+              Data
             </Text>
           </Link>
         )}
@@ -114,6 +114,36 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
             About
           </Text>
         </Link>
+      </Flex>
+      <Flex align="center" gap={4} ml="auto" mr={3}>
+        <a
+          href="https://github.com/aboydnw/cng-sandbox"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "none" }}
+        >
+          <Text
+            fontSize="sm"
+            fontWeight={500}
+            color="gray.600"
+            _hover={{ color: "gray.800" }}
+          >
+            GitHub
+          </Text>
+        </a>
+        <a
+          href="mailto:info@developmentseed.org"
+          style={{ textDecoration: "none" }}
+        >
+          <Text
+            fontSize="sm"
+            fontWeight={500}
+            color="gray.600"
+            _hover={{ color: "gray.800" }}
+          >
+            Contact
+          </Text>
+        </a>
       </Flex>
       {showWorkspace && workspace && (
         <Menu.Root>

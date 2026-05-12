@@ -76,6 +76,17 @@ describe("ExportPickerDialog", () => {
     });
   });
 
+  it("shows an error state when the list fetch fails", async () => {
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("boom")
+    );
+    renderPicker();
+    expect(
+      await screen.findByText(/could not load stories/i)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/no stories yet/i)).toBeNull();
+  });
+
   it("clicking a story opens the ExportDialog for it", async () => {
     (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       { id: "u-1", title: "Mine", chapters: [], is_example: false },

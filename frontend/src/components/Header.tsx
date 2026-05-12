@@ -139,13 +139,13 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
                 <DownloadSimple
                   size={14}
                   weight="bold"
-                  color="var(--chakra-colors-gray-600)"
+                  color="var(--chakra-colors-brand-brown)"
                 />
                 <Text
                   fontSize="sm"
                   fontWeight={500}
-                  color="gray.600"
-                  _hover={{ color: "gray.800" }}
+                  color="brand.brown"
+                  _hover={{ color: "brand.orange" }}
                 >
                   Export
                 </Text>

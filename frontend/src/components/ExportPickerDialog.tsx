@@ -25,12 +25,20 @@ interface ExportPickerDialogProps {
 export function ExportPickerDialog({ open, onClose }: ExportPickerDialogProps) {
   const [stories, setStories] = useState<Story[]>([]);
   const [picked, setPicked] = useState<Story | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    setLoading(true);
+    setLoadError(null);
     listStoriesFromServer()
       .then((rows) => setStories(rows.filter((s) => !s.is_example)))
-      .catch(() => {});
+      .catch(() => {
+        setLoadError("Could not load stories. Please try again.");
+        setStories([]);
+      })
+      .finally(() => setLoading(false));
   }, [open]);
 
   if (picked) {
@@ -61,7 +69,15 @@ export function ExportPickerDialog({ open, onClose }: ExportPickerDialogProps) {
               <CloseButton size="sm" onClick={onClose} aria-label="Close" />
             </DialogHeader>
             <DialogBody>
-              {stories.length === 0 ? (
+              {loading ? (
+                <Text fontSize="sm" color="fg.muted">
+                  Loading stories…
+                </Text>
+              ) : loadError ? (
+                <Text fontSize="sm" color="red.600">
+                  {loadError}
+                </Text>
+              ) : stories.length === 0 ? (
                 <Text fontSize="sm" color="fg.muted">
                   You have no stories yet. Start one from the Stories tab.
                 </Text>

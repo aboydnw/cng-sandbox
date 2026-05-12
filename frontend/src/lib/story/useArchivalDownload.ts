@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { downloadArchivalHtml } from "./archival/downloadArchival";
 
 interface ArchivalProgressState {
@@ -14,6 +14,13 @@ export function useArchivalDownload(storyId: string, storyTitle: string) {
     total: 0,
   });
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
 
   async function handleArchival() {
     abortRef.current?.abort();

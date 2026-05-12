@@ -66,9 +66,8 @@ describe("LandingPage", () => {
   });
 
   it("renders example story cards fetched from the public endpoint", async () => {
-    const { listExampleStoriesFromServer } = await import(
-      "../../lib/story/api"
-    );
+    const { listExampleStoriesFromServer } =
+      await import("../../lib/story/api");
     (
       listExampleStoriesFromServer as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce([

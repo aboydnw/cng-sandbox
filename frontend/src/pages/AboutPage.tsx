@@ -161,9 +161,9 @@ export default function AboutPage() {
           </Text>
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
             Concretely: no SLA, no production support, no account or auth
-            guarantees, and uploaded data expires after 30 days. The whole
-            stack is open source — fork it, host it, or get in touch if you
-            want something production-grade.
+            guarantees, and uploaded data expires after 30 days. The whole stack
+            is open source — fork it, host it, or get in touch if you want
+            something production-grade.
           </Text>
         </Box>
 

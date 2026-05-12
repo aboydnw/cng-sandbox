@@ -27,6 +27,10 @@ vi.mock("../pages/UploadPage", () => ({
   default: () => <div data-testid="upload-page" />,
 }));
 
+vi.mock("../pages/StoriesPage", () => ({
+  default: () => <div data-testid="stories-page" />,
+}));
+
 vi.mock("../pages/LibraryPage", () => ({
   default: () => <div data-testid="library-page" />,
 }));
@@ -88,9 +92,19 @@ test("/about renders the public AboutPage without a workspace", () => {
   expect(screen.getByTestId("about-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/ still renders the workspace UploadPage", () => {
+test("/w/:workspaceId/ renders the workspace StoriesPage", () => {
   renderApp("/w/abc12345/");
+  expect(screen.getByTestId("stories-page")).toBeInTheDocument();
+});
+
+test("/w/:workspaceId/quick-map renders the workspace UploadPage", () => {
+  renderApp("/w/abc12345/quick-map");
   expect(screen.getByTestId("upload-page")).toBeInTheDocument();
+});
+
+test("/w/:workspaceId/stories redirects to workspace root", () => {
+  renderApp("/w/abc12345/stories");
+  expect(screen.getByTestId("stories-page")).toBeInTheDocument();
 });
 
 test("unknown public path falls through to WorkspaceRedirect", () => {

@@ -1,5 +1,4 @@
 import {
-  CloseButton,
   DialogBackdrop,
   DialogBody,
   DialogContent,
@@ -7,9 +6,11 @@ import {
   DialogPositioner,
   DialogRoot,
   DialogTitle,
+  IconButton,
   Portal,
   Text,
 } from "@chakra-ui/react";
+import { X } from "@phosphor-icons/react";
 import { ExportSection } from "./ExportSection";
 import { ArchivalProgress } from "./ArchivalProgress";
 import { useArchivalDownload } from "../lib/story/useArchivalDownload";
@@ -46,7 +47,19 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
                 <DialogTitle>
                   Export &ldquo;{story.title || "Untitled story"}&rdquo;
                 </DialogTitle>
-                <CloseButton size="sm" onClick={onClose} aria-label="Close" />
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  onClick={onClose}
+                  aria-label="Close"
+                  _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
+                  _focusVisible={{
+                    outline: "2px solid",
+                    outlineColor: "brand.border",
+                  }}
+                >
+                  <X size={16} />
+                </IconButton>
               </DialogHeader>
               <DialogBody>
                 <Text fontSize="sm" color="fg.muted" mb={2}>

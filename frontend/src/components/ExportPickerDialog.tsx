@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Button,
-  CloseButton,
   DialogBackdrop,
   DialogBody,
   DialogContent,
@@ -10,9 +9,11 @@ import {
   DialogRoot,
   DialogTitle,
   Flex,
+  IconButton,
   Portal,
   Text,
 } from "@chakra-ui/react";
+import { X } from "@phosphor-icons/react";
 import { listStoriesFromServer } from "../lib/story/api";
 import { ExportDialog } from "./ExportDialog";
 import type { Story } from "../lib/story";
@@ -30,15 +31,25 @@ export function ExportPickerDialog({ open, onClose }: ExportPickerDialogProps) {
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
     setLoading(true);
     setLoadError(null);
     listStoriesFromServer()
-      .then((rows) => setStories(rows.filter((s) => !s.is_example)))
+      .then((rows) => {
+        if (cancelled) return;
+        setStories(rows.filter((s) => !s.is_example));
+      })
       .catch(() => {
+        if (cancelled) return;
         setLoadError("Could not load stories. Please try again.");
         setStories([]);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   if (picked) {
@@ -66,7 +77,19 @@ export function ExportPickerDialog({ open, onClose }: ExportPickerDialogProps) {
           <DialogContent shadow="lg">
             <DialogHeader>
               <DialogTitle>Pick a story to export</DialogTitle>
-              <CloseButton size="sm" onClick={onClose} aria-label="Close" />
+              <IconButton
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                aria-label="Close"
+                _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
+                _focusVisible={{
+                  outline: "2px solid",
+                  outlineColor: "brand.border",
+                }}
+              >
+                <X size={16} />
+              </IconButton>
             </DialogHeader>
             <DialogBody>
               {loading ? (

@@ -34,16 +34,22 @@ function LibraryRedirect() {
   return <Navigate to={workspacePath("/data")} replace />;
 }
 
+function StoriesRedirect() {
+  const { workspacePath } = useWorkspace();
+  return <Navigate to={workspacePath("/")} replace />;
+}
+
 function WorkspaceRoutes() {
   return (
     <WorkspaceProvider>
       <Routes>
-        <Route path="/" element={<UploadPage />} />
+        <Route path="/" element={<StoriesPage />} />
+        <Route path="/quick-map" element={<UploadPage />} />
         <Route path="/map/:id" element={<MapPage />} />
         <Route path="/map/connection/:id" element={<MapPage />} />
         <Route path="/expired/:id" element={<ExpiredPage />} />
         <Route path="/data" element={<DataPage />} />
-        <Route path="/stories" element={<StoriesPage />} />
+        <Route path="/stories" element={<StoriesRedirect />} />
         <Route path="/library" element={<LibraryRedirect />} />
         <Route path="/datasets" element={<DatasetsRedirect />} />
         <Route path="/story/new" element={<StoryEditorPage />} />

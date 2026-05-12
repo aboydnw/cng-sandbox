@@ -51,70 +51,29 @@ export default function StoriesPage() {
   return (
     <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4}>
+      <Box maxW="960px" mx="auto" py={8} px={4} w="100%">
         <Flex justify="space-between" align="center" mb={6}>
           <Heading size="lg" color="gray.800">
-            Stories
+            Your stories
           </Heading>
-          <Link to={workspacePath("/story/new")}>
-            <Button size="sm" colorScheme="orange">
-              New story
-            </Button>
-          </Link>
+          <Flex gap={2}>
+            <Link to={workspacePath("/quick-map")}>
+              <Button
+                size="sm"
+                variant="outline"
+                borderColor="brand.border"
+                color="brand.brown"
+              >
+                Quick map
+              </Button>
+            </Link>
+            <Link to={workspacePath("/story/new")}>
+              <Button size="sm" colorScheme="orange">
+                New story
+              </Button>
+            </Link>
+          </Flex>
         </Flex>
-
-        {exampleStories.length > 0 && (
-          <Box mb={8}>
-            <Heading size="md" color="gray.700" mb={3}>
-              Example stories
-            </Heading>
-            <Text fontSize="13px" color="gray.500" mb={3}>
-              Curated stories shared with every workspace.
-            </Text>
-            <Table.Root size="sm" tableLayout="fixed">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader>Name</Table.ColumnHeader>
-                  <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
-                  <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {exampleStories.map((story) => (
-                  <Table.Row key={story.id}>
-                    <Table.Cell>
-                      <Link to={workspacePath(`/story/${story.id}/edit`)}>
-                        <Text
-                          color="brand.orange"
-                          _hover={{ textDecoration: "underline" }}
-                          fontWeight={500}
-                          truncate
-                          title={story.title}
-                        >
-                          {story.title}
-                        </Text>
-                      </Link>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm" color="gray.600">
-                        {story.chapters.length}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm" color="gray.600">
-                        {story.updated_at ? timeAgo(story.updated_at) : "—"}
-                      </Text>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Root>
-          </Box>
-        )}
-
-        <Heading size="md" color="gray.700" mb={3}>
-          Your stories
-        </Heading>
 
         {loading ? (
           <Flex justify="center" py={12}>
@@ -124,20 +83,9 @@ export default function StoriesPage() {
             />
           </Flex>
         ) : userStories.length === 0 ? (
-          <Flex
-            direction="column"
-            align="center"
-            py={12}
-            gap={3}
-            color="gray.500"
-          >
-            <Text>No stories yet.</Text>
-            <Link to={workspacePath("/story/new")}>
-              <Text color="brand.orange" fontWeight={600}>
-                Create your first story
-              </Text>
-            </Link>
-          </Flex>
+          <Text color="gray.500" fontSize="sm" mb={2}>
+            No stories yet — start one or browse the example stories below.
+          </Text>
         ) : (
           <Table.Root size="sm" tableLayout="fixed">
             <Table.Header>
@@ -195,6 +143,59 @@ export default function StoriesPage() {
                     >
                       Delete
                     </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
+        )}
+
+        <Box my={8} h="1px" bg="brand.border" />
+
+        <Heading size="md" color="gray.700" mb={3}>
+          Example stories
+        </Heading>
+        <Text fontSize="13px" color="gray.500" mb={3}>
+          Curated stories shared with every workspace.
+        </Text>
+        {exampleStories.length === 0 ? (
+          <Text fontSize="sm" color="gray.500">
+            No example stories available.
+          </Text>
+        ) : (
+          <Table.Root size="sm" tableLayout="fixed">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader>Name</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
+                <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {exampleStories.map((story) => (
+                <Table.Row key={story.id}>
+                  <Table.Cell>
+                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
+                      <Text
+                        color="brand.orange"
+                        _hover={{ textDecoration: "underline" }}
+                        fontWeight={500}
+                        truncate
+                        title={story.title}
+                      >
+                        {story.title}
+                      </Text>
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {story.chapters.length}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontSize="sm" color="gray.600">
+                      {story.updated_at ? timeAgo(story.updated_at) : "—"}
+                    </Text>
                   </Table.Cell>
                 </Table.Row>
               ))}

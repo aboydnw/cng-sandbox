@@ -63,4 +63,36 @@ describe("Workspace routing", () => {
   });
 });
 
+describe("StoriesPage layout", () => {
+  it("renders a 'Quick map' link in the header pointing to /quick-map", async () => {
+    renderStoriesPage();
+    const link = await screen.findByRole("link", { name: /quick map/i });
+    expect(link.getAttribute("href")).toBe("/w/test-workspace/quick-map");
+  });
+
+  it("renders a 'New story' link in the header pointing to /story/new", async () => {
+    renderStoriesPage();
+    const link = await screen.findByRole("link", { name: /new story/i });
+    expect(link.getAttribute("href")).toBe("/w/test-workspace/story/new");
+  });
+
+  it("renders 'Your stories' heading before 'Example stories' heading in DOM order", async () => {
+    renderStoriesPage();
+    const headings = await screen.findAllByRole("heading");
+    const texts = headings.map((h) => h.textContent || "");
+    const yourIdx = texts.findIndex((t) => /your stories/i.test(t));
+    const exampleIdx = texts.findIndex((t) => /example stories/i.test(t));
+    expect(yourIdx).toBeGreaterThan(-1);
+    expect(exampleIdx).toBeGreaterThan(-1);
+    expect(yourIdx).toBeLessThan(exampleIdx);
+  });
+
+  it("always renders the Example stories section, even when there are no example stories", async () => {
+    renderStoriesPage();
+    expect(
+      await screen.findByRole("heading", { name: /example stories/i })
+    ).toBeInTheDocument();
+  });
+});
+
 export { renderStoriesPage };

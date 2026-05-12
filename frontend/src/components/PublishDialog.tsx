@@ -42,8 +42,11 @@ export function PublishDialog({
   const [published, setPublished] = useState(story.published);
   const [copied, setCopied] = useState(false);
   const urlInputRef = useRef<HTMLInputElement>(null);
-  const { progress: archivalProgress, handleArchival, handleCancelArchival } =
-    useArchivalDownload(story.id, story.title);
+  const {
+    progress: archivalProgress,
+    handleArchival,
+    handleCancelArchival,
+  } = useArchivalDownload(story.id, story.title);
 
   const incompleteChapters = story.chapters.filter(
     (ch) => !ch.narrative.trim()

@@ -60,9 +60,8 @@ describe("ExportSection", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /download static bundle/i })
     );
-    const { buildAndDownloadBundle } = await import(
-      "../../lib/story/buildStaticBundle"
-    );
+    const { buildAndDownloadBundle } =
+      await import("../../lib/story/buildStaticBundle");
     expect(buildAndDownloadBundle).toHaveBeenCalledWith("s-1", "Demo");
   });
 
@@ -71,9 +70,8 @@ describe("ExportSection", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /download story config/i })
     );
-    const { downloadStoryConfig } = await import(
-      "../../lib/story/exportConfig"
-    );
+    const { downloadStoryConfig } =
+      await import("../../lib/story/exportConfig");
     expect(downloadStoryConfig).toHaveBeenCalledWith("s-1", "Demo");
   });
 

@@ -18,6 +18,7 @@ import {
 import type { Story } from "../lib/story/types";
 import type { Dataset, Connection } from "../types";
 import { cameraFromBounds } from "../lib/layers";
+import { toaster } from "../lib/toaster";
 
 interface SaveAsStoryChapterProps {
   dataset?: Dataset | null;
@@ -101,6 +102,12 @@ export function SaveAsStoryChapter({
       });
       const created = await createStoryOnServer(story);
       navigate(workspacePath(`/story/${created.id}/edit`));
+    } catch (err) {
+      toaster.create({
+        title: "Failed to create story",
+        description: (err as Error).message,
+        type: "error",
+      });
     } finally {
       inFlightRef.current = false;
       setBusy(false);
@@ -115,17 +122,21 @@ export function SaveAsStoryChapter({
       try {
         const story = await getStoryFromServer(storyId);
         if (!story) return;
-        const nextChapter = buildMapChapter(
-          story.chapters.length,
-          dataset,
-          connection
-        );
+        const nextOrder =
+          story.chapters.reduce((max, ch) => Math.max(max, ch.order), -1) + 1;
+        const nextChapter = buildMapChapter(nextOrder, dataset, connection);
         const updated: Story = {
           ...story,
           chapters: [...story.chapters, nextChapter],
         };
         await saveStoryToServer(updated);
         navigate(workspacePath(`/story/${storyId}/edit`));
+      } catch (err) {
+        toaster.create({
+          title: "Failed to add map chapter",
+          description: (err as Error).message,
+          type: "error",
+        });
       } finally {
         inFlightRef.current = false;
         setBusy(false);

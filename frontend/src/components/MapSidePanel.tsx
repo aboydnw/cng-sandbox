@@ -12,7 +12,7 @@ import { InlineUpload } from "./InlineUpload";
 import { InlineConnectionForm } from "./InlineConnectionForm";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { ConnectionInfoCard } from "./ConnectionInfoCard";
-import { StoryCTABanner } from "./StoryCTABanner";
+import { SaveAsStoryChapter } from "./SaveAsStoryChapter";
 import { EditableDatasetTitle } from "./EditableDatasetTitle";
 import type { Table } from "apache-arrow";
 
@@ -284,7 +284,7 @@ export function MapSidePanel({
       {/* Story CTA — available for both datasets and connections */}
       {!shared && (
         <Box mt={4}>
-          <StoryCTABanner dataset={ds} connection={item.connection} />
+          <SaveAsStoryChapter dataset={ds} connection={item.connection} />
         </Box>
       )}
     </Box>

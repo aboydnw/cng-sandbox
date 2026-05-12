@@ -12,21 +12,7 @@ import {
 } from "../lib/story/api";
 import type { Story } from "../lib/story/types";
 import { ExampleStoryCard } from "../components/ExampleStoryCard";
-
-function inferDataType(story: Story): string {
-  const types = new Set<string>();
-  for (const ch of story.chapters) {
-    const t = (ch as { type?: string }).type;
-    if (t === "map") types.add("Map");
-    if (t === "chart") types.add("Chart");
-    if (t === "image") types.add("Image");
-    if (t === "video") types.add("Video");
-    if (t === "prose") types.add("Prose");
-  }
-  if (types.size === 0) return "Story";
-  if (types.size === 1) return Array.from(types)[0];
-  return "Mixed";
-}
+import { inferDataType } from "../lib/story/dataType";
 
 function timeAgo(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);

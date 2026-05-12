@@ -141,10 +141,14 @@ function renderPage() {
 }
 
 describe("UploadPage", () => {
-  it("renders exactly two path cards: Visualize data and Build a story", () => {
+  it("renders the Visualize data path card", () => {
     renderPage();
     expect(screen.getByText("Visualize data")).toBeTruthy();
-    expect(screen.getByText("Build a story")).toBeTruthy();
+  });
+
+  it("no longer renders the 'Build a story' card (moved to Stories tab)", () => {
+    renderPage();
+    expect(screen.queryByText("Build a story")).toBeNull();
   });
 
   it("does not render the old three cards", () => {
@@ -164,14 +168,6 @@ describe("UploadPage", () => {
     fireEvent.click(screen.getByText("Visualize data"));
     expect(screen.getByRole("textbox", { name: /url/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /continue/i })).toBeTruthy();
-  });
-
-  it("expanding Build a story reveals start from scratch button", () => {
-    renderPage();
-    fireEvent.click(screen.getByText("Build a story"));
-    expect(
-      screen.getByRole("button", { name: /start from scratch/i })
-    ).toBeTruthy();
   });
 
   it("routing a .parquet URL opens the GeoParquet preview modal inline", async () => {

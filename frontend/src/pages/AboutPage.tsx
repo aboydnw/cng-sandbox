@@ -5,6 +5,7 @@ import {
   GridFour,
   GlobeHemisphereWest,
   ArrowRight,
+  ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
@@ -384,7 +385,17 @@ export default function AboutPage() {
                   fontWeight: 600,
                 }}
               >
-                ↗ CNG Sandbox on GitHub
+                <ArrowSquareOut
+                  size={14}
+                  weight="bold"
+                  style={{
+                    display: "inline",
+                    marginRight: 4,
+                    verticalAlign: "text-bottom",
+                  }}
+                  aria-hidden="true"
+                />
+                CNG Sandbox on GitHub
               </a>{" "}
               — the full source for this site.
             </Box>
@@ -398,7 +409,17 @@ export default function AboutPage() {
                   fontWeight: 600,
                 }}
               >
-                ↗ developmentseed on GitHub
+                <ArrowSquareOut
+                  size={14}
+                  weight="bold"
+                  style={{
+                    display: "inline",
+                    marginRight: 4,
+                    verticalAlign: "text-bottom",
+                  }}
+                  aria-hidden="true"
+                />
+                developmentseed on GitHub
               </a>{" "}
               — titiler, tipg, stac-fastapi, and other CNG building blocks.
             </Box>

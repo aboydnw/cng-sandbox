@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
-import { ArrowRight, GithubLogo } from "@phosphor-icons/react";
+import { ArrowRight, ArrowSquareOut, GithubLogo } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExampleStoryCard } from "../components/ExampleStoryCard";
@@ -202,7 +202,17 @@ export default function LandingPage() {
                 fontSize: 14,
               }}
             >
-              ↗ github.com/developmentseed
+              <ArrowSquareOut
+                size={14}
+                weight="bold"
+                style={{
+                  display: "inline",
+                  marginRight: 4,
+                  verticalAlign: "text-bottom",
+                }}
+                aria-hidden="true"
+              />
+              github.com/developmentseed
             </a>
           </Box>
         </Box>

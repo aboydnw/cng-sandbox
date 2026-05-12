@@ -42,14 +42,7 @@ export function ExampleStoryCard({
   };
   return (
     <Box
-      as="button"
-      type="button"
-      onClick={handleClick}
-      disabled={loading}
-      aria-busy={loading || undefined}
-      textAlign="left"
-      p={0}
-      m={0}
+      asChild
       bg="white"
       border="1px solid"
       borderColor="brand.border"
@@ -60,28 +53,41 @@ export function ExampleStoryCard({
       _hover={loading ? undefined : { borderColor: "brand.orange" }}
       transition="border-color 0.15s, opacity 0.15s"
     >
-      <Flex direction="column">
-        <Box
-          h={compact ? "46px" : "90px"}
-          style={{ background: gradientForTitle(title) }}
-        />
-        <Box px={3} py={2}>
-          <Text
-            fontWeight={600}
-            fontSize={compact ? "12px" : "14px"}
-            color="brand.brown"
-            truncate
-            title={title}
-          >
-            {title}
-          </Text>
-          {!compact && (
-            <Text fontSize="11px" color="gray.500" mt={1}>
-              {loading ? "Cloning into your workspace…" : subtitle}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        aria-busy={loading || undefined}
+        style={{
+          padding: 0,
+          margin: 0,
+          textAlign: "left",
+          font: "inherit",
+        }}
+      >
+        <Flex direction="column">
+          <Box
+            h={compact ? "46px" : "90px"}
+            style={{ background: gradientForTitle(title) }}
+          />
+          <Box px={3} py={2}>
+            <Text
+              fontWeight={600}
+              fontSize={compact ? "12px" : "14px"}
+              color="brand.brown"
+              truncate
+              title={title}
+            >
+              {title}
             </Text>
-          )}
-        </Box>
-      </Flex>
+            {!compact && (
+              <Text fontSize="11px" color="gray.500" mt={1}>
+                {loading ? "Cloning into your workspace…" : subtitle}
+              </Text>
+            )}
+          </Box>
+        </Flex>
+      </button>
     </Box>
   );
 }

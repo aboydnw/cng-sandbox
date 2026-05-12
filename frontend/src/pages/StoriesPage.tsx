@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
@@ -46,19 +46,22 @@ export default function StoriesPage() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [cloningId, setCloningId] = useState<string | null>(null);
+  const cloneInFlightRef = useRef(false);
 
   const handleCloneExample = useCallback(
     async (story: Story) => {
-      if (cloningId) return;
+      if (cloneInFlightRef.current) return;
+      cloneInFlightRef.current = true;
       setCloningId(story.id);
       try {
         const forked = await forkStoryOnServer(story.id);
         navigate(workspacePath(`/story/${forked.id}/edit`));
       } catch {
+        cloneInFlightRef.current = false;
         setCloningId(null);
       }
     },
-    [cloningId, navigate, workspacePath]
+    [navigate, workspacePath]
   );
 
   useEffect(() => {

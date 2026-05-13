@@ -51,11 +51,14 @@ function renderStoriesPage() {
 }
 
 describe("Workspace routing", () => {
-  it("renders StoriesPage at workspace root (/)", async () => {
+  it("renders WorkspaceHomePage at workspace root (/), not StoriesPage", async () => {
     renderApp("/w/test-workspace");
     expect(
-      await screen.findByRole("heading", { name: /your stories/i })
+      await screen.findByRole("heading", { name: /workspace home/i })
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /your stories/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders UploadPage at /quick-map", async () => {
@@ -63,7 +66,7 @@ describe("Workspace routing", () => {
     expect(await screen.findByText(/upload/i)).toBeInTheDocument();
   });
 
-  it("redirects /stories to /", async () => {
+  it("renders StoriesPage at /w/:id/stories", async () => {
     renderApp("/w/test-workspace/stories");
     expect(
       await screen.findByRole("heading", { name: /your stories/i })

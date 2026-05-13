@@ -31,6 +31,10 @@ vi.mock("../pages/StoriesPage", () => ({
   default: () => <div data-testid="stories-page" />,
 }));
 
+vi.mock("../pages/WorkspaceHomePage", () => ({
+  default: () => <div data-testid="workspace-home-page" />,
+}));
+
 vi.mock("../pages/LibraryPage", () => ({
   default: () => <div data-testid="library-page" />,
 }));
@@ -92,9 +96,9 @@ test("/about renders the public AboutPage without a workspace", () => {
   expect(screen.getByTestId("about-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/ renders the workspace StoriesPage", () => {
+test("/w/:workspaceId/ renders the WorkspaceHomePage", () => {
   renderApp("/w/abc12345/");
-  expect(screen.getByTestId("stories-page")).toBeInTheDocument();
+  expect(screen.getByTestId("workspace-home-page")).toBeInTheDocument();
 });
 
 test("/w/:workspaceId/quick-map renders the workspace UploadPage", () => {
@@ -102,7 +106,7 @@ test("/w/:workspaceId/quick-map renders the workspace UploadPage", () => {
   expect(screen.getByTestId("upload-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/stories redirects to workspace root", () => {
+test("/w/:workspaceId/stories renders the StoriesPage", () => {
   renderApp("/w/abc12345/stories");
   expect(screen.getByTestId("stories-page")).toBeInTheDocument();
 });

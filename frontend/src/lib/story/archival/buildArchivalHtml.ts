@@ -2,28 +2,45 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import Markdown from "react-markdown";
 import type { CngRcChapter, CngRcConfig } from "../cngRcTypes";
-import { cngRcToStory } from "../cngRcAdapter";
-import type { Chapter } from "../types";
-import type { Connection } from "../../../types";
+import type { Chapter, Story } from "../types";
+import type { Connection, Dataset } from "../../../types";
 import { buildCitationBlock, escapeHtml, safeHttpUrl } from "./citations";
 import { captureChapterMap } from "./captureMap";
 import { fetchAndInlineAsBase64 } from "./inlineAsset";
 
+export interface BuildArchivalHtmlArgs {
+  config: CngRcConfig;
+  story: Story;
+  datasetMap: Map<string, Dataset | null>;
+  connectionMap: Map<string, Connection>;
+}
+
 /**
  * Assemble a single self-contained archival HTML document from a cng-rc.json
- * config. Dublin Core meta tags, chapter content (prose, map snapshots, video
- * thumbnails, images), and a data-citations block are all inlined — the result
- * has no external dependencies and is safe to archive as a standalone file.
+ * config plus the live Story + Dataset + Connection rows the live reader uses.
+ * Dublin Core meta tags, chapter content (prose, map snapshots, video
+ * thumbnails, images), and a data-citations block are all inlined.
+ *
+ * Map and scrollytelling chapters are rendered offscreen via captureChapterMap
+ * using the live datasetMap + connectionMap, so they route through the same
+ * tile endpoints as the in-page reader (e.g. /raster/collections/{id}/... for
+ * ingested datasets). Using the cng-rc-synthesized story would force every
+ * raster chapter onto the client-side /cog/tiles/?url=… path, which 500s for
+ * example datasets whose source_url is a bucket directory listing.
  *
  * Errors from map snapshot capture (timeouts, missing canvases) propagate up
  * to the caller; the export fails loudly rather than silently shipping a
  * partial document.
  */
-export async function buildArchivalHtml(config: CngRcConfig): Promise<string> {
-  const { story, connections } = cngRcToStory(config);
+export async function buildArchivalHtml({
+  config,
+  story,
+  datasetMap,
+  connectionMap,
+}: BuildArchivalHtmlArgs): Promise<string> {
   const chapterFragments = await Promise.all(
     config.chapters.map((rawCh, i) =>
-      renderChapter(rawCh, story.chapters[i], connections)
+      renderChapter(rawCh, story.chapters[i], datasetMap, connectionMap)
     )
   );
 
@@ -70,8 +87,9 @@ async function tryInlineAsset(url: string): Promise<string> {
 
 async function renderChapter(
   ch: CngRcChapter,
-  storyChapter: Chapter,
-  connections: Map<string, Connection>
+  storyChapter: Chapter | undefined,
+  datasetMap: Map<string, Dataset | null>,
+  connectionMap: Map<string, Connection>
 ): Promise<string> {
   const title = ch.title ? `<h2>${escapeHtml(ch.title)}</h2>` : "";
   const body = ch.body
@@ -84,9 +102,15 @@ async function renderChapter(
 
     case "map":
     case "scrollytelling": {
+      if (!storyChapter) {
+        throw new Error(
+          `Live chapter data missing for ${ch.type} chapter ${ch.id}`
+        );
+      }
       const dataUrl = await captureChapterMap({
         chapter: storyChapter,
-        connections,
+        datasetMap,
+        connectionMap,
       });
       const sectionClass = ch.type === "map" ? "map" : "scrolly";
       return `<section class="chapter ${sectionClass}">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`;

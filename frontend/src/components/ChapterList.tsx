@@ -113,7 +113,7 @@ export function ChapterList({
               height="auto"
               width="100%"
               minW={0}
-              _hover={{ borderColor: "gray.300" }}
+              _hover={{ borderColor: "brand.border" }}
               _focusVisible={{
                 borderColor: "brand.orange",
                 boxShadow: "none",
@@ -122,7 +122,7 @@ export function ChapterList({
               aria-label="Story title"
             />
             <Box
-              color="gray.400"
+              color="brand.brown"
               opacity={0}
               _groupHover={{ opacity: 1 }}
               _groupFocusWithin={{ opacity: 1 }}

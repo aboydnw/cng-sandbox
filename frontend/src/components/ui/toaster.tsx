@@ -1,4 +1,5 @@
 import {
+  Stack,
   Toaster as ChakraToaster,
   ToastCloseTrigger,
   ToastDescription,
@@ -16,12 +17,14 @@ export function Toaster({ toaster }: ToasterProps) {
   return (
     <ChakraToaster toaster={toaster}>
       {(toast) => (
-        <ToastRoot key={toast.id}>
+        <ToastRoot key={toast.id} width={{ md: "sm" }}>
           <ToastIndicator />
-          <ToastTitle>{toast.title}</ToastTitle>
-          {toast.description && (
-            <ToastDescription>{toast.description}</ToastDescription>
-          )}
+          <Stack gap="1" flex="1" maxWidth="100%">
+            {toast.title && <ToastTitle>{toast.title}</ToastTitle>}
+            {toast.description && (
+              <ToastDescription>{toast.description}</ToastDescription>
+            )}
+          </Stack>
           <ToastCloseTrigger />
         </ToastRoot>
       )}

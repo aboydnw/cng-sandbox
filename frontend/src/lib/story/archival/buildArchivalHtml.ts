@@ -80,9 +80,31 @@ function renderMarkdown(body: string): string {
 async function tryInlineAsset(url: string): Promise<string> {
   try {
     return await fetchAndInlineAsBase64(url);
-  } catch {
+  } catch (err) {
+    console.warn(`Archival export: failed to inline ${url}`, err);
     return "";
   }
+}
+
+interface ImageExtra {
+  url?: string;
+  thumbnail_url?: string;
+  alt_text?: string;
+}
+
+interface VideoExtra {
+  provider?: string;
+  video_id?: string;
+  original_url?: string;
+}
+
+function youtubeThumbnailUrl(video: VideoExtra): string | null {
+  if (video.provider !== "youtube" || !video.video_id) return null;
+  return `https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg`;
+}
+
+function placeholder(message: string): string {
+  return `<p><em>(${message})</em></p>`;
 }
 
 async function renderChapter(
@@ -117,28 +139,36 @@ async function renderChapter(
     }
 
     case "image": {
-      const url = ch.extra?.image_url as string | undefined;
-      const inlined = url ? await tryInlineAsset(url) : "";
-      return `<section class="chapter image">${title}${inlined ? `<img src="${inlined}" alt="" />` : ""}${body}</section>`;
+      const image = (ch.extra?.image ?? {}) as ImageExtra;
+      const src = image.url || image.thumbnail_url || "";
+      const inlined = src ? await tryInlineAsset(src) : "";
+      const alt = escapeHtml(image.alt_text ?? "");
+      const media = inlined
+        ? `<img src="${inlined}" alt="${alt}" />`
+        : placeholder("Image unavailable");
+      return `<section class="chapter image">${title}${media}${body}</section>`;
     }
 
     case "video": {
-      const thumbnailUrl =
-        (ch.extra?.thumbnail_url as string | undefined) ||
-        (ch.extra?.poster as string | undefined);
+      const video = (ch.extra?.video ?? {}) as VideoExtra;
+      const thumbnailUrl = youtubeThumbnailUrl(video);
       const inlined = thumbnailUrl ? await tryInlineAsset(thumbnailUrl) : "";
-      const rawSourceUrl = ch.extra?.video_url as string | undefined;
-      const safeSourceUrl = rawSourceUrl ? safeHttpUrl(rawSourceUrl) : null;
+      const safeSourceUrl = video.original_url
+        ? safeHttpUrl(video.original_url)
+        : null;
+      const media = inlined
+        ? `<img src="${inlined}" alt="Video thumbnail" />`
+        : placeholder("Video thumbnail unavailable");
       return `<section class="chapter video">
         ${title}
-        ${inlined ? `<img src="${inlined}" alt="Video thumbnail" />` : ""}
+        ${media}
         ${safeSourceUrl ? `<p><small>Original video: <a href="${escapeHtml(safeSourceUrl)}">${escapeHtml(safeSourceUrl)}</a></small></p>` : ""}
         ${body}
       </section>`;
     }
 
     case "chart": {
-      return `<section class="chapter chart">${title}<p><em>(Chart rendering pending)</em></p>${body}</section>`;
+      return `<section class="chapter chart">${title}${placeholder("Chart rendering pending")}${body}</section>`;
     }
 
     default: {

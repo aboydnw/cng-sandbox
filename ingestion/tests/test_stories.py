@@ -595,6 +595,43 @@ def test_fork_sets_forked_from_id(client, db_session):
     assert row.forked_from_id == "ex-source"
 
 
+def test_fork_unique_index_blocks_duplicate_inserts(db_session):
+    from sqlalchemy.exc import IntegrityError
+
+    now = datetime.now(UTC)
+    db_session.add(
+        StoryRow(
+            id="fork-a",
+            title="A",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id="ws-unique",
+            is_example=False,
+            forked_from_id="ex-source-x",
+        )
+    )
+    db_session.commit()
+
+    db_session.add(
+        StoryRow(
+            id="fork-b",
+            title="B",
+            chapters_json="[]",
+            published=False,
+            created_at=now,
+            updated_at=now,
+            workspace_id="ws-unique",
+            is_example=False,
+            forked_from_id="ex-source-x",
+        )
+    )
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+    db_session.rollback()
+
+
 def test_fork_is_distinct_per_workspace(app, db_session):
     from starlette.testclient import TestClient
 

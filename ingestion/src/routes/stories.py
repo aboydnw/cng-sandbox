@@ -203,6 +203,17 @@ async def fork_story(story_id: str, request: Request):
         if not source:
             raise HTTPException(status_code=404, detail="Story not found")
 
+        existing = (
+            session.query(StoryRow)
+            .filter(
+                StoryRow.workspace_id == workspace_id,
+                StoryRow.forked_from_id == story_id,
+            )
+            .first()
+        )
+        if existing:
+            return _row_to_response(existing)
+
         now = datetime.now(UTC)
         forked = StoryRow(
             id=str(uuid.uuid4()),
@@ -215,6 +226,7 @@ async def fork_story(story_id: str, request: Request):
             updated_at=now,
             workspace_id=workspace_id,
             is_example=False,
+            forked_from_id=source.id,
         )
         session.add(forked)
         session.commit()

@@ -535,3 +535,94 @@ def test_stories_table_has_forked_from_id_column(db_engine):
     inspector = inspect(db_engine)
     cols = {c["name"] for c in inspector.get_columns("stories")}
     assert "forked_from_id" in cols
+
+
+def test_fork_is_idempotent_per_workspace(client, db_session):
+    now = datetime.now(UTC)
+    db_session.add(
+        StoryRow(
+            id="ex-idem",
+            title="Example",
+            chapters_json="[]",
+            published=True,
+            created_at=now,
+            updated_at=now,
+            workspace_id="system",
+            is_example=True,
+        )
+    )
+    db_session.commit()
+
+    first = client.post("/api/stories/ex-idem/fork")
+    second = client.post("/api/stories/ex-idem/fork")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["id"] == second.json()["id"]
+
+    count = (
+        db_session.query(StoryRow)
+        .filter(
+            StoryRow.workspace_id == "testABCD",
+            StoryRow.forked_from_id == "ex-idem",
+        )
+        .count()
+    )
+    assert count == 1
+
+
+def test_fork_sets_forked_from_id(client, db_session):
+    now = datetime.now(UTC)
+    db_session.add(
+        StoryRow(
+            id="ex-source",
+            title="Source",
+            chapters_json="[]",
+            published=True,
+            created_at=now,
+            updated_at=now,
+            workspace_id="system",
+            is_example=True,
+        )
+    )
+    db_session.commit()
+
+    resp = client.post("/api/stories/ex-source/fork")
+    assert resp.status_code == 200
+    forked_id = resp.json()["id"]
+
+    row = db_session.query(StoryRow).filter_by(id=forked_id).one()
+    assert row.forked_from_id == "ex-source"
+
+
+def test_fork_is_distinct_per_workspace(app, db_session):
+    from starlette.testclient import TestClient
+
+    now = datetime.now(UTC)
+    db_session.add(
+        StoryRow(
+            id="ex-shared",
+            title="Shared",
+            chapters_json="[]",
+            published=True,
+            created_at=now,
+            updated_at=now,
+            workspace_id="system",
+            is_example=True,
+        )
+    )
+    db_session.commit()
+
+    client_a = TestClient(
+        app, raise_server_exceptions=False, headers={"X-Workspace-Id": "wsAAAA01"}
+    )
+    client_b = TestClient(
+        app, raise_server_exceptions=False, headers={"X-Workspace-Id": "wsBBBB02"}
+    )
+
+    fork_a = client_a.post("/api/stories/ex-shared/fork")
+    fork_b = client_b.post("/api/stories/ex-shared/fork")
+
+    assert fork_a.status_code == 200
+    assert fork_b.status_code == 200
+    assert fork_a.json()["id"] != fork_b.json()["id"]

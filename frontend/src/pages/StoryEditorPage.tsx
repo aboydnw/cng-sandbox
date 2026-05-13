@@ -1,7 +1,6 @@
-import { Box, Button, Flex, Input, Text, Menu, Portal } from "@chakra-ui/react";
+import { Box, Button, Flex, Text, Menu, Portal } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import {
-  PencilSimple,
   X as XIcon,
   ArrowCounterClockwise,
   Check,
@@ -154,49 +153,6 @@ export default function StoryEditorPage() {
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       <Header showWorkspace={false}>
-        <Flex
-          align="center"
-          gap={1}
-          role="group"
-          position="relative"
-          flex="1 1 auto"
-          minW={0}
-          maxW="300px"
-        >
-          <Input
-            value={story.title}
-            onChange={(e) =>
-              updateStory((s) => ({ ...s, title: e.target.value }))
-            }
-            placeholder="Click to name your story"
-            fontSize="15px"
-            fontWeight={600}
-            border="none"
-            borderBottom="2px solid"
-            borderColor="transparent"
-            borderRadius={0}
-            outline="none"
-            background="transparent"
-            width="100%"
-            minW={0}
-            textOverflow="ellipsis"
-            p={0}
-            height="auto"
-            _hover={{ borderColor: "gray.300" }}
-            _focusVisible={{ borderColor: "brand.orange", boxShadow: "none" }}
-            _placeholder={{ color: "gray.400", fontWeight: 400 }}
-          />
-          <Box
-            color="gray.400"
-            opacity={0}
-            _groupHover={{ opacity: 1 }}
-            _groupFocusWithin={{ opacity: 1 }}
-            pointerEvents="none"
-            flexShrink={0}
-          >
-            <PencilSimple size={14} />
-          </Box>
-        </Flex>
         <SaveStatus state={saveState} />
         <Flex gap={3} align="center">
           {story.published && (
@@ -210,9 +166,9 @@ export default function StoryEditorPage() {
           <Button
             size="sm"
             variant="outline"
-            borderColor="brand.orange"
-            color="brand.orange"
-            _hover={{ bg: "brand.bgSubtle" }}
+            borderColor="brand.border"
+            color="brand.brown"
+            _hover={{ bg: "brand.bgSubtle", borderColor: "brand.orange" }}
             onClick={() => setExportDialogOpen(true)}
           >
             <DownloadSimple size={14} weight="bold" /> Export
@@ -220,9 +176,10 @@ export default function StoryEditorPage() {
           <Flex align="center">
             <Button
               size="sm"
-              variant="outline"
+              bg="brand.orange"
+              color="white"
+              _hover={{ bg: "brand.brown" }}
               borderRightRadius={0}
-              borderRightWidth={0}
               onClick={() =>
                 window.open(workspacePath(`/story/${story.id}`), "_blank")
               }
@@ -233,8 +190,12 @@ export default function StoryEditorPage() {
               <Menu.Trigger asChild>
                 <Button
                   size="sm"
-                  variant="outline"
+                  bg="brand.orange"
+                  color="white"
+                  _hover={{ bg: "brand.brown" }}
                   borderLeftRadius={0}
+                  borderLeft="1px solid"
+                  borderLeftColor="whiteAlpha.400"
                   px={2}
                   aria-label="More publish options"
                 >
@@ -341,6 +302,10 @@ export default function StoryEditorPage() {
             onAdd={addChapter}
             onDelete={deleteChapter}
             onReorder={reorderChapters}
+            storyTitle={story.title}
+            onStoryTitleChange={(title) =>
+              updateStory((s) => ({ ...s, title }))
+            }
           />
         </Box>
 

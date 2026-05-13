@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import {
   CaretDown,
   CaretUp,
@@ -7,6 +7,7 @@ import {
   DotsSixVertical,
   ListBullets,
   MapTrifold,
+  PencilSimple,
   Scroll,
   VideoCamera,
   Plus,
@@ -23,6 +24,8 @@ interface ChapterListProps {
   onAdd: () => void;
   onDelete: (id: string) => void;
   onReorder: (chapters: Chapter[]) => void;
+  storyTitle?: string;
+  onStoryTitleChange?: (title: string) => void;
 }
 
 export function ChapterList({
@@ -32,6 +35,8 @@ export function ChapterList({
   onAdd,
   onDelete,
   onReorder,
+  storyTitle,
+  onStoryTitleChange,
 }: ChapterListProps) {
   const sorted = [...chapters].sort((a, b) => a.order - b.order);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -67,8 +72,68 @@ export function ChapterList({
     onReorder(reordered.map((ch, i) => ({ ...ch, order: i })));
   }
 
+  const showTitle = onStoryTitleChange !== undefined;
+
   return (
     <Flex direction="column" h="100%">
+      {showTitle && (
+        <Box
+          px={3}
+          py={3}
+          borderBottom="1px solid"
+          borderColor="gray.200"
+          role="group"
+        >
+          <Text
+            fontSize="11px"
+            textTransform="uppercase"
+            letterSpacing="1px"
+            color="gray.500"
+            fontWeight={600}
+            mb={1}
+          >
+            Story
+          </Text>
+          <Flex align="center" gap={1.5} position="relative">
+            <Input
+              value={storyTitle ?? ""}
+              onChange={(e) => onStoryTitleChange?.(e.target.value)}
+              placeholder="Untitled story"
+              fontSize="17px"
+              fontWeight={700}
+              color="brand.brown"
+              lineHeight="1.2"
+              border="none"
+              borderBottom="2px solid"
+              borderColor="transparent"
+              borderRadius={0}
+              outline="none"
+              background="transparent"
+              p={0}
+              height="auto"
+              width="100%"
+              minW={0}
+              _hover={{ borderColor: "brand.border" }}
+              _focusVisible={{
+                borderColor: "brand.orange",
+                boxShadow: "none",
+              }}
+              _placeholder={{ color: "gray.400", fontWeight: 500 }}
+              aria-label="Story title"
+            />
+            <Box
+              color="brand.brown"
+              opacity={0}
+              _groupHover={{ opacity: 1 }}
+              _groupFocusWithin={{ opacity: 1 }}
+              pointerEvents="none"
+              flexShrink={0}
+            >
+              <PencilSimple size={14} />
+            </Box>
+          </Flex>
+        </Box>
+      )}
       <Flex
         px={3}
         py={3}

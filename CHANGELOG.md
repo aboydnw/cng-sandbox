@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3](https://github.com/aboydnw/cng-sandbox/compare/v2.3.2...v2.3.3) (2026-05-13)
+
+
+### Bug Fixes
+
+* **stories:** guard against undefined onAfterRender crashing guided tour ([#459](https://github.com/aboydnw/cng-sandbox/issues/459)) ([6749903](https://github.com/aboydnw/cng-sandbox/commit/6749903ad0d63d35d7ad4f5f2bcb9b75cbdd02d6))
+
 ## [2.3.2](https://github.com/aboydnw/cng-sandbox/compare/v2.3.1...v2.3.2) (2026-05-13)
 
 

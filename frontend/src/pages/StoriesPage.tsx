@@ -1,18 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { useWorkspace } from "../hooks/useWorkspace";
-import {
-  listStoriesFromServer,
-  deleteStoryFromServer,
-  forkStoryOnServer,
-} from "../lib/story/api";
+import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import type { Story } from "../lib/story/types";
-import { ExampleStoryCard } from "../components/ExampleStoryCard";
-import { inferDataType } from "../lib/story/dataType";
 
 function timeAgo(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -27,28 +21,9 @@ function timeAgo(dateStr: string): string {
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
-  const navigate = useNavigate();
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [cloningId, setCloningId] = useState<string | null>(null);
-  const cloneInFlightRef = useRef(false);
-
-  const handleCloneExample = useCallback(
-    async (story: Story) => {
-      if (cloneInFlightRef.current) return;
-      cloneInFlightRef.current = true;
-      setCloningId(story.id);
-      try {
-        const forked = await forkStoryOnServer(story.id);
-        navigate(workspacePath(`/story/${forked.id}/edit`));
-      } catch {
-        cloneInFlightRef.current = false;
-        setCloningId(null);
-      }
-    },
-    [navigate, workspacePath]
-  );
 
   useEffect(() => {
     listStoriesFromServer()
@@ -70,7 +45,6 @@ export default function StoriesPage() {
     }
   }, []);
 
-  const exampleStories = stories.filter((s) => s.is_example);
   const userStories = stories.filter((s) => !s.is_example);
 
   return (
@@ -109,7 +83,7 @@ export default function StoriesPage() {
           </Flex>
         ) : userStories.length === 0 ? (
           <Text color="gray.500" fontSize="sm" mb={2}>
-            No stories yet — start one or browse the example stories below.
+            No stories yet — click &ldquo;New story&rdquo; to get started.
           </Text>
         ) : (
           <Table.Root size="sm" tableLayout="fixed">
@@ -173,41 +147,6 @@ export default function StoriesPage() {
               ))}
             </Table.Body>
           </Table.Root>
-        )}
-
-        <Box my={8} h="1px" bg="brand.border" />
-
-        <Heading size="md" color="gray.700" mb={3}>
-          Example stories
-        </Heading>
-        <Text fontSize="13px" color="gray.500" mb={3}>
-          Curated stories shared with every workspace.
-        </Text>
-        {exampleStories.length === 0 ? (
-          <Text fontSize="sm" color="gray.500">
-            No example stories available.
-          </Text>
-        ) : (
-          <Box
-            display="grid"
-            gridTemplateColumns={{
-              base: "1fr",
-              md: "repeat(3, 1fr)",
-            }}
-            gap={3}
-          >
-            {exampleStories.map((story) => (
-              <ExampleStoryCard
-                key={story.id}
-                title={story.title}
-                chapterCount={story.chapters.length}
-                dataType={inferDataType(story)}
-                onClick={() => handleCloneExample(story)}
-                loading={cloningId === story.id}
-                compact={userStories.length > 0}
-              />
-            ))}
-          </Box>
         )}
       </Box>
       <Footer />

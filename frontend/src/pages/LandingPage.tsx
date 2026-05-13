@@ -9,7 +9,11 @@ import {
   generateWorkspaceId,
   WORKSPACE_STORAGE_KEY,
 } from "../hooks/useWorkspace";
-import { listExampleStoriesFromServer } from "../lib/story/api";
+import {
+  forkStoryOnServer,
+  listExampleStoriesFromServer,
+} from "../lib/story/api";
+import { setWorkspaceId } from "../lib/api";
 import { inferDataType } from "../lib/story/dataType";
 import type { Story } from "../lib/story/types";
 
@@ -23,6 +27,7 @@ export default function LandingPage() {
   const switching = searchParams.get("switch") === "1";
   const [enteredId, setEnteredId] = useState("");
   const [examples, setExamples] = useState<Story[]>([]);
+  const [cloningId, setCloningId] = useState<string | null>(null);
 
   useEffect(() => {
     if (switching) return;
@@ -42,6 +47,21 @@ export default function LandingPage() {
     const id = generateWorkspaceId();
     localStorage.setItem(STORAGE_KEY, id);
     navigate(`/w/${id}/story/new`);
+  };
+
+  const cloneExampleAndOpenEditor = async (story: Story) => {
+    if (cloningId) return;
+    setCloningId(story.id);
+    const id = generateWorkspaceId();
+    localStorage.setItem(STORAGE_KEY, id);
+    setWorkspaceId(id);
+    try {
+      const forked = await forkStoryOnServer(story.id);
+      navigate(`/w/${id}/story/${forked.id}/edit`);
+    } catch {
+      setCloningId(null);
+      navigate(`/w/${id}/`);
+    }
   };
 
   const openExistingWorkspace = () => {
@@ -145,7 +165,8 @@ export default function LandingPage() {
                   title={story.title}
                   chapterCount={story.chapters.length}
                   dataType={inferDataType(story)}
-                  onClick={startStory}
+                  onClick={() => cloneExampleAndOpenEditor(story)}
+                  loading={cloningId === story.id}
                   compact={false}
                 />
               ))}

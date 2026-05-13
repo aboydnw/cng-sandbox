@@ -13,6 +13,7 @@ import LandingPage from "../LandingPage";
 
 vi.mock("../../lib/story/api", () => ({
   listExampleStoriesFromServer: vi.fn().mockResolvedValue([]),
+  forkStoryOnServer: vi.fn(),
 }));
 
 function WorkspaceTarget() {
@@ -90,6 +91,49 @@ describe("LandingPage", () => {
       "data-rest",
       "/story/new"
     );
+  });
+
+  it("clicking an example card forks the example and opens its editor", async () => {
+    const { listExampleStoriesFromServer, forkStoryOnServer } = await import(
+      "../../lib/story/api"
+    );
+    (
+      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([
+      {
+        id: "example-1",
+        title: "Example Flood Story",
+        description: null,
+        chapters: [{ id: "c1" }, { id: "c2" }],
+        is_example: true,
+        published: true,
+        dataset_id: null,
+        dataset_ids: [],
+        updated_at: "2026-05-12T00:00:00Z",
+      },
+    ]);
+    (forkStoryOnServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "forked-77",
+      title: "Example Flood Story",
+      description: null,
+      chapters: [],
+      is_example: false,
+      published: false,
+    });
+    renderLanding();
+    const card = await screen.findByRole("button", {
+      name: /example flood story/i,
+    });
+    fireEvent.click(card);
+    await waitFor(() => {
+      expect(forkStoryOnServer).toHaveBeenCalledWith("example-1");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+        "data-rest",
+        "/story/forked-77/edit"
+      );
+    });
   });
 
   it("renders example story cards fetched from the public endpoint", async () => {

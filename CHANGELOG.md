@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/aboydnw/cng-sandbox/compare/v2.3.1...v2.3.2) (2026-05-13)
+
+
+### Bug Fixes
+
+* **stories:** dereference deck.gl handle lazily in archival capture ([#455](https://github.com/aboydnw/cng-sandbox/issues/455)) ([3bd37e7](https://github.com/aboydnw/cng-sandbox/commit/3bd37e7a61cc91e9b06a30bb835a163c9eaa1936))
+
 ## [2.3.1](https://github.com/aboydnw/cng-sandbox/compare/v2.3.0...v2.3.1) (2026-05-13)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0](https://github.com/aboydnw/cng-sandbox/compare/v2.3.3...v2.4.0) (2026-05-13)
+
+
+### Features
+
+* differentiate workspace home from Stories tab ([#465](https://github.com/aboydnw/cng-sandbox/issues/465)) ([7ab8eb4](https://github.com/aboydnw/cng-sandbox/commit/7ab8eb4fa1709d579e6508c135b92184928a254d))
+
+
+### Bug Fixes
+
+* **share:** treat example datasets as always-shared in share UI ([#461](https://github.com/aboydnw/cng-sandbox/issues/461)) ([7cbb8e6](https://github.com/aboydnw/cng-sandbox/commit/7cbb8e6d9902085f8ad882d8597b5ff4407117d0)), closes [#334](https://github.com/aboydnw/cng-sandbox/issues/334)
+* **stories:** read wrapped extra.image/extra.video in archival HTML export ([#463](https://github.com/aboydnw/cng-sandbox/issues/463)) ([fcd48ca](https://github.com/aboydnw/cng-sandbox/commit/fcd48ca77fc0c81edacd0fbf55384250c0de2afc))
+
 ## [2.3.3](https://github.com/aboydnw/cng-sandbox/compare/v2.3.2...v2.3.3) (2026-05-13)
 
 

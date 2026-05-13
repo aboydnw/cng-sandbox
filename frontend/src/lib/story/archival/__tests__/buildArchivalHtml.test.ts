@@ -105,6 +105,39 @@ describe("buildArchivalHtml", () => {
     expect(html).toContain('src="data:image/png;base64,');
   });
 
+  it("propagates errors from captureChapterMap (no silent fallback)", async () => {
+    const { captureChapterMap } = await import("../captureMap");
+    (captureChapterMap as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("Chapter snapshot timed out after 30s")
+    );
+
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s1", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [
+        {
+          id: "ch",
+          type: "scrollytelling",
+          title: "X",
+          body: "",
+          layers: [],
+          map: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0 },
+        },
+      ],
+      layers: {},
+      assets: {},
+    };
+
+    await expect(buildArchivalHtml(config)).rejects.toThrow(/timed out/);
+  });
+
   it("uses video thumbnail for video chapters (per spec)", async () => {
     const config: CngRcConfig = {
       version: "1",

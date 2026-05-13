@@ -2,6 +2,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import Markdown from "react-markdown";
 import type { CngRcChapter, CngRcConfig } from "../cngRcTypes";
+import { cngRcToStory } from "../cngRcAdapter";
+import type { Chapter } from "../types";
+import type { Connection } from "../../../types";
 import { buildCitationBlock, escapeHtml, safeHttpUrl } from "./citations";
 import { captureChapterMap } from "./captureMap";
 import { fetchAndInlineAsBase64 } from "./inlineAsset";
@@ -11,10 +14,17 @@ import { fetchAndInlineAsBase64 } from "./inlineAsset";
  * config. Dublin Core meta tags, chapter content (prose, map snapshots, video
  * thumbnails, images), and a data-citations block are all inlined — the result
  * has no external dependencies and is safe to archive as a standalone file.
+ *
+ * Errors from map snapshot capture (timeouts, missing canvases) propagate up
+ * to the caller; the export fails loudly rather than silently shipping a
+ * partial document.
  */
 export async function buildArchivalHtml(config: CngRcConfig): Promise<string> {
+  const { story, connections } = cngRcToStory(config);
   const chapterFragments = await Promise.all(
-    config.chapters.map((ch) => renderChapter(ch, config))
+    config.chapters.map((rawCh, i) =>
+      renderChapter(rawCh, story.chapters[i], connections)
+    )
   );
 
   return `<!doctype html>
@@ -50,14 +60,6 @@ function renderMarkdown(body: string): string {
   return renderToStaticMarkup(createElement(Markdown, null, body));
 }
 
-async function tryCaptureMap(): Promise<string | null> {
-  try {
-    return await captureChapterMap();
-  } catch {
-    return null;
-  }
-}
-
 async function tryInlineAsset(url: string): Promise<string> {
   try {
     return await fetchAndInlineAsBase64(url);
@@ -68,7 +70,8 @@ async function tryInlineAsset(url: string): Promise<string> {
 
 async function renderChapter(
   ch: CngRcChapter,
-  _config: CngRcConfig
+  storyChapter: Chapter,
+  connections: Map<string, Connection>
 ): Promise<string> {
   const title = ch.title ? `<h2>${escapeHtml(ch.title)}</h2>` : "";
   const body = ch.body
@@ -79,18 +82,14 @@ async function renderChapter(
     case "prose":
       return `<section class="chapter prose">${title}${body}</section>`;
 
-    case "map": {
-      const dataUrl = await tryCaptureMap();
-      return dataUrl
-        ? `<section class="chapter map">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`
-        : `<section class="chapter map">${title}<p><em>(Map snapshot unavailable)</em></p>${body}</section>`;
-    }
-
+    case "map":
     case "scrollytelling": {
-      const dataUrl = await tryCaptureMap();
-      return dataUrl
-        ? `<section class="chapter scrolly">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`
-        : `<section class="chapter scrolly">${title}<p><em>(Map snapshot unavailable)</em></p>${body}</section>`;
+      const dataUrl = await captureChapterMap({
+        chapter: storyChapter,
+        connections,
+      });
+      const sectionClass = ch.type === "map" ? "map" : "scrolly";
+      return `<section class="chapter ${sectionClass}">${title}<img src="${dataUrl}" alt="Map snapshot" />${body}</section>`;
     }
 
     case "image": {

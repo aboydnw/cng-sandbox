@@ -89,33 +89,19 @@ describe("Header nav order", () => {
 });
 
 describe("Header utility links", () => {
-  it("renders a GitHub link pointing at the cng-sandbox repo", () => {
+  it("does not render a GitHub link in the header", () => {
     renderWithProviders(<Header />);
-    const link = screen.getByRole("link", { name: /github/i });
-    expect(link.getAttribute("href")).toBe(
-      "https://github.com/aboydnw/cng-sandbox"
-    );
-    expect(link.getAttribute("target")).toBe("_blank");
+    expect(screen.queryByRole("link", { name: /github/i })).toBeNull();
   });
 
-  it("renders a Contact link pointing at the DevSeed info mailto", () => {
+  it("does not render a Contact link in the header", () => {
     renderWithProviders(<Header />);
-    const link = screen.getByRole("link", { name: /contact/i });
-    expect(link.getAttribute("href")).toBe("mailto:info@developmentseed.org");
+    expect(screen.queryByRole("link", { name: /contact/i })).toBeNull();
   });
 
-  it("renders the GitHub and Contact links on the public (no-workspace) header too", () => {
-    render(
-      <ChakraProvider value={system}>
-        <MemoryRouter initialEntries={["/"]}>
-          <Routes>
-            <Route path="/" element={<Header />} />
-          </Routes>
-        </MemoryRouter>
-      </ChakraProvider>
-    );
-    expect(screen.getByRole("link", { name: /github/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /contact/i })).toBeInTheDocument();
+  it("does not render an Export trigger in the header", () => {
+    renderWithProviders(<Header />);
+    expect(screen.queryByRole("button", { name: /export/i })).toBeNull();
   });
 });
 

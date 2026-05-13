@@ -191,4 +191,53 @@ describe("ShareDialog", () => {
       expect(screen.getByText(/something went wrong/i)).toBeTruthy();
     });
   });
+
+  describe("when isExample is true", () => {
+    it("renders the Public link view even when isShared is false", () => {
+      renderWithChakra(
+        <ShareDialog
+          {...defaultProps}
+          kind="dataset"
+          resourceId="ex-1"
+          isShared={false}
+          isExample={true}
+        />
+      );
+      expect(screen.getByRole("heading", { name: "Public link" })).toBeTruthy();
+      expect(
+        screen.getByDisplayValue(`${window.location.origin}/map/ex-1`)
+      ).toBeTruthy();
+    });
+
+    it("does not render Share or Stop sharing buttons", () => {
+      renderWithChakra(
+        <ShareDialog
+          {...defaultProps}
+          kind="dataset"
+          resourceId="ex-1"
+          isShared={false}
+          isExample={true}
+        />
+      );
+      expect(screen.queryByRole("button", { name: /^Share$/i })).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: /Stop sharing/i })
+      ).toBeNull();
+    });
+
+    it("never calls datasetsApi.share", async () => {
+      renderWithChakra(
+        <ShareDialog
+          {...defaultProps}
+          kind="dataset"
+          resourceId="ex-1"
+          isShared={false}
+          isExample={true}
+        />
+      );
+      fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+      await Promise.resolve();
+      expect(datasetsApi.share).not.toHaveBeenCalled();
+    });
+  });
 });

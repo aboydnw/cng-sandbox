@@ -31,6 +31,7 @@ interface ShareDialogProps {
   isOpen: boolean;
   onClose(): void;
   onSharedChange(newValue: boolean): void;
+  isExample?: boolean;
 }
 
 export function ShareDialog({
@@ -40,7 +41,9 @@ export function ShareDialog({
   isOpen,
   onClose,
   onSharedChange,
+  isExample = false,
 }: ShareDialogProps) {
+  const showSharedView = isShared || isExample;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -119,13 +122,13 @@ export function ShareDialog({
           <DialogContent shadow="lg">
             <DialogHeader>
               <DialogTitle>
-                {isShared ? "Public link" : "Share publicly"}
+                {showSharedView ? "Public link" : "Share publicly"}
               </DialogTitle>
               <CloseButton size="sm" onClick={handleClose} />
             </DialogHeader>
 
             <DialogBody>
-              {isShared ? (
+              {showSharedView ? (
                 <Flex direction="column" gap={3}>
                   <Text fontSize="sm" color="gray.600">
                     Anyone with this link can view this {kind} without signing
@@ -172,7 +175,17 @@ export function ShareDialog({
             </DialogBody>
 
             <DialogFooter>
-              {isShared ? (
+              {isExample ? (
+                <Button
+                  size="sm"
+                  bg="brand.orange"
+                  color="white"
+                  _hover={{ bg: "brand.orangeHover" }}
+                  onClick={handleClose}
+                >
+                  Done
+                </Button>
+              ) : isShared ? (
                 <>
                   <Button
                     variant="ghost"

@@ -182,7 +182,86 @@ describe("buildArchivalHtml", () => {
     ).rejects.toThrow(/timed out/);
   });
 
-  it("uses video thumbnail for video chapters (per spec)", async () => {
+  it("renders image chapters with the image.url from extra and alt_text", async () => {
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s1", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [
+        {
+          id: "c1",
+          type: "image",
+          title: "Photo",
+          body: null,
+          map: null,
+          layers: [],
+          extra: {
+            image: {
+              asset_id: "a1",
+              url: "https://example.com/photo.jpg",
+              thumbnail_url: "https://example.com/photo-thumb.jpg",
+              alt_text: "A coastal photo",
+              width: 1200,
+              height: 800,
+            },
+          },
+        },
+      ],
+      layers: {},
+      assets: {},
+    };
+
+    const html = await buildArchivalHtml({
+      config,
+      story: makeStory([]),
+      ...emptyMaps,
+    });
+    expect(html).toContain('src="data:image/jpeg;base64,');
+    expect(html).toContain('alt="A coastal photo"');
+  });
+
+  it("emits a visible placeholder when an image chapter has no usable url", async () => {
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s1", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [
+        {
+          id: "c1",
+          type: "image",
+          title: "Photo",
+          body: null,
+          map: null,
+          layers: [],
+          extra: { image: {} },
+        },
+      ],
+      layers: {},
+      assets: {},
+    };
+
+    const html = await buildArchivalHtml({
+      config,
+      story: makeStory([]),
+      ...emptyMaps,
+    });
+    expect(html).toContain("Image unavailable");
+  });
+
+  it("uses YouTube video_id to fetch a thumbnail for video chapters", async () => {
+    const { fetchAndInlineAsBase64 } = await import("../inlineAsset");
     const config: CngRcConfig = {
       version: "1",
       origin: { story_id: "s1", workspace_id: null, exported_at: "" },
@@ -202,8 +281,11 @@ describe("buildArchivalHtml", () => {
           map: null,
           layers: [],
           extra: {
-            video_url: "https://example.com/v.mp4",
-            thumbnail_url: "https://example.com/v.jpg",
+            video: {
+              provider: "youtube",
+              video_id: "abc123",
+              original_url: "https://www.youtube.com/watch?v=abc123",
+            },
           },
         },
       ],
@@ -216,9 +298,53 @@ describe("buildArchivalHtml", () => {
       story: makeStory([]),
       ...emptyMaps,
     });
+    expect(fetchAndInlineAsBase64).toHaveBeenCalledWith(
+      "https://img.youtube.com/vi/abc123/maxresdefault.jpg"
+    );
     expect(html).toContain('src="data:image/jpeg;base64,');
-    expect(html).toContain("https://example.com/v.mp4");
+    expect(html).toContain("https://www.youtube.com/watch?v=abc123");
     expect(html).not.toContain("<video");
+  });
+
+  it("emits a visible placeholder for Vimeo videos (no easy thumbnail)", async () => {
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s1", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [
+        {
+          id: "c1",
+          type: "video",
+          title: "Field Video",
+          body: null,
+          map: null,
+          layers: [],
+          extra: {
+            video: {
+              provider: "vimeo",
+              video_id: "987654321",
+              original_url: "https://vimeo.com/987654321",
+            },
+          },
+        },
+      ],
+      layers: {},
+      assets: {},
+    };
+
+    const html = await buildArchivalHtml({
+      config,
+      story: makeStory([]),
+      ...emptyMaps,
+    });
+    expect(html).toContain("Video thumbnail unavailable");
+    expect(html).toContain("https://vimeo.com/987654321");
   });
 
   it("includes the citations block at the bottom", async () => {

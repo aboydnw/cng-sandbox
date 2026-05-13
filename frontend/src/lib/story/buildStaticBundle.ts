@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { workspaceFetch } from "../api";
 import { slugifyStoryTitle } from "./slug";
 
 interface ViewerManifest {
@@ -21,7 +22,7 @@ export async function buildAndDownloadBundle(
     const response = await fetch(`/viewer/${name}`).then(assertOk);
     return [name, await response.arrayBuffer()] as const;
   });
-  const configFetch = fetch(
+  const configFetch = workspaceFetch(
     `/api/stories/${encodeURIComponent(storyId)}/export/config`
   )
     .then(assertOk)

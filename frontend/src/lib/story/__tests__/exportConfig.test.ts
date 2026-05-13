@@ -43,9 +43,9 @@ describe("downloadStoryConfig", () => {
 
     await downloadStoryConfig("story-1", "My Story");
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "/api/stories/story-1/export/config"
-    );
+    expect(global.fetch).toHaveBeenCalled();
+    const [url] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toBe("/api/stories/story-1/export/config");
     expect(createObjectURL).toHaveBeenCalled();
     expect(clickSpy).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock");

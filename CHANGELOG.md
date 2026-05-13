@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.3.0](https://github.com/aboydnw/cng-sandbox/compare/v2.2.0...v2.3.0) (2026-05-13)
+
+
+### Features
+
+* **landing:** public landing rewrite + About page edits (storytelling pivot 4/5) ([#445](https://github.com/aboydnw/cng-sandbox/issues/445)) ([be7b218](https://github.com/aboydnw/cng-sandbox/commit/be7b218623f7c5de4457cebf94ede202c5b77080))
+* **mcp:** create_connection tool + validate-layer-config endpoint ([#440](https://github.com/aboydnw/cng-sandbox/issues/440)) ([47dbcb0](https://github.com/aboydnw/cng-sandbox/commit/47dbcb0b26e7026ba05b43dee9f56006dc381092))
+* **quick-map:** save-as-story-chapter menu + simpler upload page (storytelling pivot 3/5) ([#443](https://github.com/aboydnw/cng-sandbox/issues/443)) ([6db3bcc](https://github.com/aboydnw/cng-sandbox/commit/6db3bcc95dd2846e55ccb1c4fb49e18ffa5e4a25))
+* **stories:** clean up header + move story title into chapter sidebar ([#450](https://github.com/aboydnw/cng-sandbox/issues/450)) ([4bad471](https://github.com/aboydnw/cng-sandbox/commit/4bad471e00c3dfd056c97a10a280b48953d4c8f7))
+* **stories:** clone-on-click for example stories (storytelling pivot 2/5) ([#442](https://github.com/aboydnw/cng-sandbox/issues/442)) ([1e97cda](https://github.com/aboydnw/cng-sandbox/commit/1e97cda0f9dd6bf882a39f704036dd7967e78ebb))
+* **stories:** export prominence (storytelling pivot 5/5) ([#446](https://github.com/aboydnw/cng-sandbox/issues/446)) ([d4a6708](https://github.com/aboydnw/cng-sandbox/commit/d4a6708c45556b4806c2dd1b931b5aa718e59d20))
+* **stories:** inline real map snapshots in archival HTML export ([#451](https://github.com/aboydnw/cng-sandbox/issues/451)) ([cb1b561](https://github.com/aboydnw/cng-sandbox/commit/cb1b5610b1682508e0db390f94000a2ff3744240))
+* **stories:** zarr rendering, PCA-RGB coloring, parquet discovery ([#439](https://github.com/aboydnw/cng-sandbox/issues/439)) ([8dc37da](https://github.com/aboydnw/cng-sandbox/commit/8dc37da4db92458cee89ef78d719b13b21141325))
+* **workspace:** make Stories the workspace home (storytelling pivot 1/5) ([#441](https://github.com/aboydnw/cng-sandbox/issues/441)) ([d95910e](https://github.com/aboydnw/cng-sandbox/commit/d95910ed07ab102af9afb0130c995d77fe431921))
+
+
+### Bug Fixes
+
+* **connections:** backfill curated fields on existing example rows ([#435](https://github.com/aboydnw/cng-sandbox/issues/435)) ([9088f59](https://github.com/aboydnw/cng-sandbox/commit/9088f59db41150e4a3213a3e75b020be0c62249f))
+* **deploy:** reload Caddy after docker compose up ([#444](https://github.com/aboydnw/cng-sandbox/issues/444)) ([c19f93e](https://github.com/aboydnw/cng-sandbox/commit/c19f93ed81bb9470ac7b5d4fe59fba67d6d4c0e0))
+* **stories:** send workspace header on story export requests ([#449](https://github.com/aboydnw/cng-sandbox/issues/449)) ([d1129c0](https://github.com/aboydnw/cng-sandbox/commit/d1129c0af8164db991ca24a0dc8ec4666517c6a5))
+
 ## [2.2.0](https://github.com/aboydnw/cng-sandbox/compare/v2.1.1...v2.2.0) (2026-05-06)
 
 

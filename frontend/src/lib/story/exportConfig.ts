@@ -1,10 +1,13 @@
+import { workspaceFetch } from "../api";
 import { slugifyStoryTitle } from "./slug";
 
 export async function downloadStoryConfig(
   storyId: string,
   storyTitle: string
 ): Promise<void> {
-  const response = await fetch(`/api/stories/${storyId}/export/config`);
+  const response = await workspaceFetch(
+    `/api/stories/${storyId}/export/config`
+  );
   if (!response.ok) {
     throw new Error(`Failed to export story config: ${response.status}`);
   }

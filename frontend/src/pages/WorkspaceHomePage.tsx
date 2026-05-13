@@ -198,6 +198,41 @@ export default function WorkspaceHomePage() {
                 />
               ))}
             </Section>
+
+            {exampleStories.length > 0 && (
+              <>
+                <Box my={8} h="1px" bg="brand.border" />
+                <Box>
+                  <Heading size="md" color="gray.700" mb={1}>
+                    Example stories
+                  </Heading>
+                  <Text fontSize="sm" color="gray.500" mb={3}>
+                    Curated stories shared with every workspace. Click to open a
+                    copy you can edit.
+                  </Text>
+                  <Box
+                    display="grid"
+                    gridTemplateColumns={{
+                      base: "1fr",
+                      md: "repeat(3, 1fr)",
+                    }}
+                    gap={3}
+                  >
+                    {exampleStories.slice(0, 3).map((story) => (
+                      <ExampleStoryCard
+                        key={story.id}
+                        title={story.title}
+                        chapterCount={story.chapters.length}
+                        dataType={inferDataType(story)}
+                        onClick={() => handleCloneExample(story)}
+                        loading={cloningId === story.id}
+                        compact
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              </>
+            )}
           </>
         )}
       </Box>
@@ -237,9 +272,9 @@ function Section({
         <Link to={actionHref}>
           <Button
             size="sm"
-            variant="outline"
-            borderColor="brand.border"
-            color="brand.brown"
+            bg="brand.orange"
+            color="white"
+            _hover={{ bg: "brand.orangeHover" }}
           >
             {actionLabel}
           </Button>

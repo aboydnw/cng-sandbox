@@ -286,6 +286,13 @@ def _migrate_schema(engine):
             if not _is_duplicate_column(exc):
                 raise
         try:
+            conn.execute(text("ALTER TABLE stories ADD COLUMN workspace_id TEXT"))
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
+        try:
             conn.execute(text("ALTER TABLE stories ADD COLUMN forked_from_id TEXT"))
             conn.commit()
         except DBAPIError as exc:

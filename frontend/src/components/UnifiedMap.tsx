@@ -28,6 +28,7 @@ interface UnifiedMapProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mapRef?: React.Ref<any>;
   enableSnapshot?: boolean;
+  onAfterRender?: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,6 +50,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     hideBasemapPicker = false,
     mapRef,
     enableSnapshot,
+    onAfterRender,
   },
   ref
 ) {
@@ -92,7 +94,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     : camera;
 
   return (
-    <Box position="relative" w="100%" h="100%">
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <DeckGL
         ref={ref}
         viewState={viewState}
@@ -115,6 +117,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         onHover={onHover}
         onClick={onClick}
         getTooltip={getTooltip}
+        onAfterRender={onAfterRender}
       >
         <Map
           ref={mapRef}
@@ -144,6 +147,6 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
       )}
 
       {children}
-    </Box>
+    </div>
   );
 });

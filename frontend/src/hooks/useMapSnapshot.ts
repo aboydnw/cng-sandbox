@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as htmlToImage from "html-to-image";
+import { compositeMapCanvases } from "../lib/story/archival/compositeMapCanvases";
 
 export interface SnapshotMapInstance {
   getCanvas?: () => HTMLCanvasElement;
@@ -90,14 +91,14 @@ export function useMapSnapshot({
 
       const rect = container.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      const output = document.createElement("canvas");
-      output.width = Math.round(rect.width * dpr);
-      output.height = Math.round(rect.height * dpr);
+      const output = compositeMapCanvases({
+        basemapCanvas,
+        deckCanvas,
+        width: Math.round(rect.width * dpr),
+        height: Math.round(rect.height * dpr),
+      });
       const ctx = output.getContext("2d");
       if (!ctx) throw new Error("2d context unavailable");
-
-      ctx.drawImage(basemapCanvas, 0, 0, output.width, output.height);
-      ctx.drawImage(deckCanvas, 0, 0, output.width, output.height);
 
       const overlays = Array.from(
         container.querySelectorAll<HTMLElement>("[data-snapshot-overlay]")

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
 import { ArrowRight, ArrowSquareOut, GithubLogo } from "@phosphor-icons/react";
@@ -28,6 +28,7 @@ export default function LandingPage() {
   const [enteredId, setEnteredId] = useState("");
   const [examples, setExamples] = useState<Story[]>([]);
   const [cloningId, setCloningId] = useState<string | null>(null);
+  const cloneInFlightRef = useRef(false);
 
   useEffect(() => {
     if (switching) return;
@@ -50,7 +51,8 @@ export default function LandingPage() {
   };
 
   const cloneExampleAndOpenEditor = async (story: Story) => {
-    if (cloningId) return;
+    if (cloneInFlightRef.current) return;
+    cloneInFlightRef.current = true;
     setCloningId(story.id);
     const id = generateWorkspaceId();
     localStorage.setItem(STORAGE_KEY, id);
@@ -59,6 +61,7 @@ export default function LandingPage() {
       const forked = await forkStoryOnServer(story.id);
       navigate(`/w/${id}/story/${forked.id}/edit`);
     } catch {
+      cloneInFlightRef.current = false;
       setCloningId(null);
       navigate(`/w/${id}/`);
     }

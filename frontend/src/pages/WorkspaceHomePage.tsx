@@ -8,6 +8,7 @@ import { ExampleStoryCard } from "../components/ExampleStoryCard";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { forkStoryOnServer, listStoriesFromServer } from "../lib/story/api";
 import { workspaceFetch } from "../lib/api";
+import { toaster } from "../lib/toaster";
 import { inferDataType } from "../lib/story/dataType";
 import { config } from "../config";
 import type { Story } from "../lib/story/types";
@@ -90,9 +91,14 @@ export default function WorkspaceHomePage() {
       try {
         const forked = await forkStoryOnServer(story.id);
         navigate(workspacePath(`/story/${forked.id}/edit`));
-      } catch {
+      } catch (err) {
         cloneInFlightRef.current = false;
         setCloningId(null);
+        toaster.create({
+          title: "Failed to open example story",
+          description: (err as Error).message,
+          type: "error",
+        });
       }
     },
     [navigate, workspacePath]

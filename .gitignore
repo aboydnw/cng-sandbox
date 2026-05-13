@@ -23,3 +23,6 @@ scripts/update-duckdns.sh
 .yarn/
 package-lock.json
 .playwright-mcp/
+
+# Working screenshots dropped in repo root
+/*.png

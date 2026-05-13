@@ -1,5 +1,7 @@
 # CNG Sandbox
 
+[![CI](https://github.com/aboydnw/cng-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/aboydnw/cng-sandbox/actions/workflows/ci.yml)
+
 A prototype storytelling tool that allows you to convert your legacy data formats into cloud-native data formats, share that data with others, and configure interactive stories.
 
 Currently can be found at [storytelling.developmentseed.org](https://storytelling.developmentseed.org/)

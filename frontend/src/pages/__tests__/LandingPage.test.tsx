@@ -1,5 +1,11 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { MemoryRouter, Routes, Route, useParams } from "react-router-dom";
+import {
+  MemoryRouter,
+  Routes,
+  Route,
+  useParams,
+  useLocation,
+} from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { system } from "../../theme";
@@ -11,7 +17,15 @@ vi.mock("../../lib/story/api", () => ({
 
 function WorkspaceTarget() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  return <div data-testid="workspace-target" data-workspace-id={workspaceId} />;
+  const location = useLocation();
+  const rest = location.pathname.replace(`/w/${workspaceId}`, "");
+  return (
+    <div
+      data-testid="workspace-target"
+      data-workspace-id={workspaceId}
+      data-rest={rest}
+    />
+  );
 }
 
 function renderLanding(initialEntry: string = "/") {
@@ -63,6 +77,19 @@ describe("LandingPage", () => {
     renderLanding();
     fireEvent.click(screen.getByRole("button", { name: /start a story/i }));
     expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+  });
+
+  it("'Start a story' navigates straight to the story editor", async () => {
+    renderLanding();
+    const button = await screen.findByRole("button", { name: /start a story/i });
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+      "data-rest",
+      "/story/new"
+    );
   });
 
   it("renders example story cards fetched from the public endpoint", async () => {

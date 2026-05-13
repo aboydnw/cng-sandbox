@@ -41,7 +41,7 @@ export default function LandingPage() {
   const startStory = () => {
     const id = generateWorkspaceId();
     localStorage.setItem(STORAGE_KEY, id);
-    navigate(`/w/${id}/`);
+    navigate(`/w/${id}/story/new`);
   };
 
   const openExistingWorkspace = () => {

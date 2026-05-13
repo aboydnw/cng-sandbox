@@ -526,6 +526,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   : item?.dataset?.id) ?? ""
               }
               isShared={isShared}
+              isExample={itemIsExample}
               onSharedChange={setLocalIsShared}
             />
           )}

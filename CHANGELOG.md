@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.1](https://github.com/aboydnw/cng-sandbox/compare/v2.3.0...v2.3.1) (2026-05-13)
+
+
+### Bug Fixes
+
+* **frontend:** let page wrappers grow past viewport height ([#454](https://github.com/aboydnw/cng-sandbox/issues/454)) ([6641b99](https://github.com/aboydnw/cng-sandbox/commit/6641b99e0b58aecde483f572fc09de36526800b7))
+* **stories:** route archival snapshots through live dataset/connection maps ([#452](https://github.com/aboydnw/cng-sandbox/issues/452)) ([c0f2c76](https://github.com/aboydnw/cng-sandbox/commit/c0f2c764fefe56feb421ccd664fe876a9cff0e76))
+
 ## [2.3.0](https://github.com/aboydnw/cng-sandbox/compare/v2.2.0...v2.3.0) (2026-05-13)
 
 

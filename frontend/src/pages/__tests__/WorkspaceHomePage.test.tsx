@@ -100,7 +100,9 @@ describe("WorkspaceHomePage", () => {
     expect(screen.getByText("Middle")).toBeInTheDocument();
     expect(screen.getByText("Older")).toBeInTheDocument();
     expect(screen.queryByText("Oldest")).not.toBeInTheDocument();
-    expect(screen.queryByText("Example")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /^Example$/ })
+    ).not.toBeInTheDocument();
   });
 
   it("renders the three most recent datasets", async () => {

@@ -529,3 +529,9 @@ def test_legacy_prose_chapter_without_map_fields_loads_as_prose(client, db_sessi
     assert resp.status_code == 200
     body = resp.json()
     assert body["chapters"][0]["type"] == "prose"
+
+
+def test_stories_table_has_forked_from_id_column(db_engine):
+    inspector = inspect(db_engine)
+    cols = {c["name"] for c in inspector.get_columns("stories")}
+    assert "forked_from_id" in cols

@@ -285,6 +285,27 @@ def _migrate_schema(engine):
             conn.rollback()
             if not _is_duplicate_column(exc):
                 raise
+        try:
+            conn.execute(
+                text("ALTER TABLE stories ADD COLUMN forked_from_id TEXT")
+            )
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
+        try:
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_stories_fork_lookup "
+                    "ON stories (workspace_id, forked_from_id) "
+                    "WHERE forked_from_id IS NOT NULL"
+                )
+            )
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
         # Remove duplicate is_example rows before creating the unique index so
         # that deployments upgrading from a version without the index don't
         # fail. Keep the row with the lowest id for each duplicate title.

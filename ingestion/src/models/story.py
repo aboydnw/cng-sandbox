@@ -28,6 +28,7 @@ class StoryRow(Base):
         onupdate=lambda: datetime.now(UTC),
     )
     workspace_id = Column(String, nullable=True)
+    forked_from_id = Column(String, nullable=True)
 
 
 class MapStatePayload(BaseModel):

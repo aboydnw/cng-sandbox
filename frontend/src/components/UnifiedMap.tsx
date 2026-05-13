@@ -117,7 +117,10 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         onHover={onHover}
         onClick={onClick}
         getTooltip={getTooltip}
-        onAfterRender={onAfterRender}
+        // Only forward when defined: deck.gl's Deck class calls
+        // `this.props.onAfterRender()` unconditionally during _drawLayers, so
+        // an explicit `undefined` here overrides its `noop` default and throws.
+        {...(onAfterRender ? { onAfterRender } : {})}
       >
         <Map
           ref={mapRef}

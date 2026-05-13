@@ -18,6 +18,7 @@ import DiscoverDatasetPage from "./pages/DiscoverDatasetPage";
 import LandingPage from "./pages/LandingPage";
 import { Toaster } from "./components/ui/toaster";
 import { toaster } from "./lib/toaster";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function StoryReaderRedirect() {
   const { id } = useParams<{ id: string }>();
@@ -66,16 +67,18 @@ function WorkspaceRoutes() {
 export default function App() {
   return (
     <>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
-        <Route path="/map/connection/:id" element={<MapPage shared />} />
-        <Route path="/map/:id" element={<MapPage shared />} />
-        <Route path="/story/:id" element={<StoryReaderPage />} />
-        <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
-        <Route path="*" element={<WorkspaceRedirect />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
+          <Route path="/map/connection/:id" element={<MapPage shared />} />
+          <Route path="/map/:id" element={<MapPage shared />} />
+          <Route path="/story/:id" element={<StoryReaderPage />} />
+          <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
+          <Route path="*" element={<WorkspaceRedirect />} />
+        </Routes>
+      </ErrorBoundary>
       <Toaster toaster={toaster} />
     </>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
 import { ArrowRight, ArrowSquareOut, GithubLogo } from "@phosphor-icons/react";
@@ -9,7 +9,11 @@ import {
   generateWorkspaceId,
   WORKSPACE_STORAGE_KEY,
 } from "../hooks/useWorkspace";
-import { listExampleStoriesFromServer } from "../lib/story/api";
+import {
+  forkStoryOnServer,
+  listExampleStoriesFromServer,
+} from "../lib/story/api";
+import { setWorkspaceId } from "../lib/api";
 import { inferDataType } from "../lib/story/dataType";
 import type { Story } from "../lib/story/types";
 
@@ -23,6 +27,8 @@ export default function LandingPage() {
   const switching = searchParams.get("switch") === "1";
   const [enteredId, setEnteredId] = useState("");
   const [examples, setExamples] = useState<Story[]>([]);
+  const [cloningId, setCloningId] = useState<string | null>(null);
+  const cloneInFlightRef = useRef(false);
 
   useEffect(() => {
     if (switching) return;
@@ -41,7 +47,24 @@ export default function LandingPage() {
   const startStory = () => {
     const id = generateWorkspaceId();
     localStorage.setItem(STORAGE_KEY, id);
-    navigate(`/w/${id}/`);
+    navigate(`/w/${id}/story/new`);
+  };
+
+  const cloneExampleAndOpenEditor = async (story: Story) => {
+    if (cloneInFlightRef.current) return;
+    cloneInFlightRef.current = true;
+    setCloningId(story.id);
+    const id = generateWorkspaceId();
+    localStorage.setItem(STORAGE_KEY, id);
+    setWorkspaceId(id);
+    try {
+      const forked = await forkStoryOnServer(story.id);
+      navigate(`/w/${id}/story/${forked.id}/edit`);
+    } catch {
+      cloneInFlightRef.current = false;
+      setCloningId(null);
+      navigate(`/w/${id}/`);
+    }
   };
 
   const openExistingWorkspace = () => {
@@ -145,7 +168,8 @@ export default function LandingPage() {
                   title={story.title}
                   chapterCount={story.chapters.length}
                   dataType={inferDataType(story)}
-                  onClick={startStory}
+                  onClick={() => cloneExampleAndOpenEditor(story)}
+                  loading={cloningId === story.id}
                   compact={false}
                 />
               ))}

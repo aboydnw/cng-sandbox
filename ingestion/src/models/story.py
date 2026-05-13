@@ -5,13 +5,23 @@ from datetime import UTC, datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Boolean, Column, DateTime, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Index, String, Text, text
 
 from src.models.base import Base
 
 
 class StoryRow(Base):
     __tablename__ = "stories"
+    __table_args__ = (
+        Index(
+            "ix_stories_fork_lookup",
+            "workspace_id",
+            "forked_from_id",
+            unique=True,
+            sqlite_where=text("forked_from_id IS NOT NULL"),
+            postgresql_where=text("forked_from_id IS NOT NULL"),
+        ),
+    )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String, nullable=False, default="Untitled story")
@@ -28,6 +38,7 @@ class StoryRow(Base):
         onupdate=lambda: datetime.now(UTC),
     )
     workspace_id = Column(String, nullable=True)
+    forked_from_id = Column(String, nullable=True)
 
 
 class MapStatePayload(BaseModel):

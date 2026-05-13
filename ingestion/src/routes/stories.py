@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import TypeAdapter
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 
 from src.dependencies import get_session
 from src.models.story import (
@@ -203,6 +204,17 @@ async def fork_story(story_id: str, request: Request):
         if not source:
             raise HTTPException(status_code=404, detail="Story not found")
 
+        existing = (
+            session.query(StoryRow)
+            .filter(
+                StoryRow.workspace_id == workspace_id,
+                StoryRow.forked_from_id == story_id,
+            )
+            .first()
+        )
+        if existing:
+            return _row_to_response(existing)
+
         now = datetime.now(UTC)
         forked = StoryRow(
             id=str(uuid.uuid4()),
@@ -215,9 +227,24 @@ async def fork_story(story_id: str, request: Request):
             updated_at=now,
             workspace_id=workspace_id,
             is_example=False,
+            forked_from_id=source.id,
         )
         session.add(forked)
-        session.commit()
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            racing = (
+                session.query(StoryRow)
+                .filter(
+                    StoryRow.workspace_id == workspace_id,
+                    StoryRow.forked_from_id == story_id,
+                )
+                .first()
+            )
+            if racing:
+                return _row_to_response(racing)
+            raise
         session.refresh(forked)
         return _row_to_response(forked)
     finally:

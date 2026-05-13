@@ -1,6 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
@@ -14,12 +13,6 @@ vi.mock("../../lib/story/api", () => ({
 
 import App from "../../App";
 import StoriesPage from "../StoriesPage";
-
-function LocationProbe({ onLocation }: { onLocation: (path: string) => void }) {
-  const loc = useLocation();
-  onLocation(loc.pathname);
-  return null;
-}
 
 function renderApp(initialPath: string) {
   return render(
@@ -51,11 +44,14 @@ function renderStoriesPage() {
 }
 
 describe("Workspace routing", () => {
-  it("renders StoriesPage at workspace root (/)", async () => {
+  it("renders WorkspaceHomePage at workspace root (/), not StoriesPage", async () => {
     renderApp("/w/test-workspace");
     expect(
-      await screen.findByRole("heading", { name: /your stories/i })
+      await screen.findByRole("heading", { name: /workspace home/i })
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /your stories/i })
+    ).not.toBeInTheDocument();
   });
 
   it("renders UploadPage at /quick-map", async () => {
@@ -63,7 +59,7 @@ describe("Workspace routing", () => {
     expect(await screen.findByText(/upload/i)).toBeInTheDocument();
   });
 
-  it("redirects /stories to /", async () => {
+  it("renders StoriesPage at /w/:id/stories", async () => {
     renderApp("/w/test-workspace/stories");
     expect(
       await screen.findByRole("heading", { name: /your stories/i })
@@ -71,92 +67,8 @@ describe("Workspace routing", () => {
   });
 });
 
-import { listStoriesFromServer, forkStoryOnServer } from "../../lib/story/api";
+import { listStoriesFromServer } from "../../lib/story/api";
 import type { Story } from "../../lib/story/types";
-
-describe("StoriesPage example-story cards", () => {
-  it("renders example stories as clickable cards, not as table rows", async () => {
-    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-      {
-        id: "ex-1",
-        title: "Arctic ice loss",
-        chapters: [{}, {}, {}, {}],
-        is_example: true,
-        published: true,
-        updated_at: new Date().toISOString(),
-      } as unknown as Story,
-    ]);
-    renderStoriesPage();
-    const card = await screen.findByRole("button", {
-      name: /arctic ice loss/i,
-    });
-    expect(card).toBeInTheDocument();
-    expect(screen.queryByText("Chapters")).toBeNull();
-  });
-
-  it("renders 'No example stories available.' when no examples come back", async () => {
-    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      []
-    );
-    renderStoriesPage();
-    expect(
-      await screen.findByText(/no example stories available\./i)
-    ).toBeInTheDocument();
-  });
-});
-
-describe("StoriesPage example-story clone-on-click", () => {
-  it("forks the example and navigates to the new draft editor", async () => {
-    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-      {
-        id: "ex-1",
-        title: "Arctic ice loss",
-        chapters: [{}, {}, {}, {}],
-        is_example: true,
-        published: true,
-        updated_at: new Date().toISOString(),
-      } as unknown as Story,
-    ]);
-    (forkStoryOnServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: "new-draft-id",
-      title: "Arctic ice loss",
-      chapters: [],
-      is_example: false,
-      published: false,
-    } as unknown as Story);
-
-    let path = "";
-    render(
-      <ChakraProvider value={system}>
-        <MemoryRouter initialEntries={["/w/test-workspace"]}>
-          <Routes>
-            <Route
-              path="/w/:workspaceId/*"
-              element={
-                <WorkspaceProvider>
-                  <>
-                    <StoriesPage />
-                    <LocationProbe onLocation={(p) => (path = p)} />
-                  </>
-                </WorkspaceProvider>
-              }
-            />
-          </Routes>
-        </MemoryRouter>
-      </ChakraProvider>
-    );
-
-    const card = await screen.findByRole("button", {
-      name: /arctic ice loss/i,
-    });
-    const user = userEvent.setup();
-    await user.click(card);
-    expect(forkStoryOnServer).toHaveBeenCalledWith("ex-1");
-    await waitFor(() => {
-      expect(path).toBe("/w/test-workspace/story/new-draft-id/edit");
-    });
-  });
-});
 
 describe("StoriesPage layout", () => {
   it("renders a 'Quick map' link in the header pointing to /quick-map", async () => {
@@ -170,23 +82,28 @@ describe("StoriesPage layout", () => {
     const link = await screen.findByRole("link", { name: /new story/i });
     expect(link.getAttribute("href")).toBe("/w/test-workspace/story/new");
   });
+});
 
-  it("renders 'Your stories' heading before 'Example stories' heading in DOM order", async () => {
+describe("StoriesPage no longer renders example cards", () => {
+  it("does not render ExampleStoryCard when the API returns is_example rows", async () => {
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      {
+        id: "ex-1",
+        title: "An Example",
+        chapters: [],
+        is_example: true,
+        published: true,
+        updated_at: "2026-05-13T00:00:00Z",
+      } as unknown as Story,
+    ]);
     renderStoriesPage();
-    const headings = await screen.findAllByRole("heading");
-    const texts = headings.map((h) => h.textContent || "");
-    const yourIdx = texts.findIndex((t) => /your stories/i.test(t));
-    const exampleIdx = texts.findIndex((t) => /example stories/i.test(t));
-    expect(yourIdx).toBeGreaterThan(-1);
-    expect(exampleIdx).toBeGreaterThan(-1);
-    expect(yourIdx).toBeLessThan(exampleIdx);
-  });
-
-  it("always renders the Example stories section, even when there are no example stories", async () => {
-    renderStoriesPage();
+    await waitFor(() => {
+      expect(listStoriesFromServer).toHaveBeenCalled();
+    });
     expect(
-      await screen.findByRole("heading", { name: /example stories/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: /example stories/i })
+    ).toBeNull();
+    expect(screen.queryByText("An Example")).toBeNull();
   });
 });
 

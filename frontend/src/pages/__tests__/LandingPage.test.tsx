@@ -82,7 +82,9 @@ describe("LandingPage", () => {
 
   it("'Start a story' navigates straight to the story editor", async () => {
     renderLanding();
-    const button = await screen.findByRole("button", { name: /start a story/i });
+    const button = await screen.findByRole("button", {
+      name: /start a story/i,
+    });
     fireEvent.click(button);
     await waitFor(() => {
       expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
@@ -94,9 +96,8 @@ describe("LandingPage", () => {
   });
 
   it("clicking an example card forks the example and opens its editor", async () => {
-    const { listExampleStoriesFromServer, forkStoryOnServer } = await import(
-      "../../lib/story/api"
-    );
+    const { listExampleStoriesFromServer, forkStoryOnServer } =
+      await import("../../lib/story/api");
     (
       listExampleStoriesFromServer as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce([

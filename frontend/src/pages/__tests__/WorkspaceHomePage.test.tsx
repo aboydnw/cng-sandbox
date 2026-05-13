@@ -87,7 +87,12 @@ describe("WorkspaceHomePage", () => {
       ok: true,
       json: () =>
         Promise.resolve([
-          { id: "d-seed", title: "Seed dataset", filename: "seed.tif", is_example: false },
+          {
+            id: "d-seed",
+            title: "Seed dataset",
+            filename: "seed.tif",
+            is_example: false,
+          },
         ]),
     });
     renderHome();
@@ -114,25 +119,29 @@ describe("WorkspaceHomePage", () => {
         Promise.resolve([
           {
             id: "d1",
-            title: "Alpha", filename: "alpha.tif",
+            title: "Alpha",
+            filename: "alpha.tif",
             created_at: "2026-05-01T00:00:00Z",
             is_example: false,
           },
           {
             id: "d2",
-            title: "Bravo", filename: "bravo.tif",
+            title: "Bravo",
+            filename: "bravo.tif",
             created_at: "2026-05-13T00:00:00Z",
             is_example: false,
           },
           {
             id: "d3",
-            title: "Charlie", filename: "charlie.tif",
+            title: "Charlie",
+            filename: "charlie.tif",
             created_at: "2026-05-10T00:00:00Z",
             is_example: false,
           },
           {
             id: "d4",
-            title: "Delta", filename: "delta.tif",
+            title: "Delta",
+            filename: "delta.tif",
             created_at: "2026-04-01T00:00:00Z",
             is_example: false,
           },
@@ -159,7 +168,12 @@ describe("WorkspaceHomePage", () => {
       ok: true,
       json: () =>
         Promise.resolve([
-          { id: "d-seed", title: "Seed dataset", filename: "seed.tif", is_example: false },
+          {
+            id: "d-seed",
+            title: "Seed dataset",
+            filename: "seed.tif",
+            is_example: false,
+          },
         ]),
     });
     renderHome();
@@ -243,7 +257,12 @@ describe("WorkspaceHomePage", () => {
       ok: true,
       json: () =>
         Promise.resolve([
-          { id: "d-seed", title: "Seed dataset", filename: "seed.tif", is_example: false },
+          {
+            id: "d-seed",
+            title: "Seed dataset",
+            filename: "seed.tif",
+            is_example: false,
+          },
         ]),
     });
     renderHome();

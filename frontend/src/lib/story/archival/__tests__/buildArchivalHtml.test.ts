@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { buildArchivalHtml } from "../buildArchivalHtml";
 import type { CngRcConfig } from "../../cngRcTypes";
+import type { Story } from "../../types";
+import {
+  createMapChapter,
+  createProseChapter,
+  createScrollytellingChapter,
+} from "../../types";
 
 vi.mock("../captureMap", () => ({
   captureChapterMap: vi
@@ -13,6 +19,24 @@ vi.mock("../inlineAsset", () => ({
     .fn()
     .mockResolvedValue("data:image/jpeg;base64,/9j/4AAQ"),
 }));
+
+function makeStory(chapters: Story["chapters"]): Story {
+  return {
+    id: "s1",
+    title: "T",
+    dataset_id: null,
+    dataset_ids: [],
+    chapters,
+    created_at: "",
+    updated_at: "",
+    published: false,
+  };
+}
+
+const emptyMaps = {
+  datasetMap: new Map(),
+  connectionMap: new Map(),
+};
 
 describe("buildArchivalHtml", () => {
   it("emits Dublin Core meta tags from story metadata", async () => {
@@ -35,7 +59,11 @@ describe("buildArchivalHtml", () => {
       assets: {},
     };
 
-    const html = await buildArchivalHtml(config);
+    const html = await buildArchivalHtml({
+      config,
+      story: makeStory([]),
+      ...emptyMaps,
+    });
     expect(html).toContain(
       '<meta name="dc.title" content="Coastal Erosion 2024">'
     );
@@ -70,7 +98,15 @@ describe("buildArchivalHtml", () => {
       assets: {},
     };
 
-    const html = await buildArchivalHtml(config);
+    const story = makeStory([
+      createProseChapter({
+        id: "c1",
+        title: "Introduction",
+        narrative: "Hello **world**.",
+      }),
+    ]);
+
+    const html = await buildArchivalHtml({ config, story, ...emptyMaps });
     expect(html).toContain("Introduction");
     expect(html).toContain("Hello");
     expect(html).toContain("<strong>world</strong>");
@@ -101,7 +137,9 @@ describe("buildArchivalHtml", () => {
       assets: {},
     };
 
-    const html = await buildArchivalHtml(config);
+    const story = makeStory([createMapChapter({ id: "c1", title: "Map" })]);
+
+    const html = await buildArchivalHtml({ config, story, ...emptyMaps });
     expect(html).toContain('src="data:image/png;base64,');
   });
 
@@ -135,7 +173,13 @@ describe("buildArchivalHtml", () => {
       assets: {},
     };
 
-    await expect(buildArchivalHtml(config)).rejects.toThrow(/timed out/);
+    const story = makeStory([
+      createScrollytellingChapter({ id: "ch", title: "X" }),
+    ]);
+
+    await expect(
+      buildArchivalHtml({ config, story, ...emptyMaps })
+    ).rejects.toThrow(/timed out/);
   });
 
   it("uses video thumbnail for video chapters (per spec)", async () => {
@@ -167,7 +211,11 @@ describe("buildArchivalHtml", () => {
       assets: {},
     };
 
-    const html = await buildArchivalHtml(config);
+    const html = await buildArchivalHtml({
+      config,
+      story: makeStory([]),
+      ...emptyMaps,
+    });
     expect(html).toContain('src="data:image/jpeg;base64,');
     expect(html).toContain("https://example.com/v.mp4");
     expect(html).not.toContain("<video");
@@ -204,7 +252,11 @@ describe("buildArchivalHtml", () => {
       assets: {},
     };
 
-    const html = await buildArchivalHtml(config);
+    const html = await buildArchivalHtml({
+      config,
+      story: makeStory([]),
+      ...emptyMaps,
+    });
     expect(html).toContain("Data citations");
     expect(html).toContain("Test layer");
     expect(html).toContain("https://example.com/data.tif");

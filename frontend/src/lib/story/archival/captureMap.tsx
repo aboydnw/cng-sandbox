@@ -4,7 +4,7 @@ import { UnifiedMap } from "../../../components/UnifiedMap";
 import { buildLayersForChapter } from "../rendering";
 import { compositeMapCanvases } from "./compositeMapCanvases";
 import type { Chapter } from "../types";
-import type { Connection } from "../../../types";
+import type { Connection, Dataset } from "../../../types";
 
 const CAPTURE_WIDTH = 1200;
 const CAPTURE_HEIGHT = 675;
@@ -13,7 +13,8 @@ const QUIET_MS = 250;
 
 export interface CaptureChapterMapArgs {
   chapter: Chapter;
-  connections: Map<string, Connection>;
+  datasetMap: Map<string, Dataset | null>;
+  connectionMap: Map<string, Connection>;
 }
 
 interface MapInstance {
@@ -27,7 +28,8 @@ interface DeckInstance {
 
 export async function captureChapterMap({
   chapter,
-  connections,
+  datasetMap,
+  connectionMap,
 }: CaptureChapterMapArgs): Promise<string> {
   const host = document.createElement("div");
   host.setAttribute("data-archival-capture", "");
@@ -42,10 +44,20 @@ export async function captureChapterMap({
       );
     }
 
+    const connectionId = chapter.layer_config?.connection_id;
+    if (connectionId) {
+      const conn = connectionMap.get(connectionId);
+      if (conn?.connection_type === "zarr") {
+        throw new Error(
+          "Zarr chapters are not yet supported in archival export"
+        );
+      }
+    }
+
     const { layers } = buildLayersForChapter(
       chapter,
-      new Map(),
-      connections,
+      datasetMap,
+      connectionMap,
       new Map()
     );
 

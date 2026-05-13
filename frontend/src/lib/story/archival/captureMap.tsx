@@ -26,6 +26,10 @@ interface DeckInstance {
   canvas?: HTMLCanvasElement;
 }
 
+interface DeckHandle {
+  deck?: DeckInstance;
+}
+
 export async function captureChapterMap({
   chapter,
   datasetMap,
@@ -69,9 +73,9 @@ export async function captureChapterMap({
       pitch: chapter.map_state.pitch,
     };
 
-    const refs: { map: MapInstance | null; deck: DeckInstance | null } = {
+    const refs: { map: MapInstance | null; deckHandle: DeckHandle | null } = {
       map: null,
-      deck: null,
+      deckHandle: null,
     };
     let lastRenderAt = 0;
     let mapIdle = false;
@@ -90,9 +94,13 @@ export async function captureChapterMap({
       });
     };
 
+    // Hold the @deck.gl/react imperative handle itself rather than eagerly
+    // unwrapping `.deck`. The handle exposes `deck` via a live getter, but
+    // the underlying Deck instance is created inside DeckGLWithRef's
+    // useEffect — which runs *after* the ref callback fires. Capturing
+    // `.deck` here would freeze the value at `undefined` and never update.
     const deckRef = (ref: unknown) => {
-      const maybeDeck = ref as { deck?: DeckInstance } | null;
-      refs.deck = maybeDeck?.deck ?? null;
+      refs.deckHandle = ref as DeckHandle | null;
     };
 
     const onAfterRender = () => {
@@ -138,7 +146,7 @@ export async function captureChapterMap({
     ]);
 
     const basemapCanvas = refs.map?.getCanvas?.();
-    const deckCanvas = refs.deck?.canvas;
+    const deckCanvas = refs.deckHandle?.deck?.canvas;
     if (!basemapCanvas || !deckCanvas) {
       throw new Error("Capture canvases not available after map ready");
     }

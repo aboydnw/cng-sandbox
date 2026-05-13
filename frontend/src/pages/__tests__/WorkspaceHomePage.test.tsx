@@ -23,6 +23,7 @@ vi.mock("../../lib/api", async () => {
 });
 
 import WorkspaceHomePage from "../WorkspaceHomePage";
+import type { Story } from "../../lib/story/types";
 
 function renderHome() {
   return render(
@@ -170,6 +171,62 @@ describe("WorkspaceHomePage", () => {
     expect(
       screen.getByRole("link", { name: /view all data/i })
     ).toHaveAttribute("href", "/w/test-workspace/data");
+  });
+
+  it("shows example story clone cards when the workspace is empty", async () => {
+    mockListStories.mockResolvedValue([
+      {
+        id: "ex1",
+        title: "Example A",
+        chapters: [{ id: "c1" }],
+        is_example: true,
+        updated_at: "2026-05-12T00:00:00Z",
+      },
+    ]);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+    renderHome();
+    expect(
+      await screen.findByText(/this workspace is empty/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /example a/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /recent stories/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("clones an example into the workspace when its card is clicked", async () => {
+    const { forkStoryOnServer } = await import("../../lib/story/api");
+    (forkStoryOnServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "fork-9",
+      title: "Example A",
+      chapters: [],
+      is_example: false,
+      published: false,
+    } as unknown as Story);
+    mockListStories.mockResolvedValue([
+      {
+        id: "ex1",
+        title: "Example A",
+        chapters: [{ id: "c1" }],
+        is_example: true,
+        updated_at: "2026-05-12T00:00:00Z",
+      },
+    ]);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+    renderHome();
+    const card = await screen.findByRole("button", { name: /example a/i });
+    card.click();
+    await waitFor(() => {
+      expect(forkStoryOnServer).toHaveBeenCalledWith("ex1");
+    });
   });
 
   it("shows the workspace ID prominently", async () => {

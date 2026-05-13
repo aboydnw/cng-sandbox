@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 import { ArrowRight, SpinnerGap } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { ExampleStoryCard } from "../components/ExampleStoryCard";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { listStoriesFromServer } from "../lib/story/api";
+import { forkStoryOnServer, listStoriesFromServer } from "../lib/story/api";
 import { workspaceFetch } from "../lib/api";
+import { inferDataType } from "../lib/story/dataType";
 import { config } from "../config";
 import type { Story } from "../lib/story/types";
 import type { Dataset } from "../types";
@@ -67,11 +69,34 @@ export default function WorkspaceHomePage() {
     };
   }, []);
 
+  const navigate = useNavigate();
+  const [cloningId, setCloningId] = useState<string | null>(null);
+  const cloneInFlightRef = useRef(false);
+
   const userStories = (stories ?? []).filter((s) => !s.is_example);
+  const exampleStories = (stories ?? []).filter((s) => s.is_example);
   const userDatasets = (datasets ?? []).filter((d) => !d.is_example);
   const recentStories = sortByUpdated(userStories).slice(0, 3);
   const recentDatasets = sortByUpdated(userDatasets).slice(0, 3);
   const loading = stories === null || datasets === null;
+  const isEmpty =
+    !loading && userStories.length === 0 && userDatasets.length === 0;
+
+  const handleCloneExample = useCallback(
+    async (story: Story) => {
+      if (cloneInFlightRef.current) return;
+      cloneInFlightRef.current = true;
+      setCloningId(story.id);
+      try {
+        const forked = await forkStoryOnServer(story.id);
+        navigate(workspacePath(`/story/${forked.id}/edit`));
+      } catch {
+        cloneInFlightRef.current = false;
+        setCloningId(null);
+      }
+    },
+    [navigate, workspacePath]
+  );
 
   return (
     <Flex direction="column" minH="100vh" bg="gray.50">
@@ -96,6 +121,38 @@ export default function WorkspaceHomePage() {
               style={{ animation: "spin 1s linear infinite" }}
             />
           </Flex>
+        ) : isEmpty ? (
+          <Box>
+            <Heading size="md" color="gray.700" mb={2}>
+              This workspace is empty
+            </Heading>
+            <Text fontSize="sm" color="gray.500" mb={6}>
+              Clone an example story to get started — you can edit it freely.
+            </Text>
+            {exampleStories.length === 0 ? (
+              <Text fontSize="sm" color="gray.500">
+                No examples available right now.
+              </Text>
+            ) : (
+              <Box
+                display="grid"
+                gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                gap={3}
+              >
+                {exampleStories.slice(0, 3).map((story) => (
+                  <ExampleStoryCard
+                    key={story.id}
+                    title={story.title}
+                    chapterCount={story.chapters.length}
+                    dataType={inferDataType(story)}
+                    onClick={() => handleCloneExample(story)}
+                    loading={cloningId === story.id}
+                    compact={false}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
         ) : (
           <>
             <Section

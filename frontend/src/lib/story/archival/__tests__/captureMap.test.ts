@@ -79,7 +79,8 @@ describe("captureChapterMap", () => {
     vi.useFakeTimers();
     const promise = captureChapterMap({
       chapter: mockChapter,
-      connections: new Map([["portable-x", mockConnection]]),
+      datasetMap: new Map(),
+      connectionMap: new Map([["portable-x", mockConnection]]),
     });
     const failure = expect(promise).rejects.toThrow(/timed out/i);
     await vi.advanceTimersByTimeAsync(30_000);
@@ -90,7 +91,8 @@ describe("captureChapterMap", () => {
     vi.useFakeTimers();
     const promise = captureChapterMap({
       chapter: mockChapter,
-      connections: new Map([["portable-x", mockConnection]]),
+      datasetMap: new Map(),
+      connectionMap: new Map([["portable-x", mockConnection]]),
     });
     expect(
       document.body.querySelector("[data-archival-capture]")

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { downloadArchivalHtml } from "./archival/downloadArchival";
+import { toaster } from "../toaster";
 
 interface ArchivalProgressState {
   open: boolean;
@@ -40,6 +41,11 @@ export function useArchivalDownload(storyId: string, storyTitle: string) {
     } catch (err) {
       if ((err as { name?: string })?.name !== "AbortError") {
         console.error("Failed to download archival HTML", err);
+        toaster.create({
+          title: "Archival HTML export failed",
+          description: (err as Error)?.message ?? "Unknown error",
+          type: "error",
+        });
       }
     } finally {
       if (abortRef.current === controller) {

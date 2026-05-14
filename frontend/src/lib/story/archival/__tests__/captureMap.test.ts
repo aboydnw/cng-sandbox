@@ -200,4 +200,123 @@ describe("captureChapterMap", () => {
     expect(result).toMatch(/^data:image\/png/);
     expect(document.body.querySelector("[data-archival-capture]")).toBeNull();
   });
+
+  // Regression: in real exports, deck.gl finishes drawing (last `onAfterRender`
+  // fires) *before* maplibre emits its first `'idle'` event. The readiness
+  // gate `mapIdle && allLoaded` was only evaluated inside `onAfterRender`, so
+  // when `'idle'` flipped `mapIdle = true` *after* the last `onAfterRender`,
+  // nobody re-checked the gate and the capture sat for the full 30 s
+  // timeout. The fix re-evaluates the gate from both `onAfterRender` *and*
+  // the `'idle'` callback. (Diagnostic logs from a real production export
+  // showed this exact sequence: render #5 at +249 ms with mapIdle=false,
+  // then `'idle'` at +415 ms with no further renders → timeout at +30 s
+  // even though both gate inputs were true the whole time.)
+  it("resolves when maplibre 'idle' fires after deck.gl's last onAfterRender (gate re-check)", async () => {
+    const { buildLayersForChapter } = await import("../../rendering");
+    const mockLayer: { isLoaded: boolean } = { isLoaded: false };
+    (buildLayersForChapter as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      layers: [mockLayer],
+    });
+    vi.useFakeTimers();
+
+    const promise = captureChapterMap({
+      chapter: mockChapter,
+      datasetMap: new Map(),
+      connectionMap: new Map([["portable-x", mockConnection]]),
+    });
+
+    expect(rootMocks).toHaveLength(1);
+    const tree = rootMocks[0].render.mock.calls[0][0] as {
+      ref?: unknown;
+      props: {
+        mapRef: (ref: unknown) => void;
+        ref?: (ref: unknown) => void;
+        onAfterRender: () => void;
+      };
+    };
+    const deckRef = (tree.ref ?? tree.props.ref) as (ref: unknown) => void;
+    const { mapRef, onAfterRender } = tree.props;
+
+    const idle: { fire: (() => void) | null } = { fire: null };
+    const basemapCanvas = document.createElement("canvas");
+    const mapInstance = {
+      getCanvas: () => basemapCanvas,
+      loaded: () => false,
+      once: (event: string, cb: () => void) => {
+        if (event === "idle") idle.fire = cb;
+      },
+    };
+    mapRef({ getMap: () => mapInstance });
+
+    const deckCanvas = document.createElement("canvas");
+    deckRef({ deck: { canvas: deckCanvas } });
+
+    // Render once with the layer still loading.
+    onAfterRender();
+
+    // Layer finishes; deck.gl emits its final render. mapIdle is still false.
+    mockLayer.isLoaded = true;
+    onAfterRender();
+
+    // deck.gl now has nothing left to draw — no more onAfterRender calls.
+    // Sometime later, maplibre emits idle.
+    idle.fire?.();
+
+    // The 250ms quiet period elapses. Without the fix, nobody is checking
+    // the gate at this point and we sit until the 30s timeout.
+    await vi.advanceTimersByTimeAsync(300);
+
+    const result = await promise;
+    expect(result).toMatch(/^data:image\/png/);
+    expect(document.body.querySelector("[data-archival-capture]")).toBeNull();
+  });
+
+  // If the map happens to already be loaded by the time the mapRef callback
+  // attaches the `'idle'` listener (cached basemap style, etc.),
+  // `once('idle')` would never fire. The fix short-circuits this by checking
+  // `map.loaded()` at subscribe time and treating an already-loaded map as
+  // having already gone idle.
+  it("treats an already-loaded map as idle and still resolves", async () => {
+    const { buildLayersForChapter } = await import("../../rendering");
+    (buildLayersForChapter as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      layers: [],
+    });
+    vi.useFakeTimers();
+
+    const promise = captureChapterMap({
+      chapter: mockChapter,
+      datasetMap: new Map(),
+      connectionMap: new Map([["portable-x", mockConnection]]),
+    });
+
+    expect(rootMocks).toHaveLength(1);
+    const tree = rootMocks[0].render.mock.calls[0][0] as {
+      ref?: unknown;
+      props: {
+        mapRef: (ref: unknown) => void;
+        ref?: (ref: unknown) => void;
+        onAfterRender: () => void;
+      };
+    };
+    const deckRef = (tree.ref ?? tree.props.ref) as (ref: unknown) => void;
+    const { mapRef, onAfterRender } = tree.props;
+
+    const basemapCanvas = document.createElement("canvas");
+    const mapInstance = {
+      getCanvas: () => basemapCanvas,
+      loaded: () => true,
+      // 'idle' will never be invoked — map is already loaded.
+      once: () => {},
+    };
+    mapRef({ getMap: () => mapInstance });
+
+    const deckCanvas = document.createElement("canvas");
+    deckRef({ deck: { canvas: deckCanvas } });
+
+    onAfterRender();
+    await vi.advanceTimersByTimeAsync(300);
+
+    const result = await promise;
+    expect(result).toMatch(/^data:image\/png/);
+  });
 });

@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0](https://github.com/aboydnw/cng-sandbox/compare/v2.4.0...v2.5.0) (2026-05-14)
+
+
+### Features
+
+* **workspace-home:** always surface example stories + promote action buttons ([#467](https://github.com/aboydnw/cng-sandbox/issues/467)) ([dca94df](https://github.com/aboydnw/cng-sandbox/commit/dca94df585f337f356a69f05cbb43a5c481de8cb))
+
+
+### Bug Fixes
+
+* **stories:** re-check archival readiness gate from maplibre 'idle' callback ([#469](https://github.com/aboydnw/cng-sandbox/issues/469)) ([77eec8a](https://github.com/aboydnw/cng-sandbox/commit/77eec8a509fa07f73bfbd26c8f9121ee14e38685))
+
 ## [2.4.0](https://github.com/aboydnw/cng-sandbox/compare/v2.3.3...v2.4.0) (2026-05-13)
 
 

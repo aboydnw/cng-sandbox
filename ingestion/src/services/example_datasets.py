@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 
 from sqlalchemy.orm import sessionmaker
 
@@ -35,6 +36,22 @@ from src.services.remote_register import (
 from src.services.source_coop_config import SourceCoopProduct, list_products
 
 logger = logging.getLogger(__name__)
+
+
+# Stable namespace for deriving deterministic example-dataset IDs from their
+# source.coop listing URL. Changing this value would orphan every example
+# dataset row and every story chapter that references one — don't.
+EXAMPLE_DATASET_NAMESPACE = uuid.UUID("9d8b0d3c-3b1c-4f3a-9d70-1b6d5c8a4f8f")
+
+
+def example_dataset_id(source_url: str) -> str:
+    """Return the deterministic UUID an example dataset MUST use.
+
+    Derived as ``uuid5(EXAMPLE_DATASET_NAMESPACE, source_url)`` so that
+    re-seeding after a database wipe produces the same dataset IDs and any
+    stories or forks that reference them keep resolving.
+    """
+    return str(uuid.uuid5(EXAMPLE_DATASET_NAMESPACE, source_url))
 
 
 async def run_enumerator(product: SourceCoopProduct) -> list[RemoteItem]:
@@ -86,6 +103,61 @@ def _existing_example_source_urls(db_session_factory: sessionmaker) -> set[str]:
             if url:
                 urls.add(url)
         return urls
+    finally:
+        session.close()
+
+
+def migrate_example_dataset_ids(db_session_factory: sessionmaker) -> int:
+    """Rename existing example DatasetRow.id to the deterministic ``uuid5(source_url)``.
+
+    Historically example dataset rows used random uuid4 primary keys, which
+    meant a dataset re-seed (e.g. database wipe + restart) produced new IDs
+    and orphaned every chapter that referenced an old ID. This migration
+    makes IDs deterministic going forward so future re-seeds reuse the same
+    keys.
+
+    Idempotent: rows already at the deterministic ID are left alone. Rows
+    whose deterministic ID is already taken (collision with a stranger row)
+    are skipped to preserve the conflicting row. ``tile_url`` and
+    ``stac_collection_id`` are NOT rewritten — they were baked at original
+    registration time and continue to function as opaque tokens against the
+    existing pgSTAC collection.
+
+    Returns the number of rows renamed.
+    """
+    session = db_session_factory()
+    try:
+        rows = session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
+        renamed = 0
+        for row in rows:
+            meta = json.loads(row.metadata_json) if row.metadata_json else {}
+            source_url = meta.get("source_url")
+            if not source_url:
+                continue
+            target_id = example_dataset_id(source_url)
+            if row.id == target_id:
+                continue
+            if session.get(DatasetRow, target_id) is not None:
+                logger.warning(
+                    "skipping example dataset id migration for %s: "
+                    "deterministic id %s is already taken",
+                    row.id,
+                    target_id,
+                )
+                continue
+            old_id = row.id
+            row.id = target_id
+            renamed += 1
+            logger.info(
+                "migrated example dataset id %s -> %s (source_url=%s)",
+                old_id,
+                target_id,
+                source_url,
+            )
+        if renamed:
+            session.commit()
+            logger.info("renamed %d example dataset rows to deterministic ids", renamed)
+        return renamed
     finally:
         session.close()
 
@@ -144,6 +216,7 @@ async def register_example_datasets(
     `only_slugs` narrows the set of products considered (used by tests);
     production callers pass None.
     """
+    migrate_example_dataset_ids(db_session_factory)
     backfill_example_colormaps(db_session_factory)
     already = _existing_example_source_urls(db_session_factory)
     for product in ordered_products():
@@ -155,10 +228,17 @@ async def register_example_datasets(
         logger.info("registering example dataset: %s", product.slug)
         try:
             if product.kind == "pmtiles":
-                await register_pmtiles_example(product, db_session_factory)
+                await register_pmtiles_example(
+                    product,
+                    db_session_factory,
+                    dataset_id=example_dataset_id(product.listing_url),
+                )
             else:
                 items = await run_enumerator(product)
-                job = Job(filename=product.name)
+                job = Job(
+                    filename=product.name,
+                    dataset_id=example_dataset_id(product.listing_url),
+                )
                 job.workspace_id = None
                 await register_remote_collection(
                     job=job,

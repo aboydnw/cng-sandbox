@@ -86,7 +86,11 @@ async def _seed_stories(app: FastAPI) -> None:
     polling is safe.
     """
     from src.models.story import StoryRow
-    from src.services.example_stories import ALL_STORIES, seed_example_stories
+    from src.services.example_stories import (
+        ALL_STORIES,
+        relink_dead_chapter_dataset_ids,
+        seed_example_stories,
+    )
 
     canonical_titles = {s.title for s in ALL_STORIES}
     attempts = 0
@@ -94,6 +98,7 @@ async def _seed_stories(app: FastAPI) -> None:
         attempts += 1
         try:
             seed_example_stories(app.state.db_session_factory)
+            relink_dead_chapter_dataset_ids(app.state.db_session_factory)
             session = app.state.db_session_factory()
             try:
                 seeded = {

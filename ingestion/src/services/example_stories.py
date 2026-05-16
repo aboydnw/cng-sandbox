@@ -547,10 +547,13 @@ def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
     datasets which no longer exist, using the seed catalog as the source
     of truth.
 
-    Targets example stories and forks of example stories. A chapter is a
-    candidate for rewrite only when its current ``dataset_id`` does not
-    resolve in the ``datasets`` table — user edits to live references are
-    left untouched.
+    Targets example stories and explicit forks of example stories (rows
+    with ``forked_from_id`` set). User-authored stories are skipped even
+    if their title happens to coincide with a seed, so a coincidental
+    name collision cannot rewrite chapters the user wrote themselves. A
+    chapter is a candidate for rewrite only when its current
+    ``dataset_id`` does not resolve in the ``datasets`` table — live
+    references are left untouched.
 
     The seed lookup is title-based: for an example story we match its
     title to a ``StorySeed``; for a fork we match the parent's title via
@@ -580,7 +583,10 @@ def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
             elif row.forked_from_id:
                 seed_title = example_titles_by_id.get(row.forked_from_id) or row.title
             else:
-                seed_title = row.title
+                # User-authored story (not an example, not a fork). Skip even if
+                # the title matches a seed — rewriting user chapters would be
+                # destructive.
+                continue
 
             seed = seed_by_title.get(seed_title) if seed_title else None
             if seed is None:

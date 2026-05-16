@@ -458,6 +458,20 @@ def test_relink_skips_when_chapter_count_diverges():
     _seed_all_example_datasets(factory)
     seed_example_stories(factory)
 
+    session = factory()
+    try:
+        example_id = (
+            session.query(StoryRow)
+            .filter(
+                StoryRow.is_example.is_(True),
+                StoryRow.title == OCEAN_FLOOR_STORY.title,
+            )
+            .one()
+            .id
+        )
+    finally:
+        session.close()
+
     # Build a fork with only one chapter, all dead — definitely doesn't
     # match the seed shape.
     now = datetime.now(UTC)
@@ -494,7 +508,7 @@ def test_relink_skips_when_chapter_count_diverges():
                 published=False,
                 is_example=False,
                 workspace_id="ws",
-                forked_from_id=None,
+                forked_from_id=example_id,
                 created_at=now,
                 updated_at=now,
             )
@@ -514,3 +528,72 @@ def test_relink_skips_when_chapter_count_diverges():
         session.close()
 
     assert chapters[0]["layer_config"]["dataset_id"] == "dead-id"
+
+
+def test_relink_skips_user_authored_story_with_coincidental_title_match():
+    """A user-authored story (not an example, not a fork) whose title
+    happens to match a seed must not have its chapter dataset_ids
+    rewritten — the user wrote those chapters, not the seed catalog."""
+    _, factory = _make_db()
+    _seed_all_example_datasets(factory)
+    seed_example_stories(factory)
+
+    seed_chapter_count = len(OCEAN_FLOOR_STORY.chapters)
+    user_chapters = [
+        {
+            "id": f"ch-{i}",
+            "order": i,
+            "type": "scrollytelling",
+            "title": f"user chapter {i}",
+            "narrative": "",
+            "map_state": {
+                "center": [0, 0],
+                "zoom": 0,
+                "bearing": 0,
+                "pitch": 0,
+                "basemap": "streets",
+            },
+            "transition": "fly-to",
+            "overlay_position": "left",
+            "layer_config": {
+                "dataset_id": "user-private-dead-id",
+                "colormap": "viridis",
+                "opacity": 0.85,
+                "basemap": "streets",
+            },
+        }
+        for i in range(seed_chapter_count)
+    ]
+    now = datetime.now(UTC)
+    session = factory()
+    try:
+        session.add(
+            StoryRow(
+                id="user-story",
+                title=OCEAN_FLOOR_STORY.title,
+                description="user authored",
+                chapters_json=json.dumps(user_chapters),
+                published=False,
+                is_example=False,
+                workspace_id="ws",
+                forked_from_id=None,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    relinked = relink_dead_chapter_dataset_ids(factory)
+    assert relinked == 0
+
+    session = factory()
+    try:
+        row = session.get(StoryRow, "user-story")
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    for ch in chapters:
+        assert ch["layer_config"]["dataset_id"] == "user-private-dead-id"

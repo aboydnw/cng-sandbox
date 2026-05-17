@@ -1,0 +1,83 @@
+name: Bug Report
+description: Something broke, looked wrong, or didn't behave as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! The more detail you can give,
+        the faster we can reproduce and fix it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug. What did you see?
+      placeholder: "When I clicked Export → Archival HTML, the download started but the file was empty."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "I expected to get an HTML file with my story chapters embedded."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: As specific as you can be. Even rough steps help a lot.
+      placeholder: |
+        1. Go to /w/abc12345/story/...
+        2. Click Export
+        3. Choose Archival HTML
+        4. Observe...
+    validations:
+      required: false
+
+  - type: input
+    id: page-url
+    attributes:
+      label: Page URL or workspace ID
+      description: If you're comfortable sharing, paste the full URL or your workspace ID. This helps us look up the exact dataset/story.
+      placeholder: "https://storytelling.developmentseed.org/w/abc12345/..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or recording
+      description: Drag and drop an image or video file here, or paste a link.
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: "Chrome 130 on macOS, Firefox on Ubuntu, Safari on iPhone, etc."
+    validations:
+      required: false
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser console errors
+      description: |
+        Optional but very helpful. Open the browser DevTools (F12 or Cmd+Opt+I),
+        click the Console tab, and paste anything red.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Other context, related issues, ideas for what might have caused it.
+    validations:
+      required: false

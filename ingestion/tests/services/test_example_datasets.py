@@ -11,6 +11,9 @@ from sqlalchemy.pool import StaticPool
 from src.models.base import Base
 from src.models.dataset import DatasetRow
 from src.services.example_datasets import (
+    EXAMPLE_DATASET_NAMESPACE,
+    example_dataset_id,
+    migrate_example_dataset_ids,
     missing_example_products,
     ordered_products,
     register_example_datasets,
@@ -208,3 +211,160 @@ def test_register_example_datasets_dispatches_pmtiles():
 
     pmtiles_register_mock.assert_awaited_once()
     assert pmtiles_register_mock.await_args.args[0].slug == "test/pmt"
+
+
+def test_example_dataset_id_is_deterministic_uuid5():
+    import uuid
+
+    url = "https://data.source.coop/alexgleith/gebco-2024/"
+    expected = str(uuid.uuid5(EXAMPLE_DATASET_NAMESPACE, url))
+    assert example_dataset_id(url) == expected
+    assert example_dataset_id(url) == example_dataset_id(url)
+
+
+def test_example_dataset_id_differs_per_source_url():
+    a = example_dataset_id("https://data.source.coop/a/")
+    b = example_dataset_id("https://data.source.coop/b/")
+    assert a != b
+
+
+def test_migrate_example_dataset_ids_renames_legacy_random_ids():
+    _, factory = _make_db()
+    url = "https://data.source.coop/alexgleith/gebco-2024/"
+    legacy_id = "random-legacy-id"
+    session = factory()
+    try:
+        session.add(
+            DatasetRow(
+                id=legacy_id,
+                filename="GEBCO",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url=f"/raster/sandbox-{legacy_id}",
+                metadata_json=f'{{"source_url": "{url}"}}',
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    renamed = migrate_example_dataset_ids(factory)
+    assert renamed == 1
+
+    session = factory()
+    try:
+        rows = session.query(DatasetRow).all()
+        assert len(rows) == 1
+        assert rows[0].id == example_dataset_id(url)
+        # tile_url is preserved — it points to the original sandbox-<legacy-id>
+        # pgSTAC collection and continues to function.
+        assert rows[0].tile_url == f"/raster/sandbox-{legacy_id}"
+    finally:
+        session.close()
+
+
+def test_migrate_example_dataset_ids_is_idempotent():
+    _, factory = _make_db()
+    url = "https://data.source.coop/alexgleith/gebco-2024/"
+    session = factory()
+    try:
+        session.add(
+            DatasetRow(
+                id="legacy",
+                filename="GEBCO",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json=f'{{"source_url": "{url}"}}',
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    assert migrate_example_dataset_ids(factory) == 1
+    assert migrate_example_dataset_ids(factory) == 0
+
+
+def test_migrate_example_dataset_ids_skips_non_example_rows():
+    _, factory = _make_db()
+    url = "https://data.source.coop/foo/bar/"
+    session = factory()
+    try:
+        session.add(
+            DatasetRow(
+                id="user-row",
+                filename="user upload",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t",
+                metadata_json=f'{{"source_url": "{url}"}}',
+                is_example=False,
+                workspace_id="ws",
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    assert migrate_example_dataset_ids(factory) == 0
+    session = factory()
+    try:
+        row = session.query(DatasetRow).one()
+        assert row.id == "user-row"
+    finally:
+        session.close()
+
+
+def test_migrate_example_dataset_ids_skips_when_target_already_present():
+    """A pre-existing row at the deterministic ID is not overwritten."""
+    _, factory = _make_db()
+    url = "https://data.source.coop/alexgleith/gebco-2024/"
+    target = example_dataset_id(url)
+    session = factory()
+    try:
+        session.add(
+            DatasetRow(
+                id=target,
+                filename="GEBCO (canonical)",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t/canonical",
+                metadata_json=f'{{"source_url": "{url}"}}',
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.add(
+            DatasetRow(
+                id="duplicate-legacy",
+                filename="GEBCO (legacy)",
+                dataset_type="raster",
+                format_pair="geotiff-to-cog",
+                tile_url="/t/legacy",
+                metadata_json=f'{{"source_url": "{url}"}}',
+                is_example=True,
+                workspace_id=None,
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    renamed = migrate_example_dataset_ids(factory)
+    assert renamed == 0
+    session = factory()
+    try:
+        ids = {r.id for r in session.query(DatasetRow).all()}
+        assert ids == {target, "duplicate-legacy"}
+    finally:
+        session.close()

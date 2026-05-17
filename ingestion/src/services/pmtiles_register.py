@@ -24,6 +24,7 @@ class PMTilesRegistrationError(Exception):
 async def register_pmtiles_example(
     product: SourceCoopProduct,
     db_session_factory: sessionmaker,
+    dataset_id: str | None = None,
 ) -> str:
     """Register a kind="pmtiles" product as an is_example=True dataset row.
 
@@ -31,6 +32,9 @@ async def register_pmtiles_example(
     rejects any PMTiles file whose tile_type is not MVT (vector). If that
     guard is ever relaxed to admit raster PMTiles, this assignment must be
     updated to derive the type from the parsed header.
+
+    Pass ``dataset_id`` to pin the new row's primary key — the example-dataset
+    seeder uses this to derive a deterministic ID from ``source_url``.
 
     Returns the new dataset ID. Raises PMTilesRegistrationError on any
     probe/parse/persist failure.
@@ -51,7 +55,8 @@ async def register_pmtiles_example(
             f"{product.slug}: header fetch failed: {exc}"
         ) from exc
 
-    dataset_id = str(uuid.uuid4())
+    if dataset_id is None:
+        dataset_id = str(uuid.uuid4())
     dataset = Dataset(
         id=dataset_id,
         filename=product.name,

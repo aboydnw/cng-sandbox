@@ -491,13 +491,14 @@ def _load_example_dataset_map(
         session.close()
 
 
-def _existing_example_story_titles(
+def _existing_example_story_rows_by_title(
     db_session_factory: sessionmaker,
-) -> set[str]:
+) -> dict[str, str]:
+    """Return ``{title: story_id}`` for every ``is_example=True`` story."""
     session = db_session_factory()
     try:
         rows = session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
-        return {r.title for r in rows}
+        return {r.title: r.id for r in rows}
     finally:
         session.close()
 
@@ -541,24 +542,119 @@ def _build_chapter_dict(
     }
 
 
+def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
+    """Rewrite chapter ``layer_config.dataset_id`` entries that point at
+    datasets which no longer exist, using the seed catalog as the source
+    of truth.
+
+    Targets example stories and explicit forks of example stories (rows
+    with ``forked_from_id`` set). User-authored stories are skipped even
+    if their title happens to coincide with a seed, so a coincidental
+    name collision cannot rewrite chapters the user wrote themselves. A
+    chapter is a candidate for rewrite only when its current
+    ``dataset_id`` does not resolve in the ``datasets`` table — live
+    references are left untouched.
+
+    The seed lookup is title-based: for an example story we match its
+    title to a ``StorySeed``; for a fork we match the parent's title via
+    ``forked_from_id``, falling back to the fork's own title (which is a
+    copy of the parent's at fork time). If the existing chapter count
+    differs from the seed (because the user added or removed chapters),
+    we skip the row to avoid misaligning position-based replacements.
+
+    Returns the number of stories with at least one chapter rewritten.
+    """
+    seed_by_title = {s.title: s for s in ALL_STORIES}
+    dataset_map = _load_example_dataset_map(db_session_factory)
+
+    session = db_session_factory()
+    try:
+        existing_dataset_ids = {r.id for r in session.query(DatasetRow).all()}
+        example_titles_by_id = {
+            r.id: r.title
+            for r in session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
+        }
+
+        rewritten_stories = 0
+        for row in session.query(StoryRow).all():
+            seed_title: str | None = None
+            if row.is_example:
+                seed_title = row.title
+            elif row.forked_from_id:
+                seed_title = example_titles_by_id.get(row.forked_from_id) or row.title
+            else:
+                # User-authored story (not an example, not a fork). Skip even if
+                # the title matches a seed — rewriting user chapters would be
+                # destructive.
+                continue
+
+            seed = seed_by_title.get(seed_title) if seed_title else None
+            if seed is None:
+                continue
+
+            chapters = json.loads(row.chapters_json) if row.chapters_json else []
+            if len(chapters) != len(seed.chapters):
+                continue
+
+            chapter_changed = False
+            for idx, ch in enumerate(chapters):
+                layer_config = ch.get("layer_config") or {}
+                current_id = layer_config.get("dataset_id")
+                if not current_id or current_id in existing_dataset_ids:
+                    continue
+                source_url = seed.chapters[idx].dataset_source_url
+                if not source_url:
+                    continue
+                replacement = dataset_map.get(source_url)
+                if not replacement:
+                    continue
+                layer_config["dataset_id"] = replacement
+                ch["layer_config"] = layer_config
+                chapter_changed = True
+
+            if chapter_changed:
+                row.chapters_json = json.dumps(chapters)
+                rewritten_stories += 1
+                logger.info(
+                    "relinked dead chapter dataset_ids in story %s (%s)",
+                    row.id,
+                    row.title,
+                )
+
+        if rewritten_stories:
+            session.commit()
+            logger.info(
+                "relinked dead chapter dataset_ids in %d stories", rewritten_stories
+            )
+        return rewritten_stories
+    finally:
+        session.close()
+
+
 def seed_example_stories(db_session_factory: sessionmaker) -> None:
-    """Insert any example stories whose datasets are registered and whose
-    titles are not already present.
+    """Seed example stories, rebuilding chapter dataset references from the
+    current example-dataset map on every call.
+
+    Behavior per seed entry:
+
+    * If no row exists for the title, INSERT a fresh row.
+    * If a row exists, UPDATE its chapters_json, ``dataset_id``, and
+      ``description`` from the current seed. This heals dataset-ID drift
+      (e.g. after a wipe + re-seed) instead of preserving stale references.
+
+    The title/identity of an existing example row is preserved so that
+    forks (which carry ``forked_from_id``) keep pointing at the same
+    parent. ``workspace_id`` and ``created_at`` are also preserved.
 
     Idempotent within a single process and safe under concurrent startups:
-    a partial unique index on `(title) WHERE is_example = TRUE` (see
-    `_migrate_schema`) prevents duplicate example rows, and
-    `IntegrityError` is caught per-story so a racing insert is treated as
-    a no-op.
+    a partial unique index on ``(title) WHERE is_example = TRUE``
+    (see ``_migrate_schema``) prevents duplicate example rows, and
+    ``IntegrityError`` is caught per-story so a racing insert is a no-op.
     """
     dataset_map = _load_example_dataset_map(db_session_factory)
-    existing_titles = _existing_example_story_titles(db_session_factory)
+    existing_rows = _existing_example_story_rows_by_title(db_session_factory)
 
     for story in ALL_STORIES:
-        if story.title in existing_titles:
-            logger.debug("example story already present: %s", story.title)
-            continue
-
         required_urls = {
             ch.dataset_source_url for ch in story.chapters if ch.dataset_source_url
         }
@@ -596,6 +692,22 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
         now = datetime.now(UTC)
         session = db_session_factory()
         try:
+            existing_id = existing_rows.get(story.title)
+            if existing_id is not None:
+                row = session.get(StoryRow, existing_id)
+                if row is None:
+                    # Row vanished between the index load and the update —
+                    # fall through to insert.
+                    existing_id = None
+                else:
+                    row.description = story.description
+                    row.dataset_id = primary_dataset_id
+                    row.chapters_json = json.dumps(chapters_json)
+                    row.updated_at = now
+                    session.commit()
+                    logger.info("refreshed example story: %s", story.title)
+                    continue
+
             session.add(
                 StoryRow(
                     id=str(uuid.uuid4()),

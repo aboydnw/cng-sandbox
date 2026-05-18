@@ -73,7 +73,10 @@ export async function captureChartToDataUrl(
       });
     } catch (err) {
       if (timeoutTripped) {
-        throw new Error(`Chart snapshot timed out after ${TIMEOUT_MS / 1000}s`);
+        throw new Error(
+          `Chart snapshot timed out after ${TIMEOUT_MS / 1000}s`,
+          { cause: err }
+        );
       }
       throw err;
     }

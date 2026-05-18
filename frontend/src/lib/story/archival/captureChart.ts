@@ -1,13 +1,12 @@
+import type { ChartChapter } from "../types";
+
 /**
- * Render a chart spec to a canvas and return its data URL.
- *
- * Currently a stub. Chart chapters render via recharts (SVG) — see
- * `ChartChapterRenderer.tsx`. A real implementation needs to serialize
- * the rendered SVG to a Blob, draw it onto a canvas, and call toDataURL.
- * Task 4 emits a placeholder for chart chapters; this fills in afterwards.
+ * Render a chart chapter to an off-screen echarts instance and return a PNG
+ * data URL via `instance.getDataURL({ type: 'png', pixelRatio: 2, ... })`.
+ * Real implementation lands in Task 2.
  */
-export async function captureChartToDataUrl(): Promise<string> {
-  throw new Error(
-    "Not yet implemented — recharts SVG-to-canvas capture is a follow-up"
-  );
+export async function captureChartToDataUrl(
+  _chapter: ChartChapter
+): Promise<string> {
+  throw new Error("Not yet implemented");
 }

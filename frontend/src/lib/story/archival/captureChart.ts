@@ -40,11 +40,13 @@ export async function captureChartToDataUrl(
   const root = createRoot(host);
 
   try {
-    const tree: ReactNode = createElement(
-      ChakraProvider,
-      { value: defaultSystem },
-      createElement(ChartChapterRenderer, { chapter, chapterIndex: 0 })
-    );
+    const tree: ReactNode = createElement(ChakraProvider, {
+      value: defaultSystem,
+      children: createElement(ChartChapterRenderer, {
+        chapter,
+        chapterIndex: 0,
+      }),
+    });
     root.render(tree);
 
     const ready = (async () => {

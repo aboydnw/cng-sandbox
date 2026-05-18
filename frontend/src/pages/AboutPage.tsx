@@ -287,13 +287,15 @@ export default function AboutPage() {
           </Text>
 
           <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>
-            Your uploads
+            Your uploads and stories
           </Text>
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
-            Files you upload are stored under a workspace ID generated for you.
-            To protect from data storage costs, datasets have an expiration
-            policy of 30 days from the time of upload. If you would like to
-            explore a more permanent data storage solution, please reach out to{" "}
+            Datasets you upload and stories you create are stored under a
+            workspace ID generated for you. To protect against unbounded storage
+            costs, both datasets and stories are automatically deleted 30 days
+            after they are created. Treat the sandbox as a place to experiment,
+            not a place to store work long-term. If you would like to explore a
+            more permanent storage solution, please reach out to{" "}
             <a
               href="mailto:info@developmentseed.org"
               style={{
@@ -312,9 +314,9 @@ export default function AboutPage() {
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
             You are automatically assigned a unique workspace code. This allows
             you to share your work with collaborators, but only if you directly
-            share the URL or workspace ID with them. Workspaces do not
-            automatically expire, although uploaded datasets inside workspaces
-            will expire to the policy listed above.
+            share the URL or workspace ID with them. The workspace itself does
+            not expire, but the datasets and stories inside it follow the 30-day
+            policy above.
           </Text>
 
           <Text fontWeight={600} color="gray.800" fontSize="sm" mt={4} mb={1}>

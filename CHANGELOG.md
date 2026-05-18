@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.1](https://github.com/aboydnw/cng-sandbox/compare/v2.5.0...v2.5.1) (2026-05-18)
+
+
+### Bug Fixes
+
+* **archival:** implement chart-chapter capture for archival HTML export ([#475](https://github.com/aboydnw/cng-sandbox/issues/475)) ([4eeab6f](https://github.com/aboydnw/cng-sandbox/commit/4eeab6fab54d254f3c1bf72e7f06b59579d4e3ba))
+* **stories:** use deterministic example dataset IDs + heal stale chapter refs ([#470](https://github.com/aboydnw/cng-sandbox/issues/470)) ([9627d03](https://github.com/aboydnw/cng-sandbox/commit/9627d039003daf183dfaecfa196d745b316f658c))
+
 ## [2.5.0](https://github.com/aboydnw/cng-sandbox/compare/v2.4.0...v2.5.0) (2026-05-14)
 
 

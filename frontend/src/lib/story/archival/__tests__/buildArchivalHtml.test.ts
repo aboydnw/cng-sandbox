@@ -20,6 +20,12 @@ vi.mock("../inlineAsset", () => ({
     .mockResolvedValue("data:image/jpeg;base64,/9j/4AAQ"),
 }));
 
+vi.mock("../captureChart", () => ({
+  captureChartToDataUrl: vi
+    .fn()
+    .mockResolvedValue("data:image/png;base64,CHARTPNG"),
+}));
+
 function makeStory(chapters: Story["chapters"]): Story {
   return {
     id: "s1",
@@ -175,6 +181,105 @@ describe("buildArchivalHtml", () => {
 
     const story = makeStory([
       createScrollytellingChapter({ id: "ch", title: "X" }),
+    ]);
+
+    await expect(
+      buildArchivalHtml({ config, story, ...emptyMaps })
+    ).rejects.toThrow(/timed out/);
+  });
+
+  it("inlines chart snapshots as base64 PNG <img> tags with the chapter title as alt text", async () => {
+    const { createChartChapter } = await import("../../types");
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s1", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [
+        {
+          id: "c1",
+          type: "chart",
+          title: "Annual rainfall",
+          body: null,
+          map: null,
+          layers: [],
+        },
+      ],
+      layers: {},
+      assets: {},
+    };
+
+    const story = makeStory([
+      createChartChapter({
+        id: "c1",
+        title: "Annual rainfall",
+        chart: {
+          source: {
+            kind: "csv",
+            asset_id: "a1",
+            url: "http://x/y.csv",
+            columns: ["Year", "v"],
+          },
+          viz: { kind: "line", x_field: "Year", y_fields: ["v"] },
+        },
+      }),
+    ]);
+
+    const html = await buildArchivalHtml({ config, story, ...emptyMaps });
+    expect(html).toContain('src="data:image/png;base64,CHARTPNG"');
+    expect(html).toContain('alt="Annual rainfall"');
+  });
+
+  it("propagates errors from captureChartToDataUrl (no silent fallback)", async () => {
+    const { captureChartToDataUrl } = await import("../captureChart");
+    (captureChartToDataUrl as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("Chart snapshot timed out after 30s")
+    );
+
+    const { createChartChapter } = await import("../../types");
+    const config: CngRcConfig = {
+      version: "1",
+      origin: { story_id: "s1", workspace_id: null, exported_at: "" },
+      metadata: {
+        title: "T",
+        description: null,
+        author: null,
+        created: "",
+        updated: "",
+      },
+      chapters: [
+        {
+          id: "c1",
+          type: "chart",
+          title: "Doomed chart",
+          body: null,
+          map: null,
+          layers: [],
+        },
+      ],
+      layers: {},
+      assets: {},
+    };
+
+    const story = makeStory([
+      createChartChapter({
+        id: "c1",
+        title: "Doomed chart",
+        chart: {
+          source: {
+            kind: "csv",
+            asset_id: "a1",
+            url: "http://x/y.csv",
+            columns: ["Year", "v"],
+          },
+          viz: { kind: "line", x_field: "Year", y_fields: ["v"] },
+        },
+      }),
     ]);
 
     await expect(

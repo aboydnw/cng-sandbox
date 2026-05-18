@@ -6,6 +6,7 @@ import type { Chapter, Story } from "../types";
 import type { Connection, Dataset } from "../../../types";
 import { buildCitationBlock, escapeHtml, safeHttpUrl } from "./citations";
 import { captureChapterMap } from "./captureMap";
+import { captureChartToDataUrl } from "./captureChart";
 import { fetchAndInlineAsBase64 } from "./inlineAsset";
 
 export interface BuildArchivalHtmlArgs {
@@ -22,15 +23,16 @@ export interface BuildArchivalHtmlArgs {
  * thumbnails, images), and a data-citations block are all inlined.
  *
  * Map and scrollytelling chapters are rendered offscreen via captureChapterMap
- * using the live datasetMap + connectionMap, so they route through the same
- * tile endpoints as the in-page reader (e.g. /raster/collections/{id}/... for
- * ingested datasets). Using the cng-rc-synthesized story would force every
- * raster chapter onto the client-side /cog/tiles/?url=… path, which 500s for
- * example datasets whose source_url is a bucket directory listing.
+ * and chart chapters via captureChartToDataUrl, using the live datasetMap +
+ * connectionMap so map captures route through the same tile endpoints as the
+ * in-page reader (e.g. /raster/collections/{id}/... for ingested datasets).
+ * Using the cng-rc-synthesized story would force every raster chapter onto
+ * the client-side /cog/tiles/?url=… path, which 500s for example datasets
+ * whose source_url is a bucket directory listing.
  *
- * Errors from map snapshot capture (timeouts, missing canvases) propagate up
- * to the caller; the export fails loudly rather than silently shipping a
- * partial document.
+ * Errors from any chapter capture (timeouts, missing canvases, chart load
+ * failures) propagate up to the caller; the export fails loudly rather than
+ * silently shipping a partial document.
  */
 export async function buildArchivalHtml({
   config,
@@ -168,7 +170,17 @@ async function renderChapter(
     }
 
     case "chart": {
-      return `<section class="chapter chart">${title}${placeholder("Chart rendering pending")}${body}</section>`;
+      if (!storyChapter) {
+        throw new Error(`Live chapter data missing for chart chapter ${ch.id}`);
+      }
+      if (storyChapter.type !== "chart") {
+        throw new Error(
+          `Live chapter type mismatch for chart chapter ${ch.id}`
+        );
+      }
+      const dataUrl = await captureChartToDataUrl(storyChapter);
+      const altText = escapeHtml(ch.title ?? "Chart");
+      return `<section class="chapter chart">${title}<img src="${dataUrl}" alt="${altText}" />${body}</section>`;
     }
 
     default: {

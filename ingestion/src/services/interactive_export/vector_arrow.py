@@ -9,6 +9,8 @@ import pyarrow as pa
 import pyarrow.ipc as ipc
 from shapely.geometry import box
 
+MAX_ARROW_BYTES = 100 * 1024 * 1024
+
 
 def write_arrow(
     source_url: str,
@@ -60,3 +62,11 @@ def write_arrow(
 
     with ipc.new_stream(output_path, schema) as writer:
         writer.write_table(table)
+
+    size = output_path.stat().st_size
+    if size > MAX_ARROW_BYTES:
+        output_path.unlink(missing_ok=True)
+        raise ValueError(
+            f"vector chapter Arrow output too large: {size} bytes "
+            f"(cap {MAX_ARROW_BYTES})"
+        )

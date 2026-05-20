@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import csv
 import io
 import json
@@ -28,6 +29,8 @@ from src.services.url_validation import (
     raise_if_redirect,
     validate_url_safe,
 )
+
+PYRAMID_BUILD_TIMEOUT_SECONDS = 120.0
 
 _SAFE_CHAPTER_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -92,13 +95,26 @@ def _build_map_chapter(
 
         if layer.type == "raster-cog":
             out = chapter_dir / f"{layer_id}.pmtiles"
-            raster_pyramid.build_pyramid(
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            future = executor.submit(
+                raster_pyramid.build_pyramid,
                 source_url=src_url,
                 bbox=bbox,
                 min_zoom=min_zoom,
                 max_zoom=max_zoom,
                 output_path=out,
             )
+            try:
+                future.result(timeout=PYRAMID_BUILD_TIMEOUT_SECONDS)
+            except concurrent.futures.TimeoutError as exc:
+                future.cancel()
+                executor.shutdown(wait=False)
+                raise ValueError(
+                    f"raster pyramid build for layer {layer_id} timed out "
+                    f"after {PYRAMID_BUILD_TIMEOUT_SECONDS:.0f}s"
+                ) from exc
+            else:
+                executor.shutdown(wait=True)
             render = layer.render
             rescale_min = render.rescale[0] if render.rescale else None
             rescale_max = render.rescale[1] if render.rescale else None

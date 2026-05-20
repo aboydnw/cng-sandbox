@@ -3,7 +3,6 @@ import {
   Badge,
   Box,
   Button,
-  CloseButton,
   DialogBackdrop,
   DialogBody,
   DialogContent,
@@ -13,16 +12,17 @@ import {
   DialogRoot,
   DialogTitle,
   Flex,
+  IconButton,
   Input,
   Portal,
   Text,
 } from "@chakra-ui/react";
-import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
+import { CheckCircle, Copy, Warning, X } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
 import { useArchivalDownload } from "../lib/story/useArchivalDownload";
 import { useInteractiveDownload } from "../lib/story/useInteractiveDownload";
-import { ArchivalProgress } from "./ArchivalProgress";
+import { ExportProgress } from "./ExportProgress";
 import { ExportSection } from "./ExportSection";
 
 interface PublishDialogProps {
@@ -43,12 +43,24 @@ export function PublishDialog({
   const [published, setPublished] = useState(story.published);
   const [copied, setCopied] = useState(false);
   const urlInputRef = useRef<HTMLInputElement>(null);
-  const {
-    progress: archivalProgress,
-    handleArchival,
-    handleCancelArchival,
-  } = useArchivalDownload(story.id, story.title);
+  const archival = useArchivalDownload(story.id, story.title);
   const interactive = useInteractiveDownload(story.id, story.title);
+
+  const activeExport = interactive.progress.open
+    ? {
+        progress: interactive.progress,
+        onCancel: interactive.handleCancelInteractive,
+        title: "Building interactive bundle",
+        body: "Capturing chapters and assembling .zip…",
+      }
+    : archival.progress.open
+      ? {
+          progress: archival.progress,
+          onCancel: archival.handleCancelArchival,
+          title: "Building archival HTML",
+          body: "Capturing chapters and assembling HTML…",
+        }
+      : null;
 
   const incompleteChapters = story.chapters.filter(
     (ch) => !ch.narrative.trim()
@@ -78,17 +90,13 @@ export function PublishDialog({
 
   return (
     <>
-      <ArchivalProgress
-        open={archivalProgress.open}
-        current={archivalProgress.current}
-        total={archivalProgress.total}
-        onClose={handleCancelArchival}
-      />
-      <ArchivalProgress
-        open={interactive.progress.open}
-        current={interactive.progress.current}
-        total={interactive.progress.total}
-        onClose={interactive.handleCancelInteractive}
+      <ExportProgress
+        open={activeExport !== null}
+        current={activeExport?.progress.current ?? 0}
+        total={activeExport?.progress.total ?? 0}
+        title={activeExport?.title ?? ""}
+        body={activeExport?.body ?? ""}
+        onCancel={activeExport?.onCancel}
       />
       <DialogRoot
         open={open}
@@ -103,7 +111,19 @@ export function PublishDialog({
                 <DialogTitle>
                   {published ? "Story published" : "Publish story"}
                 </DialogTitle>
-                <CloseButton size="sm" onClick={handleClose} />
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleClose}
+                  aria-label="Close"
+                  _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
+                  _focusVisible={{
+                    outline: "2px solid",
+                    outlineColor: "brand.border",
+                  }}
+                >
+                  <X size={16} />
+                </IconButton>
               </DialogHeader>
 
               <DialogBody>
@@ -241,7 +261,7 @@ export function PublishDialog({
                     <ExportSection
                       story={story}
                       onArchival={() => {
-                        void handleArchival();
+                        void archival.handleArchival();
                       }}
                       onInteractive={() => {
                         void interactive.handleInteractive();

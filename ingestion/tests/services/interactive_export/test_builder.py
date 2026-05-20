@@ -138,6 +138,44 @@ def test_map_chapter_with_vector_layer_emits_arrow():
     assert any(n.startswith("chapters/ch1/") and n.endswith(".arrow") for n in names)
 
 
+def test_raster_pyramid_build_timeout_raises(monkeypatch):
+    import time
+
+    from src.services.interactive_export import raster_pyramid
+
+    monkeypatch.setattr(builder, "PYRAMID_BUILD_TIMEOUT_SECONDS", 0.05)
+
+    def slow_build(*args, **kwargs):
+        time.sleep(0.5)
+
+    monkeypatch.setattr(raster_pyramid, "build_pyramid", slow_build)
+
+    layer = CngRcLayer(
+        type="raster-cog",
+        source_url=str(FIXTURE_COG),
+        cng_url=str(FIXTURE_COG),
+        label="Raster",
+        attribution=None,
+        render=CngRcRender(
+            colormap="viridis",
+            rescale=(0.0, 1.0),
+            opacity=1.0,
+            band=None,
+            timestep=None,
+        ),
+    )
+    config, chapters_raw = _config_with_one_map_chapter(layer)
+    start = time.monotonic()
+    with pytest.raises(ValueError, match="timed out"):
+        builder.build_interactive_export(
+            config=config,
+            chapters_raw=chapters_raw,
+            chart_data_by_chapter={},
+            scrolly_pngs={},
+        )
+    assert time.monotonic() - start < 0.3
+
+
 def test_unsupported_layer_type_raises():
     layer = CngRcLayer(
         type="xyz",

@@ -38,6 +38,12 @@ export function useArchivalDownload(storyId: string, storyTitle: string) {
         },
         controller.signal
       );
+      if (!controller.signal.aborted) {
+        toaster.create({
+          title: "Archival HTML downloaded",
+          type: "success",
+        });
+      }
     } catch (err) {
       if ((err as { name?: string })?.name !== "AbortError") {
         console.error("Failed to download archival HTML", err);

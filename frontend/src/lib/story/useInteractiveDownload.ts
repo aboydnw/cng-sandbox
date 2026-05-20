@@ -38,6 +38,12 @@ export function useInteractiveDownload(storyId: string, storyTitle: string) {
         },
         controller.signal
       );
+      if (!controller.signal.aborted) {
+        toaster.create({
+          title: "Interactive bundle downloaded",
+          type: "success",
+        });
+      }
     } catch (err) {
       if ((err as { name?: string })?.name !== "AbortError") {
         console.error("Failed to download interactive bundle", err);

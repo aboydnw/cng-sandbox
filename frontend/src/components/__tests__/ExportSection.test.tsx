@@ -49,7 +49,7 @@ describe("ExportSection", () => {
   it("renders the five export entry points", () => {
     renderSection();
     expect(
-      screen.getByRole("button", { name: /download story config/i })
+      screen.getByRole("button", { name: /download raw config/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /download static bundle/i })
@@ -76,7 +76,7 @@ describe("ExportSection", () => {
   it("clicking 'Download story config' invokes downloadStoryConfig", async () => {
     renderSection();
     fireEvent.click(
-      screen.getByRole("button", { name: /download story config/i })
+      screen.getByRole("button", { name: /download raw config/i })
     );
     const { downloadStoryConfig } =
       await import("../../lib/story/exportConfig");

@@ -10,6 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "echarts": "^5.5.0",
     "marked": "^14.1.0"
   },
   "devDependencies": {

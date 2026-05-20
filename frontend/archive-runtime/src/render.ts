@@ -3,6 +3,7 @@ import { renderProseChapter } from "./chapters/ProseChapter";
 import { renderImageChapter } from "./chapters/ImageChapter";
 import { renderVideoChapter } from "./chapters/VideoChapter";
 import { renderScrollyChapter } from "./chapters/ScrollyChapter";
+import { renderChartChapter } from "./chapters/ChartChapter";
 
 export async function renderChapter(
   chapter: ChapterEntry,
@@ -22,9 +23,11 @@ export async function renderChapter(
     case "scrollytelling":
       renderScrollyChapter(chapter, host, basePath);
       return;
-    case "map":
     case "chart":
-      // implemented in later tasks
+      await renderChartChapter(chapter, host, basePath);
+      return;
+    case "map":
+      // implemented in Task 4
       throw new Error(`chapter type ${chapter.type} not yet implemented`);
     default: {
       const _exhaustive: never = chapter;

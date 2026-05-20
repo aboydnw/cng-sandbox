@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 RASTER_TILER_URL = os.environ.get("RASTER_TILER_URL", "http://raster-tiler:80")
 
 
-def _load_dataset(session, dataset_id: str, workspace_id: str | None) -> dict:
+def load_dataset(session, dataset_id: str, workspace_id: str | None) -> dict:
     """Load a dataset row and return its dict representation."""
     row = session.query(DatasetRow).filter_by(id=dataset_id).first()
     if not row:
@@ -121,7 +121,7 @@ def _cached_complete_timeseries(
     return pairs
 
 
-def _cached_timeseries(
+def cached_timeseries(
     dataset_id: str,
     collection_id: str,
     lon: float,
@@ -148,7 +148,7 @@ def dataset_timeseries(
     workspace_id = request.headers.get("x-workspace-id", "") or None
     session = get_session(request)
     try:
-        ds = _load_dataset(session, dataset_id, workspace_id)
+        ds = load_dataset(session, dataset_id, workspace_id)
     finally:
         session.close()
     if not ds.get("is_temporal"):
@@ -158,11 +158,11 @@ def dataset_timeseries(
         raise HTTPException(status_code=400, detail="dataset has no timesteps")
     collection_id = ds.get("stac_collection_id") or dataset_id
     datetimes = tuple(ts["datetime"] for ts in timesteps)
-    pairs = _cached_timeseries(dataset_id, collection_id, lon, lat, datetimes)
+    pairs = cached_timeseries(dataset_id, collection_id, lon, lat, datetimes)
     return [{"datetime": dt, "value": value} for dt, value in pairs]
 
 
-def _titiler_statistics(collection_id: str, *, categorical: bool, bins: int) -> dict:
+def titiler_statistics(collection_id: str, *, categorical: bool, bins: int) -> dict:
     """Query titiler-pgstac /statistics."""
     url = f"{RASTER_TILER_URL}/collections/{collection_id}/statistics"
     params: dict[str, str | int] = {"assets": "data"}
@@ -205,13 +205,13 @@ def dataset_histogram(
     workspace_id = request.headers.get("x-workspace-id", "") or None
     session = get_session(request)
     try:
-        ds = _load_dataset(session, dataset_id, workspace_id)
+        ds = load_dataset(session, dataset_id, workspace_id)
     finally:
         session.close()
     collection_id = ds.get("stac_collection_id") or dataset_id
 
     if ds.get("is_categorical"):
-        stats = _titiler_statistics(collection_id, categorical=True, bins=bins)
+        stats = titiler_statistics(collection_id, categorical=True, bins=bins)
         cats = stats.get("categorical") or {}
         if not isinstance(cats, dict):
             raise HTTPException(
@@ -248,7 +248,7 @@ def dataset_histogram(
         out.sort(key=lambda r: r["class"])
         return out
 
-    stats = _titiler_statistics(collection_id, categorical=False, bins=bins)
+    stats = titiler_statistics(collection_id, categorical=False, bins=bins)
     hist = stats.get("histogram") or []
     if len(hist) != 2:
         raise HTTPException(

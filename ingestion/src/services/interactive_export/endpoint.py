@@ -6,13 +6,16 @@ import asyncio
 import json
 import re
 import unicodedata
+from typing import Any
 
 from fastapi import HTTPException, Request, UploadFile
 from fastapi.responses import Response
 
 from src.dependencies import get_session
 from src.models.story import StoryRow
+from src.services import story_export
 from src.services.interactive_export import builder
+from src.services.interactive_export import chart_data as chart_data_resolver
 
 _SLUG_UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
 _SLUG_COLLAPSE_DASH = re.compile(r"-{2,}")
@@ -53,12 +56,22 @@ async def handle_interactive_export(
         ):
             raise HTTPException(status_code=404, detail="Story not found")
 
-        story = {
-            "id": row.id,
-            "title": row.title or "",
-            "description": row.description or "",
-        }
-        chapters = json.loads(row.chapters_json) if row.chapters_json else []
+        config = story_export.build_config(row, session)
+        chapters_raw = json.loads(row.chapters_json) if row.chapters_json else []
+
+        chart_data_by_chapter: dict[str, dict[str, Any]] = {}
+        for raw in chapters_raw:
+            if raw.get("type") != "chart":
+                continue
+            try:
+                chart_data_by_chapter[raw["id"]] = chart_data_resolver.resolve(
+                    raw, session, row.workspace_id
+                )
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"chart chapter {raw['id']}: {exc}",
+                ) from exc
 
         png_bytes: dict[str, bytes] = {}
         for upload in scrolly_pngs:
@@ -69,16 +82,20 @@ async def handle_interactive_export(
         try:
             zip_bytes = await asyncio.to_thread(
                 builder.build_interactive_export,
-                story=story,
-                chapters=chapters,
-                datasets={},
-                connections={},
+                config=config,
+                chapters_raw=chapters_raw,
+                chart_data_by_chapter=chart_data_by_chapter,
                 scrolly_pngs=png_bytes,
             )
         except ValueError as exc:
             msg = str(exc)
             status = (
-                400 if "zarr" in msg or "snapshot" in msg or "too large" in msg else 500
+                400
+                if "zarr" in msg
+                or "snapshot" in msg
+                or "too large" in msg
+                or "not yet supported" in msg
+                else 500
             )
             raise HTTPException(status_code=status, detail=msg) from exc
 

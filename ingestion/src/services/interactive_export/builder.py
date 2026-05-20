@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import csv
 import io
 import json
@@ -13,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+PYRAMID_BUILD_TIMEOUT_SECONDS = 120.0
 
 from src.models.cng_rc import CngRcChapter, CngRcConfig, CngRcLayer
 from src.services.interactive_export import (
@@ -92,13 +95,22 @@ def _build_map_chapter(
 
         if layer.type == "raster-cog":
             out = chapter_dir / f"{layer_id}.pmtiles"
-            raster_pyramid.build_pyramid(
-                source_url=src_url,
-                bbox=bbox,
-                min_zoom=min_zoom,
-                max_zoom=max_zoom,
-                output_path=out,
-            )
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    raster_pyramid.build_pyramid,
+                    source_url=src_url,
+                    bbox=bbox,
+                    min_zoom=min_zoom,
+                    max_zoom=max_zoom,
+                    output_path=out,
+                )
+                try:
+                    future.result(timeout=PYRAMID_BUILD_TIMEOUT_SECONDS)
+                except concurrent.futures.TimeoutError as exc:
+                    raise ValueError(
+                        f"raster pyramid build for layer {layer_id} timed out "
+                        f"after {PYRAMID_BUILD_TIMEOUT_SECONDS:.0f}s"
+                    ) from exc
             render = layer.render
             rescale_min = render.rescale[0] if render.rescale else None
             rescale_max = render.rescale[1] if render.rescale else None

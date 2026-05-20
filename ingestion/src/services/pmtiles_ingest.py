@@ -29,6 +29,13 @@ def _read_pmtiles_zoom_range(pmtiles_path: str) -> tuple[int, int]:
     return header[100], header[101]
 
 
+# Tippecanoe's `-zg` (--maximum-zoom=g) cannot infer a max zoom when the
+# input has fewer than two distinct feature locations. A single AOI polygon
+# is a common case, so fall back to an explicit max zoom that produces
+# usable tiles at street level.
+_SINGLE_FEATURE_MAXZOOM = 14
+
+
 def parquet_to_pmtiles_file(parquet_path: str, pmtiles_path: str) -> int:
     """Convert a GeoParquet file (local path or URL) to a PMTiles file on disk.
 
@@ -41,6 +48,15 @@ def parquet_to_pmtiles_file(parquet_path: str, pmtiles_path: str) -> int:
     if feature_count == 0:
         raise ValueError(f"GeoParquet at {parquet_path} has no features")
 
+    if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
+        gdf = gdf.to_crs(epsg=4326)
+
+    maxzoom_flag = (
+        f"--maximum-zoom={_SINGLE_FEATURE_MAXZOOM}"
+        if feature_count < 2
+        else "--maximum-zoom=g"
+    )
+
     with tempfile.TemporaryDirectory() as tmpdir:
         geojson_path = os.path.join(tmpdir, "data.geojson")
         gdf.to_file(geojson_path, driver="GeoJSON")
@@ -51,7 +67,7 @@ def parquet_to_pmtiles_file(parquet_path: str, pmtiles_path: str) -> int:
             "--no-feature-limit",
             "--no-tile-size-limit",
             "--force",
-            "--maximum-zoom=g",
+            maxzoom_flag,
             "--layer=default",
             geojson_path,
         ]

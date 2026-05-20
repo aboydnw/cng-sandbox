@@ -1,3 +1,4 @@
+import json
 import subprocess
 
 import geopandas as gpd
@@ -6,7 +7,11 @@ import pytest
 from obstore.store import MemoryStore
 from shapely.geometry import Polygon
 
-from src.services.pmtiles_ingest import get_pmtiles_tile_url, ingest_pmtiles
+from src.services.pmtiles_ingest import (
+    get_pmtiles_tile_url,
+    ingest_pmtiles,
+    parquet_to_pmtiles_file,
+)
 from src.services.storage import StorageService
 
 
@@ -148,6 +153,84 @@ def test_ingest_pmtiles_returns_zoom_range_and_size(
     assert min_zoom == 3
     assert max_zoom == 12
     assert file_size == 102
+
+
+def test_parquet_to_pmtiles_reprojects_non_wgs84_input(monkeypatch, tmp_path):
+    """Non-WGS84 input (e.g. UTM) is reprojected to EPSG:4326 before tippecanoe.
+
+    Tippecanoe's GeoJSON input must be in CRS84/WGS84. Shapefiles in projected
+    CRSes (like NAD83 UTM Zone 10N / EPSG:26910) were previously passed through
+    with their native coordinates, producing garbage tiles and tippecanoe warnings.
+    """
+    utm_polygon = Polygon(
+        [
+            (594129.88, 4964353.97),
+            (743218.27, 4964353.97),
+            (743218.27, 5216483.43),
+            (594129.88, 5216483.43),
+        ]
+    )
+    gdf = gpd.GeoDataFrame(
+        {"name": ["aoi"], "name_two": ["aoi2"]},
+        geometry=[utm_polygon],
+        crs="EPSG:26910",
+    )
+    parquet_path = str(tmp_path / "utm.parquet")
+    gdf.to_parquet(parquet_path)
+
+    captured_geojson: dict = {}
+
+    def fake_run(cmd, **kwargs):
+        geojson_path = next(arg for arg in cmd if arg.endswith(".geojson"))
+        with open(geojson_path) as f:
+            captured_geojson["data"] = json.load(f)
+        output_flag = next(f for f in cmd if f.startswith("--output="))
+        _write_fake_pmtiles(output_flag.split("=", 1)[1])
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    pmtiles_path = str(tmp_path / "out.pmtiles")
+    parquet_to_pmtiles_file(parquet_path, pmtiles_path)
+
+    crs_name = captured_geojson["data"].get("crs", {}).get("properties", {}).get("name")
+    assert crs_name in (None, "urn:ogc:def:crs:OGC:1.3:CRS84", "EPSG:4326")
+    coords = captured_geojson["data"]["features"][0]["geometry"]["coordinates"][0]
+    for lon, lat in coords:
+        assert -180 <= lon <= 180
+        assert -90 <= lat <= 90
+
+
+def test_parquet_to_pmtiles_single_feature_uses_explicit_maxzoom(monkeypatch, tmp_path):
+    """Single feature triggers explicit --maximum-zoom (not =g).
+
+    Tippecanoe's `--maximum-zoom=g` fails with "Can't guess maxzoom (-zg)
+    without at least two distinct feature locations" when only one feature
+    exists. A reasonable explicit max zoom is used as a fallback.
+    """
+    gdf = gpd.GeoDataFrame(
+        {"name": ["only"]},
+        geometry=[Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])],
+        crs="EPSG:4326",
+    )
+    parquet_path = str(tmp_path / "single.parquet")
+    gdf.to_parquet(parquet_path)
+
+    captured_cmd: list = []
+
+    def fake_run(cmd, **kwargs):
+        captured_cmd.extend(cmd)
+        output_flag = next(f for f in cmd if f.startswith("--output="))
+        _write_fake_pmtiles(output_flag.split("=", 1)[1])
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    parquet_to_pmtiles_file(parquet_path, str(tmp_path / "out.pmtiles"))
+
+    assert "--maximum-zoom=g" not in captured_cmd
+    assert any(
+        arg.startswith("--maximum-zoom=") and arg != "--maximum-zoom=g"
+        for arg in captured_cmd
+    )
 
 
 def test_read_pmtiles_zoom_range(tmp_path):

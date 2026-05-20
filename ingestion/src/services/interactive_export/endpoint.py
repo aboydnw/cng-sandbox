@@ -54,9 +54,7 @@ async def handle_interactive_export(
         except ValueError as exc:
             msg = str(exc)
             status = (
-                400
-                if "zarr" in msg or "snapshot" in msg or "too large" in msg
-                else 500
+                400 if "zarr" in msg or "snapshot" in msg or "too large" in msg else 500
             )
             raise HTTPException(status_code=status, detail=msg) from exc
 

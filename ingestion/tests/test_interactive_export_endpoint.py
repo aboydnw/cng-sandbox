@@ -55,3 +55,44 @@ def test_interactive_export_rejects_wrong_workspace(
 
     response = other.post(f"/api/stories/{story_id}/export/interactive")
     assert response.status_code == 404
+
+
+def test_interactive_export_with_chart_chapter(
+    client, seeded_story_with_chart_chapter, monkeypatch
+):
+    monkeypatch.setattr(
+        "src.services.interactive_export.builder._fetch_csv_rows",
+        lambda url: [{"year": 2020, "v": 1.0}, {"year": 2021, "v": 2.0}],
+    )
+    story_id = seeded_story_with_chart_chapter
+    response = client.post(f"/api/stories/{story_id}/export/interactive")
+    assert response.status_code == 200, response.text
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    chart_paths = [n for n in archive.namelist() if n.endswith("chart.json")]
+    assert len(chart_paths) == 1
+    chart = json.loads(archive.read(chart_paths[0]))
+    assert "series" in chart
+
+
+def test_interactive_export_with_scrolly_requires_upload(
+    client, seeded_story_with_scrolly_chapter
+):
+    story_id = seeded_story_with_scrolly_chapter
+    response = client.post(f"/api/stories/{story_id}/export/interactive")
+    assert response.status_code == 400
+    assert "snapshot" in response.json()["detail"]
+
+
+def test_interactive_export_with_scrolly_upload_succeeds(
+    client, seeded_story_with_scrolly_chapter
+):
+    story_id = seeded_story_with_scrolly_chapter
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+    response = client.post(
+        f"/api/stories/{story_id}/export/interactive",
+        files=[("scrolly_pngs", ("ch-scrolly.png", png, "image/png"))],
+    )
+    assert response.status_code == 200, response.text
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    assert "chapters/ch-scrolly/snapshot.png" in archive.namelist()
+    assert archive.read("chapters/ch-scrolly/snapshot.png") == png

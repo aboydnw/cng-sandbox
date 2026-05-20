@@ -57,7 +57,7 @@ def bar_option_from_histogram(bins: list[dict[str, Any]]) -> dict[str, Any]:
         if "label" in b:
             labels.append(b["label"])
         else:
-            labels.append(f"{b['bin_min']}–{b['bin_max']}")
+            labels.append(f"{b['bin_min']}–{b['bin_max']}")  # noqa: RUF001
         counts.append(b["count"])
     return {
         "tooltip": {"trigger": "axis"},

@@ -40,7 +40,7 @@ def test_bar_option_from_histogram_range_bins():
         {"bin_min": 1.0, "bin_max": 2.0, "count": 7},
     ]
     opt = chart_export.bar_option_from_histogram(bins)
-    assert opt["xAxis"]["data"] == ["0.0–1.0", "1.0–2.0"]
+    assert opt["xAxis"]["data"] == ["0.0–1.0", "1.0–2.0"]  # noqa: RUF001
     assert opt["series"][0]["data"] == [3, 7]
 
 

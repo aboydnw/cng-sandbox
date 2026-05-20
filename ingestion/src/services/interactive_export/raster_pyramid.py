@@ -45,16 +45,12 @@ def _tiles_covering_bbox(bbox: tuple[float, float, float, float], zoom: int):
     n = 2**zoom
 
     def lon_to_tile_x(lon: float) -> int:
-        return int(math.floor((lon + 180.0) / 360.0 * n))
+        return math.floor((lon + 180.0) / 360.0 * n)
 
     def lat_to_tile_y(lat: float) -> int:
         rad = math.radians(max(-85.05112878, min(85.05112878, lat)))
-        return int(
-            math.floor(
-                (1.0 - math.log(math.tan(rad) + 1.0 / math.cos(rad)) / math.pi)
-                / 2.0
-                * n
-            )
+        return math.floor(
+            (1.0 - math.log(math.tan(rad) + 1.0 / math.cos(rad)) / math.pi) / 2.0 * n
         )
 
     x0 = max(0, lon_to_tile_x(minx))
@@ -69,7 +65,11 @@ def _tiles_covering_bbox(bbox: tuple[float, float, float, float], zoom: int):
 def _encode_tile_png(image_data) -> bytes:
     """Convert a rio-tiler ImageData object's first band into an encoded PNG."""
     values = image_data.data[0].astype("float32")
-    mask = image_data.mask.astype(bool) if image_data.mask is not None else np.ones_like(values, dtype=bool)
+    mask = (
+        image_data.mask.astype(bool)
+        if image_data.mask is not None
+        else np.ones_like(values, dtype=bool)
+    )
     rgba = _encode_float_to_rgba(values, mask)
     pil = Image.fromarray(rgba, mode="RGBA")
     buf = io.BytesIO()

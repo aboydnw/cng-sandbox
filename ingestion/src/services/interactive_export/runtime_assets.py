@@ -15,8 +15,11 @@ RUNTIME_DIR = Path("/app/runtime_assets")
 """Where the Docker image stages the built bundle. Patchable in tests."""
 
 
+_REQUIRED_FILES = ("bundle.js", "bundle.css")
+
+
 def is_available() -> bool:
-    return (RUNTIME_DIR / "bundle.js").is_file()
+    return all((RUNTIME_DIR / name).is_file() for name in _REQUIRED_FILES)
 
 
 def copy_into(staging_dir: Path) -> None:
@@ -26,11 +29,9 @@ def copy_into(staging_dir: Path) -> None:
     use :func:`is_available` to decide whether to emit the real shell or the
     placeholder.
     """
-    runtime_target = staging_dir / "runtime"
-    runtime_target.mkdir(parents=True, exist_ok=True)
     if not is_available():
         return
-    for name in ("bundle.js", "bundle.css"):
-        src = RUNTIME_DIR / name
-        if src.is_file():
-            shutil.copy2(src, runtime_target / name)
+    runtime_target = staging_dir / "runtime"
+    runtime_target.mkdir(parents=True, exist_ok=True)
+    for name in _REQUIRED_FILES:
+        shutil.copy2(RUNTIME_DIR / name, runtime_target / name)

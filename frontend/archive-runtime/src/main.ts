@@ -45,16 +45,22 @@ async function bootstrap(): Promise<void> {
 bootstrap().catch((err) => {
   const article = document.querySelector("article#story");
   if (article) {
-    article.innerHTML = `<p style="color:#a00">Failed to load story: ${
+    article.replaceChildren();
+    const p = document.createElement("p");
+    p.style.color = "#a00";
+    p.textContent = `Failed to load story: ${
       err instanceof Error ? err.message : String(err)
-    }</p>`;
+    }`;
+    article.appendChild(p);
   }
   // eslint-disable-next-line no-console
   console.error(err);
 });
 
 if (typeof window !== "undefined") {
-  (window as unknown as { CngArchive: { renderChapter: typeof renderChapter } }).CngArchive = {
+  (
+    window as unknown as { CngArchive: { renderChapter: typeof renderChapter } }
+  ).CngArchive = {
     renderChapter,
   };
 }

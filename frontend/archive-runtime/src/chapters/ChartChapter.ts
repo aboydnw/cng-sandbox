@@ -1,5 +1,6 @@
 import * as echarts from "echarts";
 import type { ChartChapterEntry } from "../types";
+import { setNarrativeHtml } from "../lib/narrative";
 
 interface ChartOptionLike {
   xAxis?: { type?: string; data?: unknown[] };
@@ -18,10 +19,17 @@ function reinjectIntegerXAxisFormatter(opt: ChartOptionLike): void {
     }
   }
   const allIntegers =
-    xValues.length > 0 && xValues.every((v) => typeof v === "number" && Number.isInteger(v));
+    xValues.length > 0 &&
+    xValues.every((v) => typeof v === "number" && Number.isInteger(v));
   if (!allIntegers) return;
 
-  (xAxis as Record<string, unknown>).axisLabel = {
+  const xAxisRecord = xAxis as Record<string, unknown>;
+  const prevAxisLabel = (xAxisRecord.axisLabel ?? {}) as Record<
+    string,
+    unknown
+  >;
+  xAxisRecord.axisLabel = {
+    ...prevAxisLabel,
     formatter: (v: number) => String(Math.round(v)),
   };
 }
@@ -29,7 +37,7 @@ function reinjectIntegerXAxisFormatter(opt: ChartOptionLike): void {
 export async function renderChartChapter(
   chapter: ChartChapterEntry,
   host: HTMLElement,
-  basePath: string,
+  basePath: string
 ): Promise<void> {
   const section = document.createElement("section");
   section.className = "chapter chart";
@@ -46,7 +54,9 @@ export async function renderChartChapter(
 
   host.appendChild(section);
 
-  const resp = await fetch(`${basePath}/chapters/${chapter.id}/${chapter.chart_src}`);
+  const resp = await fetch(
+    `${basePath}/chapters/${chapter.id}/${chapter.chart_src}`
+  );
   if (!resp.ok) {
     container.textContent = `Failed to load chart (${resp.status})`;
     return;
@@ -65,7 +75,7 @@ export async function renderChartChapter(
   if (chapter.narrative) {
     const body = document.createElement("div");
     body.className = "chapter-body";
-    body.innerHTML = chapter.narrative;
+    setNarrativeHtml(body, chapter.narrative);
     section.appendChild(body);
   }
 }

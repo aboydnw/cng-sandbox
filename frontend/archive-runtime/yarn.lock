@@ -18,6 +18,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/runtime@npm:^7.12.0":
+  version: 7.29.2
+  resolution: "@babel/runtime@npm:7.29.2"
+  checksum: 10c0/30b80a0140d16467792e1bbeb06f655b0dab70407da38dfac7fedae9c859f9ae9d846ef14ad77bd3814c064295fe9b1bc551f1541ea14646ae9f22b71a8bc17a
+  languageName: node
+  linkType: hard
+
 "@carto/api-client@npm:^0.5.19":
   version: 0.5.29
   resolution: "@carto/api-client@npm:0.5.29"
@@ -79,7 +86,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@deck.gl/aggregation-layers@npm:9.3.2":
+"@deck.gl/aggregation-layers@npm:9.3.2, @deck.gl/aggregation-layers@npm:^9.1.0":
   version: 9.3.2
   resolution: "@deck.gl/aggregation-layers@npm:9.3.2"
   dependencies:
@@ -174,7 +181,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@deck.gl/extensions@npm:9.3.2":
+"@deck.gl/extensions@npm:9.3.2, @deck.gl/extensions@npm:^9.1.0":
   version: 9.3.2
   resolution: "@deck.gl/extensions@npm:9.3.2"
   dependencies:
@@ -282,7 +289,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@deck.gl/mesh-layers@npm:9.3.2":
+"@deck.gl/mesh-layers@npm:9.3.2, @deck.gl/mesh-layers@npm:^9.1.0":
   version: 9.3.2
   resolution: "@deck.gl/mesh-layers@npm:9.3.2"
   dependencies:
@@ -611,7 +618,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@loaders.gl/core@npm:^4.4.1, @loaders.gl/core@npm:~4.4.0":
+"@loaders.gl/core@npm:^4.3.0, @loaders.gl/core@npm:^4.4.1, @loaders.gl/core@npm:~4.4.0":
   version: 4.4.2
   resolution: "@loaders.gl/core@npm:4.4.2"
   dependencies:
@@ -872,7 +879,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@luma.gl/core@npm:^9.3.3":
+"@luma.gl/core@npm:^9.1.0, @luma.gl/core@npm:^9.3.3":
   version: 9.3.3
   resolution: "@luma.gl/core@npm:9.3.3"
   dependencies:
@@ -885,7 +892,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@luma.gl/engine@npm:^9.3.3":
+"@luma.gl/engine@npm:^9.1.0, @luma.gl/engine@npm:^9.3.3":
   version: 9.3.3
   resolution: "@luma.gl/engine@npm:9.3.3"
   dependencies:
@@ -916,7 +923,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@luma.gl/shadertools@npm:^9.3.3":
+"@luma.gl/shadertools@npm:^9.1.0, @luma.gl/shadertools@npm:^9.3.3":
   version: 9.3.3
   resolution: "@luma.gl/shadertools@npm:9.3.3"
   dependencies:
@@ -1022,6 +1029,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@math.gl/core@npm:3.6.3":
+  version: 3.6.3
+  resolution: "@math.gl/core@npm:3.6.3"
+  dependencies:
+    "@babel/runtime": "npm:^7.12.0"
+    "@math.gl/types": "npm:3.6.3"
+    gl-matrix: "npm:^3.4.0"
+  checksum: 10c0/f26b1f5b6f65061190ef087d0c418c020ba6b8391ebe4ac5ba830b900d4a531d84e2099b05583e44893b45dcfc7faae3e3966c6d1629801d013643cddc42120e
+  languageName: node
+  linkType: hard
+
 "@math.gl/core@npm:4.1.0, @math.gl/core@npm:^4.1.0":
   version: 4.1.0
   resolution: "@math.gl/core@npm:4.1.0"
@@ -1051,6 +1069,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@math.gl/polygon@npm:^3.6.2":
+  version: 3.6.3
+  resolution: "@math.gl/polygon@npm:3.6.3"
+  dependencies:
+    "@math.gl/core": "npm:3.6.3"
+  checksum: 10c0/a4d7a81ed6a2f8dafabaeefb1c9216064ab48b50a5774128b47fa197b58aa4afcf7f4f8279a2fe5a1e5e45b97299b604ae0b1c47ceb029702c3a5ecd6e70452f
+  languageName: node
+  linkType: hard
+
 "@math.gl/polygon@npm:^4.0.0, @math.gl/polygon@npm:^4.1.0":
   version: 4.1.0
   resolution: "@math.gl/polygon@npm:4.1.0"
@@ -1064,6 +1091,13 @@ __metadata:
   version: 4.1.0
   resolution: "@math.gl/sun@npm:4.1.0"
   checksum: 10c0/baf813f3134124a1701c5f64cc8725fdb1d8d4c9e47c7fbd0d2e960d823f776d35312f82c62a09dcb140ea31d42b3945aa781066495291df190566ae17b5857b
+  languageName: node
+  linkType: hard
+
+"@math.gl/types@npm:3.6.3":
+  version: 3.6.3
+  resolution: "@math.gl/types@npm:3.6.3"
+  checksum: 10c0/93beb933ba9a1671c03f728e829ba3653be5ad362d8648aeba7422043bfd323839f08374d85dd7cd03758e0487a84ce0c9f80379eeb19c02d92e0b669a14d294
   languageName: node
   linkType: hard
 
@@ -1544,6 +1578,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/trusted-types@npm:^2.0.7":
+  version: 2.0.7
+  resolution: "@types/trusted-types@npm:2.0.7"
+  checksum: 10c0/4c4855f10de7c6c135e0d32ce462419d8abbbc33713b31d294596c0cc34ae1fa6112a2f9da729c8f7a20707782b0d69da3b1f8df6645b0366d08825ca1522e0c
+  languageName: node
+  linkType: hard
+
 "@vitest/expect@npm:2.1.9":
   version: 2.1.9
   resolution: "@vitest/expect@npm:2.1.9"
@@ -1859,14 +1900,23 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "cng-archive-runtime@workspace:."
   dependencies:
+    "@deck.gl/aggregation-layers": "npm:^9.1.0"
     "@deck.gl/core": "npm:^9.1.0"
+    "@deck.gl/extensions": "npm:^9.1.0"
     "@deck.gl/geo-layers": "npm:^9.1.0"
     "@deck.gl/layers": "npm:^9.1.0"
     "@deck.gl/mapbox": "npm:^9.1.0"
+    "@deck.gl/mesh-layers": "npm:^9.1.0"
     "@geoarrow/deck.gl-layers": "npm:^0.3.0"
+    "@loaders.gl/core": "npm:^4.3.0"
+    "@luma.gl/core": "npm:^9.1.0"
+    "@luma.gl/engine": "npm:^9.1.0"
+    "@luma.gl/shadertools": "npm:^9.1.0"
+    "@math.gl/polygon": "npm:^3.6.2"
     "@types/node": "npm:^22.5.0"
     apache-arrow: "npm:^17.0.0"
     deck.gl: "npm:^9.1.0"
+    dompurify: "npm:^3.1.6"
     echarts: "npm:^5.5.0"
     jsdom: "npm:^25.0.0"
     maplibre-gl: "npm:^4.7.1"
@@ -2139,6 +2189,18 @@ __metadata:
   version: 1.0.0
   resolution: "delayed-stream@npm:1.0.0"
   checksum: 10c0/d758899da03392e6712f042bec80aa293bbe9e9ff1b2634baae6a360113e708b91326594c8a486d475c69d6259afb7efacdc3537bfcda1c6c648e390ce601b19
+  languageName: node
+  linkType: hard
+
+"dompurify@npm:^3.1.6":
+  version: 3.4.5
+  resolution: "dompurify@npm:3.4.5"
+  dependencies:
+    "@types/trusted-types": "npm:^2.0.7"
+  dependenciesMeta:
+    "@types/trusted-types":
+      optional: true
+  checksum: 10c0/4bcc953b0f33c61f07fd1b928342dd301dd94401a6058bff7cb47abd57892c797abe6d03118aa8056b36ea067bfe460324bea37fcaf57c0d906ed48e7ac32020
   languageName: node
   linkType: hard
 
@@ -2534,7 +2596,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"gl-matrix@npm:^3.0.0, gl-matrix@npm:^3.4.3":
+"gl-matrix@npm:^3.0.0, gl-matrix@npm:^3.4.0, gl-matrix@npm:^3.4.3":
   version: 3.4.4
   resolution: "gl-matrix@npm:3.4.4"
   checksum: 10c0/9aa022ffac0d158212ad0cd29939864ad919ac31cd5dc5a5d35e9d66bb62679ddf152ff7b2173ded20131045e40572b87f31b26a920be2a7583a1516b13b5b4b

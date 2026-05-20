@@ -1,9 +1,10 @@
 import type { ScrollyChapterEntry } from "../types";
+import { setNarrativeHtml } from "../lib/narrative";
 
 export function renderScrollyChapter(
   chapter: ScrollyChapterEntry,
   host: HTMLElement,
-  basePath: string,
+  basePath: string
 ): void {
   const section = document.createElement("section");
   section.className = "chapter scrolly";
@@ -21,7 +22,7 @@ export function renderScrollyChapter(
   if (chapter.narrative) {
     const body = document.createElement("div");
     body.className = "chapter-body";
-    body.innerHTML = chapter.narrative;
+    setNarrativeHtml(body, chapter.narrative);
     section.appendChild(body);
   }
   host.appendChild(section);

@@ -1,7 +1,10 @@
-import { marked } from "marked";
 import type { ProseChapterEntry } from "../types";
+import { setNarrativeHtml } from "../lib/narrative";
 
-export function renderProseChapter(chapter: ProseChapterEntry, host: HTMLElement): void {
+export function renderProseChapter(
+  chapter: ProseChapterEntry,
+  host: HTMLElement
+): void {
   const section = document.createElement("section");
   section.className = "chapter prose";
 
@@ -12,7 +15,7 @@ export function renderProseChapter(chapter: ProseChapterEntry, host: HTMLElement
   }
   const body = document.createElement("div");
   body.className = "chapter-body";
-  body.innerHTML = chapter.narrative ? (marked.parse(chapter.narrative) as string) : "";
+  setNarrativeHtml(body, chapter.narrative);
   section.appendChild(body);
 
   host.appendChild(section);

@@ -8,7 +8,7 @@ import { renderChartChapter } from "./chapters/ChartChapter";
 export async function renderChapter(
   chapter: ChapterEntry,
   host: HTMLElement,
-  basePath: string,
+  basePath: string
 ): Promise<void> {
   switch (chapter.type) {
     case "prose":
@@ -34,7 +34,9 @@ export async function renderChapter(
     default: {
       const _exhaustive: never = chapter;
       void _exhaustive;
-      throw new Error(`unknown chapter type: ${(chapter as { type: string }).type}`);
+      throw new Error(
+        `unknown chapter type: ${(chapter as { type: string }).type}`
+      );
     }
   }
 }

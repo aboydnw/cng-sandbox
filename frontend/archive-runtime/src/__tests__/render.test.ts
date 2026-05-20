@@ -26,7 +26,14 @@ describe("renderChapter dispatcher", () => {
   });
 
   it("throws on an unknown chapter type", async () => {
-    const ch = { id: "x", type: "bogus", title: "", narrative: "" } as unknown as ChapterEntry;
-    await expect(renderChapter(ch, root, ".")).rejects.toThrow(/unknown chapter type/);
+    const ch = {
+      id: "x",
+      type: "bogus",
+      title: "",
+      narrative: "",
+    } as unknown as ChapterEntry;
+    await expect(renderChapter(ch, root, ".")).rejects.toThrow(
+      /unknown chapter type/
+    );
   });
 });

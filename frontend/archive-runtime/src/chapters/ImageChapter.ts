@@ -1,6 +1,10 @@
 import type { ImageChapterEntry } from "../types";
+import { setNarrativeHtml } from "../lib/narrative";
 
-export function renderImageChapter(chapter: ImageChapterEntry, host: HTMLElement): void {
+export function renderImageChapter(
+  chapter: ImageChapterEntry,
+  host: HTMLElement
+): void {
   const section = document.createElement("section");
   section.className = "chapter image";
 
@@ -18,7 +22,7 @@ export function renderImageChapter(chapter: ImageChapterEntry, host: HTMLElement
   if (chapter.narrative) {
     const body = document.createElement("div");
     body.className = "chapter-body";
-    body.innerHTML = chapter.narrative;
+    setNarrativeHtml(body, chapter.narrative);
     section.appendChild(body);
   }
   host.appendChild(section);

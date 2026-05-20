@@ -35,7 +35,7 @@ describe("ChartChapter", () => {
           xAxis: { type: "value", name: "" },
           yAxis: { type: "value", name: "" },
         }),
-      }),
+      })
     );
   });
 
@@ -49,7 +49,9 @@ describe("ChartChapter", () => {
       chart_src: "chart.json",
     };
     await renderChartChapter(chapter, host, "/exported");
-    expect(global.fetch).toHaveBeenCalledWith("/exported/chapters/c1/chart.json");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/exported/chapters/c1/chart.json"
+    );
     expect(initSpy).toHaveBeenCalledTimes(1);
     expect(setOptionSpy).toHaveBeenCalledTimes(1);
   });
@@ -72,7 +74,7 @@ describe("ChartChapter", () => {
           xAxis: { type: "value", name: "" },
           yAxis: { type: "value", name: "" },
         }),
-      }),
+      })
     );
     const host = document.createElement("div");
     const chapter: ChartChapterEntry = {

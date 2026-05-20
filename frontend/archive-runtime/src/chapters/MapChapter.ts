@@ -11,9 +11,15 @@ import {
   GeoArrowScatterplotLayer,
 } from "@geoarrow/deck.gl-layers";
 
-import type { MapChapterEntry, MapLayer, RasterLayer, VectorLayer } from "../types";
+import type {
+  MapChapterEntry,
+  MapLayer,
+  RasterLayer,
+  VectorLayer,
+} from "../types";
 import { applyColormapToTile } from "../lib/rasterShader";
 import { renderLegend } from "../Legend";
+import { setNarrativeHtml } from "../lib/narrative";
 
 const BASEMAP_STYLES: Record<string, string> = {
   streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
@@ -34,7 +40,11 @@ function ensurePmtilesProtocol(): void {
   pmtilesProtocolRegistered = true;
 }
 
-function buildRasterLayer(layer: RasterLayer, basePath: string, chapterId: string) {
+function buildRasterLayer(
+  layer: RasterLayer,
+  basePath: string,
+  chapterId: string
+) {
   const url = `${basePath}/chapters/${chapterId}/${layer.src}`;
   const pmt = new PMTiles(url);
 
@@ -72,7 +82,7 @@ function buildRasterLayer(layer: RasterLayer, basePath: string, chapterId: strin
         256,
         256,
         layer.rescale,
-        layer.colormap,
+        layer.colormap
       );
       ctx.putImageData(new ImageData(out, 256, 256), 0, 0);
 
@@ -81,7 +91,12 @@ function buildRasterLayer(layer: RasterLayer, basePath: string, chapterId: strin
         const [[west, south], [east, north]] = tile.boundingBox;
         bounds = [west, south, east, north];
       } else if (tile.bbox) {
-        bounds = [tile.bbox.west, tile.bbox.south, tile.bbox.east, tile.bbox.north];
+        bounds = [
+          tile.bbox.west,
+          tile.bbox.south,
+          tile.bbox.east,
+          tile.bbox.north,
+        ];
       } else {
         return null;
       }
@@ -94,14 +109,22 @@ function buildRasterLayer(layer: RasterLayer, basePath: string, chapterId: strin
   });
 }
 
-async function buildVectorLayer(layer: VectorLayer, basePath: string, chapterId: string) {
+async function buildVectorLayer(
+  layer: VectorLayer,
+  basePath: string,
+  chapterId: string
+) {
   const url = `${basePath}/chapters/${chapterId}/${layer.src}`;
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`vector fetch failed: ${resp.status}`);
   const bytes = new Uint8Array(await resp.arrayBuffer());
   const table = tableFromIPC(bytes);
-  const fill = (layer.style.fill as [number, number, number, number?]) ?? [200, 200, 200, 180];
-  const stroke = (layer.style.stroke as [number, number, number, number?]) ?? [50, 50, 50, 255];
+  const fill = (layer.style.fill as [number, number, number, number?]) ?? [
+    200, 200, 200, 180,
+  ];
+  const stroke = (layer.style.stroke as [number, number, number, number?]) ?? [
+    50, 50, 50, 255,
+  ];
 
   if (layer.geom === "polygon") {
     return new GeoArrowSolidPolygonLayer({
@@ -131,7 +154,7 @@ async function buildVectorLayer(layer: VectorLayer, basePath: string, chapterId:
 export async function renderMapChapter(
   chapter: MapChapterEntry,
   host: HTMLElement,
-  basePath: string,
+  basePath: string
 ): Promise<void> {
   ensurePmtilesProtocol();
   const section = document.createElement("section");
@@ -163,7 +186,7 @@ export async function renderMapChapter(
     chapter.layers.map((l: MapLayer) => {
       if (l.kind === "raster") return buildRasterLayer(l, basePath, chapter.id);
       return buildVectorLayer(l, basePath, chapter.id);
-    }),
+    })
   );
 
   const overlay = new MapboxOverlay({ layers: layerObjects });
@@ -175,7 +198,7 @@ export async function renderMapChapter(
   if (chapter.narrative) {
     const body = document.createElement("div");
     body.className = "chapter-body";
-    body.innerHTML = chapter.narrative;
+    setNarrativeHtml(body, chapter.narrative);
     section.appendChild(body);
   }
 }

@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { decodeTerrainRgb, sampleColormap, COLORMAPS } from "../lib/rasterShader";
+import {
+  decodeTerrainRgb,
+  sampleColormap,
+  COLORMAPS,
+} from "../lib/rasterShader";
 import "../lib/colormaps";
 
 describe("terrain-RGB decode", () => {

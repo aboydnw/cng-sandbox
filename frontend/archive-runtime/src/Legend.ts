@@ -6,7 +6,9 @@ function colorToCss(color: LegendStop["color"]): string {
   return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
 }
 
-export function renderLegend(legend: Legend | null | undefined): HTMLElement | null {
+export function renderLegend(
+  legend: Legend | null | undefined
+): HTMLElement | null {
   if (!legend) return null;
   const wrap = document.createElement("div");
   wrap.className = "legend";
@@ -26,7 +28,8 @@ export function renderLegend(legend: Legend | null | undefined): HTMLElement | n
       sw.style.background = colorToCss(s.color);
       li.appendChild(sw);
       const label = document.createElement("span");
-      label.textContent = s.label ?? (s.value !== undefined ? String(s.value) : "");
+      label.textContent =
+        s.label ?? (s.value !== undefined ? String(s.value) : "");
       li.appendChild(label);
       ul.appendChild(li);
     }
@@ -44,7 +47,8 @@ export function renderLegend(legend: Legend | null | undefined): HTMLElement | n
     labels.style.display = "flex";
     labels.style.justifyContent = "space-between";
     labels.style.fontSize = "0.8rem";
-    const first = legend.stops[0]?.label ?? String(legend.stops[0]?.value ?? "");
+    const first =
+      legend.stops[0]?.label ?? String(legend.stops[0]?.value ?? "");
     const last =
       legend.stops[legend.stops.length - 1]?.label ??
       String(legend.stops[legend.stops.length - 1]?.value ?? "");

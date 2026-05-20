@@ -105,8 +105,13 @@ def resolve(
         raise ValueError("csv chart source has neither url nor asset_id")
 
     if kind == "dataset_timeseries":
-        dataset_id = source["dataset_id"]
-        lon, lat = source["point"]
+        dataset_id = source.get("dataset_id")
+        point = source.get("point")
+        if not dataset_id or not isinstance(point, (list, tuple)) or len(point) != 2:
+            raise ValueError(
+                "dataset_timeseries source requires dataset_id and [lon, lat] point"
+            )
+        lon, lat = point
         ds = dataset_charts.load_dataset(session, dataset_id, workspace_id)
         if not ds.get("is_temporal"):
             raise ValueError(f"dataset {dataset_id!r} is not temporal")
@@ -124,24 +129,36 @@ def resolve(
         }
 
     if kind == "dataset_histogram":
-        dataset_id = source["dataset_id"]
+        dataset_id = source.get("dataset_id")
+        if not dataset_id:
+            raise ValueError("dataset_histogram source requires dataset_id")
         bins_requested = int(source.get("bins") or 20)
         ds = dataset_charts.load_dataset(session, dataset_id, workspace_id)
         collection_id = ds.get("stac_collection_id") or dataset_id
-        is_categorical = bool(ds.get("is_categorical"))
+        # Interactive export currently emits continuous histogram bins only.
+        # Categorical stats use a different shape (label/count pairs) that the
+        # bar_option_from_histogram path here doesn't model.
         stats = dataset_charts.titiler_statistics(
-            collection_id, categorical=is_categorical, bins=bins_requested
+            collection_id, categorical=False, bins=bins_requested
         )
         hist = stats.get("histogram")
-        if not hist or len(hist) != 2:
+        if not isinstance(hist, list) or len(hist) != 2:
             raise ValueError(f"dataset {dataset_id!r} statistics missing histogram")
         counts, edges = hist[0], hist[1]
+        if (
+            not isinstance(counts, list)
+            or not isinstance(edges, list)
+            or len(edges) < len(counts) + 1
+        ):
+            raise ValueError(
+                f"dataset {dataset_id!r} statistics returned malformed histogram"
+            )
         return {
             "kind": "histogram_bins",
             "bins": [
                 {
                     "bin_min": edges[i],
-                    "bin_max": edges[i + 1] if (i + 1) < len(edges) else edges[-1],
+                    "bin_max": edges[i + 1],
                     "count": int(counts[i]),
                 }
                 for i in range(len(counts))

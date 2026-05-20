@@ -100,6 +100,10 @@ export async function downloadInteractiveExport(
   }
   if (onProgress) onProgress(total, total);
 
+  if (signal?.aborted) {
+    await resp.body?.cancel();
+    throwIfAborted(signal);
+  }
   const blob = await resp.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

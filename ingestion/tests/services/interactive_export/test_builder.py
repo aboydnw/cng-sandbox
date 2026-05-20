@@ -88,6 +88,7 @@ def test_map_chapter_with_raster_layer_emits_pmtiles():
             opacity=0.8,
             band=None,
             timestep=None,
+            colormap_reversed=True,
         ),
     )
     config, chapters_raw = _config_with_one_map_chapter(layer)
@@ -107,6 +108,7 @@ def test_map_chapter_with_raster_layer_emits_pmtiles():
     assert raster["opacity"] == 0.8
     assert raster["rescale_min"] == 0.0
     assert raster["rescale_max"] == 1.0
+    assert raster["colormap_reversed"] is True
 
 
 def test_map_chapter_with_vector_layer_emits_arrow():

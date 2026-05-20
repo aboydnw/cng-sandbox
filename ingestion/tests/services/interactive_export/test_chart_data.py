@@ -154,3 +154,117 @@ def test_csv_source_missing_url_and_asset_id_raises():
             session=MagicMock(),
             workspace_id="ws1",
         )
+
+
+def test_dataset_timeseries_missing_dataset_id_raises():
+    with pytest.raises(ValueError, match="dataset_id"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {"kind": "dataset_timeseries", "point": [1, 2]},
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
+def test_dataset_timeseries_malformed_point_raises():
+    with pytest.raises(ValueError, match="lon, lat"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {
+                        "kind": "dataset_timeseries",
+                        "dataset_id": "ds1",
+                        "point": [1],
+                    },
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
+def test_dataset_histogram_missing_dataset_id_raises():
+    with pytest.raises(ValueError, match="dataset_id"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {"kind": "dataset_histogram"},
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
+def test_dataset_histogram_malformed_stats_raises(monkeypatch):
+    monkeypatch.setattr(
+        "src.routes.dataset_charts.load_dataset",
+        lambda session, dataset_id, ws: {
+            "is_categorical": False,
+            "stac_collection_id": "coll-1",
+        },
+    )
+    monkeypatch.setattr(
+        "src.routes.dataset_charts.titiler_statistics",
+        lambda collection_id, *, categorical, bins: {
+            "histogram": [[1, 2, 3], [0.0, 1.0]],
+        },
+    )
+    with pytest.raises(ValueError, match="malformed histogram"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {
+                        "kind": "dataset_histogram",
+                        "dataset_id": "ds1",
+                    },
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
+def test_dataset_histogram_forces_continuous_stats(monkeypatch):
+    """Even when ds.is_categorical, the histogram chart asks for continuous bins."""
+    captured = {}
+
+    monkeypatch.setattr(
+        "src.routes.dataset_charts.load_dataset",
+        lambda session, dataset_id, ws: {
+            "is_categorical": True,
+            "stac_collection_id": "coll-1",
+        },
+    )
+
+    def fake_stats(collection_id, *, categorical, bins):
+        captured["categorical"] = categorical
+        return {"histogram": [[1], [0.0, 1.0]]}
+
+    monkeypatch.setattr("src.routes.dataset_charts.titiler_statistics", fake_stats)
+    chart_data.resolve(
+        raw_chapter={
+            "type": "chart",
+            "chart": {
+                "source": {
+                    "kind": "dataset_histogram",
+                    "dataset_id": "ds1",
+                },
+                "viz": {},
+            },
+        },
+        session=MagicMock(),
+        workspace_id="ws1",
+    )
+    assert captured["categorical"] is False

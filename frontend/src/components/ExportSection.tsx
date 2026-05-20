@@ -67,6 +67,13 @@ export function ExportSection({
       <Button
         size="sm"
         variant="outline"
+        borderColor="brand.border"
+        color="brand.brown"
+        _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
+        _focusVisible={{
+          outline: "2px solid",
+          outlineColor: "brand.border",
+        }}
         mt={3}
         onClick={() => onInteractive()}
       >

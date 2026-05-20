@@ -57,20 +57,38 @@ async def handle_interactive_export(
             raise HTTPException(status_code=404, detail="Story not found")
 
         config = story_export.build_config(row, session)
-        chapters_raw = json.loads(row.chapters_json) if row.chapters_json else []
+        try:
+            chapters_raw = json.loads(row.chapters_json) if row.chapters_json else []
+        except json.JSONDecodeError as exc:
+            raise HTTPException(
+                status_code=400, detail="Invalid chapters_json"
+            ) from exc
+        if not isinstance(chapters_raw, list):
+            raise HTTPException(status_code=400, detail="chapters_json must be a list")
 
         chart_data_by_chapter: dict[str, dict[str, Any]] = {}
-        for raw in chapters_raw:
+        for idx, raw in enumerate(chapters_raw):
+            if not isinstance(raw, dict):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"chapter at index {idx} must be an object",
+                )
             if raw.get("type") != "chart":
                 continue
+            chapter_id = raw.get("id")
+            if not isinstance(chapter_id, str) or not chapter_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"chart chapter at index {idx} missing id",
+                )
             try:
-                chart_data_by_chapter[raw["id"]] = chart_data_resolver.resolve(
+                chart_data_by_chapter[chapter_id] = chart_data_resolver.resolve(
                     raw, session, row.workspace_id
                 )
             except ValueError as exc:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"chart chapter {raw['id']}: {exc}",
+                    detail=f"chart chapter {chapter_id}: {exc}",
                 ) from exc
 
         png_bytes: dict[str, bytes] = {}

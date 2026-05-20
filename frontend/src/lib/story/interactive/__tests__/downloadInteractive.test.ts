@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { downloadInteractiveExport } from "../downloadInteractive";
 
 const { captureMock, fetchMock } = vi.hoisted(() => ({
@@ -14,6 +14,11 @@ beforeEach(() => {
   fetchMock.mockReset();
   captureMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 function jsonResponse(payload: unknown) {
@@ -63,10 +68,11 @@ describe("downloadInteractiveExport", () => {
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     );
 
-    const clickSpy = vi.fn();
-    HTMLAnchorElement.prototype.click = clickSpy;
-    global.URL.createObjectURL = vi.fn(() => "blob:fake");
-    global.URL.revokeObjectURL = vi.fn();
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+    vi.spyOn(global.URL, "createObjectURL").mockReturnValue("blob:fake");
+    vi.spyOn(global.URL, "revokeObjectURL").mockImplementation(() => {});
 
     await downloadInteractiveExport("story-1", "My Story");
 

@@ -111,7 +111,7 @@ def _build_map_chapter(
                     "rescale_min": rescale_min,
                     "rescale_max": rescale_max,
                     "opacity": render.opacity if render.opacity is not None else 1.0,
-                    "colormap_reversed": False,
+                    "colormap_reversed": bool(render.colormap_reversed),
                     "band": render.band,
                     "timestep": render.timestep,
                 }

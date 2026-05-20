@@ -2,7 +2,7 @@
 FROM node:22-alpine AS archive-runtime-builder
 RUN corepack enable
 WORKDIR /build/archive-runtime
-COPY frontend/archive-runtime/package.json frontend/archive-runtime/yarn.lock ./
+COPY frontend/archive-runtime/package.json frontend/archive-runtime/yarn.lock frontend/archive-runtime/.yarnrc.yml ./
 RUN yarn install --immutable
 COPY frontend/archive-runtime/src ./src
 COPY frontend/archive-runtime/index.html frontend/archive-runtime/tsconfig.json frontend/archive-runtime/vite.config.ts frontend/archive-runtime/vitest.config.ts ./

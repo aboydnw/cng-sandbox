@@ -14,6 +14,7 @@ import { X } from "@phosphor-icons/react";
 import { ExportSection } from "./ExportSection";
 import { ArchivalProgress } from "./ArchivalProgress";
 import { useArchivalDownload } from "../lib/story/useArchivalDownload";
+import { useInteractiveDownload } from "../lib/story/useInteractiveDownload";
 import type { Story } from "../lib/story";
 
 interface ExportDialogProps {
@@ -25,6 +26,7 @@ interface ExportDialogProps {
 export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
   const { progress, handleArchival, handleCancelArchival } =
     useArchivalDownload(story.id, story.title);
+  const interactive = useInteractiveDownload(story.id, story.title);
 
   return (
     <>
@@ -33,6 +35,12 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
         current={progress.current}
         total={progress.total}
         onClose={handleCancelArchival}
+      />
+      <ArchivalProgress
+        open={interactive.progress.open}
+        current={interactive.progress.current}
+        total={interactive.progress.total}
+        onClose={interactive.handleCancelInteractive}
       />
       <DialogRoot
         open={open}
@@ -70,6 +78,9 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
                   story={story}
                   onArchival={() => {
                     void handleArchival();
+                  }}
+                  onInteractive={() => {
+                    void interactive.handleInteractive();
                   }}
                 />
               </DialogBody>

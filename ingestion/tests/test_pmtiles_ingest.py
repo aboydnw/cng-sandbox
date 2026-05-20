@@ -200,6 +200,41 @@ def test_parquet_to_pmtiles_reprojects_non_wgs84_input(monkeypatch, tmp_path):
         assert -90 <= lat <= 90
 
 
+def test_parquet_to_pmtiles_coincident_features_use_explicit_maxzoom(
+    monkeypatch, tmp_path
+):
+    """Multiple features at the same location still trigger explicit --maximum-zoom.
+
+    Tippecanoe's `-zg` failure mode is "at least two distinct feature locations",
+    not a raw feature count — two coincident polygons would otherwise crash.
+    """
+    same_polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    gdf = gpd.GeoDataFrame(
+        {"name": ["a", "b"]},
+        geometry=[same_polygon, same_polygon],
+        crs="EPSG:4326",
+    )
+    parquet_path = str(tmp_path / "coincident.parquet")
+    gdf.to_parquet(parquet_path)
+
+    captured_cmd: list = []
+
+    def fake_run(cmd, **kwargs):
+        captured_cmd.extend(cmd)
+        output_flag = next(f for f in cmd if f.startswith("--output="))
+        _write_fake_pmtiles(output_flag.split("=", 1)[1])
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    parquet_to_pmtiles_file(parquet_path, str(tmp_path / "out.pmtiles"))
+
+    assert "--maximum-zoom=g" not in captured_cmd
+    assert any(
+        arg.startswith("--maximum-zoom=") and arg != "--maximum-zoom=g"
+        for arg in captured_cmd
+    )
+
+
 def test_parquet_to_pmtiles_single_feature_uses_explicit_maxzoom(monkeypatch, tmp_path):
     """Single feature triggers explicit --maximum-zoom (not =g).
 

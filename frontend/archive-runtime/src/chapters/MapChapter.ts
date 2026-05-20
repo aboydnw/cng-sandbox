@@ -40,6 +40,17 @@ function ensurePmtilesProtocol(): void {
   pmtilesProtocolRegistered = true;
 }
 
+function rescaleFromLayer(layer: RasterLayer): [number, number] {
+  if (
+    typeof layer.rescale_min === "number" &&
+    typeof layer.rescale_max === "number"
+  ) {
+    return [layer.rescale_min, layer.rescale_max];
+  }
+  if (layer.rescale) return layer.rescale;
+  return [0, 1];
+}
+
 function buildRasterLayer(
   layer: RasterLayer,
   basePath: string,
@@ -47,6 +58,9 @@ function buildRasterLayer(
 ) {
   const url = `${basePath}/chapters/${chapterId}/${layer.src}`;
   const pmt = new PMTiles(url);
+  const rescale = rescaleFromLayer(layer);
+  const reversed = !!layer.colormap_reversed;
+  const opacity = typeof layer.opacity === "number" ? layer.opacity : 1.0;
 
   return new TileLayer({
     id: `raster-${layer.id}`,
@@ -81,8 +95,9 @@ function buildRasterLayer(
         new Uint8ClampedArray(imageData.data),
         256,
         256,
-        layer.rescale,
-        layer.colormap
+        rescale,
+        layer.colormap,
+        reversed
       );
       ctx.putImageData(new ImageData(out, 256, 256), 0, 0);
 
@@ -104,6 +119,7 @@ function buildRasterLayer(
         id: `${props.id}-bitmap`,
         image: canvas,
         bounds,
+        opacity,
       });
     },
   });
@@ -126,12 +142,14 @@ async function buildVectorLayer(
     50, 50, 50, 255,
   ];
 
+  const opacity = typeof layer.opacity === "number" ? layer.opacity : 1.0;
   if (layer.geom === "polygon") {
     return new GeoArrowSolidPolygonLayer({
       id: `vector-${layer.id}`,
       data: table,
       getFillColor: fill as never,
       getLineColor: stroke as never,
+      opacity,
     });
   }
   if (layer.geom === "line") {
@@ -140,6 +158,7 @@ async function buildVectorLayer(
       data: table,
       getColor: stroke as never,
       widthMinPixels: 1,
+      opacity,
     });
   }
   return new GeoArrowScatterplotLayer({
@@ -148,6 +167,7 @@ async function buildVectorLayer(
     getFillColor: fill as never,
     radiusUnits: "pixels",
     getRadius: 4,
+    opacity,
   });
 }
 

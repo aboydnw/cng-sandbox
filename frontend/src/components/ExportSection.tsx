@@ -7,9 +7,14 @@ import type { Story } from "../lib/story";
 interface ExportSectionProps {
   story: Story;
   onArchival: () => void;
+  onInteractive: () => void;
 }
 
-export function ExportSection({ story, onArchival }: ExportSectionProps) {
+export function ExportSection({
+  story,
+  onArchival,
+  onInteractive,
+}: ExportSectionProps) {
   return (
     <Box mt={6}>
       <Text
@@ -58,6 +63,25 @@ export function ExportSection({ story, onArchival }: ExportSectionProps) {
       <Text fontSize="xs" color="fg.muted" mt={1}>
         Single self-contained file. Maps and charts inlined as images. Suitable
         for Zenodo and long-term archives.
+      </Text>
+      <Button
+        size="sm"
+        variant="outline"
+        borderColor="brand.border"
+        color="brand.brown"
+        _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
+        _focusVisible={{
+          outline: "2px solid",
+          outlineColor: "brand.border",
+        }}
+        mt={3}
+        onClick={() => onInteractive()}
+      >
+        Download interactive bundle (.zip)
+      </Button>
+      <Text fontSize="xs" color="fg.muted" mt={1}>
+        Self-contained interactive viewer. Maps pan/zoom, charts respond. Larger
+        than archival HTML; needs no CNG infrastructure to view.
       </Text>
       <Box mt={4}>
         <EmbedSnippet

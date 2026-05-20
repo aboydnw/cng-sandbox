@@ -21,6 +21,7 @@ import { CheckCircle, Copy, Warning } from "@phosphor-icons/react";
 import type { Story } from "../lib/story";
 import { isMapBoundChapter } from "../lib/story";
 import { useArchivalDownload } from "../lib/story/useArchivalDownload";
+import { useInteractiveDownload } from "../lib/story/useInteractiveDownload";
 import { ArchivalProgress } from "./ArchivalProgress";
 import { ExportSection } from "./ExportSection";
 
@@ -47,6 +48,7 @@ export function PublishDialog({
     handleArchival,
     handleCancelArchival,
   } = useArchivalDownload(story.id, story.title);
+  const interactive = useInteractiveDownload(story.id, story.title);
 
   const incompleteChapters = story.chapters.filter(
     (ch) => !ch.narrative.trim()
@@ -81,6 +83,12 @@ export function PublishDialog({
         current={archivalProgress.current}
         total={archivalProgress.total}
         onClose={handleCancelArchival}
+      />
+      <ArchivalProgress
+        open={interactive.progress.open}
+        current={interactive.progress.current}
+        total={interactive.progress.total}
+        onClose={interactive.handleCancelInteractive}
       />
       <DialogRoot
         open={open}
@@ -234,6 +242,9 @@ export function PublishDialog({
                       story={story}
                       onArchival={() => {
                         void handleArchival();
+                      }}
+                      onInteractive={() => {
+                        void interactive.handleInteractive();
                       }}
                     />
                   </Flex>

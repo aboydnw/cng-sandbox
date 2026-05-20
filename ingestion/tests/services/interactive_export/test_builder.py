@@ -3,76 +3,180 @@ import json
 import zipfile
 from pathlib import Path
 
+import httpx
 import pytest
 
+from src.models.cng_rc import (
+    CngRcChapter,
+    CngRcConfig,
+    CngRcLayer,
+    CngRcMapView,
+    CngRcMetadata,
+    CngRcOrigin,
+    CngRcRender,
+)
 from src.services.interactive_export import builder
 
 FIXTURE_COG = Path(__file__).parent / "fixtures" / "small_cog.tif"
 FIXTURE_GEOJSON = Path(__file__).parent / "fixtures" / "small_polygons.geojson"
 
 
-def _story():
-    return {"id": "s1", "title": "Demo", "description": ""}
+def _empty_config() -> CngRcConfig:
+    return CngRcConfig(
+        version="1",
+        origin=CngRcOrigin(
+            story_id="s1", workspace_id="ws1", exported_at="2026-05-20T00:00:00Z"
+        ),
+        metadata=CngRcMetadata(
+            title="Demo",
+            description="",
+            author=None,
+            created="2026-05-20T00:00:00Z",
+            updated="2026-05-20T00:00:00Z",
+        ),
+        chapters=[],
+        layers={},
+        assets={},
+    )
 
 
-def test_map_chapter_emits_raster_and_vector_assets():
-    chapters = [
+def _config_with_one_map_chapter(layer: CngRcLayer) -> tuple[CngRcConfig, list[dict]]:
+    layer_id = "layer-1"
+    chapter_id = "ch1"
+    config = _empty_config()
+    config.layers[layer_id] = layer
+    config.chapters.append(
+        CngRcChapter(
+            id=chapter_id,
+            type="map",
+            title="Map",
+            body="",
+            map=CngRcMapView(center=(0.0, 0.0), zoom=1, bearing=0, pitch=0),
+            layers=[layer_id],
+            extra=None,
+        )
+    )
+    chapters_raw = [
         {
-            "id": "ch1",
+            "id": chapter_id,
             "type": "map",
             "title": "Map",
             "narrative": "",
             "map_state": {
-                "center": [0, 0],
+                "center": [0.0, 0.0],
                 "zoom": 1,
                 "bearing": 0,
                 "pitch": 0,
-                "basemap": "voyager",
+                "basemap": "streets",
             },
-            "layer_config": {
-                "raster": [
-                    {
-                        "id": "r1",
-                        "source_url": str(FIXTURE_COG),
-                        "bbox": [-5, -5, 5, 5],
-                        "colormap": "viridis",
-                        "rescale": [0, 1],
-                    }
-                ],
-                "vector": [
-                    {
-                        "id": "v1",
-                        "source_url": str(FIXTURE_GEOJSON),
-                        "bbox": [-5, -5, 5, 5],
-                        "style": {"fill": [255, 0, 0, 180]},
-                        "geom": "polygon",
-                        "keep_columns": ["name"],
-                    }
-                ],
-            },
+            "layer_config": {"dataset_id": "ds1"},
         }
     ]
+    return config, chapters_raw
+
+
+def test_map_chapter_with_raster_layer_emits_pmtiles():
+    layer = CngRcLayer(
+        type="raster-cog",
+        source_url=str(FIXTURE_COG),
+        cng_url=str(FIXTURE_COG),
+        label="Raster",
+        attribution=None,
+        render=CngRcRender(
+            colormap="viridis",
+            rescale=(0.0, 1.0),
+            opacity=0.8,
+            band=None,
+            timestep=None,
+            colormap_reversed=True,
+        ),
+    )
+    config, chapters_raw = _config_with_one_map_chapter(layer)
     zip_bytes = builder.build_interactive_export(
-        story=_story(),
-        chapters=chapters,
-        datasets={},
-        connections={},
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
         scrolly_pngs={},
     )
     archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
     names = archive.namelist()
     assert any(n.startswith("chapters/ch1/") and n.endswith(".pmtiles") for n in names)
+    manifest = json.loads(archive.read("manifest.json"))
+    raster = manifest["chapters"][0]["layers"][0]
+    assert raster["kind"] == "raster"
+    assert raster["colormap"] == "viridis"
+    assert raster["opacity"] == 0.8
+    assert raster["rescale_min"] == 0.0
+    assert raster["rescale_max"] == 1.0
+    assert raster["colormap_reversed"] is True
+
+
+def test_map_chapter_with_vector_layer_emits_arrow():
+    layer = CngRcLayer(
+        type="vector-geoparquet",
+        source_url=str(FIXTURE_GEOJSON),
+        cng_url=str(FIXTURE_GEOJSON),
+        label="Vec",
+        attribution=None,
+        render=CngRcRender(
+            colormap=None,
+            rescale=None,
+            opacity=1.0,
+            band=None,
+            timestep=None,
+        ),
+    )
+    config, chapters_raw = _config_with_one_map_chapter(layer)
+    zip_bytes = builder.build_interactive_export(
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    names = archive.namelist()
     assert any(n.startswith("chapters/ch1/") and n.endswith(".arrow") for n in names)
 
 
-def test_chart_chapter_emits_chart_json(monkeypatch):
-    def fake_fetch(url: str) -> list[dict]:
-        return [{"year": 2020, "v": 1.0}, {"year": 2021, "v": 2.0}]
-
-    monkeypatch.setattr(
-        "src.services.interactive_export.builder._fetch_csv_rows", fake_fetch
+def test_unsupported_layer_type_raises():
+    layer = CngRcLayer(
+        type="xyz",
+        source_url="https://example.com/tiles/{z}/{x}/{y}.png",
+        cng_url=None,
+        label="XYZ",
+        attribution=None,
+        render=CngRcRender(
+            colormap=None,
+            rescale=None,
+            opacity=1.0,
+            band=None,
+            timestep=None,
+        ),
     )
-    chapters = [
+    config, chapters_raw = _config_with_one_map_chapter(layer)
+    with pytest.raises(ValueError, match="xyz"):
+        builder.build_interactive_export(
+            config=config,
+            chapters_raw=chapters_raw,
+            chart_data_by_chapter={},
+            scrolly_pngs={},
+        )
+
+
+def test_chart_chapter_emits_chart_json_from_csv_rows_payload():
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="ch1",
+            type="chart",
+            title="Chart",
+            body="",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [
         {
             "id": "ch1",
             "type": "chart",
@@ -92,11 +196,14 @@ def test_chart_chapter_emits_chart_json(monkeypatch):
             },
         }
     ]
+    payload = {
+        "kind": "csv_rows",
+        "rows": [{"year": 2020, "v": 1.0}, {"year": 2021, "v": 2.0}],
+    }
     zip_bytes = builder.build_interactive_export(
-        story=_story(),
-        chapters=chapters,
-        datasets={},
-        connections={},
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={"ch1": payload},
         scrolly_pngs={},
     )
     archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
@@ -106,16 +213,130 @@ def test_chart_chapter_emits_chart_json(monkeypatch):
     assert chart["series"][0]["type"] == "line"
 
 
+def test_chart_chapter_with_dataset_timeseries_payload():
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="c1",
+            type="chart",
+            title="T",
+            body="",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [
+        {
+            "id": "c1",
+            "type": "chart",
+            "title": "T",
+            "narrative": "",
+            "chart": {
+                "source": {
+                    "kind": "dataset_timeseries",
+                    "dataset_id": "ds1",
+                    "point": [10, 20],
+                },
+                "viz": {
+                    "kind": "line",
+                    "x_field": "datetime",
+                    "y_fields": ["value"],
+                    "series_field": None,
+                    "x_label": "",
+                    "y_label": "",
+                    "y_scale": "linear",
+                },
+            },
+        }
+    ]
+    payload = {
+        "kind": "timeseries_points",
+        "points": [
+            {"datetime": "2020-01-01", "value": 1.0},
+            {"datetime": "2021-01-01", "value": 2.0},
+        ],
+    }
+    zip_bytes = builder.build_interactive_export(
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={"c1": payload},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    chart = json.loads(archive.read("chapters/c1/chart.json"))
+    assert chart["series"][0]["type"] == "line"
+    assert chart["xAxis"]["type"] == "time"
+
+
+def test_chart_chapter_with_histogram_payload():
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="h1",
+            type="chart",
+            title="H",
+            body="",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [
+        {
+            "id": "h1",
+            "type": "chart",
+            "title": "H",
+            "narrative": "",
+            "chart": {
+                "source": {
+                    "kind": "dataset_histogram",
+                    "dataset_id": "ds1",
+                    "bins": 3,
+                },
+                "viz": {},
+            },
+        }
+    ]
+    payload = {
+        "kind": "histogram_bins",
+        "bins": [
+            {"bin_min": 0.0, "bin_max": 1.0, "count": 3},
+            {"bin_min": 1.0, "bin_max": 2.0, "count": 7},
+        ],
+    }
+    zip_bytes = builder.build_interactive_export(
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={"h1": payload},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    chart = json.loads(archive.read("chapters/h1/chart.json"))
+    assert chart["series"][0]["type"] == "bar"
+
+
 def test_scrolly_chapter_embeds_uploaded_png():
-    chapters = [
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="ch1",
+            type="scrollytelling",
+            title="Scrolly",
+            body="",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [
         {"id": "ch1", "type": "scrollytelling", "title": "Scrolly", "narrative": ""}
     ]
     fake_png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
     zip_bytes = builder.build_interactive_export(
-        story=_story(),
-        chapters=chapters,
-        datasets={},
-        connections={},
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
         scrolly_pngs={"ch1": fake_png},
     )
     archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
@@ -124,89 +345,49 @@ def test_scrolly_chapter_embeds_uploaded_png():
 
 
 def test_scrolly_chapter_without_upload_fails():
-    chapters = [
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="ch1",
+            type="scrollytelling",
+            title="Scrolly",
+            body="",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [
         {"id": "ch1", "type": "scrollytelling", "title": "Scrolly", "narrative": ""}
     ]
     with pytest.raises(ValueError, match="snapshot"):
         builder.build_interactive_export(
-            story=_story(),
-            chapters=chapters,
-            datasets={},
-            connections={},
-            scrolly_pngs={},
-        )
-
-
-def test_chart_chapter_csv_url_with_disallowed_scheme_rejected():
-    chapters = [
-        {
-            "id": "ch1",
-            "type": "chart",
-            "title": "Chart",
-            "narrative": "",
-            "chart": {
-                "source": {"kind": "csv", "url": "file:///etc/passwd"},
-                "viz": {
-                    "kind": "line",
-                    "x_field": "year",
-                    "y_fields": ["v"],
-                    "series_field": None,
-                    "x_label": "",
-                    "y_label": "",
-                    "y_scale": "linear",
-                },
-            },
-        }
-    ]
-    with pytest.raises(ValueError, match="disallowed URL"):
-        builder.build_interactive_export(
-            story=_story(),
-            chapters=chapters,
-            datasets={},
-            connections={},
-            scrolly_pngs={},
-        )
-
-
-def test_chart_chapter_csv_url_with_internal_host_rejected():
-    chapters = [
-        {
-            "id": "ch1",
-            "type": "chart",
-            "title": "Chart",
-            "narrative": "",
-            "chart": {
-                "source": {"kind": "csv", "url": "http://127.0.0.1/x.csv"},
-                "viz": {
-                    "kind": "line",
-                    "x_field": "year",
-                    "y_fields": ["v"],
-                    "series_field": None,
-                    "x_label": "",
-                    "y_label": "",
-                    "y_scale": "linear",
-                },
-            },
-        }
-    ]
-    with pytest.raises(ValueError, match="disallowed URL"):
-        builder.build_interactive_export(
-            story=_story(),
-            chapters=chapters,
-            datasets={},
-            connections={},
+            config=config,
+            chapters_raw=chapters_raw,
+            chart_data_by_chapter={},
             scrolly_pngs={},
         )
 
 
 def test_chapter_id_path_traversal_rejected():
-    chapters = [{"id": "../escape", "type": "prose", "title": "x", "narrative": ""}]
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="../escape",
+            type="prose",
+            title="x",
+            body="",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [{"id": "../escape", "type": "prose", "title": "x", "narrative": ""}]
     with pytest.raises(ValueError, match="invalid chapter id"):
         builder.build_interactive_export(
-            story=_story(),
-            chapters=chapters,
-            datasets={},
-            connections={},
+            config=config,
+            chapters_raw=chapters_raw,
+            chart_data_by_chapter={},
             scrolly_pngs={},
         )
 
@@ -217,12 +398,23 @@ def test_zip_contains_runtime_bundle_when_available(monkeypatch):
     fake_runtime = Path(__file__).parent / "fixtures" / "fake_runtime"
     monkeypatch.setattr(runtime_assets, "RUNTIME_DIR", fake_runtime)
 
-    chapters = [{"id": "p1", "type": "prose", "title": "Hi", "narrative": "yo"}]
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="p1",
+            type="prose",
+            title="Hi",
+            body="yo",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [{"id": "p1", "type": "prose", "title": "Hi", "narrative": "yo"}]
     zip_bytes = builder.build_interactive_export(
-        story=_story(),
-        chapters=chapters,
-        datasets={},
-        connections={},
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
         scrolly_pngs={},
     )
     archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
@@ -237,11 +429,23 @@ def test_zip_uses_placeholder_html_when_runtime_missing(monkeypatch, tmp_path):
 
     monkeypatch.setattr(runtime_assets, "RUNTIME_DIR", tmp_path / "missing")
 
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="p1",
+            type="prose",
+            title="Hi",
+            body="yo",
+            map=None,
+            layers=[],
+            extra=None,
+        )
+    )
+    chapters_raw = [{"id": "p1", "type": "prose", "title": "Hi", "narrative": "yo"}]
     zip_bytes = builder.build_interactive_export(
-        story=_story(),
-        chapters=[{"id": "p1", "type": "prose", "title": "Hi", "narrative": "yo"}],
-        datasets={},
-        connections={},
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
         scrolly_pngs={},
     )
     archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
@@ -250,34 +454,101 @@ def test_zip_uses_placeholder_html_when_runtime_missing(monkeypatch, tmp_path):
     assert "placeholder" in html.lower()
 
 
-def test_zarr_connection_in_map_chapter_rejected():
-    chapters = [
+def test_image_chapter_inlines_external_asset(monkeypatch):
+    fake_png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
+
+    def fake_get(url, *args, **kwargs):
+        return httpx.Response(
+            200,
+            content=fake_png,
+            request=httpx.Request("GET", url),
+            headers={"content-type": "image/png"},
+        )
+
+    monkeypatch.setattr(httpx, "get", fake_get)
+    monkeypatch.setattr(
+        "src.services.interactive_export.asset_inline.validate_url_safe",
+        lambda url: None,
+    )
+
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="img1",
+            type="image",
+            title="Pic",
+            body="",
+            map=None,
+            layers=[],
+            extra={"image": {"url": "https://example.com/x.png", "alt_text": "X"}},
+        )
+    )
+    chapters_raw = [
         {
-            "id": "ch1",
-            "type": "map",
-            "title": "Z",
+            "id": "img1",
+            "type": "image",
+            "title": "Pic",
             "narrative": "",
-            "map_state": {
-                "center": [0, 0],
-                "zoom": 1,
-                "bearing": 0,
-                "pitch": 0,
-                "basemap": "voyager",
-            },
-            "layer_config": {
-                "raster": [
-                    {"id": "r1", "connection_id": "conn-zarr", "bbox": [-5, -5, 5, 5]}
-                ],
-                "vector": [],
-            },
+            "image": {"url": "https://example.com/x.png", "alt_text": "X"},
         }
     ]
-    connections = {"conn-zarr": {"id": "conn-zarr", "connection_type": "zarr"}}
-    with pytest.raises(ValueError, match="zarr"):
-        builder.build_interactive_export(
-            story=_story(),
-            chapters=chapters,
-            datasets={},
-            connections=connections,
-            scrolly_pngs={},
+    zip_bytes = builder.build_interactive_export(
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    assert "assets/img1-image.png" in archive.namelist()
+    manifest = json.loads(archive.read("manifest.json"))
+    assert manifest["chapters"][0]["image_src"] == "assets/img1-image.png"
+
+
+def test_video_chapter_inlines_youtube_thumbnail(monkeypatch):
+    fake_jpg = b"\xff\xd8\xff" + b"\x00" * 16
+
+    def fake_get(url, *args, **kwargs):
+        return httpx.Response(
+            200,
+            content=fake_jpg,
+            request=httpx.Request("GET", url),
+            headers={"content-type": "image/jpeg"},
         )
+
+    monkeypatch.setattr(httpx, "get", fake_get)
+    monkeypatch.setattr(
+        "src.services.interactive_export.asset_inline.validate_url_safe",
+        lambda url: None,
+    )
+
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="vid1",
+            type="video",
+            title="V",
+            body="",
+            map=None,
+            layers=[],
+            extra={"video": {"provider": "youtube", "video_id": "abc"}},
+        )
+    )
+    chapters_raw = [
+        {
+            "id": "vid1",
+            "type": "video",
+            "title": "V",
+            "narrative": "",
+            "video": {"provider": "youtube", "video_id": "abc"},
+        }
+    ]
+    zip_bytes = builder.build_interactive_export(
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    assert "assets/vid1-thumb.jpg" in archive.namelist()
+    manifest = json.loads(archive.read("manifest.json"))
+    assert manifest["chapters"][0]["thumbnail_src"] == "assets/vid1-thumb.jpg"

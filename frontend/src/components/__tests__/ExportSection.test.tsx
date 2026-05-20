@@ -31,7 +31,12 @@ function renderSection(
 ) {
   return render(
     <ChakraProvider value={system}>
-      <ExportSection story={baseStory} onArchival={vi.fn()} {...props} />
+      <ExportSection
+        story={baseStory}
+        onArchival={vi.fn()}
+        onInteractive={vi.fn()}
+        {...props}
+      />
     </ChakraProvider>
   );
 }
@@ -41,7 +46,7 @@ describe("ExportSection", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the four export entry points", () => {
+  it("renders the five export entry points", () => {
     renderSection();
     expect(
       screen.getByRole("button", { name: /download story config/i })
@@ -51,6 +56,9 @@ describe("ExportSection", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /download archival html/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /download interactive bundle/i })
     ).toBeInTheDocument();
     expect(screen.getByTestId("embed-snippet")).toBeInTheDocument();
   });
@@ -82,5 +90,14 @@ describe("ExportSection", () => {
       screen.getByRole("button", { name: /download archival html/i })
     );
     expect(onArchival).toHaveBeenCalled();
+  });
+
+  it("clicking 'Download interactive bundle' calls onInteractive", () => {
+    const onInteractive = vi.fn();
+    renderSection({ onInteractive });
+    fireEvent.click(
+      screen.getByRole("button", { name: /download interactive bundle/i })
+    );
+    expect(onInteractive).toHaveBeenCalled();
   });
 });

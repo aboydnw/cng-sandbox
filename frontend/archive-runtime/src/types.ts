@@ -16,7 +16,14 @@ export interface RasterLayer {
   kind: "raster";
   src: string;
   colormap: string;
-  rescale: [number, number];
+  rescale_min?: number | null;
+  rescale_max?: number | null;
+  opacity?: number;
+  colormap_reversed?: boolean;
+  band?: number | null;
+  timestep?: string | number | null;
+  /** Legacy fallback when only Plan 1 manifest fields are present. */
+  rescale?: [number, number];
 }
 
 export interface VectorLayer {
@@ -25,6 +32,7 @@ export interface VectorLayer {
   src: string;
   geom: "point" | "line" | "polygon";
   style: Record<string, unknown>;
+  opacity?: number;
 }
 
 export type MapLayer = RasterLayer | VectorLayer;

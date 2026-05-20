@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.6.0](https://github.com/aboydnw/cng-sandbox/compare/v2.5.1...v2.6.0) (2026-05-20)
+
+
+### Features
+
+* **stories:** archive runtime + ingestion integration (interactive export plan 2) ([#485](https://github.com/aboydnw/cng-sandbox/issues/485)) ([36cdc64](https://github.com/aboydnw/cng-sandbox/commit/36cdc64442c0edd8c55695d614b83f6f3e7bc078))
+* **stories:** interactive export UI + backend bridge to real story schema ([#486](https://github.com/aboydnw/cng-sandbox/issues/486)) ([e7ac1ad](https://github.com/aboydnw/cng-sandbox/commit/e7ac1ad21ad3f885c49008abecad4792704a0370))
+* **stories:** scaffold server-side interactive export pipeline ([#481](https://github.com/aboydnw/cng-sandbox/issues/481)) ([d4214a3](https://github.com/aboydnw/cng-sandbox/commit/d4214a3f5d4b2f91e3629dd7f70255f1eaca05a8))
+
+
+### Bug Fixes
+
+* **ingestion:** reproject non-WGS84 vectors and handle single-feature inputs ([#483](https://github.com/aboydnw/cng-sandbox/issues/483)) ([73dae1a](https://github.com/aboydnw/cng-sandbox/commit/73dae1a37e8e0002e3a0bf5c053024f38115f232))
+* **stories:** close spec gaps + polish interactive-export UX ([#488](https://github.com/aboydnw/cng-sandbox/issues/488)) ([748983b](https://github.com/aboydnw/cng-sandbox/commit/748983b3dfd892e1aa1213419c6ea2b2d6201403))
+
 ## [2.5.1](https://github.com/aboydnw/cng-sandbox/compare/v2.5.0...v2.5.1) (2026-05-18)
 
 

@@ -73,6 +73,105 @@ def client(app):
 
 
 @pytest.fixture
+def seeded_story_with_prose_chapter(client):
+    resp = client.post(
+        "/api/stories",
+        json={
+            "title": "Prose Story",
+            "description": "Prose desc",
+            "chapters": [
+                {
+                    "id": "ch-prose",
+                    "order": 0,
+                    "type": "prose",
+                    "title": "Hello",
+                    "narrative": "hello",
+                }
+            ],
+            "published": True,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+@pytest.fixture
+def seeded_story_with_chart_chapter(client):
+    resp = client.post(
+        "/api/stories",
+        json={
+            "title": "Chart Story",
+            "description": "",
+            "chapters": [
+                {
+                    "id": "ch-chart",
+                    "order": 0,
+                    "type": "chart",
+                    "title": "Yearly",
+                    "narrative": "",
+                    "chart": {
+                        "source": {
+                            "kind": "csv",
+                            "asset_id": "asset-x",
+                            "url": "https://example.test/x.csv",
+                            "columns": ["year", "v"],
+                        },
+                        "viz": {
+                            "kind": "line",
+                            "x_field": "year",
+                            "y_fields": ["v"],
+                            "series_field": None,
+                            "x_label": "Year",
+                            "y_label": "Value",
+                            "y_scale": "linear",
+                        },
+                    },
+                }
+            ],
+            "published": True,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+@pytest.fixture
+def seeded_story_with_scrolly_chapter(client):
+    resp = client.post(
+        "/api/stories",
+        json={
+            "title": "Scrolly Story",
+            "description": "",
+            "chapters": [
+                {
+                    "id": "ch-scrolly",
+                    "order": 0,
+                    "type": "scrollytelling",
+                    "title": "Scroll",
+                    "narrative": "story narrative",
+                    "map_state": {
+                        "center": [0.0, 0.0],
+                        "zoom": 1.0,
+                        "bearing": 0.0,
+                        "pitch": 0.0,
+                        "basemap": "voyager",
+                    },
+                    "layer_config": {
+                        "dataset_id": "ds-x",
+                        "colormap": "viridis",
+                        "opacity": 1.0,
+                        "basemap": "voyager",
+                    },
+                }
+            ],
+            "published": True,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+@pytest.fixture
 def synthetic_geotiff():
     import rasterio
     from rasterio.transform import from_bounds

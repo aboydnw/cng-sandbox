@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import TypeAdapter
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -18,6 +18,7 @@ from src.models.story import (
     StoryUpdate,
 )
 from src.services import story_export
+from src.services.interactive_export import endpoint as interactive_export_endpoint
 from src.workspace import validate_workspace_id
 
 router = APIRouter(prefix="/api")
@@ -161,6 +162,19 @@ async def export_story_config(story_id: str, request: Request):
         return config.model_dump(mode="json")
     finally:
         session.close()
+
+
+@router.post("/stories/{story_id}/export/interactive")
+async def export_story_interactive(
+    story_id: str,
+    request: Request,
+    scrolly_pngs: list[UploadFile] = File(default=[]),
+):
+    return await interactive_export_endpoint.handle_interactive_export(
+        story_id=story_id,
+        request=request,
+        scrolly_pngs=scrolly_pngs,
+    )
 
 
 @router.patch("/stories/{story_id}")

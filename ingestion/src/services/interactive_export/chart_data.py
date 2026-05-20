@@ -111,7 +111,13 @@ def resolve(
             raise ValueError(
                 "dataset_timeseries source requires dataset_id and [lon, lat] point"
             )
-        lon, lat = point
+        try:
+            lon = float(point[0])
+            lat = float(point[1])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "dataset_timeseries point coordinates must be numeric"
+            ) from exc
         ds = dataset_charts.load_dataset(session, dataset_id, workspace_id)
         if not ds.get("is_temporal"):
             raise ValueError(f"dataset {dataset_id!r} is not temporal")
@@ -132,7 +138,17 @@ def resolve(
         dataset_id = source.get("dataset_id")
         if not dataset_id:
             raise ValueError("dataset_histogram source requires dataset_id")
-        bins_requested = int(source.get("bins") or 20)
+        bins_raw = source.get("bins", 20)
+        try:
+            bins_requested = int(bins_raw) if bins_raw is not None else 20
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"dataset_histogram bins must be a positive integer, got {bins_raw!r}"
+            ) from exc
+        if bins_requested <= 0:
+            raise ValueError(
+                f"dataset_histogram bins must be > 0, got {bins_requested}"
+            )
         ds = dataset_charts.load_dataset(session, dataset_id, workspace_id)
         collection_id = ds.get("stac_collection_id") or dataset_id
         # Interactive export currently emits continuous histogram bins only.

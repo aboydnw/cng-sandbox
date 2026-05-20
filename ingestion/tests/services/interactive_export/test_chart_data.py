@@ -236,6 +236,63 @@ def test_dataset_histogram_malformed_stats_raises(monkeypatch):
         )
 
 
+def test_dataset_timeseries_non_numeric_point_raises():
+    with pytest.raises(ValueError, match="numeric"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {
+                        "kind": "dataset_timeseries",
+                        "dataset_id": "ds1",
+                        "point": ["abc", {}],
+                    },
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
+def test_dataset_histogram_zero_bins_raises():
+    with pytest.raises(ValueError, match="> 0"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {
+                        "kind": "dataset_histogram",
+                        "dataset_id": "ds1",
+                        "bins": 0,
+                    },
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
+def test_dataset_histogram_non_integer_bins_raises():
+    with pytest.raises(ValueError, match="positive integer"):
+        chart_data.resolve(
+            raw_chapter={
+                "type": "chart",
+                "chart": {
+                    "source": {
+                        "kind": "dataset_histogram",
+                        "dataset_id": "ds1",
+                        "bins": "many",
+                    },
+                    "viz": {},
+                },
+            },
+            session=MagicMock(),
+            workspace_id="ws1",
+        )
+
+
 def test_dataset_histogram_forces_continuous_stats(monkeypatch):
     """Even when ds.is_categorical, the histogram chart asks for continuous bins."""
     captured = {}

@@ -235,6 +235,46 @@ def test_parquet_to_pmtiles_coincident_features_use_explicit_maxzoom(
     )
 
 
+def test_parquet_to_pmtiles_empty_geom_alongside_real_uses_explicit_maxzoom(
+    monkeypatch, tmp_path
+):
+    """One real geometry + one empty geometry should not count as two distinct locations.
+
+    `representative_point()` on an empty geometry returns `POINT EMPTY`, which
+    has a distinct WKT but is not a usable location for tippecanoe. Without
+    filtering, this case would erroneously hit `--maximum-zoom=g` and crash.
+    """
+    from shapely import from_wkt
+
+    gdf = gpd.GeoDataFrame(
+        {"name": ["real", "empty"]},
+        geometry=[
+            Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+            from_wkt("POLYGON EMPTY"),
+        ],
+        crs="EPSG:4326",
+    )
+    parquet_path = str(tmp_path / "with_empty.parquet")
+    gdf.to_parquet(parquet_path)
+
+    captured_cmd: list = []
+
+    def fake_run(cmd, **kwargs):
+        captured_cmd.extend(cmd)
+        output_flag = next(f for f in cmd if f.startswith("--output="))
+        _write_fake_pmtiles(output_flag.split("=", 1)[1])
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    parquet_to_pmtiles_file(parquet_path, str(tmp_path / "out.pmtiles"))
+
+    assert "--maximum-zoom=g" not in captured_cmd
+    assert any(
+        arg.startswith("--maximum-zoom=") and arg != "--maximum-zoom=g"
+        for arg in captured_cmd
+    )
+
+
 def test_parquet_to_pmtiles_single_feature_uses_explicit_maxzoom(monkeypatch, tmp_path):
     """Single feature triggers explicit --maximum-zoom (not =g).
 

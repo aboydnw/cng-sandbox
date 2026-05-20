@@ -51,7 +51,9 @@ def parquet_to_pmtiles_file(parquet_path: str, pmtiles_path: str) -> int:
     if gdf.crs is not None and gdf.crs.to_epsg() != 4326:
         gdf = gdf.to_crs(epsg=4326)
 
-    distinct_locations = gdf.geometry.representative_point().dropna().to_wkt().nunique()
+    representative_points = gdf.geometry.representative_point().dropna()
+    representative_points = representative_points[~representative_points.is_empty]
+    distinct_locations = representative_points.to_wkt().nunique()
     maxzoom_flag = (
         f"--maximum-zoom={_SINGLE_FEATURE_MAXZOOM}"
         if distinct_locations < 2

@@ -36,6 +36,31 @@ def test_drops_unreferenced_columns(tmp_path):
     assert "geometry" in table.column_names
 
 
+def test_reprojects_clip_geom_when_source_is_not_4326(tmp_path):
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+
+    # 100m square around UTM zone 33N origin (Easting=500000, Northing=0)
+    poly = Polygon(
+        [(500000, 0), (500100, 0), (500100, 100), (500000, 100), (500000, 0)]
+    )
+    gdf = gpd.GeoDataFrame({"name": ["x"]}, geometry=[poly], crs="EPSG:32633")
+    source = tmp_path / "utm.parquet"
+    gdf.to_parquet(source)
+
+    output = tmp_path / "vector.arrow"
+    # UTM 33N central meridian is 15°E; easting=500000 lands near lon=15.
+    vector_arrow.write_arrow(
+        source_url=str(source),
+        bbox=(14.99, -0.01, 15.01, 0.01),
+        keep_columns=["name"],
+        output_path=output,
+    )
+    with ipc.open_stream(output) as reader:
+        table = reader.read_all()
+    assert table.column("name").to_pylist() == ["x"]
+
+
 def test_includes_geoarrow_extension_metadata(tmp_path):
     output = tmp_path / "vector.arrow"
     vector_arrow.write_arrow(

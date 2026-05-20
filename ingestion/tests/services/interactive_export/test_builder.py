@@ -137,6 +137,80 @@ def test_scrolly_chapter_without_upload_fails():
         )
 
 
+def test_chart_chapter_csv_url_with_disallowed_scheme_rejected():
+    chapters = [
+        {
+            "id": "ch1",
+            "type": "chart",
+            "title": "Chart",
+            "narrative": "",
+            "chart": {
+                "source": {"kind": "csv", "url": "file:///etc/passwd"},
+                "viz": {
+                    "kind": "line",
+                    "x_field": "year",
+                    "y_fields": ["v"],
+                    "series_field": None,
+                    "x_label": "",
+                    "y_label": "",
+                    "y_scale": "linear",
+                },
+            },
+        }
+    ]
+    with pytest.raises(ValueError, match="disallowed URL"):
+        builder.build_interactive_export(
+            story=_story(),
+            chapters=chapters,
+            datasets={},
+            connections={},
+            scrolly_pngs={},
+        )
+
+
+def test_chart_chapter_csv_url_with_internal_host_rejected():
+    chapters = [
+        {
+            "id": "ch1",
+            "type": "chart",
+            "title": "Chart",
+            "narrative": "",
+            "chart": {
+                "source": {"kind": "csv", "url": "http://127.0.0.1/x.csv"},
+                "viz": {
+                    "kind": "line",
+                    "x_field": "year",
+                    "y_fields": ["v"],
+                    "series_field": None,
+                    "x_label": "",
+                    "y_label": "",
+                    "y_scale": "linear",
+                },
+            },
+        }
+    ]
+    with pytest.raises(ValueError, match="disallowed URL"):
+        builder.build_interactive_export(
+            story=_story(),
+            chapters=chapters,
+            datasets={},
+            connections={},
+            scrolly_pngs={},
+        )
+
+
+def test_chapter_id_path_traversal_rejected():
+    chapters = [{"id": "../escape", "type": "prose", "title": "x", "narrative": ""}]
+    with pytest.raises(ValueError, match="invalid chapter id"):
+        builder.build_interactive_export(
+            story=_story(),
+            chapters=chapters,
+            datasets={},
+            connections={},
+            scrolly_pngs={},
+        )
+
+
 def test_zarr_connection_in_map_chapter_rejected():
     chapters = [
         {

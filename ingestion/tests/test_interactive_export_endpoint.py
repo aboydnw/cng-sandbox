@@ -83,6 +83,36 @@ def test_interactive_export_with_scrolly_requires_upload(
     assert "snapshot" in response.json()["detail"]
 
 
+def test_interactive_export_filename_slug_sanitized(client):
+    create_resp = client.post(
+        "/api/stories",
+        json={
+            "title": 'Naïve "Story"/2026 — Q1!',
+            "description": "",
+            "chapters": [
+                {
+                    "id": "ch-prose",
+                    "order": 0,
+                    "type": "prose",
+                    "title": "x",
+                    "narrative": "y",
+                }
+            ],
+            "published": True,
+        },
+    )
+    assert create_resp.status_code == 201, create_resp.text
+    story_id = create_resp.json()["id"]
+    response = client.post(f"/api/stories/{story_id}/export/interactive")
+    assert response.status_code == 200, response.text
+    cd = response.headers["content-disposition"]
+    # Must be ASCII-only and contain only safe filename chars.
+    assert '"' in cd  # quoted filename
+    assert "/" not in cd.split('filename="', 1)[1]
+    assert "Na" in cd  # ASCII-folded
+    assert '"Story"' not in cd  # quotes stripped
+
+
 def test_interactive_export_with_scrolly_upload_succeeds(
     client, seeded_story_with_scrolly_chapter
 ):

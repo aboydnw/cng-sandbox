@@ -11,6 +11,7 @@ Alpha encodes nodata mask: 0 for nodata, 255 otherwise.
 from __future__ import annotations
 
 import io
+import logging
 import math
 from pathlib import Path
 
@@ -19,7 +20,10 @@ from PIL import Image
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
 from pyproj import CRS
+from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io import Reader as COGReader
+
+logger = logging.getLogger(__name__)
 
 
 def _encode_float_to_rgba(values: np.ndarray, mask: np.ndarray) -> np.ndarray:
@@ -112,8 +116,23 @@ def build_pyramid(
             for x, y in _tiles_covering_bbox(bbox, z):
                 try:
                     img = reader.tile(x, y, z, tilesize=256)
-                except Exception:
+                except TileOutsideBounds:
+                    logger.debug(
+                        "raster_pyramid: tile %d/%d/%d outside source bounds; skipping",
+                        z,
+                        x,
+                        y,
+                    )
                     continue
+                except Exception:
+                    logger.exception(
+                        "raster_pyramid: failed to read tile %d/%d/%d (tile_id=%d)",
+                        z,
+                        x,
+                        y,
+                        zxy_to_tileid(z, x, y),
+                    )
+                    raise
                 tile_pngs.append((zxy_to_tileid(z, x, y), _encode_tile_png(img)))
 
         if not tile_pngs:

@@ -27,7 +27,13 @@ def write_arrow(
     src = str(source_url)
     gdf = gpd.read_parquet(src) if src.endswith(".parquet") else gpd.read_file(src)
 
-    clip_geom = box(*bbox)
+    if gdf.crs is None:
+        gdf = gdf.set_crs(4326)
+
+    clip_gs = gpd.GeoSeries([box(*bbox)], crs=4326)
+    if gdf.crs.to_epsg() != 4326:
+        clip_gs = clip_gs.to_crs(gdf.crs)
+    clip_geom = clip_gs.iloc[0]
     clipped = gdf[gdf.intersects(clip_geom)].copy()
 
     cols = [c for c in keep_columns if c in clipped.columns]

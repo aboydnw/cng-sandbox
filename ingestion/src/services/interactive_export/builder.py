@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import tempfile
 import zipfile
 from datetime import UTC, datetime
@@ -19,10 +20,23 @@ from src.services.interactive_export import (
     raster_pyramid,
     vector_arrow,
 )
+from src.services.url_validation import (
+    SSRFError,
+    raise_if_redirect,
+    validate_url_safe,
+)
+
+_SAFE_CHAPTER_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def _safe_chapter_dir(staging: Path, chapter_id: str) -> Path:
-    chapter_dir = staging / "chapters" / chapter_id
+    """Create a per-chapter staging dir, rejecting any traversal-shaped id."""
+    if not chapter_id or not _SAFE_CHAPTER_ID.match(chapter_id):
+        raise ValueError(f"invalid chapter id: {chapter_id!r}")
+    root = (staging / "chapters").resolve()
+    chapter_dir = (root / chapter_id).resolve()
+    if chapter_dir.parent != root:
+        raise ValueError(f"chapter id escapes staging dir: {chapter_id!r}")
     chapter_dir.mkdir(parents=True, exist_ok=True)
     return chapter_dir
 
@@ -112,8 +126,16 @@ def _fetch_csv_rows(url: str) -> list[dict[str, Any]]:
 
     Plan 1: supports csv sources with a `url` field only. Plan 3 will add
     csv_asset (workspace asset lookup), dataset_timeseries, and dataset_histogram.
+
+    Applies SSRF protection: rejects non-http(s) schemes and any host that
+    resolves to a private/loopback/link-local address, and refuses redirects.
     """
-    resp = httpx.get(url, timeout=30.0, follow_redirects=True)
+    try:
+        validate_url_safe(url)
+    except SSRFError as exc:
+        raise ValueError(f"refusing to fetch csv from disallowed URL: {exc}") from exc
+    resp = httpx.get(url, timeout=30.0, follow_redirects=False)
+    raise_if_redirect(resp)
     resp.raise_for_status()
     reader = csv.DictReader(io.StringIO(resp.text))
     rows: list[dict[str, Any]] = []

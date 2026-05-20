@@ -3,6 +3,7 @@
 import json
 import uuid
 from datetime import UTC, datetime
+from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import TypeAdapter
@@ -168,7 +169,7 @@ async def export_story_config(story_id: str, request: Request):
 async def export_story_interactive(
     story_id: str,
     request: Request,
-    scrolly_pngs: list[UploadFile] = File(default=[]),
+    scrolly_pngs: Annotated[list[UploadFile], File()] = [],  # noqa: B006
 ):
     return await interactive_export_endpoint.handle_interactive_export(
         story_id=story_id,

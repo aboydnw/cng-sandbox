@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import re
+import unicodedata
 
 from fastapi import HTTPException, Request, UploadFile
 from fastapi.responses import Response
@@ -10,6 +13,26 @@ from fastapi.responses import Response
 from src.dependencies import get_session
 from src.models.story import StoryRow
 from src.services.interactive_export import builder
+
+_SLUG_UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
+_SLUG_COLLAPSE_DASH = re.compile(r"-{2,}")
+
+
+def _safe_filename_slug(title: str | None) -> str:
+    """Produce an attachment filename slug safe for Content-Disposition.
+
+    Normalizes Unicode to ASCII, replaces any character outside
+    `[A-Za-z0-9._-]` with `-`, collapses consecutive dashes, trims to 60
+    chars, strips leading dots/dashes, and falls back to "story" if empty.
+    """
+    raw = (title or "").strip()
+    ascii_form = (
+        unicodedata.normalize("NFKD", raw).encode("ascii", "ignore").decode("ascii")
+    )
+    slug = _SLUG_UNSAFE.sub("-", ascii_form)
+    slug = _SLUG_COLLAPSE_DASH.sub("-", slug)
+    slug = slug.strip("-.")[:60]
+    return slug or "story"
 
 
 async def handle_interactive_export(
@@ -44,7 +67,8 @@ async def handle_interactive_export(
                 png_bytes[key] = await upload.read()
 
         try:
-            zip_bytes = builder.build_interactive_export(
+            zip_bytes = await asyncio.to_thread(
+                builder.build_interactive_export,
                 story=story,
                 chapters=chapters,
                 datasets={},
@@ -58,7 +82,7 @@ async def handle_interactive_export(
             )
             raise HTTPException(status_code=status, detail=msg) from exc
 
-        slug = (row.title or "story").lower().replace(" ", "-")[:60] or "story"
+        slug = _safe_filename_slug(row.title)
         return Response(
             content=zip_bytes,
             media_type="application/zip",

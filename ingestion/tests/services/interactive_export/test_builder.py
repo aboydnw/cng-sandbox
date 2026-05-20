@@ -165,6 +165,7 @@ def test_raster_pyramid_build_timeout_raises(monkeypatch):
         ),
     )
     config, chapters_raw = _config_with_one_map_chapter(layer)
+    start = time.monotonic()
     with pytest.raises(ValueError, match="timed out"):
         builder.build_interactive_export(
             config=config,
@@ -172,6 +173,7 @@ def test_raster_pyramid_build_timeout_raises(monkeypatch):
             chart_data_by_chapter={},
             scrolly_pngs={},
         )
+    assert time.monotonic() - start < 0.3
 
 
 def test_unsupported_layer_type_raises():

@@ -26,9 +26,11 @@ export async function renderChapter(
     case "chart":
       await renderChartChapter(chapter, host, basePath);
       return;
-    case "map":
-      // implemented in Task 4
-      throw new Error(`chapter type ${chapter.type} not yet implemented`);
+    case "map": {
+      const { renderMapChapter } = await import("./chapters/MapChapter");
+      await renderMapChapter(chapter, host, basePath);
+      return;
+    }
     default: {
       const _exhaustive: never = chapter;
       void _exhaustive;

@@ -211,6 +211,45 @@ def test_chapter_id_path_traversal_rejected():
         )
 
 
+def test_zip_contains_runtime_bundle_when_available(monkeypatch):
+    from src.services.interactive_export import runtime_assets
+
+    fake_runtime = Path(__file__).parent / "fixtures" / "fake_runtime"
+    monkeypatch.setattr(runtime_assets, "RUNTIME_DIR", fake_runtime)
+
+    chapters = [{"id": "p1", "type": "prose", "title": "Hi", "narrative": "yo"}]
+    zip_bytes = builder.build_interactive_export(
+        story=_story(),
+        chapters=chapters,
+        datasets={},
+        connections={},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    assert "runtime/bundle.js" in archive.namelist()
+    assert "runtime/bundle.css" in archive.namelist()
+    html = archive.read("index.html").decode("utf-8")
+    assert "./runtime/bundle.js" in html
+
+
+def test_zip_uses_placeholder_html_when_runtime_missing(monkeypatch, tmp_path):
+    from src.services.interactive_export import runtime_assets
+
+    monkeypatch.setattr(runtime_assets, "RUNTIME_DIR", tmp_path / "missing")
+
+    zip_bytes = builder.build_interactive_export(
+        story=_story(),
+        chapters=[{"id": "p1", "type": "prose", "title": "Hi", "narrative": "yo"}],
+        datasets={},
+        connections={},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    assert "runtime/bundle.js" not in archive.namelist()
+    html = archive.read("index.html").decode("utf-8")
+    assert "placeholder" in html.lower()
+
+
 def test_zarr_connection_in_map_chapter_rejected():
     chapters = [
         {

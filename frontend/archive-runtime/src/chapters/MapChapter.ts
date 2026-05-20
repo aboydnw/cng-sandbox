@@ -54,7 +54,7 @@ function buildRasterLayer(layer: RasterLayer, basePath: string, chapterId: strin
       return await createImageBitmap(blob);
     },
     renderSubLayers: (props) => {
-      const tile = props.tile as {
+      const tile = props.tile as unknown as {
         boundingBox?: [[number, number], [number, number]];
         bbox?: { west: number; south: number; east: number; north: number };
       };
@@ -107,22 +107,22 @@ async function buildVectorLayer(layer: VectorLayer, basePath: string, chapterId:
     return new GeoArrowSolidPolygonLayer({
       id: `vector-${layer.id}`,
       data: table,
-      getFillColor: fill,
-      getLineColor: stroke,
+      getFillColor: fill as never,
+      getLineColor: stroke as never,
     });
   }
   if (layer.geom === "line") {
     return new GeoArrowPathLayer({
       id: `vector-${layer.id}`,
       data: table,
-      getColor: stroke,
+      getColor: stroke as never,
       widthMinPixels: 1,
     });
   }
   return new GeoArrowScatterplotLayer({
     id: `vector-${layer.id}`,
     data: table,
-    getFillColor: fill,
+    getFillColor: fill as never,
     radiusUnits: "pixels",
     getRadius: 4,
   });

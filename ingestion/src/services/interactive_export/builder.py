@@ -18,6 +18,7 @@ from src.services.interactive_export import (
     chart_export,
     html_shell,
     raster_pyramid,
+    runtime_assets,
     vector_arrow,
 )
 from src.services.url_validation import (
@@ -248,7 +249,7 @@ def build_interactive_export(
         staging = Path(tmp)
         (staging / "chapters").mkdir()
         (staging / "assets").mkdir()
-        (staging / "runtime").mkdir()
+        runtime_assets.copy_into(staging)
 
         manifest_chapters: list[dict[str, Any]] = []
         for ch in chapters:

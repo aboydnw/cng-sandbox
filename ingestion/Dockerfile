@@ -1,3 +1,13 @@
+# Stage 0: Archive runtime builder (Vite library bundle)
+FROM node:22-alpine AS archive-runtime-builder
+RUN corepack enable
+WORKDIR /build/archive-runtime
+COPY frontend/archive-runtime/package.json frontend/archive-runtime/yarn.lock ./
+RUN yarn install --immutable
+COPY frontend/archive-runtime/src ./src
+COPY frontend/archive-runtime/index.html frontend/archive-runtime/tsconfig.json frontend/archive-runtime/vite.config.ts frontend/archive-runtime/vitest.config.ts ./
+RUN yarn build
+
 # Stage 1: Builder
 FROM python:3.13-slim AS builder
 
@@ -36,6 +46,7 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 WORKDIR /app
 COPY ingestion/src/ /app/src/
+COPY --from=archive-runtime-builder /build/archive-runtime/dist /app/runtime_assets
 
 EXPOSE 8000
 

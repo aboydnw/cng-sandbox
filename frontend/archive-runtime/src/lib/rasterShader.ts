@@ -14,10 +14,10 @@ export function decodeTerrainRgb(
   return -10_000 + (r * 65536 + g * 256 + b) * 0.1;
 }
 
-export function sampleColormap(name: string, t: number): Rgba {
+export function sampleColormap(name: string, t: number, reversed = false): Rgba {
   const lut = COLORMAPS[name] ?? COLORMAPS[DEFAULT_COLORMAP];
   if (!lut) throw new Error("no default colormap registered");
-  const clamped = Math.max(0, Math.min(1, t));
+  const clamped = Math.max(0, Math.min(1, reversed ? 1 - t : t));
   const idx = Math.min(255, Math.floor(clamped * 256));
   return lut[idx];
 }
@@ -27,7 +27,8 @@ export function applyColormapToTile(
   width: number,
   height: number,
   rescale: [number, number],
-  colormap: string
+  colormap: string,
+  reversed = false
 ): Uint8ClampedArray {
   const [vmin, vmax] = rescale;
   const span = vmax - vmin;
@@ -46,7 +47,7 @@ export function applyColormapToTile(
       continue;
     }
     const t = validSpan ? (value - vmin) / span : 0;
-    const [r, g, b, a] = sampleColormap(colormap, t);
+    const [r, g, b, a] = sampleColormap(colormap, t, reversed);
     out[off] = r;
     out[off + 1] = g;
     out[off + 2] = b;

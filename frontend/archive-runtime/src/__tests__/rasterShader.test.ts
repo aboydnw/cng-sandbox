@@ -38,3 +38,13 @@ describe("sampleColormap", () => {
     expect(c).toHaveLength(4);
   });
 });
+
+describe("reversed colormap", () => {
+  it("sampleColormap returns the complement when reversed=true", () => {
+    const forward = sampleColormap("viridis", 0.0);
+    const reversed = sampleColormap("viridis", 0.0, true);
+    expect(reversed).not.toEqual(forward);
+    const endForward = sampleColormap("viridis", 1.0);
+    expect(reversed).toEqual(endForward);
+  });
+});

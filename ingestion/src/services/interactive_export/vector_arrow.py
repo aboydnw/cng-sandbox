@@ -11,6 +11,27 @@ from shapely.geometry import box
 
 MAX_ARROW_BYTES = 100 * 1024 * 1024
 
+_SOURCE_ERROR_CLASS_NAMES = frozenset(
+    {
+        "DataSourceError",  # pyogrio
+        "DriverError",  # fiona
+        "ArrowInvalid",  # pyarrow
+        "ArrowIOError",  # pyarrow
+    }
+)
+
+
+def _is_source_unavailable_error(exc: BaseException) -> bool:
+    """Return True for errors that signal the vector source can't be opened.
+
+    Covers `OSError` (FileNotFoundError, urllib HTTPError, etc.) and the named
+    third-party driver errors without hard-importing pyogrio/fiona — geopandas
+    picks one at runtime and we shouldn't take on a tighter dep.
+    """
+    if isinstance(exc, OSError):
+        return True
+    return exc.__class__.__name__ in _SOURCE_ERROR_CLASS_NAMES
+
 
 def write_arrow(
     source_url: str,
@@ -25,9 +46,20 @@ def write_arrow(
         bbox: (minx, miny, maxx, maxy) in EPSG:4326.
         keep_columns: Non-geometry columns to retain. Empty list keeps geometry only.
         output_path: Where to write the .arrow file.
+
+    Raises:
+        ValueError: If the source can't be opened (missing file, HTTP error,
+            unsupported format) or if the output exceeds the size cap.
     """
     src = str(source_url)
-    gdf = gpd.read_parquet(src) if src.endswith(".parquet") else gpd.read_file(src)
+    try:
+        gdf = gpd.read_parquet(src) if src.endswith(".parquet") else gpd.read_file(src)
+    except Exception as exc:
+        if _is_source_unavailable_error(exc):
+            raise ValueError(
+                f"vector source unavailable: {source_url} ({exc})"
+            ) from exc
+        raise
 
     if gdf.crs is None:
         gdf = gdf.set_crs(4326)

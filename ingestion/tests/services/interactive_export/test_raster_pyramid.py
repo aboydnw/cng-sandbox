@@ -47,3 +47,28 @@ def test_pyramid_raises_when_bbox_outside_source(tmp_path):
             max_zoom=2,
             output_path=output,
         )
+
+
+def test_pyramid_raises_value_error_when_source_missing(tmp_path):
+    output = tmp_path / "raster.pmtiles"
+    missing = tmp_path / "does-not-exist.tif"
+    with pytest.raises(ValueError, match="raster source unavailable"):
+        raster_pyramid.build_pyramid(
+            source_url=str(missing),
+            bbox=(-5.0, -5.0, 5.0, 5.0),
+            min_zoom=0,
+            max_zoom=2,
+            output_path=output,
+        )
+
+
+def test_pyramid_raises_value_error_when_source_url_returns_404(tmp_path):
+    output = tmp_path / "raster.pmtiles"
+    with pytest.raises(ValueError, match="raster source unavailable"):
+        raster_pyramid.build_pyramid(
+            source_url="https://example.invalid/missing-cog.tif",
+            bbox=(-5.0, -5.0, 5.0, 5.0),
+            min_zoom=0,
+            max_zoom=2,
+            output_path=output,
+        )

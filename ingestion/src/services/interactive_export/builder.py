@@ -22,6 +22,7 @@ from src.services.interactive_export import (
     html_shell,
     raster_pyramid,
     runtime_assets,
+    source_resolver,
     vector_arrow,
 )
 from src.services.url_validation import (
@@ -95,10 +96,11 @@ def _build_map_chapter(
 
         if layer.type == "raster-cog":
             out = chapter_dir / f"{layer_id}.pmtiles"
+            resolved_url = source_resolver.resolve_raster_source(src_url)
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             future = executor.submit(
                 raster_pyramid.build_pyramid,
-                source_url=src_url,
+                source_url=resolved_url,
                 bbox=bbox,
                 min_zoom=min_zoom,
                 max_zoom=max_zoom,
@@ -134,12 +136,13 @@ def _build_map_chapter(
             )
         elif layer.type == "vector-geoparquet":
             out = chapter_dir / f"{layer_id}.arrow"
-            vector_arrow.write_arrow(
-                source_url=src_url,
-                bbox=bbox,
-                keep_columns=[],
-                output_path=out,
-            )
+            with source_resolver.vector_source_path(src_url) as resolved_path:
+                vector_arrow.write_arrow(
+                    source_url=resolved_path,
+                    bbox=bbox,
+                    keep_columns=[],
+                    output_path=out,
+                )
             manifest_layers.append(
                 {
                     "id": layer_id,

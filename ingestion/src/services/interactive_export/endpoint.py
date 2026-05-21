@@ -113,6 +113,7 @@ async def handle_interactive_export(
                 or "snapshot" in msg
                 or "too large" in msg
                 or "not yet supported" in msg
+                or "source unavailable" in msg
                 else 500
             )
             raise HTTPException(status_code=status, detail=msg) from exc

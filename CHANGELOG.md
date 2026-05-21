@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/aboydnw/cng-sandbox/compare/v2.6.0...v2.6.1) (2026-05-21)
+
+
+### Bug Fixes
+
+* **stories:** surface unreachable layer source as 400, not generic 500 ([#489](https://github.com/aboydnw/cng-sandbox/issues/489)) ([378781a](https://github.com/aboydnw/cng-sandbox/commit/378781ad81c1135a764c889d9f649debd9c8787e))
+
 ## [2.6.0](https://github.com/aboydnw/cng-sandbox/compare/v2.5.1...v2.6.0) (2026-05-20)
 
 

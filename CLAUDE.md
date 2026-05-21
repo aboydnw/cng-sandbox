@@ -82,7 +82,7 @@ Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing 
 
 ## CI/CD
 
-PRs require `backend`, `frontend`, `docker-build`, and `conventional-commits` jobs to pass. Releases are automated via release-please (merge the open Release PR to cut a version and auto-deploy). Dependabot opens weekly grouped PRs. Full details (release-please GitHub App setup, dependency-update workflow, conventional-commit table) are in [docs/cicd.md](docs/cicd.md).
+PRs require `backend`, `frontend`, `archive-runtime`, `docker-build`, and `conventional-commits` jobs to pass. Releases are automated via release-please (merge the open Release PR to cut a version and auto-deploy). Dependabot opens weekly grouped PRs. Full details (release-please GitHub App setup, dependency-update workflow, conventional-commit table) are in [docs/cicd.md](docs/cicd.md).
 
 ## Services and Ports
 
@@ -125,10 +125,13 @@ The frontend's Vite dev server proxies `/api` → ingestion, `/cog` → COG tile
 
 Built with React 19, Chakra UI v3, MapLibre GL JS (vector maps), and deck.gl (raster maps). A small set of vendored utilities from `@maptool/core` live in `src/lib/maptool/`.
 
+A separate Vite library workspace at `frontend/archive-runtime/` builds the interactive-export runtime (a single `bundle.js` + `bundle.css`) that the ingestion service embeds into archival HTML exports. The ingestion Dockerfile builds this bundle in a dedicated stage and copies it to `/app/runtime_assets`; `ingestion/src/services/interactive_export/html_shell.py` emits a real shell loading the bundle when it's available.
+
 ### Running tests
 
 ```bash
 cd frontend && npx vitest run
+cd frontend/archive-runtime && yarn test    # archive-runtime workspace
 ```
 
 ### Design direction

@@ -12,8 +12,9 @@ import {
 } from "@chakra-ui/react";
 import { X } from "@phosphor-icons/react";
 import { ExportSection } from "./ExportSection";
-import { ArchivalProgress } from "./ArchivalProgress";
+import { ExportProgress } from "./ExportProgress";
 import { useArchivalDownload } from "../lib/story/useArchivalDownload";
+import { useInteractiveDownload } from "../lib/story/useInteractiveDownload";
 import type { Story } from "../lib/story";
 
 interface ExportDialogProps {
@@ -23,16 +24,34 @@ interface ExportDialogProps {
 }
 
 export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
-  const { progress, handleArchival, handleCancelArchival } =
-    useArchivalDownload(story.id, story.title);
+  const archival = useArchivalDownload(story.id, story.title);
+  const interactive = useInteractiveDownload(story.id, story.title);
+
+  const activeExport = interactive.progress.open
+    ? {
+        progress: interactive.progress,
+        onCancel: interactive.handleCancelInteractive,
+        title: "Building interactive bundle",
+        body: "Capturing chapters and assembling .zip…",
+      }
+    : archival.progress.open
+      ? {
+          progress: archival.progress,
+          onCancel: archival.handleCancelArchival,
+          title: "Building archival HTML",
+          body: "Capturing chapters and assembling HTML…",
+        }
+      : null;
 
   return (
     <>
-      <ArchivalProgress
-        open={progress.open}
-        current={progress.current}
-        total={progress.total}
-        onClose={handleCancelArchival}
+      <ExportProgress
+        open={activeExport !== null}
+        current={activeExport?.progress.current ?? 0}
+        total={activeExport?.progress.total ?? 0}
+        title={activeExport?.title ?? ""}
+        body={activeExport?.body ?? ""}
+        onCancel={activeExport?.onCancel}
       />
       <DialogRoot
         open={open}
@@ -68,8 +87,12 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
                 </Text>
                 <ExportSection
                   story={story}
+                  hideHeader
                   onArchival={() => {
-                    void handleArchival();
+                    void archival.handleArchival();
+                  }}
+                  onInteractive={() => {
+                    void interactive.handleInteractive();
                   }}
                 />
               </DialogBody>

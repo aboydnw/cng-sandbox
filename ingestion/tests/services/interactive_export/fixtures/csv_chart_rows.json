@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {"year": 2020, "yield": 10.5, "region": "north"},
+    {"year": 2021, "yield": 12.1, "region": "north"},
+    {"year": 2020, "yield": 8.3, "region": "south"},
+    {"year": 2021, "yield": 9.7, "region": "south"}
+  ],
+  "viz": {
+    "kind": "line",
+    "x_field": "year",
+    "y_fields": ["yield"],
+    "series_field": "region",
+    "x_label": "Year",
+    "y_label": "Yield (t)",
+    "y_scale": "linear"
+  }
+}

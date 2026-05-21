@@ -17,9 +17,9 @@ vi.mock("../../lib/story/archival/downloadArchival", () => ({
 vi.mock("../EmbedSnippet", () => ({
   EmbedSnippet: () => <div data-testid="embed-snippet" />,
 }));
-vi.mock("../ArchivalProgress", () => ({
-  ArchivalProgress: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="archival-progress" /> : null,
+vi.mock("../ExportProgress", () => ({
+  ExportProgress: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="export-progress" /> : null,
 }));
 
 const story = {
@@ -49,6 +49,9 @@ describe("ExportDialog", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /download archival html/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /download interactive bundle/i })
     ).toBeInTheDocument();
   });
 

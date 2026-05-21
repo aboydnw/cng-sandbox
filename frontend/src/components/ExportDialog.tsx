@@ -1,6 +1,7 @@
 import {
   DialogBackdrop,
   DialogBody,
+  DialogCloseTrigger,
   DialogContent,
   DialogHeader,
   DialogPositioner,
@@ -66,6 +67,8 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
                 <DialogTitle>
                   Export &ldquo;{story.title || "Untitled story"}&rdquo;
                 </DialogTitle>
+              </DialogHeader>
+              <DialogCloseTrigger asChild>
                 <IconButton
                   size="sm"
                   variant="ghost"
@@ -79,7 +82,7 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
                 >
                   <X size={16} />
                 </IconButton>
-              </DialogHeader>
+              </DialogCloseTrigger>
               <DialogBody>
                 <Text fontSize="sm" color="fg.muted" mb={2}>
                   Download a portable representation of this story. Works on

@@ -3,6 +3,7 @@ import {
   Button,
   DialogBackdrop,
   DialogBody,
+  DialogCloseTrigger,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -49,7 +50,9 @@ export function ExportProgress({
           <DialogContent shadow="lg">
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
-              {onCancel ? (
+            </DialogHeader>
+            {onCancel ? (
+              <DialogCloseTrigger asChild>
                 <IconButton
                   size="sm"
                   variant="ghost"
@@ -64,8 +67,8 @@ export function ExportProgress({
                 >
                   <X size={16} />
                 </IconButton>
-              ) : null}
-            </DialogHeader>
+              </DialogCloseTrigger>
+            ) : null}
             <DialogBody>
               <Text fontSize="sm" mb={2}>
                 {finalizing ? finalizingBody : body}

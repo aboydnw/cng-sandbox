@@ -5,6 +5,7 @@ import {
   Button,
   DialogBackdrop,
   DialogBody,
+  DialogCloseTrigger,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -111,6 +112,8 @@ export function PublishDialog({
                 <DialogTitle>
                   {published ? "Story published" : "Publish story"}
                 </DialogTitle>
+              </DialogHeader>
+              <DialogCloseTrigger asChild>
                 <IconButton
                   size="sm"
                   variant="ghost"
@@ -124,7 +127,7 @@ export function PublishDialog({
                 >
                   <X size={16} />
                 </IconButton>
-              </DialogHeader>
+              </DialogCloseTrigger>
 
               <DialogBody>
                 {!published ? (

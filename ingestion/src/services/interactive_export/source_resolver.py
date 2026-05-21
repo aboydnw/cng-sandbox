@@ -70,7 +70,10 @@ def vector_source_path(
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as fd:
         tmp_path = Path(fd.name)
     try:
-        result = obstore.get(storage.store, key)
+        try:
+            result = obstore.get(storage.store, key)
+        except Exception as exc:
+            raise ValueError(f"vector source unavailable: {url} ({exc})") from exc
         tmp_path.write_bytes(bytes(result.bytes()))
         yield str(tmp_path)
     finally:

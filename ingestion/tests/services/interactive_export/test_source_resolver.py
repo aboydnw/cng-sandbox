@@ -40,6 +40,24 @@ def test_vector_source_path_passes_through_non_storage_url(tmp_path):
         assert path == str(local)
 
 
+def test_vector_source_path_normalizes_obstore_error_to_value_error(monkeypatch):
+    def fake_get(store, key):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(source_resolver.obstore, "get", fake_get)
+    fake_storage = SimpleNamespace(bucket="b", store=object())
+
+    import pytest
+
+    with (
+        pytest.raises(ValueError, match="vector source unavailable"),
+        source_resolver.vector_source_path(
+            "/storage/datasets/abc/data.geojson", storage=fake_storage
+        ),
+    ):
+        pass
+
+
 def test_vector_source_path_downloads_storage_url(monkeypatch, tmp_path):
     payload = b'{"type":"FeatureCollection","features":[]}'
 

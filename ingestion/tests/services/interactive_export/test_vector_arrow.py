@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pyarrow.ipc as ipc
+import pytest
 
 from src.services.interactive_export import vector_arrow
 
@@ -59,6 +60,31 @@ def test_reprojects_clip_geom_when_source_is_not_4326(tmp_path):
     with ipc.open_stream(output) as reader:
         table = reader.read_all()
     assert table.column("name").to_pylist() == ["x"]
+
+
+def test_raises_when_arrow_output_exceeds_size_cap(tmp_path, monkeypatch):
+    monkeypatch.setattr(vector_arrow, "MAX_ARROW_BYTES", 100)
+    output = tmp_path / "vector.arrow"
+    with pytest.raises(ValueError, match="too large"):
+        vector_arrow.write_arrow(
+            source_url=str(FIXTURE_GEOJSON),
+            bbox=(-100.0, -100.0, 100.0, 100.0),
+            keep_columns=["name", "value"],
+            output_path=output,
+        )
+    assert not output.exists()
+
+
+def test_raises_value_error_when_source_missing(tmp_path):
+    output = tmp_path / "vector.arrow"
+    missing = tmp_path / "does-not-exist.geojson"
+    with pytest.raises(ValueError, match="vector source unavailable"):
+        vector_arrow.write_arrow(
+            source_url=str(missing),
+            bbox=(-1.0, -1.0, 5.0, 5.0),
+            keep_columns=[],
+            output_path=output,
+        )
 
 
 def test_includes_geoarrow_extension_metadata(tmp_path):

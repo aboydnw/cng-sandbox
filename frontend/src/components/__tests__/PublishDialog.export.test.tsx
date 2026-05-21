@@ -49,7 +49,7 @@ describe("PublishDialog Export section", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /download story config/i,
+      name: /download raw config/i,
     });
     fireEvent.click(button);
 

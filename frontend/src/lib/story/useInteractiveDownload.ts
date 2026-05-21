@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { downloadArchivalHtml } from "./archival/downloadArchival";
+import { downloadInteractiveExport } from "./interactive/downloadInteractive";
 import { toaster } from "../toaster";
 
-interface ArchivalProgressState {
+interface InteractiveProgressState {
   open: boolean;
   current: number;
   total: number;
 }
 
-export function useArchivalDownload(storyId: string, storyTitle: string) {
-  const [progress, setProgress] = useState<ArchivalProgressState>({
+export function useInteractiveDownload(storyId: string, storyTitle: string) {
+  const [progress, setProgress] = useState<InteractiveProgressState>({
     open: false,
     current: 0,
     total: 0,
@@ -23,13 +23,13 @@ export function useArchivalDownload(storyId: string, storyTitle: string) {
     };
   }, []);
 
-  async function handleArchival() {
+  async function handleInteractive() {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setProgress({ open: true, current: 0, total: 1 });
     try {
-      await downloadArchivalHtml(
+      await downloadInteractiveExport(
         storyId,
         storyTitle,
         (current, total) => {
@@ -40,15 +40,15 @@ export function useArchivalDownload(storyId: string, storyTitle: string) {
       );
       if (!controller.signal.aborted) {
         toaster.create({
-          title: "Archival HTML downloaded",
+          title: "Interactive bundle downloaded",
           type: "success",
         });
       }
     } catch (err) {
       if ((err as { name?: string })?.name !== "AbortError") {
-        console.error("Failed to download archival HTML", err);
+        console.error("Failed to download interactive bundle", err);
         toaster.create({
-          title: "Archival HTML export failed",
+          title: "Interactive export failed",
           description: (err as Error)?.message ?? "Unknown error",
           type: "error",
         });
@@ -61,11 +61,11 @@ export function useArchivalDownload(storyId: string, storyTitle: string) {
     }
   }
 
-  function handleCancelArchival() {
+  function handleCancelInteractive() {
     abortRef.current?.abort();
     abortRef.current = null;
     setProgress({ open: false, current: 0, total: 0 });
   }
 
-  return { progress, handleArchival, handleCancelArchival };
+  return { progress, handleInteractive, handleCancelInteractive };
 }

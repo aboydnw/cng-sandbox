@@ -107,6 +107,7 @@ def _resolve_layer(lc: dict, session: Session) -> CngRcLayer | None:
         opacity=lc.get("opacity", 1.0),
         band=lc.get("band"),
         timestep=lc.get("timestep"),
+        colormap_reversed=lc.get("colormap_reversed") or False,
     )
 
     if connection_id:

@@ -17,7 +17,7 @@ def clear_timeseries_cache():
 def test_timeseries_returns_value_per_timestep(client):
     with (
         patch("src.routes.dataset_charts._titiler_point") as mock_pt,
-        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+        patch("src.routes.dataset_charts.load_dataset") as mock_load,
     ):
         mock_load.return_value = {
             "id": "ds-1",
@@ -47,7 +47,7 @@ def test_timeseries_returns_value_per_timestep(client):
 
 
 def test_timeseries_rejects_non_temporal(client):
-    with patch("src.routes.dataset_charts._load_dataset") as mock_load:
+    with patch("src.routes.dataset_charts.load_dataset") as mock_load:
         mock_load.return_value = {"id": "ds-1", "is_temporal": False, "timesteps": []}
         resp = client.get("/api/datasets/ds-1/timeseries", params={"lon": 0, "lat": 0})
         assert resp.status_code == 400
@@ -215,7 +215,7 @@ def test_titiler_point_passes_assets_param(monkeypatch):
 
 
 def test_titiler_statistics_passes_assets_param(monkeypatch):
-    from src.routes.dataset_charts import _titiler_statistics
+    from src.routes.dataset_charts import titiler_statistics
 
     captured: dict = {}
 
@@ -240,7 +240,7 @@ def test_titiler_statistics_passes_assets_param(monkeypatch):
             return FakeResponse()
 
     monkeypatch.setattr("src.routes.dataset_charts.httpx.Client", FakeClient)
-    _titiler_statistics("col", categorical=False, bins=10)
+    titiler_statistics("col", categorical=False, bins=10)
     assert captured["params"]["assets"] == "data"
     assert captured["params"]["histogram_bins"] == 10
 
@@ -276,8 +276,8 @@ def test_titiler_point_returns_none_on_non_200(monkeypatch, caplog):
 
 def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):
     with (
-        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
-        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+        patch("src.routes.dataset_charts.titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts.load_dataset") as mock_load,
     ):
         mock_load.return_value = {
             "id": "ds-1",
@@ -301,8 +301,8 @@ def test_histogram_continuous_returns_numeric_bins(client: pytest.fixture):
 
 def test_histogram_categorical_returns_class_counts(client: pytest.fixture):
     with (
-        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
-        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+        patch("src.routes.dataset_charts.titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts.load_dataset") as mock_load,
     ):
         mock_load.return_value = {
             "id": "ds-1",
@@ -326,8 +326,8 @@ def test_histogram_categorical_returns_class_counts(client: pytest.fixture):
 
 def test_histogram_categorical_502s_on_non_dict(client: pytest.fixture):
     with (
-        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
-        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+        patch("src.routes.dataset_charts.titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts.load_dataset") as mock_load,
     ):
         mock_load.return_value = {
             "id": "ds-1",
@@ -343,8 +343,8 @@ def test_histogram_categorical_502s_on_non_dict(client: pytest.fixture):
 
 def test_histogram_categorical_502s_on_non_integer_entries(client: pytest.fixture):
     with (
-        patch("src.routes.dataset_charts._titiler_statistics") as mock_stats,
-        patch("src.routes.dataset_charts._load_dataset") as mock_load,
+        patch("src.routes.dataset_charts.titiler_statistics") as mock_stats,
+        patch("src.routes.dataset_charts.load_dataset") as mock_load,
     ):
         mock_load.return_value = {
             "id": "ds-1",

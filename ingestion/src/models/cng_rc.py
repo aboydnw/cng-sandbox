@@ -45,6 +45,7 @@ class CngRcRender(BaseModel):
     opacity: float
     band: int | None
     timestep: str | None
+    colormap_reversed: bool = False
 
 
 class CngRcLayer(BaseModel):

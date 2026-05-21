@@ -20,6 +20,7 @@ from PIL import Image
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
 from pyproj import CRS
+from rasterio.errors import RasterioIOError
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io import Reader as COGReader
 
@@ -97,8 +98,22 @@ def build_pyramid(
         output_path: Where to write the .pmtiles file.
 
     Raises:
-        ValueError: If bbox does not intersect the source raster.
+        ValueError: If the source can't be opened (missing file, HTTP error,
+            unsupported format) or if bbox does not intersect the source raster.
     """
+    try:
+        _build_pyramid_inner(source_url, bbox, min_zoom, max_zoom, output_path)
+    except RasterioIOError as exc:
+        raise ValueError(f"raster source unavailable: {source_url} ({exc})") from exc
+
+
+def _build_pyramid_inner(
+    source_url: str,
+    bbox: tuple[float, float, float, float],
+    min_zoom: int,
+    max_zoom: int,
+    output_path: Path,
+) -> None:
     with COGReader(source_url) as reader:
         src_bounds = reader.get_geographic_bounds(CRS.from_epsg(4326))
         if (

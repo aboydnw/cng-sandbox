@@ -90,6 +90,12 @@ export default defineConfig(
       },
       globals: true,
       setupFiles: ["./src/test-setup.ts"],
+      exclude: [
+        "**/node_modules/**",
+        "**/dist/**",
+        // archive-runtime is a self-contained workspace with its own vitest config
+        "archive-runtime/**",
+      ],
       server: {
         deps: {
           // Workaround: @developmentseed/proj's dist ships extensionless relative

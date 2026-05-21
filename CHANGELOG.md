@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2](https://github.com/aboydnw/cng-sandbox/compare/v2.6.1...v2.6.2) (2026-05-21)
+
+
+### Bug Fixes
+
+* **stories:** anchor X close button to dialog corner via DialogCloseTrigger ([#491](https://github.com/aboydnw/cng-sandbox/issues/491)) ([c51db39](https://github.com/aboydnw/cng-sandbox/commit/c51db39fdf726f8bb2c602508788dd968ddba8e9))
+
 ## [2.6.1](https://github.com/aboydnw/cng-sandbox/compare/v2.6.0...v2.6.1) (2026-05-21)
 
 

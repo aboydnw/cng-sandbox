@@ -1,5 +1,5 @@
 # Stage 0: Archive runtime builder (Vite library bundle)
-FROM node:22-alpine AS archive-runtime-builder
+FROM node:26-alpine AS archive-runtime-builder
 RUN corepack enable
 WORKDIR /build/archive-runtime
 COPY frontend/archive-runtime/package.json frontend/archive-runtime/yarn.lock frontend/archive-runtime/.yarnrc.yml ./

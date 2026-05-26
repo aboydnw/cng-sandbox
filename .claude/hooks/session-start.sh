@@ -41,16 +41,25 @@ echo "[session-start] Installing ingestion deps (uv) + cng-toolkit..."
 echo "[session-start] Installing MCP deps (uv)..."
 ( cd mcp && uv sync --extra dev --frozen )
 
-# Install the superpowers plugin so its skills/commands are available in the
-# ephemeral cloud container. The enabledPlugins entry in settings.json only
-# toggles it on once installed; the install itself doesn't persist across
-# container restarts.
-if command -v claude >/dev/null 2>&1; then
-  echo "[session-start] Installing superpowers plugin..."
-  claude plugin install superpowers@claude-plugins-official || \
+# Install the superpowers plugin at project scope (matches the other plugins
+# auto-installed from enabledPlugins in .claude/settings.json — user scope
+# isn't picked up by the project-scope auto-loader).
+#
+# NOTE: this hook runs AFTER Claude Code's startup plugin loader, so the
+# install only takes effect in subsequent in-container sessions. For
+# superpowers to be available in the FIRST session, install it from the
+# cloud environment's pre-session setup script (configured in the web UI,
+# not in this repo) — see https://code.claude.com/docs/en/claude-code-on-the-web.
+CLAUDE_BIN="$(command -v claude || true)"
+if [ -z "$CLAUDE_BIN" ] && [ -x /opt/claude-code/bin/claude ]; then
+  CLAUDE_BIN=/opt/claude-code/bin/claude
+fi
+if [ -n "$CLAUDE_BIN" ]; then
+  echo "[session-start] Installing superpowers plugin (project scope)..."
+  "$CLAUDE_BIN" plugin install --scope project superpowers@claude-plugins-official || \
     echo "[session-start] superpowers plugin install failed (continuing)"
 else
-  echo "[session-start] claude CLI not on PATH; skipping plugin install"
+  echo "[session-start] claude CLI not found; skipping plugin install"
 fi
 
 # Expose helpful env vars for the rest of the session.

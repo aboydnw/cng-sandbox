@@ -41,6 +41,18 @@ echo "[session-start] Installing ingestion deps (uv) + cng-toolkit..."
 echo "[session-start] Installing MCP deps (uv)..."
 ( cd mcp && uv sync --extra dev --frozen )
 
+# Install the superpowers plugin so its skills/commands are available in the
+# ephemeral cloud container. The enabledPlugins entry in settings.json only
+# toggles it on once installed; the install itself doesn't persist across
+# container restarts.
+if command -v claude >/dev/null 2>&1; then
+  echo "[session-start] Installing superpowers plugin..."
+  claude plugin install superpowers@claude-plugins-official || \
+    echo "[session-start] superpowers plugin install failed (continuing)"
+else
+  echo "[session-start] claude CLI not on PATH; skipping plugin install"
+fi
+
 # Expose helpful env vars for the rest of the session.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   if ! grep -Fqx 'export PATH="$HOME/.local/bin:$PATH"' "$CLAUDE_ENV_FILE" 2>/dev/null; then

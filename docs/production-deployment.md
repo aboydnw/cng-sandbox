@@ -10,7 +10,7 @@ All paths are public. `AUTH_USER` and `AUTH_PASSWORD_HASH` are no longer consume
 
 ## Prerequisites
 
-1. **Domain:** Point an A record for your domain (e.g. `cngsandbox.org`) to the Hetzner VM's public IPv4 address. Caddy auto-obtains Let's Encrypt certs via HTTP-01 challenge.
+1. **Domain:** Point an A record for your domain (e.g. `storytelling.developmentseed.org`) to the Hetzner VM's public IPv4 address. Caddy auto-obtains Let's Encrypt certs via HTTP-01 challenge.
 2. **Hetzner firewall:** Allow inbound TCP 22, 80, 443 only (block all other ports from external access). Configure in the Hetzner Cloud console (Firewalls section). Also check the OS-level firewall: `sudo ufw status` — if active, ensure ports 80 and 443 are allowed (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)
 
 ## Configure
@@ -18,7 +18,7 @@ All paths are public. `AUTH_USER` and `AUTH_PASSWORD_HASH` are no longer consume
 Edit `.env` on the VM and fill in the deployment variables:
 
 ```dotenv
-SITE_ADDRESS=cngsandbox.org
+SITE_ADDRESS=storytelling.developmentseed.org
 ```
 
 ## Viewer subdomain (iframe embeds)

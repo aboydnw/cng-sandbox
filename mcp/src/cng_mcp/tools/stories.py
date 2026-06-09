@@ -3,8 +3,10 @@
 from typing import Any
 from mcp.types import TextContent
 from cng_mcp.client.sandbox_api import SandboxAPIClient
+from cng_mcp.tools._errors import surface_api_errors
 
 
+@surface_api_errors
 async def read_story_tool(client: SandboxAPIClient, story_id: str) -> TextContent:
     """Get a story by ID."""
     story = await client.get_story(story_id)
@@ -24,6 +26,7 @@ async def read_story_tool(client: SandboxAPIClient, story_id: str) -> TextConten
     return TextContent(type="text", text="\n".join(lines))
 
 
+@surface_api_errors
 async def create_story_tool(
     client: SandboxAPIClient,
     title: str,
@@ -47,6 +50,7 @@ async def create_story_tool(
     return TextContent(type="text", text="\n".join(lines))
 
 
+@surface_api_errors
 async def update_story_tool(
     client: SandboxAPIClient,
     story_id: str,

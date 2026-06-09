@@ -1,2 +1,0 @@
-ALTER TABLE datasets    ADD COLUMN IF NOT EXISTS render_mode TEXT;
-ALTER TABLE connections ADD COLUMN IF NOT EXISTS render_mode TEXT;

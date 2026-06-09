@@ -599,7 +599,19 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                         job.dataset_id,
                         output_path,
                     )
-                    await _wait_for_tipg_collection(job.dataset_id)
+                    tipg_ready = await _wait_for_tipg_collection(job.dataset_id)
+                    if not tipg_ready:
+                        job.validation_results.append(
+                            ValidationCheck(
+                                name="vector_tiler_readiness",
+                                passed=False,
+                                detail=(
+                                    "tipg did not expose the collection within "
+                                    "30s; tiles may 404 until its catalog "
+                                    "refresh catches up"
+                                ),
+                            )
+                        )
 
         # Stage 5: Ready
         job.status = JobStatus.READY
@@ -671,8 +683,14 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
         job.error = map_pipeline_error(e)
 
 
-async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> None:
-    """Poll tipg until it has discovered the new collection, or timeout."""
+async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> bool:
+    """Poll tipg until it has discovered the new collection.
+
+    Returns True once tipg serves the collection, False on timeout. A False
+    result means the tile URL may 404 until tipg's catalog refresh catches up,
+    so callers should surface it — but not fail the job, since tipg may just
+    be slow.
+    """
     settings = get_settings()
     table = vector_ingest.build_table_name(dataset_id)
     collection_id = f"public.{table}"
@@ -685,10 +703,19 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
                     url, headers={"Accept": "application/json"}, timeout=5.0
                 )
                 if resp.status_code == 200:
-                    return
-            except Exception:
-                pass
+                    return True
+            except Exception as exc:
+                logger.debug(
+                    "tipg readiness probe failed for %s: %s", collection_id, exc
+                )
             await asyncio.sleep(1.0)
+    logger.warning(
+        "tipg did not expose collection %s within %.0fs; "
+        "tile URL may not be servable yet",
+        collection_id,
+        timeout,
+    )
+    return False
 
 
 def _convert_geotiff_to_cog(

@@ -235,7 +235,7 @@ async def run_infile_temporal_pipeline(
             if cross_errors:
                 job.status = JobStatus.FAILED
                 job.error = "; ".join(cross_errors)
-                _cleanup_uploaded(storage, uploaded_keys)
+                await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
                 return
 
             # Stage 4: Compute global stats
@@ -261,7 +261,7 @@ async def run_infile_temporal_pipeline(
             for i, cog_path in enumerate(cog_paths):
                 cog_filename = os.path.basename(cog_path)
                 key = f"datasets/{job.dataset_id}/timesteps/{i}/{cog_filename}"
-                storage.upload_file(cog_path, key)
+                await asyncio.to_thread(storage.upload_file, cog_path, key)
                 uploaded_keys.append(key)
                 s3_hrefs.append(storage.get_s3_uri(key))
                 converted_file_size += os.path.getsize(cog_path)
@@ -314,7 +314,7 @@ async def run_infile_temporal_pipeline(
         logger.exception("In-file temporal pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
         job.error = map_pipeline_error(e)
-        _cleanup_uploaded(storage, uploaded_keys)
+        await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
 
 
 async def run_temporal_pipeline(
@@ -362,6 +362,7 @@ async def run_temporal_pipeline(
                     job.error = (
                         f"Temporal pipelines only support raster files, got {fp.value}"
                     )
+                    await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
                     return
 
                 if format_pair is None:
@@ -405,7 +406,7 @@ async def run_temporal_pipeline(
                     )
                     job.status = JobStatus.FAILED
                     job.error = f"Validation failed for {entry.filename}: {details}"
-                    _cleanup_uploaded(storage, uploaded_keys)
+                    await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
                     return
 
             # Stage 3: Cross-file validation
@@ -416,7 +417,7 @@ async def run_temporal_pipeline(
             if cross_errors:
                 job.status = JobStatus.FAILED
                 job.error = "; ".join(cross_errors)
-                _cleanup_uploaded(storage, uploaded_keys)
+                await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
                 return
 
             # Stage 4: Compute global stats
@@ -444,7 +445,7 @@ async def run_temporal_pipeline(
             ):
                 cog_filename = os.path.basename(cog_path)
                 key = f"datasets/{job.dataset_id}/timesteps/{i}/{cog_filename}"
-                storage.upload_file(cog_path, key)
+                await asyncio.to_thread(storage.upload_file, cog_path, key)
                 uploaded_keys.append(key)
                 s3_hrefs.append(storage.get_s3_uri(key))
                 converted_file_size += os.path.getsize(cog_path)
@@ -501,7 +502,7 @@ async def run_temporal_pipeline(
         logger.exception("Temporal pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
         job.error = map_pipeline_error(e)
-        _cleanup_uploaded(storage, uploaded_keys)
+        await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
 
 
 def _cleanup_uploaded(storage: StorageService, keys: list[str]) -> None:

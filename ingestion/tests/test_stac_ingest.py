@@ -2,6 +2,7 @@ import os
 import tempfile
 
 import numpy as np
+import pytest
 import rasterio
 from rasterio.transform import from_bounds
 
@@ -223,3 +224,79 @@ class TestBuildStacItemFromHref:
             },
         )
         assert item.assets["data"].media_type == COG_MEDIA_TYPE
+
+
+class _FakeResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
+        self.text = ""
+
+
+class _FakeStacClient:
+    def __init__(self, status_code, posts):
+        self._status_code = status_code
+        self._posts = posts
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def post(self, url, json=None):
+        self._posts.append(url)
+        return _FakeResponse(self._status_code)
+
+
+class TestItemCreationIdempotency:
+    @pytest.mark.asyncio
+    async def test_ingest_raster_accepts_409_on_existing_item(self, monkeypatch):
+        from src.services import stac_ingest
+
+        posts = []
+        monkeypatch.setattr(
+            stac_ingest.httpx,
+            "AsyncClient",
+            lambda **kw: _FakeStacClient(409, posts),
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cog_path = os.path.join(tmpdir, "test.tif")
+            _create_test_cog(cog_path)
+
+            tile_url = await stac_ingest.ingest_raster(
+                "abc-123", cog_path, "s3://bucket/test.tif", "test.tif"
+            )
+
+        assert "sandbox-abc-123" in tile_url
+        assert len(posts) == 2
+
+    @pytest.mark.asyncio
+    async def test_ingest_temporal_accepts_409_on_existing_items(self, monkeypatch):
+        from src.services import stac_ingest
+
+        posts = []
+        monkeypatch.setattr(
+            stac_ingest.httpx,
+            "AsyncClient",
+            lambda **kw: _FakeStacClient(409, posts),
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cog_paths = []
+            datetimes = ["2020-01-01T00:00:00Z", "2020-01-02T00:00:00Z"]
+            for i in range(2):
+                path = os.path.join(tmpdir, f"t{i}.tif")
+                _create_test_cog(path)
+                cog_paths.append(path)
+
+            tile_url = await stac_ingest.ingest_temporal_raster(
+                dataset_id="abc123",
+                cog_paths=cog_paths,
+                s3_hrefs=[f"s3://bucket/{i}.tif" for i in range(2)],
+                filename="t",
+                datetimes=datetimes,
+            )
+
+        assert "sandbox-abc123" in tile_url
+        assert len(posts) == 3

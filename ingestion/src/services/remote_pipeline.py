@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 
+from src.config import get_settings
 from src.models import (
     Dataset,
     DatasetType,
@@ -41,7 +42,10 @@ from src.services.url_validation import raise_if_redirect
 
 logger = logging.getLogger(__name__)
 
-MAX_CONVERT_BYTES = 16_106_127_360  # ~15 GB
+
+def _max_convert_bytes() -> int:
+    """Size limit for remote conversions, tied to the configurable upload limit."""
+    return get_settings().max_upload_bytes
 
 
 async def read_remote_bounds(url: str) -> tuple[list[float], dict]:
@@ -129,11 +133,12 @@ async def run_remote_pipeline(
             )
         else:
             estimated = await _estimate_total_size(urls)
-            if estimated is not None and estimated > MAX_CONVERT_BYTES:
+            limit = _max_convert_bytes()
+            if estimated is not None and estimated > limit:
                 job.status = JobStatus.FAILED
                 job.error = (
                     f"Estimated download size ({estimated / 1e9:.1f} GB) exceeds "
-                    f"the {MAX_CONVERT_BYTES / 1e9:.0f} GB limit for conversion."
+                    f"the {limit / 1e9:.0f} GB limit for conversion."
                 )
                 return
 
@@ -334,7 +339,7 @@ async def _run_with_conversion(
                     key = f"datasets/{job.dataset_id}/timesteps/{i}/{cog_filename}"
                 else:
                     key = f"datasets/{job.dataset_id}/mosaic/{i}/{cog_filename}"
-                storage.upload_file(cog_path, key)
+                await asyncio.to_thread(storage.upload_file, cog_path, key)
                 uploaded_keys.append(key)
                 s3_hrefs.append(storage.get_s3_uri(key))
                 converted_file_size += os.path.getsize(cog_path)
@@ -421,7 +426,7 @@ async def _run_with_conversion(
             persist_dataset(db_session_factory, dataset)
 
     except Exception:
-        _cleanup_uploaded(storage, uploaded_keys)
+        await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
         raise
 
 

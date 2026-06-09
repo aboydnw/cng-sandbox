@@ -94,7 +94,8 @@ async def _seed_stories(app: FastAPI) -> None:
 
     canonical_titles = {s.title for s in ALL_STORIES}
     attempts = 0
-    while True:
+    max_attempts = 2880  # ~24h at one attempt per 30s
+    while attempts < max_attempts:
         attempts += 1
         try:
             seed_example_stories(app.state.db_session_factory)
@@ -118,6 +119,11 @@ async def _seed_stories(app: FastAPI) -> None:
             logger.warning(
                 "Example story seeding still incomplete after %d attempts", attempts
             )
+    logger.error(
+        "Giving up on example story seeding after %d attempts; "
+        "some canonical stories never seeded",
+        max_attempts,
+    )
 
 
 async def _seed_example_connections(app: FastAPI) -> None:

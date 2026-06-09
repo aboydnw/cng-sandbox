@@ -37,7 +37,7 @@ async def create_story_tool(
     story = await client.create_story(title=title, description=description, chapters=chapters)
     story_id = story.get("id", "unknown")
     lines = [
-        f"# Story Created Successfully\n",
+        "# Story Created Successfully\n",
         f"**Story ID**: `{story_id}`",
         f"**Title**: {title}",
         f"**Description**: {description}",
@@ -58,7 +58,7 @@ async def update_story_tool(
 
     await client.update_story(story_id=story_id, updates=updates)
     lines = [
-        f"# Story Updated\n",
+        "# Story Updated\n",
         f"**Story ID**: `{story_id}`",
         f"**Updated Fields**: {', '.join(updates.keys())}",
     ]

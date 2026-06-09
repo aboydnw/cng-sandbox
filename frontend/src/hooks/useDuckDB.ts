@@ -27,6 +27,11 @@ async function createDuckDB(): Promise<DuckDBHandle> {
   const DUCKDB_BUNDLES = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
 
   const workerResponse = await fetch(DUCKDB_BUNDLES.mainWorker!);
+  if (!workerResponse.ok) {
+    throw new Error(
+      `Failed to fetch DuckDB worker (HTTP ${workerResponse.status})`
+    );
+  }
   const workerBlob = new Blob([await workerResponse.text()], {
     type: "application/javascript",
   });

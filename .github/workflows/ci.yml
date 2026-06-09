@@ -32,7 +32,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: pip install ruff && ruff check src/ tests/
+        run: ruff check src/ tests/
 
       - name: Check formatting with ruff
         run: ruff format --check src/ tests/
@@ -65,6 +65,9 @@ jobs:
       - run: npx tsc --noEmit
 
       - run: npx vitest run
+
+      - name: Build production bundle
+        run: yarn build
 
   archive-runtime:
     runs-on: ubuntu-latest
@@ -112,8 +115,27 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - run: cp .env.example .env
-      - run: docker compose build
+
+      - name: Validate compose config
+        run: cp .env.example .env && docker compose config --quiet
+
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          file: ingestion/Dockerfile
+          push: false
+          cache-from: type=gha,scope=ingestion
+          cache-to: type=gha,mode=max,scope=ingestion
+
+      - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: frontend
+          target: dev
+          push: false
+          cache-from: type=gha,scope=frontend-dev
+          cache-to: type=gha,mode=max,scope=frontend-dev
 
   pr-size-check:
     if: github.event_name == 'pull_request'
@@ -131,10 +153,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BASE_REF: ${{ github.base_ref }}
+          REPO: ${{ github.repository }}
         run: |
+          MARKER="<!-- pr-size-check -->"
           LINES=$(git diff --numstat "origin/$BASE_REF"...HEAD | awk '{s+=$1+$2} END {print s+0}')
           echo "Total changed lines: $LINES"
           if [ "$LINES" -gt 500 ]; then
-            gh pr comment "$PR_NUMBER" \
-              --body "**Large PR warning:** This PR changes $LINES lines. Consider breaking it into smaller changes for easier review."
+            BODY="$MARKER
+          **Large PR warning:** This PR changes $LINES lines. Consider breaking it into smaller changes for easier review."
+            COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --jq "[.[] | select(.body | contains(\"$MARKER\"))][0].id // empty" | head -n1)
+            if [ -n "$COMMENT_ID" ]; then
+              echo "Updating existing comment $COMMENT_ID"
+              gh api -X PATCH "repos/$REPO/issues/comments/$COMMENT_ID" -f body="$BODY" > /dev/null
+            else
+              gh pr comment "$PR_NUMBER" --body "$BODY"
+            fi
           fi

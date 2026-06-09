@@ -13,31 +13,73 @@ from sqlalchemy import create_engine as sa_create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.config import get_settings
+from src.models import JobStatus
 from src.models.base import Base
 from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
 from src.models.story_asset import StoryAssetRow  # noqa: F401 — ensures table creation
 from src.rate_limit import limiter, rate_limit_exceeded_handler
 from src.services.cleanup import cleanup_expired_rows
-from src.state import scan_store, scan_store_lock
+from src.state import jobs, scan_store, scan_store_lock
 
 logger = logging.getLogger(__name__)
 
+SCAN_TTL = timedelta(minutes=30)
+TERMINAL_JOB_TTL = timedelta(hours=1)
+
+
+async def _expire_stale_scans(now: datetime | None = None):
+    """Fail and release pipelines whose variable-selection scan was abandoned.
+
+    Pipelines paused for variable selection block on ``job.scan_event``.
+    Without this, an abandoned scan leaves the pipeline coroutine waiting
+    forever and its temp upload on disk permanently.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - SCAN_TTL
+    async with scan_store_lock:
+        expired = [
+            sid
+            for sid, entry in scan_store.items()
+            if entry.get("state") == "waiting" and entry.get("created_at", now) < cutoff
+        ]
+        for sid in expired:
+            entry = scan_store.pop(sid)
+            job = entry.get("job")
+            if job is not None:
+                job.status = JobStatus.FAILED
+                job.error = (
+                    "Scan expired — no variable was selected within 30 minutes. "
+                    "Please re-upload the file."
+                )
+                if job.scan_event is not None:
+                    job.scan_event.set()
+                logger.info("Expired abandoned scan %s (job %s)", sid, job.id)
+
+
+def _evict_terminal_jobs(now: datetime | None = None):
+    """Drop jobs that have been in a terminal status for over an hour.
+
+    The terminal transition is stamped on first observation by this sweep,
+    so eviction happens one TTL after the sweep first sees the job done.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - TERMINAL_JOB_TTL
+    for job_id, job in list(jobs.items()):
+        if job.status not in (JobStatus.READY, JobStatus.FAILED):
+            continue
+        if job.finished_at is None:
+            job.finished_at = now
+        elif job.finished_at < cutoff:
+            del jobs[job_id]
+
 
 async def _cleanup_scans():
-    """Remove expired scan entries every 5 minutes."""
+    """Expire abandoned scans and evict finished jobs every 5 minutes."""
     while True:
         await asyncio.sleep(300)
-        cutoff = datetime.now(UTC) - timedelta(minutes=30)
-        async with scan_store_lock:
-            expired = [
-                sid
-                for sid, entry in scan_store.items()
-                if entry.get("state") == "waiting"
-                and entry.get("created_at", datetime.now(UTC)) < cutoff
-            ]
-            for sid in expired:
-                del scan_store[sid]
+        await _expire_stale_scans()
+        _evict_terminal_jobs()
 
 
 async def _register_examples(app):

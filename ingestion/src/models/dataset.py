@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, String, Text
 
+from src.models import expiry
 from src.models.base import Base
 
 
@@ -32,6 +33,9 @@ class DatasetRow(Base):
         """Convert to the Dataset API response format."""
         meta = json.loads(self.metadata_json) if self.metadata_json else {}
         bounds = json.loads(self.bounds_json) if self.bounds_json else None
+        expires_at = expiry.effective_expires_at(
+            self.created_at, self.expires_at, bool(self.is_example)
+        )
         return {
             **meta,
             "title": meta.get("title"),
@@ -43,7 +47,7 @@ class DatasetRow(Base):
             "bounds": bounds,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "workspace_id": self.workspace_id,
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "expires_at": expires_at.isoformat() if expires_at else None,
             "is_example": bool(self.is_example),
             "is_shared": bool(self.is_shared),
             "render_mode": self.render_mode,

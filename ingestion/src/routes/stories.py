@@ -11,6 +11,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from src.dependencies import get_session
+from src.models import expiry
 from src.models.story import (
     ChapterPayload,
     StoryCreate,
@@ -52,6 +53,9 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         if chapter_dataset_ids
         else ([row.dataset_id] if row.dataset_id else [])
     )
+    expires_at = expiry.effective_expires_at(
+        row.created_at, is_example=bool(row.is_example)
+    )
     return StoryResponse(
         id=row.id,
         title=row.title,
@@ -63,6 +67,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         is_example=bool(row.is_example),
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
+        expires_at=expires_at.isoformat() if expires_at else None,
     )
 
 

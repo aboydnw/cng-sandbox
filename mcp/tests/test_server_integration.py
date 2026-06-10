@@ -66,6 +66,24 @@ async def test_read_resource_colormaps(sandbox_api_url):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "uri", ["cng://datasets/", "cng://story-templates/", "cng://colormaps/"]
+)
+async def test_read_resource_accepts_trailing_slash(
+    sandbox_api_url, monkeypatch, sample_dataset, uri
+):
+    async def fake_get_datasets(self):
+        return [sample_dataset]
+
+    monkeypatch.setattr(SandboxAPIClient, "get_datasets", fake_get_datasets)
+    server = create_server(sandbox_api_url=sandbox_api_url)
+
+    text = await read_resource(server, uri)
+
+    assert text.strip()
+
+
+@pytest.mark.asyncio
 async def test_read_resource_unknown_uri_raises(sandbox_api_url):
     server = create_server(sandbox_api_url=sandbox_api_url)
 

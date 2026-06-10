@@ -13,7 +13,9 @@ export function formatCount(n: number): string {
 }
 
 export function timeAgo(dateStr: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  const time = new Date(dateStr).getTime();
+  if (Number.isNaN(time)) return "—";
+  const seconds = Math.floor((Date.now() - time) / 1000);
   if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -21,14 +23,4 @@ export function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
-}
-
-export function daysUntilExpiry(createdAt: string): number {
-  const created = new Date(createdAt);
-  const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const now = new Date();
-  return Math.max(
-    0,
-    Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  );
 }

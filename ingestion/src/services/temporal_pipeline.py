@@ -10,7 +10,6 @@ import tempfile
 from collections.abc import Callable
 
 from src.models import (
-    Dataset,
     DatasetType,
     FormatPair,
     Job,
@@ -22,19 +21,14 @@ from src.services import stac_ingest
 from src.services.detector import detect_format, validate_magic_bytes
 from src.services.error_mapping import map_pipeline_error
 from src.services.pipeline import (
-    _extract_band_metadata,
-    _extract_bounds,
-    _extract_zoom_range_raster,
+    _build_raster_dataset,
+    _extract_raster_summary,
     _import_and_convert,
     _import_and_validate,
-    get_credits,
 )
 from src.services.storage import StorageService
 from src.services.temporal_ordering import common_filename_prefix, order_files
-from src.services.temporal_validation import (
-    compute_global_stats,
-    validate_cross_file_compatibility,
-)
+from src.services.temporal_validation import validate_cross_file_compatibility
 
 try:
     import xarray as xr
@@ -238,20 +232,8 @@ async def run_infile_temporal_pipeline(
                 await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
                 return
 
-            # Stage 4: Compute global stats
-            raster_min, raster_max = await asyncio.to_thread(
-                compute_global_stats, cog_paths
-            )
-
-            # Stage 5: Extract metadata from first COG
-            first_cog = cog_paths[0]
-            bounds = await asyncio.to_thread(
-                _extract_bounds, first_cog, DatasetType.RASTER
-            )
-            band_meta = await asyncio.to_thread(_extract_band_metadata, first_cog)
-            min_zoom, max_zoom = await asyncio.to_thread(
-                _extract_zoom_range_raster, first_cog
-            )
+            # Stage 4-5: Global stats and first-COG metadata
+            summary = await _extract_raster_summary(cog_paths)
 
             # Stage 6: Ingest
             job.status = JobStatus.INGESTING
@@ -281,30 +263,17 @@ async def run_infile_temporal_pipeline(
                 Timestep(datetime=dt, index=i) for i, dt in enumerate(datetimes)
             ]
 
-            dataset = Dataset(
-                id=job.dataset_id,
+            dataset = _build_raster_dataset(
+                job,
                 filename=job.filename,
-                dataset_type=DatasetType.RASTER,
                 format_pair=job.format_pair,
                 tile_url=tile_url,
-                bounds=bounds,
-                band_count=band_meta.band_count,
-                band_names=band_meta.band_names,
-                color_interpretation=band_meta.color_interpretation,
-                dtype=band_meta.dtype,
-                original_file_size=original_file_size,
+                summary=summary,
                 converted_file_size=converted_file_size,
-                min_zoom=min_zoom,
-                max_zoom=max_zoom,
-                stac_collection_id=f"sandbox-{job.dataset_id}",
                 validation_results=[],
-                credits=get_credits(job.format_pair),
-                workspace_id=job.workspace_id,
+                original_file_size=original_file_size,
                 is_temporal=True,
                 timesteps=timesteps,
-                raster_min=raster_min,
-                raster_max=raster_max,
-                created_at=job.created_at,
             )
             from src.models.dataset import persist_dataset
 
@@ -420,20 +389,8 @@ async def run_temporal_pipeline(
                 await asyncio.to_thread(_cleanup_uploaded, storage, uploaded_keys)
                 return
 
-            # Stage 4: Compute global stats
-            raster_min, raster_max = await asyncio.to_thread(
-                compute_global_stats, cog_paths
-            )
-
-            # Stage 5: Extract metadata from first COG
-            first_cog = cog_paths[0]
-            bounds = await asyncio.to_thread(
-                _extract_bounds, first_cog, DatasetType.RASTER
-            )
-            band_meta = await asyncio.to_thread(_extract_band_metadata, first_cog)
-            min_zoom, max_zoom = await asyncio.to_thread(
-                _extract_zoom_range_raster, first_cog
-            )
+            # Stage 4-5: Global stats and first-COG metadata
+            summary = await _extract_raster_summary(cog_paths)
 
             # Stage 6: Ingest
             job.status = JobStatus.INGESTING
@@ -469,30 +426,17 @@ async def run_temporal_pipeline(
                 for entry in ordered
             ]
 
-            dataset = Dataset(
-                id=job.dataset_id,
+            dataset = _build_raster_dataset(
+                job,
                 filename=display_name,
-                dataset_type=DatasetType.RASTER,
                 format_pair=format_pair,
                 tile_url=tile_url,
-                bounds=bounds,
-                band_count=band_meta.band_count,
-                band_names=band_meta.band_names,
-                color_interpretation=band_meta.color_interpretation,
-                dtype=band_meta.dtype,
-                original_file_size=original_file_size,
+                summary=summary,
                 converted_file_size=converted_file_size,
-                min_zoom=min_zoom,
-                max_zoom=max_zoom,
-                stac_collection_id=f"sandbox-{job.dataset_id}",
                 validation_results=last_validation_results,
-                credits=get_credits(format_pair),
-                workspace_id=job.workspace_id,
+                original_file_size=original_file_size,
                 is_temporal=True,
                 timesteps=timesteps,
-                raster_min=raster_min,
-                raster_max=raster_max,
-                created_at=job.created_at,
             )
             from src.models.dataset import persist_dataset
 

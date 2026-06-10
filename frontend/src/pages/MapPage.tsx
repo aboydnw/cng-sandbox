@@ -61,7 +61,10 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const workspace = useOptionalWorkspace();
   const workspacePath = workspace?.workspacePath ?? ((p: string) => p);
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTimestep = Number(searchParams.get("t") ?? 0);
+  const rawTimestep = Number(searchParams.get("t") ?? 0);
+  const initialTimestep = Number.isFinite(rawTimestep)
+    ? Math.max(0, Math.trunc(rawTimestep))
+    : 0;
 
   const isConnectionRoute =
     window.location.pathname.includes("/map/connection/");

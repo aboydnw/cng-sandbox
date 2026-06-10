@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
 import {
   X as XIcon,
@@ -113,8 +113,12 @@ export function ConnectionModal({
   const [manualPath, setManualPath] = useState("");
   const [manualPathError, setManualPathError] = useState<string | null>(null);
   const [tryingManualPath, setTryingManualPath] = useState(false);
+  // Incremented for every new probe (and on modal close) so slow stale
+  // probes can't overwrite the results of a newer one.
+  const probeReqIdRef = useRef(0);
 
   const runZarrProbe = useCallback(async (probeUrl: string) => {
+    const reqId = ++probeReqIdRef.current;
     setProbeMetadata(null);
     setZarrProbe(null);
     setZarrConfig(null);
@@ -126,8 +130,10 @@ export function ConnectionModal({
     setProbing(true);
     try {
       const probe = await probeZarr(probeUrl);
+      if (reqId !== probeReqIdRef.current) return;
       setZarrProbe(probe);
     } catch (e) {
+      if (reqId !== probeReqIdRef.current) return;
       setZarrProbe(null);
       const msg = e instanceof Error ? e.message : String(e);
       setProbeWarning(
@@ -136,13 +142,14 @@ export function ConnectionModal({
           : `Could not open Zarr store. ${msg}`
       );
     } finally {
-      setProbing(false);
+      if (reqId === probeReqIdRef.current) setProbing(false);
     }
   }, []);
 
   // Auto-detect type and name when URL changes
   const handleUrlBlur = useCallback(async () => {
     if (!url) return;
+    const reqId = ++probeReqIdRef.current;
     setProbeWarning(null);
     setZarrProbe(null);
     setZarrConfig(null);
@@ -166,8 +173,10 @@ export function ConnectionModal({
           detected === "pmtiles"
             ? await probePMTiles(url)
             : await probeCOG(url);
+        if (reqId !== probeReqIdRef.current) return;
         setProbeMetadata(metadata);
       } catch (e) {
+        if (reqId !== probeReqIdRef.current) return;
         setProbeMetadata(null);
         const msg = e instanceof Error ? e.message : String(e);
         setProbeWarning(
@@ -176,7 +185,7 @@ export function ConnectionModal({
             : `Could not read COG metadata. ${msg}`
         );
       } finally {
-        setProbing(false);
+        if (reqId === probeReqIdRef.current) setProbing(false);
       }
     } else if (detected === "zarr") {
       await runZarrProbe(url);
@@ -188,6 +197,7 @@ export function ConnectionModal({
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
+      probeReqIdRef.current++;
       setUrl("");
       setName("");
       setConnectionType(null);
@@ -416,6 +426,7 @@ export function ConnectionModal({
                 variant="outline"
                 disabled={!manualPath.trim() || tryingManualPath}
                 onClick={async () => {
+                  const reqId = ++probeReqIdRef.current;
                   setTryingManualPath(true);
                   setManualPathError(null);
                   try {
@@ -423,14 +434,17 @@ export function ConnectionModal({
                       url,
                       manualPath.trim()
                     );
+                    if (reqId !== probeReqIdRef.current) return;
                     setZarrProbe(result);
                     setProbeWarning(null);
                   } catch (err) {
+                    if (reqId !== probeReqIdRef.current) return;
                     setManualPathError(
                       err instanceof Error ? err.message : String(err)
                     );
                   } finally {
-                    setTryingManualPath(false);
+                    if (reqId === probeReqIdRef.current)
+                      setTryingManualPath(false);
                   }
                 }}
                 alignSelf="flex-start"

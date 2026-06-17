@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { Box, Text } from "@chakra-ui/react";
+import type { PickingInfo } from "@deck.gl/core";
 
 type TileBbox =
   | { west: number; south: number; east: number; north: number }
@@ -66,12 +67,14 @@ function resolveTileExtent(
   return null;
 }
 
-interface DeckHoverInfo {
-  x: number;
-  y: number;
-  coordinate?: [number, number];
+/**
+ * The subset of deck.gl's `PickingInfo` this inspector reads, plus the
+ * COGLayer-specific `sourceTile` extra. Derived from `PickingInfo` so any
+ * deck.gl hover callback is assignable to it.
+ */
+type DeckHoverInfo = Pick<PickingInfo, "x" | "y" | "coordinate"> & {
   sourceTile?: HoverSourceTile;
-}
+};
 
 function lookupValue(
   sourceTile: HoverSourceTile,

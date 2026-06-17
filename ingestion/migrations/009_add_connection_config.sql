@@ -1,1 +1,0 @@
-ALTER TABLE connections ADD COLUMN IF NOT EXISTS config JSONB;

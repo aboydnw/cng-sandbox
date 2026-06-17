@@ -107,4 +107,18 @@ describe("StoriesPage no longer renders example cards", () => {
   });
 });
 
+describe("StoriesPage fetch failure", () => {
+  it("shows an error message instead of the empty state when the fetch rejects", async () => {
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("Failed to list stories: 500")
+    );
+    renderStoriesPage();
+
+    expect(
+      await screen.findByText(/couldn’t load your stories/i)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/no stories yet/i)).not.toBeInTheDocument();
+  });
+});
+
 export { renderStoriesPage };

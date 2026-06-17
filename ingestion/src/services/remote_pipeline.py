@@ -26,18 +26,15 @@ from src.services.cog_checker import check_remote_is_cog
 from src.services.detector import detect_format
 from src.services.error_mapping import map_pipeline_error
 from src.services.pipeline import (
-    _extract_band_metadata,
+    _build_raster_dataset,
     _extract_bounds,
-    _extract_zoom_range_raster,
+    _extract_raster_summary,
     _import_and_convert,
     get_credits,
 )
 from src.services.storage import StorageService
 from src.services.temporal_ordering import common_filename_prefix, order_files
-from src.services.temporal_validation import (
-    compute_global_stats,
-    validate_cross_file_compatibility,
-)
+from src.services.temporal_validation import validate_cross_file_compatibility
 from src.services.url_validation import raise_if_redirect
 
 logger = logging.getLogger(__name__)
@@ -305,18 +302,7 @@ async def _run_with_conversion(
                     job.error = "; ".join(cross_errors)
                     return
 
-            raster_min, raster_max = await asyncio.to_thread(
-                compute_global_stats, cog_paths
-            )
-
-            first_cog = cog_paths[0]
-            bounds = await asyncio.to_thread(
-                _extract_bounds, first_cog, DatasetType.RASTER
-            )
-            band_meta = await asyncio.to_thread(_extract_band_metadata, first_cog)
-            min_zoom, max_zoom = await asyncio.to_thread(
-                _extract_zoom_range_raster, first_cog
-            )
+            summary = await _extract_raster_summary(cog_paths)
 
             job.status = JobStatus.INGESTING
 
@@ -395,33 +381,20 @@ async def _run_with_conversion(
 
             expires_at = datetime.now(UTC) + timedelta(days=30)
 
-            dataset = Dataset(
-                id=job.dataset_id,
+            dataset = _build_raster_dataset(
+                job,
                 filename=display_name,
-                dataset_type=DatasetType.RASTER,
                 format_pair=FormatPair.GEOTIFF_TO_COG,
                 tile_url=tile_url,
-                bounds=bounds,
-                band_count=band_meta.band_count,
-                band_names=band_meta.band_names,
-                color_interpretation=band_meta.color_interpretation,
-                dtype=band_meta.dtype,
+                summary=summary,
                 converted_file_size=converted_file_size,
-                min_zoom=min_zoom,
-                max_zoom=max_zoom,
-                stac_collection_id=f"sandbox-{job.dataset_id}",
                 validation_results=[],
-                credits=get_credits(FormatPair.GEOTIFF_TO_COG),
-                workspace_id=job.workspace_id,
                 is_zero_copy=False,
                 is_mosaic=(mode == "mosaic"),
                 is_temporal=(mode == "temporal"),
                 timesteps=timesteps,
                 source_url=source_url,
-                raster_min=raster_min,
-                raster_max=raster_max,
                 expires_at=expires_at,
-                created_at=job.created_at,
             )
             persist_dataset(db_session_factory, dataset)
 

@@ -48,7 +48,10 @@ export function workspaceFetch(
 
 export const connectionsApi = {
   list(): Promise<Connection[]> {
-    return workspaceFetch("/api/connections").then((r) => r.json());
+    return workspaceFetch("/api/connections").then(async (r) => {
+      if (!r.ok) throw new Error(await readErrorDetail(r));
+      return r.json();
+    });
   },
 
   get(id: string): Promise<Connection> {

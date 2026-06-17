@@ -40,6 +40,26 @@ describe("workspaceFetch", () => {
   });
 });
 
+describe("connectionsApi.list", () => {
+  it("resolves with the connections array on ok response", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => [{ id: "c1" }],
+    });
+    const result = await connectionsApi.list();
+    expect(result).toEqual([{ id: "c1" }]);
+  });
+
+  it("throws on non-ok response", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ detail: "Internal Server Error" }),
+    });
+    await expect(connectionsApi.list()).rejects.toThrow();
+  });
+});
+
 describe("datasetsApi.setPreferredColormap", () => {
   it("PATCHes /api/datasets/{id}/colormap with the payload", async () => {
     mockFetch.mockResolvedValue({

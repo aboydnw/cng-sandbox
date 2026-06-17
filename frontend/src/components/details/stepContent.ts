@@ -448,6 +448,12 @@ function getStoreStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         description:
           "S3-compatible object storage with zero egress fees, used to host COG files for tiler access.",
       },
+      {
+        name: "obstore",
+        url: "https://github.com/developmentseed/obstore",
+        description:
+          "Rust-backed Python object-store client that uploads the converted file to R2 with high throughput.",
+      },
     ];
 
     return {
@@ -488,6 +494,12 @@ function getStoreStep(dataset: Dataset, pipeline: PipelineType): StepContent {
         url: "https://www.cloudflare.com/developer-platform/r2/",
         description:
           "S3-compatible object storage with zero egress fees, hosting the PMTiles archive for direct browser access.",
+      },
+      {
+        name: "obstore",
+        url: "https://github.com/developmentseed/obstore",
+        description:
+          "Rust-backed Python object-store client that uploads the converted file to R2 with high throughput.",
       },
     ];
 

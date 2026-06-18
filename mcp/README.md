@@ -94,7 +94,7 @@ Check if a layer configuration is valid before creating a chapter.
 
 ```bash
 cd mcp
-uv sync
+uv sync --extra dev
 uv run pytest tests/ -v
 ```
 

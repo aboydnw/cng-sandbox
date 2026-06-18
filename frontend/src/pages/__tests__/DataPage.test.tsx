@@ -46,6 +46,7 @@ const userConnection: Connection = {
 vi.mock("../../lib/api", () => ({
   workspaceFetch: vi.fn(() =>
     Promise.resolve({
+      ok: true,
       json: () => Promise.resolve([]),
     })
   ),
@@ -55,6 +56,8 @@ vi.mock("../../lib/api", () => ({
   },
   setWorkspaceId: vi.fn(),
 }));
+
+import { workspaceFetch, connectionsApi } from "../../lib/api";
 
 function renderDataPage() {
   return render(
@@ -103,5 +106,37 @@ describe("DataPage example connection gating", () => {
     expect(userRow).not.toBeNull();
     const deleteButton = userRow!.querySelector("button");
     expect(deleteButton?.textContent).toMatch(/delete/i);
+  });
+});
+
+describe("DataPage fetch failures", () => {
+  it("shows an error message when the datasets fetch returns non-ok", async () => {
+    (workspaceFetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ detail: "boom" }),
+    });
+    renderDataPage();
+
+    expect(
+      await screen.findByText(/couldn’t load your data library/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/nothing in your data library yet/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows an error message when the connections fetch rejects", async () => {
+    (connectionsApi.list as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("HTTP 502")
+    );
+    renderDataPage();
+
+    expect(
+      await screen.findByText(/couldn’t load your data library/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/nothing in your data library yet/i)
+    ).not.toBeInTheDocument();
   });
 });

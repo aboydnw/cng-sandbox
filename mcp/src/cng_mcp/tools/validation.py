@@ -3,8 +3,10 @@
 from typing import Optional
 from mcp.types import TextContent
 from cng_mcp.client.sandbox_api import SandboxAPIClient
+from cng_mcp.tools._errors import surface_api_errors
 
 
+@surface_api_errors
 async def validate_layer_config_tool(
     client: SandboxAPIClient,
     dataset_id: str,

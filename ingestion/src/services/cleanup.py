@@ -32,10 +32,11 @@ async def cleanup_expired_rows(
     expired_datasets = (
         session.query(DatasetRow)
         .filter(
+            DatasetRow.is_example.is_(False),
             or_(
                 (DatasetRow.expires_at.isnot(None)) & (DatasetRow.expires_at < now),
                 (DatasetRow.expires_at.is_(None)) & (DatasetRow.created_at < cutoff),
-            )
+            ),
         )
         .all()
     )
@@ -49,7 +50,11 @@ async def cleanup_expired_rows(
             continue
         deleted.append(row.id)
 
-    expired_stories = session.query(StoryRow).filter(StoryRow.created_at < cutoff).all()
+    expired_stories = (
+        session.query(StoryRow)
+        .filter(StoryRow.is_example.is_(False), StoryRow.created_at < cutoff)
+        .all()
+    )
     for row in expired_stories:
         logger.info("Cleaning up expired story %s (%s)", row.id, row.title)
         session.delete(row)

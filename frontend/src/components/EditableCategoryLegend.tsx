@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Box, Flex, Text, Input } from "@chakra-ui/react";
 import { workspaceFetch } from "../lib/api";
+import { toaster } from "../lib/toaster";
 import { CategoryColorPopover } from "./CategoryColorPopover";
 
 interface Category {
@@ -73,14 +74,24 @@ export function EditableCategoryLegend({
       source === "connection"
         ? `/api/connections/${datasetId}/categories`
         : `/api/datasets/${datasetId}/categories`;
+    const revert = () => {
+      onCategoriesChange(
+        categories.map((c) => (c.value === value ? original : c))
+      );
+      toaster.create({
+        title: "Failed to save category label",
+        type: "error",
+      });
+    };
     workspaceFetch(endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify([{ value, label: newLabel }]),
-    }).catch(() => {
-      // Revert on failure
-      onCategoriesChange(categories);
-    });
+    })
+      .then((resp) => {
+        if (!resp.ok) revert();
+      })
+      .catch(revert);
   };
 
   const handleColorSave = (value: number, nextColor: string) => {
@@ -98,15 +109,24 @@ export function EditableCategoryLegend({
       source === "connection"
         ? `/api/connections/${datasetId}/categories`
         : `/api/datasets/${datasetId}/categories`;
+    const revert = () => {
+      onCategoriesChange(
+        categories.map((c) => (c.value === value ? original : c))
+      );
+      toaster.create({
+        title: "Failed to save category color",
+        type: "error",
+      });
+    };
     workspaceFetch(endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify([{ value, color: nextColor }]),
-    }).catch(() => {
-      onCategoriesChange(
-        categories.map((c) => (c.value === value ? original : c))
-      );
-    });
+    })
+      .then((resp) => {
+        if (!resp.ok) revert();
+      })
+      .catch(revert);
   };
 
   return (

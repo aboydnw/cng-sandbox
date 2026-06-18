@@ -9,6 +9,7 @@ from typing import Any
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, Resource, TextContent
+from pydantic import AnyUrl
 
 from cng_mcp.client.sandbox_api import SandboxAPIClient
 from cng_mcp.tools import (
@@ -203,12 +204,13 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
         return RESOURCE_DEFINITIONS
 
     @server.read_resource()
-    async def handle_read_resource(uri: str) -> str:
-        if uri == "cng://datasets":
+    async def handle_read_resource(uri: AnyUrl) -> str:
+        uri_str = str(uri).rstrip("/")
+        if uri_str == "cng://datasets":
             return await list_datasets_resource(client)
-        if uri == "cng://story-templates":
+        if uri_str == "cng://story-templates":
             return await list_story_templates_resource()
-        if uri == "cng://colormaps":
+        if uri_str == "cng://colormaps":
             return await list_colormaps_resource()
         raise ValueError(f"Unknown resource: {uri}")
 

@@ -50,6 +50,6 @@ Agents pick from list. v2 can expose metadata.
 
 ## Error Handling
 
-- Client raises `httpx.HTTPError` on API failures
-- Tools catch and format as user-friendly `TextContent`
+- Client raises `httpx.HTTPStatusError` on non-2xx API responses (30s default timeout)
+- All tools are wrapped by the `surface_api_errors` decorator (`tools/_errors.py`), which catches `HTTPStatusError` and returns the API response body in the `TextContent` result so agents see the FastAPI `detail` message
 - Server wraps protocol-level errors

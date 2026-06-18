@@ -3,9 +3,21 @@ import { Box } from "@chakra-ui/react";
 import DeckGL from "@deck.gl/react";
 import { MapView, FlyToInterpolator } from "@deck.gl/core";
 import Map from "react-map-gl/maplibre";
-import type { Layer } from "@deck.gl/core";
+import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { CameraState } from "../lib/layers/types";
 import { BASEMAPS, BasemapPicker } from "./MapShell";
+
+// Mirrors deck.gl's TooltipContent, which is not exported from
+// @deck.gl/core's package entry point.
+type TooltipContent =
+  | null
+  | string
+  | {
+      text?: string;
+      html?: string;
+      className?: string;
+      style?: Partial<CSSStyleDeclaration>;
+    };
 
 interface UnifiedMapProps {
   camera: CameraState;
@@ -13,12 +25,9 @@ interface UnifiedMapProps {
   layers: Layer[];
   basemap: string;
   onBasemapChange: (basemap: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onHover?: (info: any) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onClick?: (info: any) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getTooltip?: (info: any) => any;
+  onHover?: (info: PickingInfo) => void;
+  onClick?: (info: PickingInfo) => void;
+  getTooltip?: (info: PickingInfo) => TooltipContent;
   children?: React.ReactNode;
   transitionDuration?: number;
   transitionInterpolator?: FlyToInterpolator;

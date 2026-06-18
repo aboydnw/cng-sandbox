@@ -1,4 +1,5 @@
 import { MVTLayer } from "@deck.gl/geo-layers";
+import type { PickingInfo } from "@deck.gl/core";
 import { PMTiles } from "pmtiles";
 import { load } from "@loaders.gl/core";
 import { MVTLoader } from "@loaders.gl/mvt";
@@ -25,8 +26,8 @@ interface VectorLayerOptions {
   opacity: number;
   minZoom?: number;
   maxZoom?: number;
-  onHover?: (info: any) => void;
-  onClick?: (info: any) => void;
+  onHover?: (info: PickingInfo) => void;
+  onClick?: (info: PickingInfo) => void;
   getFillColor?:
     | ((feature: any) => [number, number, number, number])
     | [number, number, number, number];

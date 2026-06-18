@@ -122,7 +122,7 @@ function ScrollytellingBlock({
   const activeConn = activeConnId
     ? (connectionMap?.get(activeConnId) ?? null)
     : null;
-  const zarrNode = useStoryZarrNode(activeConn);
+  const { node: zarrNode, error: zarrError } = useStoryZarrNode(activeConn);
   const zarrNodeMap = useMemo<Map<string, ZarrNode>>(() => {
     if (activeConnId && zarrNode) {
       return new Map([[activeConnId, zarrNode]]);
@@ -174,6 +174,23 @@ function ScrollytellingBlock({
         {renderMetadata && !(activeDataset === null && !hasConnection) && (
           <Box position="absolute" top={3} right={3} zIndex={10}>
             <RenderModeIndicator {...renderMetadata} />
+          </Box>
+        )}
+        {zarrError && (
+          <Box
+            position="absolute"
+            top={4}
+            left={4}
+            bg="red.subtle"
+            borderWidth="1px"
+            borderColor="red.border"
+            color="red.fg"
+            px={3}
+            py={2}
+            fontSize="sm"
+            zIndex={10}
+          >
+            Couldn&apos;t open Zarr store: {zarrError}
           </Box>
         )}
         {activeDataset === null && !hasConnection && (

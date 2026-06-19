@@ -13,31 +13,73 @@ from sqlalchemy import create_engine as sa_create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.config import get_settings
+from src.models import JobStatus
 from src.models.base import Base
 from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
 from src.models.story_asset import StoryAssetRow  # noqa: F401 — ensures table creation
 from src.rate_limit import limiter, rate_limit_exceeded_handler
 from src.services.cleanup import cleanup_expired_rows
-from src.state import scan_store, scan_store_lock
+from src.state import jobs, scan_store, scan_store_lock
 
 logger = logging.getLogger(__name__)
 
+SCAN_TTL = timedelta(minutes=30)
+TERMINAL_JOB_TTL = timedelta(hours=1)
+
+
+async def _expire_stale_scans(now: datetime | None = None):
+    """Fail and release pipelines whose variable-selection scan was abandoned.
+
+    Pipelines paused for variable selection block on ``job.scan_event``.
+    Without this, an abandoned scan leaves the pipeline coroutine waiting
+    forever and its temp upload on disk permanently.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - SCAN_TTL
+    async with scan_store_lock:
+        expired = [
+            sid
+            for sid, entry in scan_store.items()
+            if entry.get("state") == "waiting" and entry.get("created_at", now) < cutoff
+        ]
+        for sid in expired:
+            entry = scan_store.pop(sid)
+            job = entry.get("job")
+            if job is not None:
+                job.status = JobStatus.FAILED
+                job.error = (
+                    "Scan expired — no variable was selected within 30 minutes. "
+                    "Please re-upload the file."
+                )
+                if job.scan_event is not None:
+                    job.scan_event.set()
+                logger.info("Expired abandoned scan %s (job %s)", sid, job.id)
+
+
+def _evict_terminal_jobs(now: datetime | None = None):
+    """Drop jobs that have been in a terminal status for over an hour.
+
+    The terminal transition is stamped on first observation by this sweep,
+    so eviction happens one TTL after the sweep first sees the job done.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = now - TERMINAL_JOB_TTL
+    for job_id, job in list(jobs.items()):
+        if job.status not in (JobStatus.READY, JobStatus.FAILED):
+            continue
+        if job.finished_at is None:
+            job.finished_at = now
+        elif job.finished_at < cutoff:
+            del jobs[job_id]
+
 
 async def _cleanup_scans():
-    """Remove expired scan entries every 5 minutes."""
+    """Expire abandoned scans and evict finished jobs every 5 minutes."""
     while True:
         await asyncio.sleep(300)
-        cutoff = datetime.now(UTC) - timedelta(minutes=30)
-        async with scan_store_lock:
-            expired = [
-                sid
-                for sid, entry in scan_store.items()
-                if entry.get("state") == "waiting"
-                and entry.get("created_at", datetime.now(UTC)) < cutoff
-            ]
-            for sid in expired:
-                del scan_store[sid]
+        await _expire_stale_scans()
+        _evict_terminal_jobs()
 
 
 async def _register_examples(app):
@@ -94,7 +136,8 @@ async def _seed_stories(app: FastAPI) -> None:
 
     canonical_titles = {s.title for s in ALL_STORIES}
     attempts = 0
-    while True:
+    max_attempts = 2880  # ~24h at one attempt per 30s
+    while attempts < max_attempts:
         attempts += 1
         try:
             seed_example_stories(app.state.db_session_factory)
@@ -118,6 +161,11 @@ async def _seed_stories(app: FastAPI) -> None:
             logger.warning(
                 "Example story seeding still incomplete after %d attempts", attempts
             )
+    logger.error(
+        "Giving up on example story seeding after %d attempts; "
+        "some canonical stories never seeded",
+        max_attempts,
+    )
 
 
 async def _seed_example_connections(app: FastAPI) -> None:
@@ -155,9 +203,69 @@ async def _cleanup_expired(app):
 
 
 def _migrate_schema(engine):
-    """Add columns that create_all won't add to existing tables."""
+    """Apply additive schema migrations that create_all won't perform.
+
+    This is the single live migration mechanism for the ingestion service:
+    it runs on every startup right after ``Base.metadata.create_all`` and
+    every statement must stay idempotent. The eventual destination for this
+    is alembic.
+    """
     from sqlalchemy import text
     from sqlalchemy.exc import DBAPIError
+
+    columns = [
+        ("connections", "band_count", "INTEGER"),
+        ("connections", "rescale", "TEXT"),
+        ("connections", "is_categorical", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("connections", "categories_json", "TEXT"),
+        ("connections", "tile_url", "TEXT"),
+        ("connections", "render_path", "TEXT"),
+        ("connections", "conversion_status", "TEXT"),
+        ("connections", "conversion_error", "TEXT"),
+        ("connections", "feature_count", "INTEGER"),
+        ("connections", "file_size", "BIGINT"),
+        ("datasets", "expires_at", "TIMESTAMP"),
+        ("datasets", "is_example", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("stories", "is_example", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("datasets", "is_shared", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("connections", "is_shared", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("datasets", "render_mode", "TEXT"),
+        ("connections", "render_mode", "TEXT"),
+        ("datasets", "preferred_colormap", "TEXT"),
+        ("connections", "preferred_colormap", "TEXT"),
+        ("datasets", "preferred_colormap_reversed", "BOOLEAN"),
+        ("connections", "preferred_colormap_reversed", "BOOLEAN"),
+        ("connections", "config", "JSONB"),
+        ("connections", "geozarr_attrs", "JSONB"),
+        ("connections", "is_example", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("stories", "workspace_id", "TEXT"),
+        ("datasets", "workspace_id", "TEXT"),
+        ("stories", "forked_from_id", "TEXT"),
+    ]
+
+    # SQLite cannot express ALTER COLUMN ... DROP NOT NULL; it is also
+    # unnecessary there because only pre-existing PostgreSQL deployments
+    # carry the old NOT NULL constraint on stories.dataset_id.
+    postgres_statements = [
+        "ALTER TABLE stories ALTER COLUMN dataset_id DROP NOT NULL",
+    ]
+
+    statements = [
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_fork_lookup "
+        "ON stories (workspace_id, forked_from_id) "
+        "WHERE forked_from_id IS NOT NULL",
+        # Remove duplicate is_example rows before creating the unique index so
+        # that deployments upgrading from a version without the index don't
+        # fail. Keep the row with the lowest id for each duplicate title.
+        "DELETE FROM stories WHERE is_example AND id NOT IN ("
+        "  SELECT MIN(id) FROM stories WHERE is_example GROUP BY title"
+        ")",
+        # Partial unique index so concurrent startups cannot insert
+        # duplicate is_example=True story titles. PostgreSQL and SQLite
+        # both support `CREATE UNIQUE INDEX ... WHERE ...`.
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
+        "ON stories (title) WHERE is_example",
+    ]
 
     def _is_duplicate_column(exc: DBAPIError) -> bool:
         # PostgreSQL raises SQLSTATE 42701 (duplicate_column); SQLite and
@@ -168,183 +276,31 @@ def _migrate_schema(engine):
             return True
         return "duplicate column" in str(orig).lower()
 
+    def _add_column(conn, table: str, column: str, ddl: str) -> None:
+        try:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
+
+    def _execute(conn, statement: str) -> None:
+        try:
+            conn.execute(text(statement))
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
+
     with engine.connect() as conn:
-        for col, typ in [
-            ("band_count", "INTEGER"),
-            ("rescale", "TEXT"),
-            ("is_categorical", "BOOLEAN NOT NULL DEFAULT FALSE"),
-            ("categories_json", "TEXT"),
-            ("tile_url", "TEXT"),
-            ("render_path", "TEXT"),
-            ("conversion_status", "TEXT"),
-            ("conversion_error", "TEXT"),
-            ("feature_count", "INTEGER"),
-            ("file_size", "BIGINT"),
-        ]:
-            try:
-                conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if _is_duplicate_column(exc):
-                    continue
-                raise
-        try:
-            conn.execute(text("ALTER TABLE datasets ADD COLUMN expires_at TIMESTAMP"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "ALTER TABLE datasets ADD COLUMN is_example BOOLEAN "
-                    "NOT NULL DEFAULT FALSE"
-                )
-            )
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "ALTER TABLE stories ADD COLUMN is_example BOOLEAN "
-                    "NOT NULL DEFAULT FALSE"
-                )
-            )
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(
-                    text(
-                        f"ALTER TABLE {table} ADD COLUMN is_shared BOOLEAN "
-                        "NOT NULL DEFAULT FALSE"
-                    )
-                )
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN render_mode TEXT"))
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(
-                    text(f"ALTER TABLE {table} ADD COLUMN preferred_colormap TEXT")
-                )
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(
-                    text(
-                        f"ALTER TABLE {table} ADD COLUMN "
-                        "preferred_colormap_reversed BOOLEAN"
-                    )
-                )
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        try:
-            conn.execute(text("ALTER TABLE connections ADD COLUMN config JSONB"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(text("ALTER TABLE connections ADD COLUMN geozarr_attrs JSONB"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "ALTER TABLE connections ADD COLUMN is_example BOOLEAN "
-                    "NOT NULL DEFAULT FALSE"
-                )
-            )
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(text("ALTER TABLE stories ADD COLUMN workspace_id TEXT"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(text("ALTER TABLE stories ADD COLUMN forked_from_id TEXT"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_fork_lookup "
-                    "ON stories (workspace_id, forked_from_id) "
-                    "WHERE forked_from_id IS NOT NULL"
-                )
-            )
-            conn.commit()
-        except DBAPIError:
-            conn.rollback()
-            raise
-        # Remove duplicate is_example rows before creating the unique index so
-        # that deployments upgrading from a version without the index don't
-        # fail. Keep the row with the lowest id for each duplicate title.
-        try:
-            conn.execute(
-                text(
-                    "DELETE FROM stories WHERE is_example AND id NOT IN ("
-                    "  SELECT MIN(id) FROM stories WHERE is_example GROUP BY title"
-                    ")"
-                )
-            )
-            conn.commit()
-        except DBAPIError:
-            conn.rollback()
-            raise
-        # Partial unique index so concurrent startups cannot insert
-        # duplicate is_example=True story titles. PostgreSQL and SQLite
-        # both support `CREATE UNIQUE INDEX ... WHERE ...`.
-        try:
-            conn.execute(
-                text(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
-                    "ON stories (title) WHERE is_example"
-                )
-            )
-            conn.commit()
-        except DBAPIError:
-            conn.rollback()
-            raise
+        for table, column, ddl in columns:
+            _add_column(conn, table, column, ddl)
+        if engine.dialect.name == "postgresql":
+            for statement in postgres_statements:
+                _execute(conn, statement)
+        for statement in statements:
+            _execute(conn, statement)
 
 
 @asynccontextmanager

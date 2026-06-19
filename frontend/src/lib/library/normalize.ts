@@ -10,6 +10,7 @@ export interface LibraryItem {
   type: "raster" | "vector";
   source: { label: string; href?: string };
   addedAt: string;
+  expiresAt: string | null;
   detailHref: string;
   raw:
     | { kind: "dataset"; dataset: Dataset }
@@ -24,6 +25,7 @@ export function datasetToLibraryItem(ds: Dataset): LibraryItem {
     type: ds.dataset_type,
     source: { label: "Uploaded" },
     addedAt: ds.created_at,
+    expiresAt: ds.expires_at ?? null,
     detailHref: `/map/${ds.id}`,
     raw: { kind: "dataset", dataset: ds },
   };
@@ -52,6 +54,7 @@ export function connectionToLibraryItem(conn: Connection): LibraryItem {
     type: connectionTypeToKind(conn),
     source: { label: conn.url, href: conn.url },
     addedAt: conn.created_at,
+    expiresAt: null,
     detailHref: `/map/connection/${conn.id}`,
     raw: { kind: "connection", connection: conn },
   };

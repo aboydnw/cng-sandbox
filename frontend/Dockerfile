@@ -20,6 +20,7 @@ COPY index.html ./
 COPY viewer.html ./
 COPY vite.config.ts vite.shared.config.ts vite.viewer.config.ts ./
 COPY tsconfig.json ./
+COPY version.txt ./
 COPY public/ ./public/
 EXPOSE 5185
 CMD ["npx", "vite", "--host"]

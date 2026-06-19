@@ -105,7 +105,7 @@ async def ingest_raster(
         resp = await client.post(
             f"/collections/{collection_id}/items", json=item.to_dict()
         )
-        if resp.status_code not in (200, 201):
+        if resp.status_code not in (200, 201, 409):
             raise RuntimeError(
                 f"Failed to create STAC item: {resp.status_code} {resp.text}"
             )
@@ -200,7 +200,7 @@ async def ingest_mosaic_raster(
             resp = await client.post(
                 f"/collections/{collection_id}/items", json=item.to_dict()
             )
-            if resp.status_code not in (200, 201):
+            if resp.status_code not in (200, 201, 409):
                 raise RuntimeError(
                     f"Failed to create STAC item {i}: {resp.status_code} {resp.text}"
                 )
@@ -261,7 +261,7 @@ async def ingest_temporal_raster(
             resp = await client.post(
                 f"/collections/{collection_id}/items", json=item.to_dict()
             )
-            if resp.status_code not in (200, 201):
+            if resp.status_code not in (200, 201, 409):
                 raise RuntimeError(
                     f"Failed to create STAC item {i}: {resp.status_code} {resp.text}"
                 )

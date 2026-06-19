@@ -2,8 +2,10 @@
 
 from mcp.types import TextContent
 from cng_mcp.client.sandbox_api import SandboxAPIClient
+from cng_mcp.tools._errors import surface_api_errors
 
 
+@surface_api_errors
 async def read_datasets_tool(client: SandboxAPIClient) -> TextContent:
     """List all datasets in workspace."""
     datasets = await client.get_datasets()

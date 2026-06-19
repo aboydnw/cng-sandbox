@@ -151,6 +151,7 @@ export interface Story {
   updated_at: string;
   published: boolean;
   is_example?: boolean;
+  expires_at?: string | null;
 }
 
 export interface StoryIndexEntry {

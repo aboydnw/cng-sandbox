@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { ExpiryBadge } from "../components/ExpiryBadge";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
 import type { Dataset, Connection } from "../types";
 import { displayName } from "../utils/dataset";
+import { timeAgo } from "../utils/format";
 import { detectCadence, formatDateRangeBadge } from "../utils/temporal";
 import {
   datasetToLibraryItem,
@@ -20,43 +22,52 @@ interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
 }
 
-function timeAgo(dateStr: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 export default function DataPage() {
   const { workspacePath } = useWorkspace();
   const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [datasetsLoading, setDatasetsLoading] = useState(true);
   const [connectionsLoading, setConnectionsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) => r.json())
-      .then((data) => {
-        setDatasets(data);
-        setDatasetsLoading(false);
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
       })
-      .catch(() => setDatasetsLoading(false));
+      .then((data) => {
+        if (!cancelled) setDatasets(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError((err as Error).message);
+      })
+      .finally(() => {
+        if (!cancelled) setDatasetsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     connectionsApi
       .list()
       .then((data) => {
-        setConnections(data);
-        setConnectionsLoading(false);
+        if (!cancelled) setConnections(data);
       })
-      .catch(() => setConnectionsLoading(false));
+      .catch((err) => {
+        if (!cancelled) setError((err as Error).message);
+      })
+      .finally(() => {
+        if (!cancelled) setConnectionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleDelete = useCallback(async (item: LibraryItem) => {
@@ -271,6 +282,21 @@ export default function DataPage() {
               style={{ animation: "spin 1s linear infinite" }}
             />
           </Flex>
+        ) : error ? (
+          <Flex
+            align="center"
+            gap={2}
+            p={2.5}
+            bg="red.50"
+            border="1px solid"
+            borderColor="red.200"
+            borderRadius="6px"
+            color="red.600"
+            fontSize="13px"
+          >
+            <Warning size={16} style={{ flexShrink: 0 }} />
+            <Text>Couldn&rsquo;t load your data library. {error}</Text>
+          </Flex>
         ) : (
           (() => {
             const userItems: LibraryItem[] = [
@@ -309,6 +335,7 @@ export default function DataPage() {
                     <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
                     <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
                     <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
+                    <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
                     <Table.ColumnHeader w="80px" />
                   </Table.Row>
                 </Table.Header>
@@ -371,6 +398,15 @@ export default function DataPage() {
                         <Text fontSize="sm" color="gray.600">
                           {item.addedAt ? timeAgo(item.addedAt) : "—"}
                         </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {item.expiresAt ? (
+                          <ExpiryBadge expiresAt={item.expiresAt} />
+                        ) : (
+                          <Text fontSize="sm" color="gray.500">
+                            —
+                          </Text>
+                        )}
                       </Table.Cell>
                       <Table.Cell>
                         <Button

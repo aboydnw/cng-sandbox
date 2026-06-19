@@ -33,6 +33,7 @@ import {
 import type { Connection, Dataset } from "../types";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
+import { toaster } from "../lib/toaster";
 
 export function useStoryEditor() {
   const { id } = useParams<{ id: string }>();
@@ -510,20 +511,28 @@ export function useStoryEditor() {
     }
   }
 
-  function handlePublish() {
+  function setPublished(published: boolean) {
     if (!story) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    const published = { ...story, published: true };
-    setStory(published);
-    saveStoryToServer(published);
+    const updated = { ...story, published };
+    setStory(updated);
+    saveStoryToServer(updated).catch(() => {
+      setStory((s) => (s ? { ...s, published: !published } : s));
+      toaster.create({
+        title: published
+          ? "Failed to publish story"
+          : "Failed to unpublish story",
+        type: "error",
+      });
+    });
+  }
+
+  function handlePublish() {
+    setPublished(true);
   }
 
   function handleUnpublish() {
-    if (!story) return;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    const unpublished = { ...story, published: false };
-    setStory(unpublished);
-    saveStoryToServer(unpublished);
+    setPublished(false);
   }
 
   function updateChapter(next: Chapter) {

@@ -1,0 +1,52 @@
+# Applies to builds with the repo root as context (ingestion in
+# docker-compose.yml). The frontend service builds from the frontend/
+# context, which has its own .dockerignore.
+#
+# The ingestion Dockerfile COPYs: ingestion/, geo-conversions/, and
+# frontend/archive-runtime/ — keep those (minus caches) available.
+
+# VCS and agent state
+.git
+.github
+.worktrees
+.claude
+.superpowers
+.playwright-mcp
+
+# Python caches and environments
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/*.egg-info
+
+# Node dependencies and build output (reinstalled/rebuilt inside the image)
+**/node_modules
+frontend/dist
+frontend/archive-runtime/dist
+frontend/public/viewer
+frontend/public/.vite
+**/.yarn
+
+# Tests aren't shipped in images
+ingestion/tests
+
+# Local data, logs, and secrets
+sample-data
+logs
+*.log
+*.zip
+.env
+.env.*
+
+# Services never built from the root context
+mcp
+deploy
+docs
+
+# Editor/OS noise
+.DS_Store
+.idea
+.vscode
+*.swp
+*.swo

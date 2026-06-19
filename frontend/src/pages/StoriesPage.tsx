@@ -1,37 +1,37 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { ExpiryBadge } from "../components/ExpiryBadge";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
+import { timeAgo } from "../utils/format";
 import type { Story } from "../lib/story/types";
-
-function timeAgo(dateStr: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     listStoriesFromServer()
       .then((data) => {
-        setStories(data);
-        setLoading(false);
+        if (!cancelled) setStories(data);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        if (!cancelled) setError((err as Error).message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleDelete = useCallback(async (story: Story) => {
@@ -81,6 +81,21 @@ export default function StoriesPage() {
               style={{ animation: "spin 1s linear infinite" }}
             />
           </Flex>
+        ) : error ? (
+          <Flex
+            align="center"
+            gap={2}
+            p={2.5}
+            bg="red.50"
+            border="1px solid"
+            borderColor="red.200"
+            borderRadius="6px"
+            color="red.600"
+            fontSize="13px"
+          >
+            <Warning size={16} style={{ flexShrink: 0 }} />
+            <Text>Couldn&rsquo;t load your stories. {error}</Text>
+          </Flex>
         ) : userStories.length === 0 ? (
           <Text color="gray.500" fontSize="sm" mb={2}>
             No stories yet — click &ldquo;New story&rdquo; to get started.
@@ -93,6 +108,7 @@ export default function StoriesPage() {
                 <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
                 <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
                 <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
+                <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
                 <Table.ColumnHeader w="80px" />
               </Table.Row>
             </Table.Header>
@@ -131,6 +147,15 @@ export default function StoriesPage() {
                     <Text fontSize="sm" color="gray.600">
                       {story.updated_at ? timeAgo(story.updated_at) : "—"}
                     </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {story.expires_at ? (
+                      <ExpiryBadge expiresAt={story.expires_at} />
+                    ) : (
+                      <Text fontSize="sm" color="gray.500">
+                        —
+                      </Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell>
                     <Button

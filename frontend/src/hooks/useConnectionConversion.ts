@@ -14,6 +14,8 @@ const INITIAL: ConversionStatus = {
   featureCount: null,
 };
 
+const MAX_RETRIES = 3;
+
 export function useConnectionConversion(
   connectionId: string | null,
   enabled: boolean
@@ -22,24 +24,61 @@ export function useConnectionConversion(
 
   useEffect(() => {
     if (!enabled || !connectionId) return;
-    const source = new EventSource(`/api/connections/${connectionId}/stream`);
-    source.addEventListener("status", (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
-      setState({
-        status: data.status,
-        tileUrl: data.tile_url ?? null,
-        error: data.error ?? null,
-        featureCount: data.feature_count ?? null,
+
+    let source: EventSource | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryCount = 0;
+    let cancelled = false;
+
+    const connect = () => {
+      const es = new EventSource(`/api/connections/${connectionId}/stream`);
+      source = es;
+      es.addEventListener("status", (e: MessageEvent) => {
+        let data;
+        try {
+          data = JSON.parse(e.data);
+        } catch {
+          return;
+        }
+        retryCount = 0;
+        setState({
+          status: data.status,
+          tileUrl: data.tile_url ?? null,
+          error: data.error ?? null,
+          featureCount: data.feature_count ?? null,
+        });
+        if (
+          data.status === "ready" ||
+          data.status === "failed" ||
+          data.status === "not_found"
+        ) {
+          es.close();
+        }
       });
-      if (
-        data.status === "ready" ||
-        data.status === "failed" ||
-        data.status === "not_found"
-      ) {
-        source.close();
-      }
-    });
-    return () => source.close();
+      es.onerror = () => {
+        es.close();
+        if (cancelled) return;
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          retryTimer = setTimeout(connect, 1000 * retryCount);
+        } else {
+          setState({
+            status: "failed",
+            tileUrl: null,
+            error: "Connection lost. Please refresh the page.",
+            featureCount: null,
+          });
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      source?.close();
+    };
   }, [connectionId, enabled]);
 
   return state;

@@ -102,6 +102,70 @@ async def test_deletes_expired_stories(db_session):
 
 
 @pytest.mark.asyncio
+async def test_preserves_example_rows_past_cutoff(db_session):
+    old = datetime.now(UTC) - timedelta(days=365)
+    db_session.add(
+        DatasetRow(
+            id="example-ds",
+            filename="example.tif",
+            dataset_type="raster",
+            format_pair="geotiff-to-cog",
+            tile_url="/tiles/example",
+            workspace_id=None,
+            created_at=old,
+            expires_at=None,
+            is_example=True,
+        )
+    )
+    db_session.add(
+        DatasetRow(
+            id="plain-ds",
+            filename="plain.tif",
+            dataset_type="raster",
+            format_pair="geotiff-to-cog",
+            tile_url="/tiles/plain",
+            workspace_id=None,
+            created_at=old,
+            expires_at=None,
+            is_example=False,
+        )
+    )
+    db_session.add(
+        StoryRow(
+            id="example-story",
+            title="Example",
+            workspace_id=None,
+            created_at=old,
+            is_example=True,
+        )
+    )
+    db_session.add(
+        StoryRow(
+            id="plain-story",
+            title="Plain",
+            workspace_id=None,
+            created_at=old,
+            is_example=False,
+        )
+    )
+    db_session.commit()
+
+    with patch(
+        "src.services.cleanup.delete_dataset", new_callable=AsyncMock
+    ) as mock_delete:
+        mock_delete.return_value = {"deleted": True, "affected_stories": []}
+        deleted = await cleanup_expired_rows(db_session, ttl_days=30)
+
+    assert "example-ds" not in deleted
+    assert "example-story" not in deleted
+    assert "plain-ds" in deleted
+    assert "plain-story" in deleted
+    mock_delete.assert_called_once_with(db_session, "plain-ds", storage=None)
+    assert db_session.get(StoryRow, "example-story") is not None
+    assert db_session.get(StoryRow, "plain-story") is None
+
+
+@pytest.mark.asyncio
 async def test_continues_on_delete_failure(db_session):
     old = datetime.now(UTC) - timedelta(days=31)
     db_session.add(

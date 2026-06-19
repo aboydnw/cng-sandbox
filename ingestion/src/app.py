@@ -197,9 +197,69 @@ async def _cleanup_expired(app):
 
 
 def _migrate_schema(engine):
-    """Add columns that create_all won't add to existing tables."""
+    """Apply additive schema migrations that create_all won't perform.
+
+    This is the single live migration mechanism for the ingestion service:
+    it runs on every startup right after ``Base.metadata.create_all`` and
+    every statement must stay idempotent. The eventual destination for this
+    is alembic.
+    """
     from sqlalchemy import text
     from sqlalchemy.exc import DBAPIError
+
+    columns = [
+        ("connections", "band_count", "INTEGER"),
+        ("connections", "rescale", "TEXT"),
+        ("connections", "is_categorical", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("connections", "categories_json", "TEXT"),
+        ("connections", "tile_url", "TEXT"),
+        ("connections", "render_path", "TEXT"),
+        ("connections", "conversion_status", "TEXT"),
+        ("connections", "conversion_error", "TEXT"),
+        ("connections", "feature_count", "INTEGER"),
+        ("connections", "file_size", "BIGINT"),
+        ("datasets", "expires_at", "TIMESTAMP"),
+        ("datasets", "is_example", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("stories", "is_example", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("datasets", "is_shared", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("connections", "is_shared", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("datasets", "render_mode", "TEXT"),
+        ("connections", "render_mode", "TEXT"),
+        ("datasets", "preferred_colormap", "TEXT"),
+        ("connections", "preferred_colormap", "TEXT"),
+        ("datasets", "preferred_colormap_reversed", "BOOLEAN"),
+        ("connections", "preferred_colormap_reversed", "BOOLEAN"),
+        ("connections", "config", "JSONB"),
+        ("connections", "geozarr_attrs", "JSONB"),
+        ("connections", "is_example", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("stories", "workspace_id", "TEXT"),
+        ("datasets", "workspace_id", "TEXT"),
+        ("stories", "forked_from_id", "TEXT"),
+    ]
+
+    # SQLite cannot express ALTER COLUMN ... DROP NOT NULL; it is also
+    # unnecessary there because only pre-existing PostgreSQL deployments
+    # carry the old NOT NULL constraint on stories.dataset_id.
+    postgres_statements = [
+        "ALTER TABLE stories ALTER COLUMN dataset_id DROP NOT NULL",
+    ]
+
+    statements = [
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_fork_lookup "
+        "ON stories (workspace_id, forked_from_id) "
+        "WHERE forked_from_id IS NOT NULL",
+        # Remove duplicate is_example rows before creating the unique index so
+        # that deployments upgrading from a version without the index don't
+        # fail. Keep the row with the lowest id for each duplicate title.
+        "DELETE FROM stories WHERE is_example AND id NOT IN ("
+        "  SELECT MIN(id) FROM stories WHERE is_example GROUP BY title"
+        ")",
+        # Partial unique index so concurrent startups cannot insert
+        # duplicate is_example=True story titles. PostgreSQL and SQLite
+        # both support `CREATE UNIQUE INDEX ... WHERE ...`.
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
+        "ON stories (title) WHERE is_example",
+    ]
 
     def _is_duplicate_column(exc: DBAPIError) -> bool:
         # PostgreSQL raises SQLSTATE 42701 (duplicate_column); SQLite and
@@ -210,183 +270,31 @@ def _migrate_schema(engine):
             return True
         return "duplicate column" in str(orig).lower()
 
+    def _add_column(conn, table: str, column: str, ddl: str) -> None:
+        try:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+            conn.commit()
+        except DBAPIError as exc:
+            conn.rollback()
+            if not _is_duplicate_column(exc):
+                raise
+
+    def _execute(conn, statement: str) -> None:
+        try:
+            conn.execute(text(statement))
+            conn.commit()
+        except DBAPIError:
+            conn.rollback()
+            raise
+
     with engine.connect() as conn:
-        for col, typ in [
-            ("band_count", "INTEGER"),
-            ("rescale", "TEXT"),
-            ("is_categorical", "BOOLEAN NOT NULL DEFAULT FALSE"),
-            ("categories_json", "TEXT"),
-            ("tile_url", "TEXT"),
-            ("render_path", "TEXT"),
-            ("conversion_status", "TEXT"),
-            ("conversion_error", "TEXT"),
-            ("feature_count", "INTEGER"),
-            ("file_size", "BIGINT"),
-        ]:
-            try:
-                conn.execute(text(f"ALTER TABLE connections ADD COLUMN {col} {typ}"))
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if _is_duplicate_column(exc):
-                    continue
-                raise
-        try:
-            conn.execute(text("ALTER TABLE datasets ADD COLUMN expires_at TIMESTAMP"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "ALTER TABLE datasets ADD COLUMN is_example BOOLEAN "
-                    "NOT NULL DEFAULT FALSE"
-                )
-            )
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "ALTER TABLE stories ADD COLUMN is_example BOOLEAN "
-                    "NOT NULL DEFAULT FALSE"
-                )
-            )
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(
-                    text(
-                        f"ALTER TABLE {table} ADD COLUMN is_shared BOOLEAN "
-                        "NOT NULL DEFAULT FALSE"
-                    )
-                )
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN render_mode TEXT"))
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(
-                    text(f"ALTER TABLE {table} ADD COLUMN preferred_colormap TEXT")
-                )
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        for table in ("datasets", "connections"):
-            try:
-                conn.execute(
-                    text(
-                        f"ALTER TABLE {table} ADD COLUMN "
-                        "preferred_colormap_reversed BOOLEAN"
-                    )
-                )
-                conn.commit()
-            except DBAPIError as exc:
-                conn.rollback()
-                if not _is_duplicate_column(exc):
-                    raise
-        try:
-            conn.execute(text("ALTER TABLE connections ADD COLUMN config JSONB"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(text("ALTER TABLE connections ADD COLUMN geozarr_attrs JSONB"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "ALTER TABLE connections ADD COLUMN is_example BOOLEAN "
-                    "NOT NULL DEFAULT FALSE"
-                )
-            )
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(text("ALTER TABLE stories ADD COLUMN workspace_id TEXT"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(text("ALTER TABLE stories ADD COLUMN forked_from_id TEXT"))
-            conn.commit()
-        except DBAPIError as exc:
-            conn.rollback()
-            if not _is_duplicate_column(exc):
-                raise
-        try:
-            conn.execute(
-                text(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_fork_lookup "
-                    "ON stories (workspace_id, forked_from_id) "
-                    "WHERE forked_from_id IS NOT NULL"
-                )
-            )
-            conn.commit()
-        except DBAPIError:
-            conn.rollback()
-            raise
-        # Remove duplicate is_example rows before creating the unique index so
-        # that deployments upgrading from a version without the index don't
-        # fail. Keep the row with the lowest id for each duplicate title.
-        try:
-            conn.execute(
-                text(
-                    "DELETE FROM stories WHERE is_example AND id NOT IN ("
-                    "  SELECT MIN(id) FROM stories WHERE is_example GROUP BY title"
-                    ")"
-                )
-            )
-            conn.commit()
-        except DBAPIError:
-            conn.rollback()
-            raise
-        # Partial unique index so concurrent startups cannot insert
-        # duplicate is_example=True story titles. PostgreSQL and SQLite
-        # both support `CREATE UNIQUE INDEX ... WHERE ...`.
-        try:
-            conn.execute(
-                text(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_stories_example_title "
-                    "ON stories (title) WHERE is_example"
-                )
-            )
-            conn.commit()
-        except DBAPIError:
-            conn.rollback()
-            raise
+        for table, column, ddl in columns:
+            _add_column(conn, table, column, ddl)
+        if engine.dialect.name == "postgresql":
+            for statement in postgres_statements:
+                _execute(conn, statement)
+        for statement in statements:
+            _execute(conn, statement)
 
 
 @asynccontextmanager

@@ -484,3 +484,40 @@ def test_convert_geotiff_categorical_preserves_source_crs(tmp_path):
             f"expected output CRS EPSG:5070, got {src.crs}"
         )
         assert src.overviews(1), "expected overviews to be built by COG driver"
+
+
+class _FakeTipgResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
+class _FakeTipgClient:
+    def __init__(self, status_code):
+        self._status_code = status_code
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def get(self, url, headers=None, timeout=None):
+        return _FakeTipgResponse(self._status_code)
+
+
+@pytest.mark.asyncio
+async def test_wait_for_tipg_collection_returns_true_when_served(monkeypatch):
+    from src.services import pipeline
+
+    monkeypatch.setattr(pipeline.httpx, "AsyncClient", lambda: _FakeTipgClient(200))
+
+    assert await pipeline._wait_for_tipg_collection("abc", timeout=5.0) is True
+
+
+@pytest.mark.asyncio
+async def test_wait_for_tipg_collection_returns_false_on_timeout(monkeypatch):
+    from src.services import pipeline
+
+    monkeypatch.setattr(pipeline.httpx, "AsyncClient", lambda: _FakeTipgClient(404))
+
+    assert await pipeline._wait_for_tipg_collection("abc", timeout=0.0) is False

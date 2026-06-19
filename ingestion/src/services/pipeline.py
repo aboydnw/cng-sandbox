@@ -305,6 +305,143 @@ def _detect_use_pmtiles(output_path: str) -> bool:
     return True
 
 
+@dataclass
+class RasterSummary:
+    raster_min: float
+    raster_max: float
+    bounds: list[float]
+    band_meta: BandMetadata
+    min_zoom: int
+    max_zoom: int
+
+
+async def _extract_raster_summary(cog_paths: list[str]) -> RasterSummary:
+    """Compute global stats and first-COG metadata for a raster pipeline.
+
+    Runs compute_global_stats across all COGs, then extracts bounds, band
+    metadata, and zoom range from the first COG. All blocking work runs off
+    the event loop.
+    """
+    from src.services.temporal_validation import compute_global_stats
+
+    raster_min, raster_max = await asyncio.to_thread(compute_global_stats, cog_paths)
+    first_cog = cog_paths[0]
+    bounds = await asyncio.to_thread(_extract_bounds, first_cog, DatasetType.RASTER)
+    band_meta = await asyncio.to_thread(_extract_band_metadata, first_cog)
+    min_zoom, max_zoom = await asyncio.to_thread(_extract_zoom_range_raster, first_cog)
+    return RasterSummary(
+        raster_min=raster_min,
+        raster_max=raster_max,
+        bounds=bounds,
+        band_meta=band_meta,
+        min_zoom=min_zoom,
+        max_zoom=max_zoom,
+    )
+
+
+def _build_raster_dataset(
+    job: Job,
+    *,
+    filename: str,
+    format_pair: FormatPair,
+    tile_url: str,
+    summary: RasterSummary,
+    converted_file_size: int,
+    validation_results: list[ValidationCheck],
+    **extra,
+) -> Dataset:
+    """Build the raster Dataset record shared by the multi-COG pipelines.
+
+    Extra keyword arguments (e.g. timesteps, source_url, expires_at) are
+    passed through to the Dataset constructor unchanged.
+    """
+    return Dataset(
+        id=job.dataset_id,
+        filename=filename,
+        dataset_type=DatasetType.RASTER,
+        format_pair=format_pair,
+        tile_url=tile_url,
+        bounds=summary.bounds,
+        band_count=summary.band_meta.band_count,
+        band_names=summary.band_meta.band_names,
+        color_interpretation=summary.band_meta.color_interpretation,
+        dtype=summary.band_meta.dtype,
+        converted_file_size=converted_file_size,
+        min_zoom=summary.min_zoom,
+        max_zoom=summary.max_zoom,
+        stac_collection_id=f"sandbox-{job.dataset_id}",
+        validation_results=validation_results,
+        credits=get_credits(format_pair),
+        workspace_id=job.workspace_id,
+        raster_min=summary.raster_min,
+        raster_max=summary.raster_max,
+        created_at=job.created_at,
+        **extra,
+    )
+
+
+async def _pause_for_variable_selection(
+    job: Job,
+    input_path: str,
+    variables: list[dict],
+    db_session_factory,
+) -> bool:
+    """Pause the pipeline until the user resumes it via /scan/{id}/convert.
+
+    Registers the scan in the shared scan store, publishes the scan result on
+    the job, and waits for the resume event. If the user selected a temporal
+    range, dispatches to the in-file temporal pipeline and returns True so the
+    caller can return early; otherwise returns False and the caller continues
+    with a single-timestep conversion.
+    """
+    from datetime import datetime as dt
+
+    from src.state import scan_store, scan_store_lock
+
+    scan_id = str(uuid.uuid4())
+    job.scan_result = {"scan_id": scan_id, "variables": variables}
+    job.scan_event = asyncio.Event()
+
+    async with scan_store_lock:
+        scan_store[scan_id] = {
+            "path": input_path,
+            "job": job,
+            "created_at": dt.now(UTC),
+            "variables": variables,
+            "state": "waiting",
+        }
+
+    await job.scan_event.wait()
+
+    # The cleanup loop fails the job and sets the event when a scan expires
+    # unanswered; bail out so the caller's finally block can delete the temp
+    # upload instead of converting an already-failed job.
+    if job.status == JobStatus.FAILED:
+        return True
+
+    temporal_params = None
+    async with scan_store_lock:
+        if scan_id in scan_store:
+            scan_store[scan_id]["state"] = "converting"
+            temporal_params = scan_store[scan_id].get("temporal")
+
+    if temporal_params is None:
+        return False
+
+    from src.services.temporal_pipeline import run_infile_temporal_pipeline
+
+    await run_infile_temporal_pipeline(
+        job=job,
+        input_path=input_path,
+        variable=job.variable,
+        group=job.group or "",
+        start_index=temporal_params.start_index,
+        end_index=temporal_params.end_index,
+        db_session_factory=db_session_factory,
+    )
+    return True
+
+
 async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
     """Execute the full conversion pipeline. Updates job status in-place.
 
@@ -324,10 +461,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
         # Variable selection for HDF5/NetCDF
         if format_pair in (FormatPair.HDF5_TO_COG, FormatPair.NETCDF_TO_COG):
-            from datetime import datetime as dt
-
             from src.services import scanner
-            from src.state import scan_store, scan_store_lock
 
             if format_pair == FormatPair.HDF5_TO_COG:
                 variables = await asyncio.to_thread(scanner.scan_hdf5, input_path)
@@ -340,47 +474,9 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 return
 
             if len(variables) > 1:
-                scan_id = str(uuid.uuid4())
-                job.scan_result = {"scan_id": scan_id, "variables": variables}
-                job.scan_event = asyncio.Event()
-
-                async with scan_store_lock:
-                    scan_store[scan_id] = {
-                        "path": input_path,
-                        "job": job,
-                        "created_at": dt.now(UTC),
-                        "variables": variables,
-                        "state": "waiting",
-                    }
-
-                await job.scan_event.wait()
-
-                # The cleanup loop fails the job and sets the event when a
-                # scan expires unanswered; bail out so the caller's finally
-                # block can delete the temp upload.
-                if job.status == JobStatus.FAILED:
-                    return
-
-                temporal_params = None
-                async with scan_store_lock:
-                    if scan_id in scan_store:
-                        scan_store[scan_id]["state"] = "converting"
-                        temporal_params = scan_store[scan_id].get("temporal")
-
-                if temporal_params is not None:
-                    from src.services.temporal_pipeline import (
-                        run_infile_temporal_pipeline,
-                    )
-
-                    await run_infile_temporal_pipeline(
-                        job=job,
-                        input_path=input_path,
-                        variable=job.variable,
-                        group=job.group or "",
-                        start_index=temporal_params.start_index,
-                        end_index=temporal_params.end_index,
-                        db_session_factory=db_session_factory,
-                    )
+                if await _pause_for_variable_selection(
+                    job, input_path, variables, db_session_factory
+                ):
                     return
 
             elif len(variables) == 1:
@@ -388,49 +484,14 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 job.variable = v["name"]
                 job.group = v.get("group", "")
 
-                if v.get("time_dim") and v["time_dim"]["size"] > 1:
-                    scan_id = str(uuid.uuid4())
-                    job.scan_result = {
-                        "scan_id": scan_id,
-                        "variables": variables,
-                    }
-                    job.scan_event = asyncio.Event()
-
-                    async with scan_store_lock:
-                        scan_store[scan_id] = {
-                            "path": input_path,
-                            "job": job,
-                            "created_at": dt.now(UTC),
-                            "variables": variables,
-                            "state": "waiting",
-                        }
-
-                    await job.scan_event.wait()
-
-                    if job.status == JobStatus.FAILED:
-                        return
-
-                    temporal_params = None
-                    async with scan_store_lock:
-                        if scan_id in scan_store:
-                            scan_store[scan_id]["state"] = "converting"
-                            temporal_params = scan_store[scan_id].get("temporal")
-
-                    if temporal_params is not None:
-                        from src.services.temporal_pipeline import (
-                            run_infile_temporal_pipeline,
-                        )
-
-                        await run_infile_temporal_pipeline(
-                            job=job,
-                            input_path=input_path,
-                            variable=job.variable,
-                            group=job.group or "",
-                            start_index=temporal_params.start_index,
-                            end_index=temporal_params.end_index,
-                            db_session_factory=db_session_factory,
-                        )
-                        return
+                if (
+                    v.get("time_dim")
+                    and v["time_dim"]["size"] > 1
+                    and await _pause_for_variable_selection(
+                        job, input_path, variables, db_session_factory
+                    )
+                ):
+                    return
 
         # Upload raw file to S3 off the event loop. obstore.put is blocking,
         # and on large files it stalls the SSE ping coroutine long enough for
@@ -608,7 +669,19 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                         job.dataset_id,
                         output_path,
                     )
-                    await _wait_for_tipg_collection(job.dataset_id)
+                    tipg_ready = await _wait_for_tipg_collection(job.dataset_id)
+                    if not tipg_ready:
+                        job.validation_results.append(
+                            ValidationCheck(
+                                name="vector_tiler_readiness",
+                                passed=False,
+                                detail=(
+                                    "tipg did not expose the collection within "
+                                    "30s; tiles may 404 until its catalog "
+                                    "refresh catches up"
+                                ),
+                            )
+                        )
 
         # Stage 5: Ready
         job.status = JobStatus.READY
@@ -680,8 +753,14 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
         job.error = map_pipeline_error(e)
 
 
-async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> None:
-    """Poll tipg until it has discovered the new collection, or timeout."""
+async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> bool:
+    """Poll tipg until it has discovered the new collection.
+
+    Returns True once tipg serves the collection, False on timeout. A False
+    result means the tile URL may 404 until tipg's catalog refresh catches up,
+    so callers should surface it — but not fail the job, since tipg may just
+    be slow.
+    """
     settings = get_settings()
     table = vector_ingest.build_table_name(dataset_id)
     collection_id = f"public.{table}"
@@ -694,10 +773,19 @@ async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> N
                     url, headers={"Accept": "application/json"}, timeout=5.0
                 )
                 if resp.status_code == 200:
-                    return
-            except Exception:
-                pass
+                    return True
+            except Exception as exc:
+                logger.debug(
+                    "tipg readiness probe failed for %s: %s", collection_id, exc
+                )
             await asyncio.sleep(1.0)
+    logger.warning(
+        "tipg did not expose collection %s within %.0fs; "
+        "tile URL may not be servable yet",
+        collection_id,
+        timeout,
+    )
+    return False
 
 
 def _convert_geotiff_to_cog(

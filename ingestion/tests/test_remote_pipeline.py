@@ -316,6 +316,20 @@ class TestRunRemotePipeline:
         assert "limit" in job.error.lower()
 
 
+class TestMaxConvertBytes:
+    def test_follows_settings_upload_limit(self, monkeypatch):
+        from src.config import Settings
+        from src.services import remote_pipeline
+
+        monkeypatch.setattr(
+            remote_pipeline,
+            "get_settings",
+            lambda: Settings(max_upload_bytes=1234),
+        )
+
+        assert remote_pipeline._max_convert_bytes() == 1234
+
+
 async def _async_return(value):
     return value
 

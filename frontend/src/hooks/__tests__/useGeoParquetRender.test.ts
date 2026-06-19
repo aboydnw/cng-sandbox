@@ -75,6 +75,53 @@ describe("useGeoParquetRender", () => {
     expect(result.current.overCap).toBe(true);
   });
 
+  it("sets error and clears loading when the query fails", async () => {
+    const conn = {
+      query: vi.fn(async () => {
+        throw new Error("network failure");
+      }),
+    } as unknown as import("@duckdb/duckdb-wasm").AsyncDuckDBConnection;
+
+    const { result } = renderHook(() =>
+      useGeoParquetRender(conn, "https://example.com/x.parquet")
+    );
+    await act(async () => {
+      await result.current.load();
+    });
+    expect(result.current.table).toBeNull();
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.overCap).toBe(false);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("clears a previous error on a successful reload", async () => {
+    let failing = true;
+    const good = makeMockConn([
+      { __geojson: '{"type":"Point","coordinates":[0,0]}', name: "A" },
+    ]) as unknown as { query: (sql: string) => Promise<unknown> };
+    const conn = {
+      query: vi.fn(async (sql: string) => {
+        if (failing) throw new Error("transient failure");
+        return good.query(sql);
+      }),
+    } as unknown as import("@duckdb/duckdb-wasm").AsyncDuckDBConnection;
+
+    const { result } = renderHook(() =>
+      useGeoParquetRender(conn, "https://example.com/x.parquet")
+    );
+    await act(async () => {
+      await result.current.load();
+    });
+    expect(result.current.error).not.toBeNull();
+
+    failing = false;
+    await act(async () => {
+      await result.current.load();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.table).not.toBeNull();
+  });
+
   it("does nothing when conn is null", async () => {
     const { result } = renderHook(() =>
       useGeoParquetRender(null, "https://example.com/x.parquet")

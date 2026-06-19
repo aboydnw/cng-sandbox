@@ -387,11 +387,27 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     }
   }, [conversion.status, refresh]);
 
-  const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
-  const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
+  const {
+    conn: duckConn,
+    loading: duckDBLoading,
+    error: duckDBError,
+    initialize: initializeDuckDB,
+  } = useDuckDB();
+  const {
+    table: geoParquetTable,
+    loading: geoParquetLoading,
+    error: geoParquetError,
+    overCap: geoParquetOverCap,
+    load: loadGeoParquet,
+  } = useGeoParquetRender(
     duckConn,
     isClientGeoParquet ? (item?.connection?.url ?? "") : ""
   );
+  const clientGeoParquetError = duckDBError ?? geoParquetError;
+  const clientGeoParquetLoading =
+    !clientGeoParquetError && (duckDBLoading || geoParquetLoading);
+  const showClientGeoParquetOverlay =
+    isClientGeoParquet && (clientGeoParquetLoading || !!clientGeoParquetError);
 
   useEffect(() => {
     if (!isClientGeoParquet) return;
@@ -611,6 +627,35 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 )}
               </Box>
             )}
+            {showClientGeoParquetOverlay && (
+              <Box
+                position="absolute"
+                inset={0}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                zIndex={10}
+                bg="whiteAlpha.800"
+              >
+                {clientGeoParquetError ? (
+                  <Box textAlign="center" maxW="md" px={4}>
+                    <Text color="red.600" fontWeight="semibold">
+                      {duckDBError
+                        ? "Map engine failed to load"
+                        : geoParquetOverCap
+                          ? "Dataset too large for in-browser rendering"
+                          : "Couldn't load GeoParquet"}
+                    </Text>
+                    <Text fontSize="sm">{clientGeoParquetError}</Text>
+                  </Box>
+                ) : (
+                  <Box textAlign="center">
+                    <Spinner color="brand.orange" />
+                    <Text mt={2}>Loading GeoParquet…</Text>
+                  </Box>
+                )}
+              </Box>
+            )}
             {zarrState.isLoading && (
               <Box
                 position="absolute"
@@ -665,35 +710,37 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   onDismiss={() => setZoomPromptDismissed(true)}
                 />
               )}
-              {shared && !(isServerGeoParquet && needsConversion) && (
-                <Box
-                  position="absolute"
-                  top={3}
-                  right={3}
-                  display="flex"
-                  gap={2}
-                  alignItems="flex-start"
-                >
-                  {item && item.dataType === "raster" && (
-                    <RenderModeIndicator
-                      renderMode={
-                        controls.renderMode === "client" ? "client" : "server"
-                      }
-                      reason={evaluateClientRenderEligibility(item).reason}
-                      sizeBytes={
-                        item.dataset?.converted_file_size ??
-                        item.connection?.file_size ??
-                        null
-                      }
+              {shared &&
+                !(isServerGeoParquet && needsConversion) &&
+                !showClientGeoParquetOverlay && (
+                  <Box
+                    position="absolute"
+                    top={3}
+                    right={3}
+                    display="flex"
+                    gap={2}
+                    alignItems="flex-start"
+                  >
+                    {item && item.dataType === "raster" && (
+                      <RenderModeIndicator
+                        renderMode={
+                          controls.renderMode === "client" ? "client" : "server"
+                        }
+                        reason={evaluateClientRenderEligibility(item).reason}
+                        sizeBytes={
+                          item.dataset?.converted_file_size ??
+                          item.connection?.file_size ??
+                          null
+                        }
+                      />
+                    )}
+                    <SnapButton
+                      onSnap={snapshot.snap}
+                      isCapturing={snapshot.isCapturing}
+                      error={snapshot.error}
                     />
-                  )}
-                  <SnapButton
-                    onSnap={snapshot.snap}
-                    isCapturing={snapshot.isCapturing}
-                    error={snapshot.error}
-                  />
-                </Box>
-              )}
+                  </Box>
+                )}
               {controls.isCategorical &&
                 effectiveCategories &&
                 effectiveCategories.length > 0 && (

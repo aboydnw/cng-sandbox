@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -30,4 +30,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       - run: cd mcp && uv sync --extra dev
+      - name: Lint with ruff
+        run: cd mcp && uv run ruff check .
       - run: cd mcp && uv run pytest tests/ -v --cov=src/cng_mcp

@@ -22,6 +22,10 @@ The `release-please` workflow has three jobs that run in order: `release-please`
 
 Caddy uses the upstream `caddy:2` image directly (no custom Dockerfile). During the brief restart window when ingestion or the tilers cycle, Caddy's `handle_errors 502 503` block serves a self-refreshing maintenance page (`Caddyfile`) so users see "Deploying…" instead of a raw error.
 
+### SSH host-key verification
+
+The deploy job verifies the Hetzner VM's host key against a pinned `known_hosts` instead of `StrictHostKeyChecking=no`. It reads the `DEPLOY_KNOWN_HOSTS` repository secret and fails fast with a clear error if the secret is missing. To set it up (or rotate after a host-key change), run `ssh-keyscan <deploy host>` and save the output as the `DEPLOY_KNOWN_HOSTS` secret.
+
 ## GitHub App for Release-Please (optional)
 
 By default, release-please uses `GITHUB_TOKEN`, which means its PRs won't trigger CI checks (GitHub limitation). To fix this, set up a GitHub App:

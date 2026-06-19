@@ -91,6 +91,18 @@ jobs:
       group: deploy-production
       cancel-in-progress: false
     steps:
+      - name: Configure SSH known hosts
+        env:
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$DEPLOY_KNOWN_HOSTS" ]; then
+            echo "::error::DEPLOY_KNOWN_HOSTS secret is not set. Run 'ssh-keyscan <deploy host>' and save the output as the DEPLOY_KNOWN_HOSTS repository secret."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
       - name: Deploy to Hetzner VM
         env:
           TAG: ${{ needs.release-please.outputs.tag_name }}
@@ -100,7 +112,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -o StrictHostKeyChecking=no \
+          ssh -o StrictHostKeyChecking=yes \
             -i ~/.ssh/deploy_key \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
             "cd ${{ secrets.DEPLOY_PATH }} && git checkout main && git pull origin main && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod pull && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod up -d && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod exec -T caddy caddy reload --config /etc/caddy/Caddyfile"
@@ -108,7 +120,7 @@ jobs:
       - name: Verify deploy health
         run: |
           for i in $(seq 1 30); do
-            if ssh -o StrictHostKeyChecking=no \
+            if ssh -o StrictHostKeyChecking=yes \
               -i ~/.ssh/deploy_key \
               "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
               "cd ${{ secrets.DEPLOY_PATH }} && docker compose --profile prod ps --format json" \

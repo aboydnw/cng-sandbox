@@ -251,7 +251,17 @@ export function useConversionJob() {
           }));
           return;
         }
-        confirmVariable(data.scan_id, v.name, v.group);
+        confirmVariable(data.scan_id, v.name, v.group).catch(() => {
+          const msg =
+            "Variable selection failed. Please check your connection and try again.";
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "failed",
+            error: msg,
+            stages: updateStages("failed", msg),
+          }));
+        });
         return;
       }
 
@@ -405,42 +415,66 @@ export function useConversionJob() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const resp = await fetchWithRetry(`${config.apiBase}/api/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      try {
+        const resp = await fetchWithRetry(`${config.apiBase}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
 
-      if (resp.status === 409) {
-        const body = await resp.json().catch(() => ({}));
-        if (body.dataset_id && body.filename) {
+        if (resp.status === 409) {
+          const body = await resp.json().catch(() => ({}));
+          if (body.dataset_id && body.filename) {
+            setState((prev) => ({
+              ...prev,
+              isUploading: false,
+              status: "pending",
+              stages: buildInitialStages(),
+              duplicate: {
+                datasetId: body.dataset_id,
+                filename: body.filename,
+              },
+            }));
+            return;
+          }
+          // Malformed 409 — treat as generic failure
           setState((prev) => ({
             ...prev,
             isUploading: false,
-            status: "pending",
-            stages: buildInitialStages(),
-            duplicate: {
-              datasetId: body.dataset_id,
-              filename: body.filename,
-            },
+            status: "failed",
+            error: "Duplicate check failed",
+            stages: buildUploadFailedStagesAfterCheck("Duplicate check failed"),
           }));
           return;
         }
-        // Malformed 409 — treat as generic failure
+
+        if (!resp.ok) {
+          const detail = await resp
+            .json()
+            .catch(() => ({ detail: "Upload failed" }));
+          const msg = extractErrorMessage(detail, "Upload failed");
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "failed",
+            error: msg,
+            stages: buildUploadFailedStagesAfterCheck(msg),
+          }));
+          return;
+        }
+
+        const { job_id, dataset_id } = await resp.json();
+        datasetIdRef.current = dataset_id;
         setState((prev) => ({
           ...prev,
-          isUploading: false,
-          status: "failed",
-          error: "Duplicate check failed",
-          stages: buildUploadFailedStagesAfterCheck("Duplicate check failed"),
+          jobId: job_id,
+          datasetId: null,
+          status: "pending",
+          error: null,
         }));
-        return;
-      }
-
-      if (!resp.ok) {
-        const detail = await resp
-          .json()
-          .catch(() => ({ detail: "Upload failed" }));
-        const msg = extractErrorMessage(detail, "Upload failed");
+        connectSSE(job_id);
+      } catch {
+        const msg =
+          "Upload failed. Please check your connection and try again.";
         setState((prev) => ({
           ...prev,
           isUploading: false,
@@ -448,19 +482,7 @@ export function useConversionJob() {
           error: msg,
           stages: buildUploadFailedStagesAfterCheck(msg),
         }));
-        return;
       }
-
-      const { job_id, dataset_id } = await resp.json();
-      datasetIdRef.current = dataset_id;
-      setState((prev) => ({
-        ...prev,
-        jobId: job_id,
-        datasetId: null,
-        status: "pending",
-        error: null,
-      }));
-      connectSSE(job_id);
     },
     [connectSSE]
   );
@@ -510,43 +532,66 @@ export function useConversionJob() {
         // Preflight failed — proceed with upload; server-side 409 is the backstop
       }
 
-      const resp = await fetchWithRetry(`${config.apiBase}/api/convert-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
+      try {
+        const resp = await fetchWithRetry(`${config.apiBase}/api/convert-url`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
 
-      if (resp.status === 409) {
-        const body = await resp.json().catch(() => ({}));
-        if (body.dataset_id && body.filename) {
+        if (resp.status === 409) {
+          const body = await resp.json().catch(() => ({}));
+          if (body.dataset_id && body.filename) {
+            setState((prev) => ({
+              ...prev,
+              isUploading: false,
+              status: "pending",
+              stages: buildInitialStages(),
+              duplicate: {
+                datasetId: body.dataset_id,
+                filename: body.filename,
+              },
+            }));
+            return;
+          }
+          // Malformed 409 — treat as generic failure
           setState((prev) => ({
             ...prev,
             isUploading: false,
-            status: "pending",
-            stages: buildInitialStages(),
-            duplicate: {
-              datasetId: body.dataset_id,
-              filename: body.filename,
-            },
+            status: "failed",
+            error: "Duplicate check failed",
+            stages: buildUploadFailedStages("Duplicate check failed"),
           }));
           return;
         }
-        // Malformed 409 — treat as generic failure
+
+        if (!resp.ok) {
+          const body = await resp
+            .json()
+            .catch(() => ({ detail: "Fetch failed" }));
+          const msg = extractErrorMessage(body, "Fetch failed");
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "failed",
+            error: msg,
+            stages: buildUploadFailedStages(msg),
+          }));
+          return;
+        }
+
+        const { job_id, dataset_id } = await resp.json();
+        datasetIdRef.current = dataset_id;
         setState((prev) => ({
           ...prev,
-          isUploading: false,
-          status: "failed",
-          error: "Duplicate check failed",
-          stages: buildUploadFailedStages("Duplicate check failed"),
+          jobId: job_id,
+          datasetId: null,
+          status: "pending",
+          error: null,
         }));
-        return;
-      }
-
-      if (!resp.ok) {
-        const body = await resp
-          .json()
-          .catch(() => ({ detail: "Fetch failed" }));
-        const msg = extractErrorMessage(body, "Fetch failed");
+        connectSSE(job_id);
+      } catch {
+        const msg = "Fetch failed. Please check your connection and try again.";
         setState((prev) => ({
           ...prev,
           isUploading: false,
@@ -554,19 +599,7 @@ export function useConversionJob() {
           error: msg,
           stages: buildUploadFailedStages(msg),
         }));
-        return;
       }
-
-      const { job_id, dataset_id } = await resp.json();
-      datasetIdRef.current = dataset_id;
-      setState((prev) => ({
-        ...prev,
-        jobId: job_id,
-        datasetId: null,
-        status: "pending",
-        error: null,
-      }));
-      connectSSE(job_id);
     },
     [connectSSE]
   );
@@ -594,19 +627,43 @@ export function useConversionJob() {
         formData.append("files", file);
       }
 
-      const resp = await fetchWithRetry(
-        `${config.apiBase}/api/upload-temporal`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      try {
+        const resp = await fetchWithRetry(
+          `${config.apiBase}/api/upload-temporal`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
-      if (!resp.ok) {
-        const detail = await resp
-          .json()
-          .catch(() => ({ detail: "Upload failed" }));
-        const msg = extractErrorMessage(detail, "Upload failed");
+        if (!resp.ok) {
+          const detail = await resp
+            .json()
+            .catch(() => ({ detail: "Upload failed" }));
+          const msg = extractErrorMessage(detail, "Upload failed");
+          setState((prev) => ({
+            ...prev,
+            isUploading: false,
+            status: "failed",
+            error: msg,
+            stages: buildUploadFailedStages(msg),
+          }));
+          return;
+        }
+
+        const { job_id, dataset_id } = await resp.json();
+        datasetIdRef.current = dataset_id;
+        setState((prev) => ({
+          ...prev,
+          jobId: job_id,
+          datasetId: null,
+          status: "pending",
+          error: null,
+        }));
+        connectSSE(job_id);
+      } catch {
+        const msg =
+          "Upload failed. Please check your connection and try again.";
         setState((prev) => ({
           ...prev,
           isUploading: false,
@@ -614,19 +671,7 @@ export function useConversionJob() {
           error: msg,
           stages: buildUploadFailedStages(msg),
         }));
-        return;
       }
-
-      const { job_id, dataset_id } = await resp.json();
-      datasetIdRef.current = dataset_id;
-      setState((prev) => ({
-        ...prev,
-        jobId: job_id,
-        datasetId: null,
-        status: "pending",
-        error: null,
-      }));
-      connectSSE(job_id);
     },
     [connectSSE]
   );

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { PickingInfo } from "@deck.gl/core";
 import type { MapItem } from "../types";
 import type { RenderMode } from "./useMapControls";
 import type { Table } from "apache-arrow";
@@ -35,8 +36,7 @@ interface UseLayerBuilderOptions {
   effectiveCategories?:
     | { value: number; color: string; label: string }[]
     | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onVectorClick?: (info: any) => void;
+  onVectorClick?: (info: PickingInfo) => void;
   zarrNode?:
     | zarr.Group<zarr.Readable>
     | zarr.Array<zarr.DataType, zarr.Readable>

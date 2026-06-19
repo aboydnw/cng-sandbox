@@ -28,6 +28,12 @@ import {
   DEFAULT_CAMERA,
   cameraFromBounds,
 } from "../lib/layers";
+import {
+  shouldShowZoomPrompt,
+  boundsCenter,
+  buildExtentOutlineLayer,
+} from "../lib/layers/dataExtent";
+import { ZoomPromptBanner } from "../components/ZoomPromptBanner";
 import { useColorScale, MapLegend } from "../lib/maptool";
 import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
@@ -61,7 +67,10 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const workspace = useOptionalWorkspace();
   const workspacePath = workspace?.workspacePath ?? ((p: string) => p);
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTimestep = Number(searchParams.get("t") ?? 0);
+  const rawTimestep = Number(searchParams.get("t") ?? 0);
+  const initialTimestep = Number.isFinite(rawTimestep)
+    ? Math.max(0, Math.trunc(rawTimestep))
+    : 0;
 
   const isConnectionRoute =
     window.location.pathname.includes("/map/connection/");
@@ -186,6 +195,29 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       setCamera(cameraFromBounds(item.bounds, size));
     }
   }, [item?.id, boundsKey]);
+
+  // --- Zoom prompt for layers whose tiles only exist at higher zooms ---
+  const [zoomPromptDismissed, setZoomPromptDismissed] = useState(false);
+
+  useEffect(() => {
+    setZoomPromptDismissed(false);
+  }, [item?.id]);
+
+  const zoomPromptActive = shouldShowZoomPrompt(camera.zoom, item?.minZoom);
+  const showZoomBanner = zoomPromptActive && !zoomPromptDismissed;
+
+  const handleZoomToData = useCallback(() => {
+    const minZoom = item?.minZoom;
+    if (minZoom == null) return;
+    const center = item?.bounds ? boundsCenter(item.bounds) : null;
+    setCamera((prev) => ({
+      longitude: center?.[0] ?? prev.longitude,
+      latitude: center?.[1] ?? prev.latitude,
+      zoom: minZoom,
+      bearing: 0,
+      pitch: 0,
+    }));
+  }, [item?.minZoom, item?.bounds]);
 
   // --- Report card ---
   const [reportCardOpen, setReportCardOpen] = useState(false);
@@ -355,11 +387,27 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     }
   }, [conversion.status, refresh]);
 
-  const { conn: duckConn, initialize: initializeDuckDB } = useDuckDB();
-  const { table: geoParquetTable, load: loadGeoParquet } = useGeoParquetRender(
+  const {
+    conn: duckConn,
+    loading: duckDBLoading,
+    error: duckDBError,
+    initialize: initializeDuckDB,
+  } = useDuckDB();
+  const {
+    table: geoParquetTable,
+    loading: geoParquetLoading,
+    error: geoParquetError,
+    overCap: geoParquetOverCap,
+    load: loadGeoParquet,
+  } = useGeoParquetRender(
     duckConn,
     isClientGeoParquet ? (item?.connection?.url ?? "") : ""
   );
+  const clientGeoParquetError = duckDBError ?? geoParquetError;
+  const clientGeoParquetLoading =
+    !clientGeoParquetError && (duckDBLoading || geoParquetLoading);
+  const showClientGeoParquetOverlay =
+    isClientGeoParquet && (clientGeoParquetLoading || !!clientGeoParquetError);
 
   useEffect(() => {
     if (!isClientGeoParquet) return;
@@ -422,6 +470,19 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     effectiveCategories,
     zarrNode: zarrState.node,
   });
+
+  const extentOutlineLayer = useMemo(
+    () =>
+      zoomPromptActive && item?.bounds
+        ? buildExtentOutlineLayer(item.bounds)
+        : null,
+    [zoomPromptActive, item?.bounds]
+  );
+
+  const mapLayers = useMemo(
+    () => (extentOutlineLayer ? [...layers, extentOutlineLayer] : layers),
+    [layers, extentOutlineLayer]
+  );
 
   // --- Color scale for legend ---
   const domain: [number, number] =
@@ -566,6 +627,35 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 )}
               </Box>
             )}
+            {showClientGeoParquetOverlay && (
+              <Box
+                position="absolute"
+                inset={0}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                zIndex={10}
+                bg="whiteAlpha.800"
+              >
+                {clientGeoParquetError ? (
+                  <Box textAlign="center" maxW="md" px={4}>
+                    <Text color="red.600" fontWeight="semibold">
+                      {duckDBError
+                        ? "Map engine failed to load"
+                        : geoParquetOverCap
+                          ? "Dataset too large for in-browser rendering"
+                          : "Couldn't load GeoParquet"}
+                    </Text>
+                    <Text fontSize="sm">{clientGeoParquetError}</Text>
+                  </Box>
+                ) : (
+                  <Box textAlign="center">
+                    <Spinner color="brand.orange" />
+                    <Text mt={2}>Loading GeoParquet…</Text>
+                  </Box>
+                )}
+              </Box>
+            )}
             {zarrState.isLoading && (
               <Box
                 position="absolute"
@@ -604,7 +694,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               mapRef={mapRef}
               camera={camera}
               onCameraChange={setCamera}
-              layers={layers}
+              layers={mapLayers}
               basemap={basemap}
               onBasemapChange={setBasemap}
               onHover={onHover}
@@ -613,35 +703,44 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               hideBasemapPicker={shared}
               enableSnapshot={shared}
             >
-              {shared && !(isServerGeoParquet && needsConversion) && (
-                <Box
-                  position="absolute"
-                  top={3}
-                  right={3}
-                  display="flex"
-                  gap={2}
-                  alignItems="flex-start"
-                >
-                  {item && item.dataType === "raster" && (
-                    <RenderModeIndicator
-                      renderMode={
-                        controls.renderMode === "client" ? "client" : "server"
-                      }
-                      reason={evaluateClientRenderEligibility(item).reason}
-                      sizeBytes={
-                        item.dataset?.converted_file_size ??
-                        item.connection?.file_size ??
-                        null
-                      }
-                    />
-                  )}
-                  <SnapButton
-                    onSnap={snapshot.snap}
-                    isCapturing={snapshot.isCapturing}
-                    error={snapshot.error}
-                  />
-                </Box>
+              {showZoomBanner && item?.minZoom != null && (
+                <ZoomPromptBanner
+                  minZoom={item.minZoom}
+                  onZoomToData={handleZoomToData}
+                  onDismiss={() => setZoomPromptDismissed(true)}
+                />
               )}
+              {shared &&
+                !(isServerGeoParquet && needsConversion) &&
+                !showClientGeoParquetOverlay && (
+                  <Box
+                    position="absolute"
+                    top={3}
+                    right={3}
+                    display="flex"
+                    gap={2}
+                    alignItems="flex-start"
+                  >
+                    {item && item.dataType === "raster" && (
+                      <RenderModeIndicator
+                        renderMode={
+                          controls.renderMode === "client" ? "client" : "server"
+                        }
+                        reason={evaluateClientRenderEligibility(item).reason}
+                        sizeBytes={
+                          item.dataset?.converted_file_size ??
+                          item.connection?.file_size ??
+                          null
+                        }
+                      />
+                    )}
+                    <SnapButton
+                      onSnap={snapshot.snap}
+                      isCapturing={snapshot.isCapturing}
+                      error={snapshot.error}
+                    />
+                  </Box>
+                )}
               {controls.isCategorical &&
                 effectiveCategories &&
                 effectiveCategories.length > 0 && (

@@ -4,27 +4,39 @@ import { createZarrStore } from "../lib/zarr/zarrFetch";
 import type { Connection } from "../types";
 import type { ZarrNode } from "./useZarrNode";
 
+export interface UseStoryZarrNodeResult {
+  node: ZarrNode | null;
+  error: string | null;
+}
+
 /**
- * Opens the zarr store for a zarr `Connection` and returns the resolved node.
- * Returns null when the connection is not zarr type, has no URL, or is loading/errored.
+ * Opens the zarr store for a zarr `Connection` and returns the resolved node
+ * plus an error message when the store fails to open. Returns an empty result
+ * when the connection is not zarr type, has no URL, or is loading.
  * Re-opens when the connection URL or variable changes.
  */
-export function useStoryZarrNode(conn: Connection | null): ZarrNode | null {
+export function useStoryZarrNode(
+  conn: Connection | null
+): UseStoryZarrNodeResult {
   const isZarr = conn?.connection_type === "zarr";
   const url = isZarr ? (conn!.url ?? null) : null;
   const variable = isZarr
     ? ((conn!.config as { variable?: string | null } | null)?.variable ?? null)
     : null;
 
-  const [node, setNode] = useState<ZarrNode | null>(null);
+  const [state, setState] = useState<UseStoryZarrNodeResult>({
+    node: null,
+    error: null,
+  });
 
   useEffect(() => {
     if (!url) {
-      setNode(null);
+      setState({ node: null, error: null });
       return;
     }
 
     let cancelled = false;
+    setState({ node: null, error: null });
 
     (async () => {
       try {
@@ -45,9 +57,14 @@ export function useStoryZarrNode(conn: Connection | null): ZarrNode | null {
           }
         }
 
-        if (!cancelled) setNode(result);
-      } catch {
-        if (!cancelled) setNode(null);
+        if (!cancelled) setState({ node: result, error: null });
+      } catch (err) {
+        if (!cancelled) {
+          setState({
+            node: null,
+            error: err instanceof Error ? err.message : "Failed to open Zarr",
+          });
+        }
       }
     })();
 
@@ -56,5 +73,5 @@ export function useStoryZarrNode(conn: Connection | null): ZarrNode | null {
     };
   }, [url, variable]);
 
-  return node;
+  return state;
 }

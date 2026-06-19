@@ -102,6 +102,7 @@ class Job(BaseModel):
     progress_total: int | None = None
     stage_progress: StageProgress | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    finished_at: datetime | None = Field(default=None, exclude=True)
     variable: str | None = None
     group: str | None = None
     scan_event: asyncio.Event | None = Field(default=None, exclude=True)

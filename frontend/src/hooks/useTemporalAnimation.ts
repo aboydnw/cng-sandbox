@@ -23,6 +23,18 @@ export function useTemporalAnimation(
   });
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // The initial index can come from an untrusted URL param before the frame
+  // count is known. Clamp once frames are available (and on dataset switches
+  // that shrink the frame count).
+  useEffect(() => {
+    if (totalFrames <= 0) return;
+    setState((prev) =>
+      prev.activeIndex >= totalFrames
+        ? { ...prev, activeIndex: totalFrames - 1 }
+        : prev
+    );
+  }, [totalFrames]);
+
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
       clearInterval(timerRef.current);
@@ -31,6 +43,7 @@ export function useTemporalAnimation(
   }, []);
 
   const advanceFrame = useCallback(() => {
+    if (totalFrames <= 0) return;
     setState((prev) => {
       let next = (prev.activeIndex + 1) % totalFrames;
       let checked = 0;

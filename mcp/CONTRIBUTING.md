@@ -4,7 +4,7 @@
 
 ```bash
 cd mcp
-uv sync
+uv sync --extra dev
 ```
 
 ## Test-Driven Approach

@@ -355,6 +355,12 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
                 await job.scan_event.wait()
 
+                # The cleanup loop fails the job and sets the event when a
+                # scan expires unanswered; bail out so the caller's finally
+                # block can delete the temp upload.
+                if job.status == JobStatus.FAILED:
+                    return
+
                 temporal_params = None
                 async with scan_store_lock:
                     if scan_id in scan_store:
@@ -400,6 +406,9 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                         }
 
                     await job.scan_event.wait()
+
+                    if job.status == JobStatus.FAILED:
+                        return
 
                     temporal_params = None
                     async with scan_store_lock:

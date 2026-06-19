@@ -45,7 +45,9 @@ export function MapChapter({
     setCamera(c);
   }, []);
 
-  const zarrNode = useStoryZarrNode(connection ?? null);
+  const { node: zarrNode, error: zarrError } = useStoryZarrNode(
+    connection ?? null
+  );
 
   const { layers, renderMetadata } = useMemo(() => {
     if (connection) {
@@ -121,6 +123,23 @@ export function MapChapter({
         shadow="sm"
         position="relative"
       >
+        {zarrError && (
+          <Box
+            position="absolute"
+            top={4}
+            left={4}
+            bg="red.subtle"
+            borderWidth="1px"
+            borderColor="red.border"
+            color="red.fg"
+            px={3}
+            py={2}
+            fontSize="sm"
+            zIndex={10}
+          >
+            Couldn&apos;t open Zarr store: {zarrError}
+          </Box>
+        )}
         {dataset || connection ? (
           <UnifiedMap
             camera={camera}

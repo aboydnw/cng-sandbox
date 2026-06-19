@@ -3,8 +3,10 @@
 from typing import Any, Optional
 from mcp.types import TextContent
 from cng_mcp.client.sandbox_api import SandboxAPIClient
+from cng_mcp.tools._errors import surface_api_errors
 
 
+@surface_api_errors
 async def read_connections_tool(client: SandboxAPIClient) -> TextContent:
     """List all external tile source connections."""
     connections = await client.get_connections()
@@ -32,6 +34,7 @@ async def read_connections_tool(client: SandboxAPIClient) -> TextContent:
     return TextContent(type="text", text="\n".join(lines))
 
 
+@surface_api_errors
 async def create_connection_tool(
     client: SandboxAPIClient,
     name: str,

@@ -21,7 +21,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   stac-api:
     image: ghcr.io/stac-utils/stac-fastapi-pgstac:5.0.2

@@ -4,6 +4,7 @@ import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { ExpiryBadge } from "../components/ExpiryBadge";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
@@ -334,6 +335,7 @@ export default function DataPage() {
                     <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
                     <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
                     <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
+                    <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
                     <Table.ColumnHeader w="80px" />
                   </Table.Row>
                 </Table.Header>
@@ -396,6 +398,15 @@ export default function DataPage() {
                         <Text fontSize="sm" color="gray.600">
                           {item.addedAt ? timeAgo(item.addedAt) : "—"}
                         </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        {item.expiresAt ? (
+                          <ExpiryBadge expiresAt={item.expiresAt} />
+                        ) : (
+                          <Text fontSize="sm" color="gray.500">
+                            —
+                          </Text>
+                        )}
                       </Table.Cell>
                       <Table.Cell>
                         <Button

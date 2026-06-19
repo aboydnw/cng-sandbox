@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { timeAgo } from "../format";
+import { daysUntilExpiry, expiryLabel, timeAgo } from "../format";
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("timeAgo", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-09T12:00:00Z"));
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("returns 'just now' for timestamps under a minute old", () => {
@@ -25,5 +25,33 @@ describe("timeAgo", () => {
 
   it("returns days for older timestamps", () => {
     expect(timeAgo("2026-06-02T12:00:00Z")).toBe("7d ago");
+  });
+});
+
+describe("daysUntilExpiry", () => {
+  it("counts whole days remaining, rounding up", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00Z"));
+    expect(daysUntilExpiry("2026-06-13T12:00:00Z")).toBe(13);
+  });
+
+  it("returns 0 for past dates", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00Z"));
+    expect(daysUntilExpiry("2026-05-20T00:00:00Z")).toBe(0);
+  });
+});
+
+describe("expiryLabel", () => {
+  it("formats plural days", () => {
+    expect(expiryLabel(12)).toBe("Expires in 12 days");
+  });
+
+  it("formats a single day", () => {
+    expect(expiryLabel(1)).toBe("Expires in 1 day");
+  });
+
+  it("formats today", () => {
+    expect(expiryLabel(0)).toBe("Expires today");
   });
 });

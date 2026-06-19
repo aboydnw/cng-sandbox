@@ -25,12 +25,17 @@ export function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export function daysUntilExpiry(createdAt: string): number {
-  const created = new Date(createdAt);
-  const expiry = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const now = new Date();
+export function daysUntilExpiry(expiresAt: string): number {
   return Math.max(
     0,
-    Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    Math.ceil(
+      (new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    )
   );
+}
+
+export function expiryLabel(daysLeft: number): string {
+  if (daysLeft <= 0) return "Expires today";
+  if (daysLeft === 1) return "Expires in 1 day";
+  return `Expires in ${daysLeft} days`;
 }

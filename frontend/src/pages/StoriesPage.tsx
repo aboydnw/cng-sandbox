@@ -4,6 +4,7 @@ import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { ExpiryBadge } from "../components/ExpiryBadge";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import { timeAgo } from "../utils/format";
@@ -107,6 +108,7 @@ export default function StoriesPage() {
                 <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
                 <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
                 <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
+                <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
                 <Table.ColumnHeader w="80px" />
               </Table.Row>
             </Table.Header>
@@ -145,6 +147,15 @@ export default function StoriesPage() {
                     <Text fontSize="sm" color="gray.600">
                       {story.updated_at ? timeAgo(story.updated_at) : "—"}
                     </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {story.expires_at ? (
+                      <ExpiryBadge expiresAt={story.expires_at} />
+                    ) : (
+                      <Text fontSize="sm" color="gray.500">
+                        —
+                      </Text>
+                    )}
                   </Table.Cell>
                   <Table.Cell>
                     <Button

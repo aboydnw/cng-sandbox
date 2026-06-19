@@ -24,8 +24,8 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 
 ## Datasets
 
-- `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it).
-- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`, `is_example`, and `is_shared`); returns 404 if the caller's workspace does not own the dataset and the dataset is not an example, not explicitly shared, and not referenced by a published story
+- `GET /api/datasets` — List datasets belonging to the caller's workspace plus any dataset flagged `is_example=True` (example datasets are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it). Each dataset includes `expires_at` (ISO timestamp): the stored expiry if set, otherwise `created_at` + the 30-day retention window; always `null` for example datasets, which never expire.
+- `GET /api/datasets/{id}` — Get dataset metadata (includes `tile_url`, `is_example`, `is_shared`, and `expires_at`); returns 404 if the caller's workspace does not own the dataset and the dataset is not an example, not explicitly shared, and not referenced by a published story
 - `PATCH /api/datasets/{id}` — Update editable dataset metadata (currently just `title`, 1–200 chars; pass `null` to clear); returns 403 if the dataset is an example or belongs to another workspace
 - `PATCH /api/datasets/{id}/share` — Toggle public sharing; body `{"is_shared": true|false}`; returns 403 if the dataset is an example or belongs to another workspace
 - `DELETE /api/datasets/{id}` — Delete a dataset; returns 403 if the dataset is an example (`is_example=True`) or belongs to another workspace
@@ -40,7 +40,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 ## Stories (shareable map narratives)
 
 - `POST /api/stories` — Create a story with chapters linking to datasets
-- `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it).
+- `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it). Each story includes `expires_at` (ISO timestamp, `created_at` + the 30-day retention window); always `null` for example stories, which never expire.
 - `GET /api/stories/examples` — Public list of example stories (`is_example=True`); no `X-Workspace-Id` header required. Used by the public landing page to render the example carousel without provisioning a workspace.
 - `GET /api/stories/{id}` — Get a story by ID
 - `PATCH /api/stories/{id}` — Update a story; returns 403 if the story is an example (`is_example=True`)

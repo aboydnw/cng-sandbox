@@ -196,3 +196,4 @@ class StoryResponse(BaseModel):
     is_example: bool = False
     created_at: str
     updated_at: str
+    expires_at: str | None = None

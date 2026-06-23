@@ -27,6 +27,7 @@ from cng_mcp.tools import (
     discover_remote_tool,
     connect_remote_temporal_tool,
     upload_story_asset_tool,
+    export_story_interactive_tool,
 )
 from cng_mcp.resources import (
     list_datasets_resource,
@@ -223,6 +224,18 @@ TOOL_DEFINITIONS = [
             "required": ["connection_id"],
         },
     ),
+    Tool(
+        name="export_story_interactive",
+        description="Build and download a story's self-contained interactive HTML bundle (.zip) to a local path. Stories with zarr layers or scrolly chapters needing snapshots return an error.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "story_id": {"type": "string"},
+                "output_path": {"type": "string", "description": "Local path to write the .zip"},
+            },
+            "required": ["story_id", "output_path"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -341,6 +354,12 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
             )]
         if name == "delete_connection":
             return [await delete_connection_tool(client, connection_id=arguments["connection_id"])]
+        if name == "export_story_interactive":
+            return [await export_story_interactive_tool(
+                client,
+                story_id=arguments["story_id"],
+                output_path=arguments["output_path"],
+            )]
         raise ValueError(f"Unknown tool: {name}")
 
     @server.list_resources()

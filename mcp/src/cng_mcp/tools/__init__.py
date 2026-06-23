@@ -14,6 +14,7 @@ from .jobs import get_job_status_tool, poll_job
 from .ingest import ingest_url_tool
 from .remote import discover_remote_tool, connect_remote_temporal_tool
 from .story_assets import upload_story_asset_tool
+from .export import export_story_interactive_tool
 
 __all__ = [
     "read_datasets_tool",
@@ -32,4 +33,5 @@ __all__ = [
     "update_connection_colormap_tool",
     "update_connection_categories_tool",
     "delete_connection_tool",
+    "export_story_interactive_tool",
 ]

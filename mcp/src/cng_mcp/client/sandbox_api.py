@@ -241,6 +241,16 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def export_story_interactive(self, story_id: str) -> bytes:
+        """Build and download the interactive HTML bundle (.zip) for a story."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/stories/{quote(story_id, safe='')}/export/interactive",
+            headers=self._headers(),
+            timeout=300.0,
+        )
+        response.raise_for_status()
+        return response.content
+
     async def close(self):
         """Close HTTP client."""
         await self.http_client.aclose()

@@ -186,6 +186,18 @@ async def test_delete_connection(mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_export_story_interactive(mock_http_client):
+    resp = MagicMock()
+    resp.content = b"PK\x03\x04zipbytes"
+    resp.raise_for_status = MagicMock()
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    data = await client.export_story_interactive("story1")
+    assert data.startswith(b"PK")
+    assert "/api/stories/story1/export/interactive" in mock_http_client.post.call_args.args[0]
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

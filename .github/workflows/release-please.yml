@@ -115,7 +115,7 @@ jobs:
           ssh -o StrictHostKeyChecking=yes \
             -i ~/.ssh/deploy_key \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "cd ${{ secrets.DEPLOY_PATH }} && git checkout main && git pull origin main && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod pull && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod up -d && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod exec -T caddy caddy reload --config /etc/caddy/Caddyfile"
+            "cd ${{ secrets.DEPLOY_PATH }} && git fetch origin main && git checkout main && git reset --hard origin/main && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod pull && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod up -d && IMAGE_TAG='${IMAGE_TAG}' docker compose --profile prod exec -T caddy caddy reload --config /etc/caddy/Caddyfile"
 
       - name: Verify deploy health
         run: |

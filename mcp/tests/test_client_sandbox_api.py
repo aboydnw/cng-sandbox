@@ -95,6 +95,109 @@ async def test_validate_layer_config(sandbox_api_url, mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_get_job(mock_http_client):
+    job = {"id": "job1", "status": "ready", "dataset_id": "ds1"}
+    mock_http_client.get = AsyncMock(return_value=_make_response(job))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.get_job("job1")
+    assert result["status"] == "ready"
+    mock_http_client.get.assert_awaited_once()
+    assert "/api/jobs/job1" in mock_http_client.get.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_convert_url_success(mock_http_client):
+    resp = _make_response({"job_id": "j1", "dataset_id": "ds1"})
+    resp.status_code = 202
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.convert_url("https://example.com/x.geojson")
+    assert result["dataset_id"] == "ds1"
+
+
+@pytest.mark.asyncio
+async def test_convert_url_duplicate_returns_existing(mock_http_client):
+    resp = MagicMock()
+    resp.status_code = 409
+    resp.json = MagicMock(return_value={"detail": "duplicate_dataset", "dataset_id": "ds9", "filename": "x.geojson"})
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.convert_url("https://example.com/x.geojson")
+    assert result["dataset_id"] == "ds9"
+    assert result["detail"] == "duplicate_dataset"
+
+
+@pytest.mark.asyncio
+async def test_discover(mock_http_client):
+    body = {"files": [{"url": "https://x/a.tif", "filename": "a.tif"}], "count": 1, "dominant_extension": ".tif"}
+    mock_http_client.post = AsyncMock(return_value=_make_response(body))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.discover("https://x/")
+    assert result["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_connect_remote(mock_http_client):
+    mock_http_client.post = AsyncMock(return_value=_make_response({"job_id": "j1", "dataset_id": "ds1"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    files = [{"url": "https://x/a.tif", "filename": "a.tif"}]
+    result = await client.connect_remote("https://x/", "temporal", files)
+    assert result["dataset_id"] == "ds1"
+
+
+@pytest.mark.asyncio
+async def test_upload_story_asset(mock_http_client):
+    resp = _make_response({"asset_id": "a1", "url": "/api/story-assets/a1/data",
+                           "thumbnail_url": "/t", "width": 100, "height": 80})
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.upload_story_asset(b"\x89PNG", "cover.png", "image/png", "image")
+    assert result["asset_id"] == "a1"
+    kwargs = mock_http_client.post.call_args.kwargs
+    assert "files" in kwargs and "data" in kwargs
+    assert kwargs["data"]["kind"] == "image"
+
+
+@pytest.mark.asyncio
+async def test_update_connection_colormap(mock_http_client):
+    mock_http_client.patch = AsyncMock(return_value=_make_response({"id": "c1", "preferred_colormap": "blues"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.update_connection_colormap("c1", "blues", False)
+    assert result["preferred_colormap"] == "blues"
+    assert "/api/connections/c1/colormap" in mock_http_client.patch.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_update_connection_categories(mock_http_client):
+    mock_http_client.patch = AsyncMock(return_value=_make_response({"id": "c1"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    await client.update_connection_categories("c1", [{"value": 1, "label": "Flood", "color": "#6138BE"}])
+    assert "/api/connections/c1/categories" in mock_http_client.patch.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_delete_connection(mock_http_client):
+    resp = MagicMock()
+    resp.raise_for_status = MagicMock()
+    mock_http_client.delete = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    await client.delete_connection("c1")
+    assert "/api/connections/c1" in mock_http_client.delete.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_export_story_interactive(mock_http_client):
+    resp = MagicMock()
+    resp.content = b"PK\x03\x04zipbytes"
+    resp.raise_for_status = MagicMock()
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    data = await client.export_story_interactive("story1")
+    assert data.startswith(b"PK")
+    assert "/api/stories/story1/export/interactive" in mock_http_client.post.call_args.args[0]
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

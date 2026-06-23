@@ -78,3 +78,33 @@ async def test_create_connection_tool_requires_fields(mock_http_client):
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     result = await create_connection_tool(client, name="", url="s3://x/", connection_type="zarr")
     assert "Error" in result.text
+
+
+@pytest.mark.asyncio
+async def test_update_connection_colormap_tool(mock_http_client):
+    from cng_mcp.tools.connections import update_connection_colormap_tool
+    mock_http_client.patch = AsyncMock(return_value=_make_response({"id": "c1", "preferred_colormap": "blues"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await update_connection_colormap_tool(client, connection_id="c1", colormap="blues")
+    assert "c1" in result.text and "blues" in result.text
+
+
+@pytest.mark.asyncio
+async def test_update_connection_categories_tool(mock_http_client):
+    from cng_mcp.tools.connections import update_connection_categories_tool
+    mock_http_client.patch = AsyncMock(return_value=_make_response({"id": "c1"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await update_connection_categories_tool(
+        client, connection_id="c1", categories=[{"value": 1, "label": "Flood", "color": "#6138BE"}])
+    assert "c1" in result.text
+
+
+@pytest.mark.asyncio
+async def test_delete_connection_tool(mock_http_client):
+    from cng_mcp.tools.connections import delete_connection_tool
+    resp = MagicMock()
+    resp.raise_for_status = MagicMock()
+    mock_http_client.delete = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await delete_connection_tool(client, connection_id="c1")
+    assert "c1" in result.text and "deleted" in result.text.lower()

@@ -138,6 +138,119 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def convert_url(self, url: str) -> dict[str, Any]:
+        """Fetch and convert a remote file. Returns job info, or the existing
+        dataset on a 409 duplicate instead of raising."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/convert-url",
+            json={"url": url},
+            headers=self._headers(),
+        )
+        if response.status_code == 409:
+            return response.json()
+        response.raise_for_status()
+        return response.json()
+
+    async def upload_story_asset(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        mime: str,
+        kind: str,
+        story_id: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Upload an image or CSV asset for use in story chapters."""
+        data: dict[str, str] = {"kind": kind}
+        if story_id is not None:
+            data["story_id"] = story_id
+        response = await self.http_client.post(
+            f"{self.api_url}/api/story-assets",
+            files={"file": (filename, file_bytes, mime)},
+            data=data,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def discover(self, url: str) -> dict[str, Any]:
+        """Discover geospatial files at a URL or S3 prefix."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/discover",
+            json={"url": url},
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def connect_remote(
+        self, url: str, mode: str, files: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Connect remote files as a mosaic or temporal dataset."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/connect-remote",
+            json={"url": url, "mode": mode, "files": files},
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def update_connection_colormap(
+        self,
+        connection_id: str,
+        preferred_colormap: Optional[str],
+        preferred_colormap_reversed: Optional[bool] = None,
+    ) -> dict[str, Any]:
+        """Set the preferred colormap for a raster connection."""
+        payload: dict[str, Any] = {"preferred_colormap": preferred_colormap}
+        if preferred_colormap_reversed is not None:
+            payload["preferred_colormap_reversed"] = preferred_colormap_reversed
+        response = await self.http_client.patch(
+            f"{self.api_url}/api/connections/{quote(connection_id, safe='')}/colormap",
+            json=payload,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def update_connection_categories(
+        self, connection_id: str, categories: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Update category labels/colors for a categorical connection."""
+        response = await self.http_client.patch(
+            f"{self.api_url}/api/connections/{quote(connection_id, safe='')}/categories",
+            json=categories,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def delete_connection(self, connection_id: str) -> None:
+        """Delete a connection."""
+        response = await self.http_client.delete(
+            f"{self.api_url}/api/connections/{quote(connection_id, safe='')}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+
+    async def get_job(self, job_id: str) -> dict[str, Any]:
+        """Get the status of a conversion job."""
+        response = await self.http_client.get(
+            f"{self.api_url}/api/jobs/{quote(job_id, safe='')}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def export_story_interactive(self, story_id: str) -> bytes:
+        """Build and download the interactive HTML bundle (.zip) for a story."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/stories/{quote(story_id, safe='')}/export/interactive",
+            headers=self._headers(),
+            timeout=300.0,
+        )
+        response.raise_for_status()
+        return response.content
+
     async def close(self):
         """Close HTTP client."""
         await self.http_client.aclose()

@@ -27,7 +27,7 @@ async def read_connections_tool(client: SandboxAPIClient) -> TextContent:
             categories = conn.get("categories", []) or []
             lines.append(f"- **Categorical**: Yes ({len(categories)} categories)")
         else:
-            lines.append(f"- **Categorical**: No")
+            lines.append("- **Categorical**: No")
         lines.append("")
     return TextContent(type="text", text="\n".join(lines))
 

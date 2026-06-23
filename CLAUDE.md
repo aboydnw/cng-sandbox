@@ -176,7 +176,7 @@ For tipg, titiler-pgstac, and GDAL+R2 env-var configuration, see [docs/services.
 
 ## MCP Server
 
-Wraps the ingestion API as MCP tools (datasets, stories, connections, validation) for Claude Desktop/Code. Source in `mcp/src/cng_mcp/`. See [mcp/README.md](mcp/README.md) for tools, resources, server config, and client examples.
+Wraps the ingestion API as MCP tools (datasets, stories, connections, validation, plus ingestion & export: job polling, URL ingest, remote temporal/mosaic discovery+connect, story-asset upload, connection colormap/categories/delete, interactive HTML export) for Claude Desktop/Code. Source in `mcp/src/cng_mcp/`. See [mcp/README.md](mcp/README.md) for tools, resources, server config, and client examples.
 
 ### Running tests
 

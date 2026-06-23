@@ -146,6 +146,19 @@ async def test_connect_remote(mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_upload_story_asset(mock_http_client):
+    resp = _make_response({"asset_id": "a1", "url": "/api/story-assets/a1/data",
+                           "thumbnail_url": "/t", "width": 100, "height": 80})
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.upload_story_asset(b"\x89PNG", "cover.png", "image/png", "image")
+    assert result["asset_id"] == "a1"
+    kwargs = mock_http_client.post.call_args.kwargs
+    assert "files" in kwargs and "data" in kwargs
+    assert kwargs["data"]["kind"] == "image"
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

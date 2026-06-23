@@ -35,3 +35,9 @@ def test_remote_tools_registered():
     from cng_mcp.server import TOOL_DEFINITIONS
     names = {t.name for t in TOOL_DEFINITIONS}
     assert {"discover_remote", "connect_remote_temporal"} <= names
+
+
+def test_upload_story_asset_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "upload_story_asset" in names

@@ -151,6 +151,27 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def upload_story_asset(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        mime: str,
+        kind: str,
+        story_id: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Upload an image or CSV asset for use in story chapters."""
+        data: dict[str, str] = {"kind": kind}
+        if story_id is not None:
+            data["story_id"] = story_id
+        response = await self.http_client.post(
+            f"{self.api_url}/api/story-assets",
+            files={"file": (filename, file_bytes, mime)},
+            data=data,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def discover(self, url: str) -> dict[str, Any]:
         """Discover geospatial files at a URL or S3 prefix."""
         response = await self.http_client.post(

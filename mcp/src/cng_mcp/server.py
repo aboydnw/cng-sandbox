@@ -23,6 +23,7 @@ from cng_mcp.tools import (
     ingest_url_tool,
     discover_remote_tool,
     connect_remote_temporal_tool,
+    upload_story_asset_tool,
 )
 from cng_mcp.resources import (
     list_datasets_resource,
@@ -172,6 +173,19 @@ TOOL_DEFINITIONS = [
             "required": ["url"],
         },
     ),
+    Tool(
+        name="upload_story_asset",
+        description="Upload a local image or CSV file as a story asset (for image chapters and CSV chart chapters). Returns the asset ID and URL.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string", "description": "Absolute path to a local image or CSV file"},
+                "kind": {"type": "string", "description": "'image' or 'csv'"},
+                "story_id": {"type": "string", "description": "Optional story to attach the asset to"},
+            },
+            "required": ["file_path", "kind"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -267,6 +281,13 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
                 mode=arguments.get("mode", "temporal"),
                 files=arguments.get("files"),
                 timeout=arguments.get("timeout", 600.0),
+            )]
+        if name == "upload_story_asset":
+            return [await upload_story_asset_tool(
+                client,
+                file_path=arguments["file_path"],
+                kind=arguments["kind"],
+                story_id=arguments.get("story_id"),
             )]
         raise ValueError(f"Unknown tool: {name}")
 

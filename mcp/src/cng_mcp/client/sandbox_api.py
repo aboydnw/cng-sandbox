@@ -194,6 +194,44 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def update_connection_colormap(
+        self,
+        connection_id: str,
+        preferred_colormap: Optional[str],
+        preferred_colormap_reversed: Optional[bool] = None,
+    ) -> dict[str, Any]:
+        """Set the preferred colormap for a raster connection."""
+        payload: dict[str, Any] = {"preferred_colormap": preferred_colormap}
+        if preferred_colormap_reversed is not None:
+            payload["preferred_colormap_reversed"] = preferred_colormap_reversed
+        response = await self.http_client.patch(
+            f"{self.api_url}/api/connections/{quote(connection_id, safe='')}/colormap",
+            json=payload,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def update_connection_categories(
+        self, connection_id: str, categories: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Update category labels/colors for a categorical connection."""
+        response = await self.http_client.patch(
+            f"{self.api_url}/api/connections/{quote(connection_id, safe='')}/categories",
+            json=categories,
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def delete_connection(self, connection_id: str) -> None:
+        """Delete a connection."""
+        response = await self.http_client.delete(
+            f"{self.api_url}/api/connections/{quote(connection_id, safe='')}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+
     async def get_job(self, job_id: str) -> dict[str, Any]:
         """Get the status of a conversion job."""
         response = await self.http_client.get(

@@ -41,3 +41,9 @@ def test_upload_story_asset_registered():
     from cng_mcp.server import TOOL_DEFINITIONS
     names = {t.name for t in TOOL_DEFINITIONS}
     assert "upload_story_asset" in names
+
+
+def test_connection_mutation_tools_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert {"update_connection_colormap", "update_connection_categories", "delete_connection"} <= names

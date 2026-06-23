@@ -72,3 +72,48 @@ async def create_connection_tool(
     conn_url = conn.get("url", url)
     text = f"Connection created.\n\n- **ID**: {conn_id}\n- **Name**: {conn_name}\n- **Type**: {conn_type}\n- **URL**: {conn_url}"
     return TextContent(type="text", text=text)
+
+
+async def update_connection_colormap_tool(
+    client: SandboxAPIClient,
+    connection_id: str,
+    colormap: Optional[str],
+    reversed: bool = False,
+) -> TextContent:
+    """Set a connection's preferred colormap."""
+    if not connection_id or not connection_id.strip():
+        return TextContent(type="text", text="Error: connection_id is required.")
+    conn = await client.update_connection_colormap(connection_id, colormap, reversed)
+    return TextContent(
+        type="text",
+        text=f"Colormap updated for connection {conn.get('id', connection_id)}: "
+             f"{conn.get('preferred_colormap', colormap)}"
+             f"{' (reversed)' if reversed else ''}.",
+    )
+
+
+async def update_connection_categories_tool(
+    client: SandboxAPIClient,
+    connection_id: str,
+    categories: list[dict[str, Any]],
+) -> TextContent:
+    """Update category labels/colors for a categorical connection."""
+    if not connection_id or not connection_id.strip():
+        return TextContent(type="text", text="Error: connection_id is required.")
+    if not categories:
+        return TextContent(type="text", text="Error: categories must not be empty.")
+    conn = await client.update_connection_categories(connection_id, categories)
+    return TextContent(
+        type="text",
+        text=f"Updated {len(categories)} categories for connection {conn.get('id', connection_id)}.",
+    )
+
+
+async def delete_connection_tool(
+    client: SandboxAPIClient, connection_id: str
+) -> TextContent:
+    """Delete a connection."""
+    if not connection_id or not connection_id.strip():
+        return TextContent(type="text", text="Error: connection_id is required.")
+    await client.delete_connection(connection_id)
+    return TextContent(type="text", text=f"Connection {connection_id} deleted.")

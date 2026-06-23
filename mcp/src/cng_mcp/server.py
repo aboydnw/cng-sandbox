@@ -18,6 +18,9 @@ from cng_mcp.tools import (
     update_story_tool,
     read_connections_tool,
     create_connection_tool,
+    update_connection_colormap_tool,
+    update_connection_categories_tool,
+    delete_connection_tool,
     validate_layer_config_tool,
     get_job_status_tool,
     ingest_url_tool,
@@ -186,6 +189,40 @@ TOOL_DEFINITIONS = [
             "required": ["file_path", "kind"],
         },
     ),
+    Tool(
+        name="update_connection_colormap",
+        description="Set the preferred colormap for a raster connection (cog/xyz_raster/raster pmtiles).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "connection_id": {"type": "string"},
+                "colormap": {"type": "string"},
+                "reversed": {"type": "boolean"},
+            },
+            "required": ["connection_id", "colormap"],
+        },
+    ),
+    Tool(
+        name="update_connection_categories",
+        description="Update category labels/colors for a categorical connection. categories: [{value:int, label?:str, color?:'#RRGGBB'}].",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "connection_id": {"type": "string"},
+                "categories": {"type": "array", "items": {"type": "object"}},
+            },
+            "required": ["connection_id", "categories"],
+        },
+    ),
+    Tool(
+        name="delete_connection",
+        description="Delete an external tile source connection by ID.",
+        inputSchema={
+            "type": "object",
+            "properties": {"connection_id": {"type": "string"}},
+            "required": ["connection_id"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -289,6 +326,21 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
                 kind=arguments["kind"],
                 story_id=arguments.get("story_id"),
             )]
+        if name == "update_connection_colormap":
+            return [await update_connection_colormap_tool(
+                client,
+                connection_id=arguments["connection_id"],
+                colormap=arguments["colormap"],
+                reversed=arguments.get("reversed", False),
+            )]
+        if name == "update_connection_categories":
+            return [await update_connection_categories_tool(
+                client,
+                connection_id=arguments["connection_id"],
+                categories=arguments["categories"],
+            )]
+        if name == "delete_connection":
+            return [await delete_connection_tool(client, connection_id=arguments["connection_id"])]
         raise ValueError(f"Unknown tool: {name}")
 
     @server.list_resources()

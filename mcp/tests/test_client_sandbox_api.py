@@ -159,6 +159,33 @@ async def test_upload_story_asset(mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_update_connection_colormap(mock_http_client):
+    mock_http_client.patch = AsyncMock(return_value=_make_response({"id": "c1", "preferred_colormap": "blues"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.update_connection_colormap("c1", "blues", False)
+    assert result["preferred_colormap"] == "blues"
+    assert "/api/connections/c1/colormap" in mock_http_client.patch.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_update_connection_categories(mock_http_client):
+    mock_http_client.patch = AsyncMock(return_value=_make_response({"id": "c1"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    await client.update_connection_categories("c1", [{"value": 1, "label": "Flood", "color": "#6138BE"}])
+    assert "/api/connections/c1/categories" in mock_http_client.patch.call_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_delete_connection(mock_http_client):
+    resp = MagicMock()
+    resp.raise_for_status = MagicMock()
+    mock_http_client.delete = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    await client.delete_connection("c1")
+    assert "/api/connections/c1" in mock_http_client.delete.call_args.args[0]
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

@@ -9,7 +9,7 @@ COPY frontend/archive-runtime/index.html frontend/archive-runtime/tsconfig.json 
 RUN yarn build
 
 # Stage 1: Builder
-FROM python:3.13-slim-trixie AS builder
+FROM python:3.14-slim-trixie AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal-dev \
@@ -36,7 +36,7 @@ COPY ingestion/ /build/ingestion/
 RUN pip install --no-cache-dir --no-deps .
 
 # Stage 2: Runtime
-FROM python:3.13-slim-trixie
+FROM python:3.14-slim-trixie
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal36 \

@@ -19,7 +19,16 @@ from cng_mcp.tools import (
     update_story_tool,
     read_connections_tool,
     create_connection_tool,
+    update_connection_colormap_tool,
+    update_connection_categories_tool,
+    delete_connection_tool,
     validate_layer_config_tool,
+    get_job_status_tool,
+    ingest_url_tool,
+    discover_remote_tool,
+    connect_remote_temporal_tool,
+    upload_story_asset_tool,
+    export_story_interactive_tool,
 )
 from cng_mcp.resources import (
     list_datasets_resource,
@@ -120,6 +129,114 @@ TOOL_DEFINITIONS = [
             "required": ["dataset_id", "colormap"],
         },
     ),
+    Tool(
+        name="get_job_status",
+        description="Get the status of a conversion job by job ID (pending/converting/ready/failed).",
+        inputSchema={
+            "type": "object",
+            "properties": {"job_id": {"type": "string"}},
+            "required": ["job_id"],
+        },
+    ),
+    Tool(
+        name="ingest_url",
+        description="Ingest a remote geospatial file (GeoTIFF, GeoJSON, Shapefile .zip, NetCDF, HDF5) into a dataset. Waits for conversion to finish and returns the dataset ID.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "HTTP(S) or S3 URL of the file"},
+                "wait": {"type": "boolean", "description": "Wait for conversion (default true)"},
+                "timeout": {"type": "number", "description": "Max seconds to wait (default 600)"},
+            },
+            "required": ["url"],
+        },
+    ),
+    Tool(
+        name="discover_remote",
+        description="List geospatial files at a remote URL or S3 prefix before connecting them.",
+        inputSchema={
+            "type": "object",
+            "properties": {"url": {"type": "string"}},
+            "required": ["url"],
+        },
+    ),
+    Tool(
+        name="connect_remote_temporal",
+        description="Register remote COGs as a temporal (date-stepped, time-slider) or mosaic dataset. Discovers files at the URL if an explicit file list is not given; waits for the job to finish.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "URL or S3 prefix"},
+                "mode": {"type": "string", "description": "'temporal' or 'mosaic' (default temporal)"},
+                "files": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Optional explicit [{url, filename}] list; discovered from url if omitted",
+                },
+                "timeout": {"type": "number"},
+            },
+            "required": ["url"],
+        },
+    ),
+    Tool(
+        name="upload_story_asset",
+        description="Upload a local image or CSV file as a story asset (for image chapters and CSV chart chapters). Returns the asset ID and URL.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string", "description": "Absolute path to a local image or CSV file"},
+                "kind": {"type": "string", "description": "'image' or 'csv'"},
+                "story_id": {"type": "string", "description": "Optional story to attach the asset to"},
+            },
+            "required": ["file_path", "kind"],
+        },
+    ),
+    Tool(
+        name="update_connection_colormap",
+        description="Set the preferred colormap for a raster connection (cog/xyz_raster/raster pmtiles).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "connection_id": {"type": "string"},
+                "colormap": {"type": "string"},
+                "reversed": {"type": "boolean"},
+            },
+            "required": ["connection_id", "colormap"],
+        },
+    ),
+    Tool(
+        name="update_connection_categories",
+        description="Update category labels/colors for a categorical connection. categories: [{value:int, label?:str, color?:'#RRGGBB'}].",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "connection_id": {"type": "string"},
+                "categories": {"type": "array", "items": {"type": "object"}},
+            },
+            "required": ["connection_id", "categories"],
+        },
+    ),
+    Tool(
+        name="delete_connection",
+        description="Delete an external tile source connection by ID.",
+        inputSchema={
+            "type": "object",
+            "properties": {"connection_id": {"type": "string"}},
+            "required": ["connection_id"],
+        },
+    ),
+    Tool(
+        name="export_story_interactive",
+        description="Build and download a story's self-contained interactive HTML bundle (.zip) to a local path. Stories with zarr layers or scrolly chapters needing snapshots return an error.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "story_id": {"type": "string"},
+                "output_path": {"type": "string", "description": "Local path to write the .zip"},
+            },
+            "required": ["story_id", "output_path"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -196,6 +313,53 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
                 colormap=arguments["colormap"],
                 rescale_min=arguments.get("rescale_min"),
                 rescale_max=arguments.get("rescale_max"),
+            )]
+        if name == "get_job_status":
+            return [await get_job_status_tool(client, job_id=arguments["job_id"])]
+        if name == "ingest_url":
+            return [await ingest_url_tool(
+                client,
+                url=arguments["url"],
+                wait=arguments.get("wait", True),
+                timeout=arguments.get("timeout", 600.0),
+            )]
+        if name == "discover_remote":
+            return [await discover_remote_tool(client, url=arguments["url"])]
+        if name == "connect_remote_temporal":
+            return [await connect_remote_temporal_tool(
+                client,
+                url=arguments["url"],
+                mode=arguments.get("mode", "temporal"),
+                files=arguments.get("files"),
+                timeout=arguments.get("timeout", 600.0),
+            )]
+        if name == "upload_story_asset":
+            return [await upload_story_asset_tool(
+                client,
+                file_path=arguments["file_path"],
+                kind=arguments["kind"],
+                story_id=arguments.get("story_id"),
+            )]
+        if name == "update_connection_colormap":
+            return [await update_connection_colormap_tool(
+                client,
+                connection_id=arguments["connection_id"],
+                colormap=arguments["colormap"],
+                reversed=arguments.get("reversed", False),
+            )]
+        if name == "update_connection_categories":
+            return [await update_connection_categories_tool(
+                client,
+                connection_id=arguments["connection_id"],
+                categories=arguments["categories"],
+            )]
+        if name == "delete_connection":
+            return [await delete_connection_tool(client, connection_id=arguments["connection_id"])]
+        if name == "export_story_interactive":
+            return [await export_story_interactive_tool(
+                client,
+                story_id=arguments["story_id"],
+                output_path=arguments["output_path"],
             )]
         raise ValueError(f"Unknown tool: {name}")
 

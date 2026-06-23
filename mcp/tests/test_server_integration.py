@@ -33,6 +33,42 @@ async def test_server_lists_tools(sandbox_api_url):
     assert len(server.request_handlers) > 0
 
 
+def test_get_job_status_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "get_job_status" in names
+
+
+def test_ingest_url_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "ingest_url" in names
+
+
+def test_remote_tools_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert {"discover_remote", "connect_remote_temporal"} <= names
+
+
+def test_upload_story_asset_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "upload_story_asset" in names
+
+
+def test_connection_mutation_tools_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert {"update_connection_colormap", "update_connection_categories", "delete_connection"} <= names
+
+
+def test_export_story_interactive_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "export_story_interactive" in names
+
+
 @pytest.mark.asyncio
 async def test_read_resource_datasets(sandbox_api_url, monkeypatch, sample_dataset):
     async def fake_get_datasets(self):

@@ -17,3 +17,9 @@ async def test_server_lists_tools(sandbox_api_url):
     from cng_mcp.server import create_server
     server = create_server(sandbox_api_url=sandbox_api_url)
     assert len(server.request_handlers) > 0
+
+
+def test_get_job_status_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "get_job_status" in names

@@ -95,6 +95,17 @@ async def test_validate_layer_config(sandbox_api_url, mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_get_job(mock_http_client):
+    job = {"id": "job1", "status": "ready", "dataset_id": "ds1"}
+    mock_http_client.get = AsyncMock(return_value=_make_response(job))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.get_job("job1")
+    assert result["status"] == "ready"
+    mock_http_client.get.assert_awaited_once()
+    assert "/api/jobs/job1" in mock_http_client.get.call_args.args[0]
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

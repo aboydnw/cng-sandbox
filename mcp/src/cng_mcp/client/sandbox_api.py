@@ -138,6 +138,15 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def get_job(self, job_id: str) -> dict[str, Any]:
+        """Get the status of a conversion job."""
+        response = await self.http_client.get(
+            f"{self.api_url}/api/jobs/{quote(job_id, safe='')}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def close(self):
         """Close HTTP client."""
         await self.http_client.aclose()

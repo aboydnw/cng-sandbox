@@ -19,6 +19,7 @@ from cng_mcp.tools import (
     read_connections_tool,
     create_connection_tool,
     validate_layer_config_tool,
+    get_job_status_tool,
 )
 from cng_mcp.resources import (
     list_datasets_resource,
@@ -119,6 +120,15 @@ TOOL_DEFINITIONS = [
             "required": ["dataset_id", "colormap"],
         },
     ),
+    Tool(
+        name="get_job_status",
+        description="Get the status of a conversion job by job ID (pending/converting/ready/failed).",
+        inputSchema={
+            "type": "object",
+            "properties": {"job_id": {"type": "string"}},
+            "required": ["job_id"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -196,6 +206,8 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
                 rescale_min=arguments.get("rescale_min"),
                 rescale_max=arguments.get("rescale_max"),
             )]
+        if name == "get_job_status":
+            return [await get_job_status_tool(client, job_id=arguments["job_id"])]
         raise ValueError(f"Unknown tool: {name}")
 
     @server.list_resources()

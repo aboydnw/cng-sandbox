@@ -151,6 +151,28 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def discover(self, url: str) -> dict[str, Any]:
+        """Discover geospatial files at a URL or S3 prefix."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/discover",
+            json={"url": url},
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def connect_remote(
+        self, url: str, mode: str, files: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Connect remote files as a mosaic or temporal dataset."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/connect-remote",
+            json={"url": url, "mode": mode, "files": files},
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def get_job(self, job_id: str) -> dict[str, Any]:
         """Get the status of a conversion job."""
         response = await self.http_client.get(

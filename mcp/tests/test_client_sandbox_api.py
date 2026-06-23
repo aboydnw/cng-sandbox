@@ -128,6 +128,24 @@ async def test_convert_url_duplicate_returns_existing(mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_discover(mock_http_client):
+    body = {"files": [{"url": "https://x/a.tif", "filename": "a.tif"}], "count": 1, "dominant_extension": ".tif"}
+    mock_http_client.post = AsyncMock(return_value=_make_response(body))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.discover("https://x/")
+    assert result["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_connect_remote(mock_http_client):
+    mock_http_client.post = AsyncMock(return_value=_make_response({"job_id": "j1", "dataset_id": "ds1"}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    files = [{"url": "https://x/a.tif", "filename": "a.tif"}]
+    result = await client.connect_remote("https://x/", "temporal", files)
+    assert result["dataset_id"] == "ds1"
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

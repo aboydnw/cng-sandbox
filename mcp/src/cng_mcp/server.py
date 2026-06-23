@@ -21,6 +21,8 @@ from cng_mcp.tools import (
     validate_layer_config_tool,
     get_job_status_tool,
     ingest_url_tool,
+    discover_remote_tool,
+    connect_remote_temporal_tool,
 )
 from cng_mcp.resources import (
     list_datasets_resource,
@@ -143,6 +145,33 @@ TOOL_DEFINITIONS = [
             "required": ["url"],
         },
     ),
+    Tool(
+        name="discover_remote",
+        description="List geospatial files at a remote URL or S3 prefix before connecting them.",
+        inputSchema={
+            "type": "object",
+            "properties": {"url": {"type": "string"}},
+            "required": ["url"],
+        },
+    ),
+    Tool(
+        name="connect_remote_temporal",
+        description="Register remote COGs as a temporal (date-stepped, time-slider) or mosaic dataset. Discovers files at the URL if an explicit file list is not given; waits for the job to finish.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "URL or S3 prefix"},
+                "mode": {"type": "string", "description": "'temporal' or 'mosaic' (default temporal)"},
+                "files": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Optional explicit [{url, filename}] list; discovered from url if omitted",
+                },
+                "timeout": {"type": "number"},
+            },
+            "required": ["url"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -227,6 +256,16 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
                 client,
                 url=arguments["url"],
                 wait=arguments.get("wait", True),
+                timeout=arguments.get("timeout", 600.0),
+            )]
+        if name == "discover_remote":
+            return [await discover_remote_tool(client, url=arguments["url"])]
+        if name == "connect_remote_temporal":
+            return [await connect_remote_temporal_tool(
+                client,
+                url=arguments["url"],
+                mode=arguments.get("mode", "temporal"),
+                files=arguments.get("files"),
                 timeout=arguments.get("timeout", 600.0),
             )]
         raise ValueError(f"Unknown tool: {name}")

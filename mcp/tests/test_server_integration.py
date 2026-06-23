@@ -29,3 +29,9 @@ def test_ingest_url_registered():
     from cng_mcp.server import TOOL_DEFINITIONS
     names = {t.name for t in TOOL_DEFINITIONS}
     assert "ingest_url" in names
+
+
+def test_remote_tools_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert {"discover_remote", "connect_remote_temporal"} <= names

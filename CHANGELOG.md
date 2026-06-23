@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.7.0](https://github.com/aboydnw/cng-sandbox/compare/v2.6.2...v2.7.0) (2026-06-23)
+
+
+### Features
+
+* add obstore to Store step in technical details panel ([#510](https://github.com/aboydnw/cng-sandbox/issues/510)) ([6f6b661](https://github.com/aboydnw/cng-sandbox/commit/6f6b6618a94150aa730c45de8780919c86645fa1)), closes [#72](https://github.com/aboydnw/cng-sandbox/issues/72)
+* **frontend:** indicate data extent when tiles aren't visible at current zoom ([#524](https://github.com/aboydnw/cng-sandbox/issues/524)) ([3ebf15f](https://github.com/aboydnw/cng-sandbox/commit/3ebf15f4413e5e11c8dc9a7ce53b0f2bc3a9a2e2)), closes [#145](https://github.com/aboydnw/cng-sandbox/issues/145)
+* show days remaining before dataset and story expiry ([#523](https://github.com/aboydnw/cng-sandbox/issues/523)) ([fc59a25](https://github.com/aboydnw/cng-sandbox/commit/fc59a2534cbde223c7720fbc07a19848c3795244)), closes [#23](https://github.com/aboydnw/cng-sandbox/issues/23)
+
+
+### Bug Fixes
+
+* **ci:** point uptime monitor at storytelling.developmentseed.org ([#509](https://github.com/aboydnw/cng-sandbox/issues/509)) ([4caa3d5](https://github.com/aboydnw/cng-sandbox/commit/4caa3d5bb7b4834fe2c79eb33b4142ef35f1895d))
+* **frontend:** fail visibly on upload and conversion stream errors ([#516](https://github.com/aboydnw/cng-sandbox/issues/516)) ([fb0760e](https://github.com/aboydnw/cng-sandbox/commit/fb0760e3f300d6c6a52703d948f04c53ea48a2d3))
+* **frontend:** harden optimistic updates, async races, and picking types ([#521](https://github.com/aboydnw/cng-sandbox/issues/521)) ([b7e5a09](https://github.com/aboydnw/cng-sandbox/commit/b7e5a0925c7d7552d8a9c8b651fdb10b40113d4e))
+* **frontend:** surface client-render and DuckDB failures on the map ([#513](https://github.com/aboydnw/cng-sandbox/issues/513)) ([2720516](https://github.com/aboydnw/cng-sandbox/commit/2720516bfaae68560918237af661d3896c0a8cf1))
+* **frontend:** surface fetch failures on list pages and connections API ([#518](https://github.com/aboydnw/cng-sandbox/issues/518)) ([9d2ac03](https://github.com/aboydnw/cng-sandbox/commit/9d2ac03fe6a69e4105ce052e8ca1f85701a8d013))
+* **infra:** dev stack reliability fixes ([#514](https://github.com/aboydnw/cng-sandbox/issues/514)) ([8ef5e0f](https://github.com/aboydnw/cng-sandbox/commit/8ef5e0ffe5488770597f493f26b325dddd3d715d))
+* **ingestion:** exclude example datasets and stories from expiry cleanup ([#511](https://github.com/aboydnw/cng-sandbox/issues/511)) ([6f529a5](https://github.com/aboydnw/cng-sandbox/commit/6f529a574918252d9883a311e38f85dba6d2d9ff))
+* **ingestion:** expire abandoned scans and evict terminal jobs ([#515](https://github.com/aboydnw/cng-sandbox/issues/515)) ([757d41d](https://github.com/aboydnw/cng-sandbox/commit/757d41d5022512eff359f688261073ea90dd29e8))
+* **ingestion:** pipeline reliability fixes ([#520](https://github.com/aboydnw/cng-sandbox/issues/520)) ([83c1ae6](https://github.com/aboydnw/cng-sandbox/commit/83c1ae61e27e912697c5a4f92a76dd22c72aca40))
+* **mcp:** resource URI matching, API error surfacing, and client timeout ([#512](https://github.com/aboydnw/cng-sandbox/issues/512)) ([83b8a9f](https://github.com/aboydnw/cng-sandbox/commit/83b8a9f6081eb434ad2aa2a2ecba5c71676b60c6))
+
 ## [2.6.2](https://github.com/aboydnw/cng-sandbox/compare/v2.6.1...v2.6.2) (2026-05-21)
 
 

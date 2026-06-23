@@ -74,3 +74,53 @@ def test_migrate_schema_adds_all_connection_conversion_columns(tmp_path):
     }
     missing = expected - columns
     assert not missing, f"_migrate_schema failed to add columns: {missing}"
+
+
+def test_migrate_schema_is_idempotent(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'drift.db'}")
+    _create_pre_ticket_b_schema(engine)
+
+    _migrate_schema(engine)
+    _migrate_schema(engine)
+
+
+def test_migrate_schema_adds_expected_columns_per_table(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'drift.db'}")
+    _create_pre_ticket_b_schema(engine)
+
+    _migrate_schema(engine)
+
+    inspector = inspect(engine)
+    datasets = {c["name"] for c in inspector.get_columns("datasets")}
+    stories = {c["name"] for c in inspector.get_columns("stories")}
+    connections = {c["name"] for c in inspector.get_columns("connections")}
+
+    assert {
+        "expires_at",
+        "is_example",
+        "is_shared",
+        "render_mode",
+        "preferred_colormap",
+        "preferred_colormap_reversed",
+        "workspace_id",
+    } <= datasets
+    assert {"is_example", "workspace_id", "forked_from_id"} <= stories
+    assert {
+        "is_shared",
+        "render_mode",
+        "preferred_colormap",
+        "preferred_colormap_reversed",
+        "config",
+        "geozarr_attrs",
+        "is_example",
+    } <= connections
+
+
+def test_migrate_schema_creates_story_indexes(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'drift.db'}")
+    _create_pre_ticket_b_schema(engine)
+
+    _migrate_schema(engine)
+
+    indexes = {ix["name"] for ix in inspect(engine).get_indexes("stories")}
+    assert {"ix_stories_fork_lookup", "ix_stories_example_title"} <= indexes

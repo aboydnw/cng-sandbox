@@ -18,7 +18,7 @@ jobs:
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 30 \
-            "https://cngsandbox.org/api/health" || echo "000")
+            "https://storytelling.developmentseed.org/api/health" || echo "000")
           echo "status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
           if [ "$HTTP_STATUS" = "200" ]; then
             echo "Site is healthy (HTTP $HTTP_STATUS)"
@@ -40,9 +40,9 @@ jobs:
             --json number \
             --jq '.[0].number // empty')
 
-          BODY="The uptime monitor detected that cngsandbox.org is not responding."
+          BODY="The uptime monitor detected that storytelling.developmentseed.org is not responding."
           BODY="${BODY}\n\n- **HTTP status**: ${HTTP_STATUS}"
-          BODY="${BODY}\n- **Endpoint**: https://cngsandbox.org/api/health"
+          BODY="${BODY}\n- **Endpoint**: https://storytelling.developmentseed.org/api/health"
           BODY="${BODY}\n- **Time**: $(date -u '+%Y-%m-%d %H:%M UTC')"
           BODY="${BODY}\n\n## Troubleshooting"
           BODY="${BODY}\n\nSSH into the VM and check:"

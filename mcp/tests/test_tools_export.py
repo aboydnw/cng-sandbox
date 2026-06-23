@@ -22,6 +22,18 @@ async def test_export_story_interactive_tool_writes_file(tmp_path, mock_http_cli
 
 
 @pytest.mark.asyncio
+async def test_export_story_interactive_tool_handles_write_error(tmp_path, mock_http_client):
+    resp = MagicMock()
+    resp.content = b"PK\x03\x04zipbytes"
+    resp.raise_for_status = MagicMock()
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    bad_path = str(tmp_path / "no_such_dir" / "story.zip")
+    result = await export_story_interactive_tool(client, story_id="s1", output_path=bad_path)
+    assert "Error" in result.text
+
+
+@pytest.mark.asyncio
 async def test_export_story_interactive_tool_surfaces_400(tmp_path, mock_http_client):
     request = httpx.Request("POST", "http://localhost:8086/api/stories/s1/export/interactive")
     error_resp = httpx.Response(400, json={"detail": "missing scrolly snapshots"}, request=request)

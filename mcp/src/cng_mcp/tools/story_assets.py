@@ -23,8 +23,11 @@ async def upload_story_asset_tool(
     if not os.path.isfile(file_path):
         return TextContent(type="text", text=f"Error: file not found: {file_path}")
 
-    with open(file_path, "rb") as fh:
-        file_bytes = fh.read()
+    try:
+        with open(file_path, "rb") as fh:
+            file_bytes = fh.read()
+    except OSError as exc:
+        return TextContent(type="text", text=f"Error reading file {file_path}: {exc}")
     filename = os.path.basename(file_path)
     mime = mimetypes.guess_type(filename)[0] or (
         "text/csv" if kind == "csv" else "application/octet-stream"

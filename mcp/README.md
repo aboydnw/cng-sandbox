@@ -132,7 +132,7 @@ Build and download a story's self-contained interactive HTML bundle (`.zip`) to 
 
 ```bash
 cd mcp
-uv sync
+uv sync --extra dev
 uv run pytest tests/ -v
 ```
 

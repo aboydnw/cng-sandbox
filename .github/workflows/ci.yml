@@ -14,7 +14,7 @@ jobs:
       run:
         working-directory: ingestion
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -32,7 +32,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: pip install ruff && ruff check src/ tests/
+        run: ruff check src/ tests/
 
       - name: Check formatting with ruff
         run: ruff format --check src/ tests/
@@ -46,7 +46,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -66,13 +66,16 @@ jobs:
 
       - run: npx vitest run
 
+      - name: Build production bundle
+        run: yarn build
+
   archive-runtime:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend/archive-runtime
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -89,7 +92,7 @@ jobs:
   actions-security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Install zizmor
@@ -100,7 +103,7 @@ jobs:
   proxy-parity:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
       - name: Check Vite/Caddy proxy parity
@@ -109,11 +112,30 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-      - run: cp .env.example .env
-      - run: docker compose build
+
+      - name: Validate compose config
+        run: cp .env.example .env && docker compose config --quiet
+
+      - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: ingestion/Dockerfile
+          push: false
+          cache-from: type=gha,scope=ingestion
+          cache-to: type=gha,mode=max,scope=ingestion
+
+      - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: frontend
+          target: dev
+          push: false
+          cache-from: type=gha,scope=frontend-dev
+          cache-to: type=gha,mode=max,scope=frontend-dev
 
   pr-size-check:
     if: github.event_name == 'pull_request'
@@ -121,7 +143,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -131,10 +153,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BASE_REF: ${{ github.base_ref }}
+          REPO: ${{ github.repository }}
         run: |
+          MARKER="<!-- pr-size-check -->"
           LINES=$(git diff --numstat "origin/$BASE_REF"...HEAD | awk '{s+=$1+$2} END {print s+0}')
           echo "Total changed lines: $LINES"
           if [ "$LINES" -gt 500 ]; then
-            gh pr comment "$PR_NUMBER" \
-              --body "**Large PR warning:** This PR changes $LINES lines. Consider breaking it into smaller changes for easier review."
+            BODY="$MARKER
+          **Large PR warning:** This PR changes $LINES lines. Consider breaking it into smaller changes for easier review."
+            COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --jq "[.[] | select(.body | contains(\"$MARKER\"))][0].id // empty" | head -n1)
+            if [ -n "$COMMENT_ID" ]; then
+              echo "Updating existing comment $COMMENT_ID"
+              gh api -X PATCH "repos/$REPO/issues/comments/$COMMENT_ID" -f body="$BODY" > /dev/null
+            else
+              gh pr comment "$PR_NUMBER" --body "$BODY"
+            fi
           fi

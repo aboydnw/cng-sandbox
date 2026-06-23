@@ -16,7 +16,7 @@ class SandboxAPIClient:
     ):
         self.api_url = api_url.rstrip("/")
         self.workspace_id = workspace_id
-        self.http_client = http_client or httpx.AsyncClient()
+        self.http_client = http_client or httpx.AsyncClient(timeout=httpx.Timeout(30.0))
 
     def _headers(self) -> dict[str, str]:
         if self.workspace_id:

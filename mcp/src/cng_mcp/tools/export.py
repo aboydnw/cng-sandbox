@@ -24,8 +24,11 @@ async def export_story_interactive_tool(
             detail = exc.response.text
         return TextContent(type="text", text=f"Error exporting story {story_id}: {detail}")
 
-    with open(output_path, "wb") as fh:
-        fh.write(data)
+    try:
+        with open(output_path, "wb") as fh:
+            fh.write(data)
+    except OSError as exc:
+        return TextContent(type="text", text=f"Error writing file {output_path}: {exc}")
     return TextContent(
         type="text",
         text=f"Interactive bundle written to {output_path} ({len(data)} bytes).",

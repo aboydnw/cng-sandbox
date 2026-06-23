@@ -1,32 +1,27 @@
 import { Flex, Text } from "@chakra-ui/react";
-import { Clock } from "@phosphor-icons/react";
+import { ClockCountdown } from "@phosphor-icons/react";
+import { daysUntilExpiry, expiryLabel } from "../utils/format";
 
 interface ExpiryBadgeProps {
   expiresAt: string;
 }
 
 export function ExpiryBadge({ expiresAt }: ExpiryBadgeProps) {
-  const daysLeft = Math.ceil(
-    (new Date(expiresAt).getTime() - Date.now()) / 86400000
-  );
-  const isUrgent = daysLeft <= 3;
-  const label = daysLeft <= 0 ? "Expires today" : `Expires in ${daysLeft}d`;
+  const daysLeft = daysUntilExpiry(expiresAt);
+  const isUrgent = daysLeft < 3;
 
   return (
     <Flex
       display="inline-flex"
       align="center"
       gap={1}
-      px={2}
-      py={0.5}
-      borderRadius="full"
-      fontSize="11px"
-      fontWeight={500}
-      bg={isUrgent ? "red.50" : "orange.50"}
-      color={isUrgent ? "red.600" : "orange.600"}
+      fontSize="xs"
+      fontWeight={isUrgent ? 600 : 500}
+      color={isUrgent ? "brand.orange" : "brand.textSecondary"}
+      title={`Expires on ${new Date(expiresAt).toLocaleDateString()}`}
     >
-      <Clock size={11} />
-      <Text>{label}</Text>
+      <ClockCountdown size={12} />
+      <Text>{expiryLabel(daysLeft)}</Text>
     </Flex>
   );
 }

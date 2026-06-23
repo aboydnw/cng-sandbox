@@ -106,6 +106,28 @@ async def test_get_job(mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_convert_url_success(mock_http_client):
+    resp = _make_response({"job_id": "j1", "dataset_id": "ds1"})
+    resp.status_code = 202
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.convert_url("https://example.com/x.geojson")
+    assert result["dataset_id"] == "ds1"
+
+
+@pytest.mark.asyncio
+async def test_convert_url_duplicate_returns_existing(mock_http_client):
+    resp = MagicMock()
+    resp.status_code = 409
+    resp.json = MagicMock(return_value={"detail": "duplicate_dataset", "dataset_id": "ds9", "filename": "x.geojson"})
+    mock_http_client.post = AsyncMock(return_value=resp)
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await client.convert_url("https://example.com/x.geojson")
+    assert result["dataset_id"] == "ds9"
+    assert result["detail"] == "duplicate_dataset"
+
+
+@pytest.mark.asyncio
 async def test_create_connection(sandbox_api_url, mock_http_client):
     expected = {"id": "conn_123", "name": "Test Zarr", "connection_type": "zarr"}
     mock_http_client.post = AsyncMock(return_value=_make_response(expected))

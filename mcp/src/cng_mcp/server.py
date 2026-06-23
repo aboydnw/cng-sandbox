@@ -20,6 +20,7 @@ from cng_mcp.tools import (
     create_connection_tool,
     validate_layer_config_tool,
     get_job_status_tool,
+    ingest_url_tool,
 )
 from cng_mcp.resources import (
     list_datasets_resource,
@@ -129,6 +130,19 @@ TOOL_DEFINITIONS = [
             "required": ["job_id"],
         },
     ),
+    Tool(
+        name="ingest_url",
+        description="Ingest a remote geospatial file (GeoTIFF, GeoJSON, Shapefile .zip, NetCDF, HDF5) into a dataset. Waits for conversion to finish and returns the dataset ID.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "HTTP(S) or S3 URL of the file"},
+                "wait": {"type": "boolean", "description": "Wait for conversion (default true)"},
+                "timeout": {"type": "number", "description": "Max seconds to wait (default 600)"},
+            },
+            "required": ["url"],
+        },
+    ),
 ]
 
 RESOURCE_DEFINITIONS = [
@@ -208,6 +222,13 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
             )]
         if name == "get_job_status":
             return [await get_job_status_tool(client, job_id=arguments["job_id"])]
+        if name == "ingest_url":
+            return [await ingest_url_tool(
+                client,
+                url=arguments["url"],
+                wait=arguments.get("wait", True),
+                timeout=arguments.get("timeout", 600.0),
+            )]
         raise ValueError(f"Unknown tool: {name}")
 
     @server.list_resources()

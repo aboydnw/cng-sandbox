@@ -138,6 +138,19 @@ class SandboxAPIClient:
         response.raise_for_status()
         return response.json()
 
+    async def convert_url(self, url: str) -> dict[str, Any]:
+        """Fetch and convert a remote file. Returns job info, or the existing
+        dataset on a 409 duplicate instead of raising."""
+        response = await self.http_client.post(
+            f"{self.api_url}/api/convert-url",
+            json={"url": url},
+            headers=self._headers(),
+        )
+        if response.status_code == 409:
+            return response.json()
+        response.raise_for_status()
+        return response.json()
+
     async def get_job(self, job_id: str) -> dict[str, Any]:
         """Get the status of a conversion job."""
         response = await self.http_client.get(

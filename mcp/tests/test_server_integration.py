@@ -23,3 +23,9 @@ def test_get_job_status_registered():
     from cng_mcp.server import TOOL_DEFINITIONS
     names = {t.name for t in TOOL_DEFINITIONS}
     assert "get_job_status" in names
+
+
+def test_ingest_url_registered():
+    from cng_mcp.server import TOOL_DEFINITIONS
+    names = {t.name for t in TOOL_DEFINITIONS}
+    assert "ingest_url" in names

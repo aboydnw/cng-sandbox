@@ -12,6 +12,8 @@ MCP is a protocol that lets applications (agents, CLI tools, SDKs) discover and 
 pip install cng-mcp
 ```
 
+To run against your own instance, see the [self-hosting guide](../docs/self-hosting.md).
+
 ## Quick Start
 
 ### 1. Start the Server

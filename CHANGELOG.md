@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/aboydnw/cng-sandbox/compare/v2.8.0...v2.9.0) (2026-06-24)
+
+
+### Features
+
+* aerial true-color RGB imagery support + Lahaina example story ([#541](https://github.com/aboydnw/cng-sandbox/issues/541)) ([c1bc8e4](https://github.com/aboydnw/cng-sandbox/commit/c1bc8e44fbde49627c387ee52a4d152979f9f98c))
+
 ## [2.8.0](https://github.com/aboydnw/cng-sandbox/compare/v2.7.0...v2.8.0) (2026-06-24)
 
 

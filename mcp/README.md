@@ -9,10 +9,10 @@ MCP is a protocol that lets applications (agents, CLI tools, SDKs) discover and 
 ## Installation
 
 ```bash
-pip install cng-mcp
+pip install cngstorytelling-mcp
 ```
 
-To run against your own instance, see the [self-hosting guide](../docs/self-hosting.md).
+This installs the `cng-mcp` command. To run against your own instance, see the [self-hosting guide](../docs/self-hosting.md).
 
 ## Quick Start
 

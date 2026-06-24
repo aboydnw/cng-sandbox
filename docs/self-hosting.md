@@ -39,7 +39,7 @@ The app is at <http://localhost:5185> and the ingestion API at
 ## 3. Install the MCP server
 
 ```bash
-pip install cng-mcp
+pip install cngstorytelling-mcp
 ```
 
 ## 4. Connect your AI client

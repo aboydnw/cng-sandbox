@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cng-mcp"
+name = "cngstorytelling-mcp"
 version = "0.1.0"
 description = "MCP Server for CNG Sandbox: agent-driven story creation and data exploration"
 readme = "README.md"

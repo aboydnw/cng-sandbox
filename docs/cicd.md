@@ -18,12 +18,12 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 ## Publishing the `cng-mcp` package to PyPI
 
-The MCP server (`mcp/`) is published to PyPI as [`cng-mcp`](https://pypi.org/project/cng-mcp/) by `.github/workflows/publish-mcp.yml`, using **PyPI Trusted Publishing (OIDC)** — no API tokens or stored secrets.
+The MCP server (`mcp/`) is published to PyPI as [`cngstorytelling-mcp`](https://pypi.org/project/cngstorytelling-mcp/) by `.github/workflows/publish-mcp.yml`, using **PyPI Trusted Publishing (OIDC)** — no API tokens or stored secrets. (The installed console command is `cng-mcp`.)
 
 - **Triggers:** `release: published` (publishes to PyPI automatically when release-please cuts a release) and `workflow_dispatch` with a `target` input (`testpypi` | `pypi`) for manual/dry runs.
 - **Jobs:** `build` (`uv build` → sdist+wheel artifact) → `publish-testpypi` / `publish-pypi` (download artifact, `pypa/gh-action-pypi-publish` via OIDC). The publish jobs use GitHub environments `testpypi` / `pypi` and `id-token: write`.
 
-**One-time setup (required before the first publish, owner action):** claim the `cng-mcp` project on both [PyPI](https://pypi.org/manage/account/publishing/) and [TestPyPI](https://test.pypi.org/manage/account/publishing/), and register this repo as a Trusted Publisher in each (owner `aboydnw`, repo `cng-sandbox`, workflow `publish-mcp.yml`, environment `pypi` / `testpypi`). Then validate with a TestPyPI dry run before relying on the release path:
+**One-time setup (required before the first publish, owner action):** claim the `cngstorytelling-mcp` project on both [PyPI](https://pypi.org/manage/account/publishing/) and [TestPyPI](https://test.pypi.org/manage/account/publishing/), and register this repo as a Trusted Publisher in each (owner `aboydnw`, repo `cng-sandbox`, workflow `publish-mcp.yml`, environment `pypi` / `testpypi`). Then validate with a TestPyPI dry run before relying on the release path:
 
 ```bash
 gh workflow run publish-mcp.yml -f target=testpypi

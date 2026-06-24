@@ -14,9 +14,9 @@ Releases are managed by [release-please](https://github.com/googleapis/release-p
 
 **Manual deploy:** Use the "Run workflow" button on the release-please workflow in GitHub Actions. This rebuilds and republishes the images, then redeploys without creating a release.
 
-**Version:** Tracked in `frontend/version.txt` and `mcp/pyproject.toml` (both managed by release-please via `extra-files`, don't edit manually). The `mcp/pyproject.toml` version uses a typed `toml` updater (`jsonpath: $.project.version`) so the published `cng-mcp` package version stays in lockstep with the repo release.
+**Version:** Tracked in `frontend/version.txt` and `mcp/pyproject.toml` (both managed by release-please via `extra-files`, don't edit manually). The `mcp/pyproject.toml` version uses a typed `toml` updater (`jsonpath: $.project.version`) so the published `cngstorytelling-mcp` package version stays in lockstep with the repo release.
 
-## Publishing the `cng-mcp` package to PyPI
+## Publishing the `cngstorytelling-mcp` package to PyPI
 
 The MCP server (`mcp/`) is published to PyPI as [`cngstorytelling-mcp`](https://pypi.org/project/cngstorytelling-mcp/) by `.github/workflows/publish-mcp.yml`, using **PyPI Trusted Publishing (OIDC)** — no API tokens or stored secrets. (The installed console command is `cng-mcp`.)
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.8.0](https://github.com/aboydnw/cng-sandbox/compare/v2.7.0...v2.8.0) (2026-06-24)
+
+
+### Features
+
+* **mcp:** add ingestion and authoring tools ([#535](https://github.com/aboydnw/cng-sandbox/issues/535)) ([6675075](https://github.com/aboydnw/cng-sandbox/commit/6675075b835ecb9b7985050d1fce5c1ebde0e73d))
+* **mcp:** publish cng-mcp to PyPI + self-hosting guide ([#539](https://github.com/aboydnw/cng-sandbox/issues/539)) ([2bed2dd](https://github.com/aboydnw/cng-sandbox/commit/2bed2dd6c5fc7dd8c328a1c91f20dac17ea3ad1b))
+
+
+### Bug Fixes
+
+* **export:** accept integer timestep in CngRcRender ([#538](https://github.com/aboydnw/cng-sandbox/issues/538)) ([8ba5d39](https://github.com/aboydnw/cng-sandbox/commit/8ba5d39b12e3312b05b411734190e0613ed77154))
+
 ## [2.7.0](https://github.com/aboydnw/cng-sandbox/compare/v2.6.2...v2.7.0) (2026-06-23)
 
 

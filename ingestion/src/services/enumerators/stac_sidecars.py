@@ -68,6 +68,27 @@ def _pick_data_asset(sidecar: dict) -> dict | None:
     return None
 
 
+def pick_rgb_asset(stac_item: dict) -> dict | None:
+    """Return the true-color RGB asset dict, or None.
+
+    Prefers an asset whose ``roles`` contains ``"visual"``, then an asset
+    keyed ``"visual"``, then falls back to the primary data asset.
+    """
+    assets = stac_item.get("assets")
+    if not isinstance(assets, dict):
+        return None
+    for asset in assets.values():
+        if not isinstance(asset, dict):
+            continue
+        roles = asset.get("roles") or []
+        if isinstance(roles, list) and "visual" in roles and asset.get("href"):
+            return asset
+    visual = assets.get("visual")
+    if isinstance(visual, dict) and visual.get("href"):
+        return visual
+    return _pick_data_asset(stac_item)
+
+
 def _parse_datetime(value: str | None) -> datetime | None:
     if not value:
         return None

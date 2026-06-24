@@ -31,6 +31,11 @@ GEBCO_URL = "https://data.source.coop/alexgleith/gebco-2024/"
 GHRSST_URL = "https://data.source.coop/ausantarctic/ghrsst-mur-v2/"
 CARBON_URL = "https://data.source.coop/vizzuality/lg-land-carbon-data/"
 BUILDINGS_URL = "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
+MAXAR_LAHAINA_COLLECTION = (
+    "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
+)
+LAHAINA_PRE_URL = f"{MAXAR_LAHAINA_COLLECTION}#pre"
+LAHAINA_POST_URL = f"{MAXAR_LAHAINA_COLLECTION}#post"
 
 
 @dataclass(frozen=True)
@@ -466,10 +471,109 @@ OCEAN_FOREST_STORY = StorySeed(
 )
 
 
+LAHAINA_STORY = StorySeed(
+    title="Lahaina: before and after the 2023 wildfire",
+    description=(
+        "A side-by-side look at Lahaina, Maui, in high-resolution aerial "
+        "imagery from before and after the August 2023 wildfire — one of the "
+        "deadliest in modern U.S. history. Imagery © Maxar/Vantor Open Data "
+        "(CC-BY-NC 4.0)."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="A town on the water",
+            narrative=(
+                "On **August 8, 2023**, a wind-driven wildfire swept through "
+                "Lahaina on the west coast of Maui. This story uses "
+                "high-resolution **true-color satellite imagery** from the "
+                "Maxar/Vantor Open Data Program to show the same streets "
+                "before and after.\n\n"
+                "Scroll to fly into town, then compare the two maps."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Before the fire",
+            narrative=(
+                "Lahaina's historic waterfront and dense residential blocks, "
+                "imaged before August 2023. Note Front Street along the coast "
+                "and the tightly packed neighborhoods inland."
+            ),
+            dataset_source_url=LAHAINA_PRE_URL,
+            center=(-156.68, 20.88),
+            zoom=14.5,
+            basemap="streets",
+            opacity=1.0,
+            transition="fly-to",
+            overlay_position="left",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="After the fire",
+            narrative=(
+                "The same footprint after the fire. Entire blocks are reduced "
+                "to ash while the surrounding vegetation and coastline remain — "
+                "the sharp boundary of the burn scar is visible from orbit."
+            ),
+            dataset_source_url=LAHAINA_POST_URL,
+            center=(-156.68, 20.88),
+            zoom=14.5,
+            basemap="streets",
+            opacity=1.0,
+            transition="instant",
+            overlay_position="right",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="The waterfront, block by block",
+            narrative=(
+                "Zooming in on Front Street and the harbor. At this scale the "
+                "imagery resolves individual lots — you can trace which "
+                "structures stood and which were lost along the shoreline."
+            ),
+            dataset_source_url=LAHAINA_POST_URL,
+            center=(-156.6792, 20.8722),
+            zoom=16.0,
+            basemap="streets",
+            opacity=1.0,
+            transition="fly-to",
+            overlay_position="left",
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Why aerial imagery matters",
+            narrative=(
+                "True-color imagery like this is among the first data available "
+                "after a disaster. It guides search-and-rescue, scopes the "
+                "damage for recovery funding, and creates a permanent record of "
+                "what was there before.\n\n"
+                "Imagery © Maxar/Vantor Open Data, released under CC-BY-NC 4.0."
+            ),
+        ),
+        ChapterSeed(
+            type="map",
+            title="Explore the burn scar",
+            narrative=(
+                "Pan and zoom across the post-fire imagery. The contrast "
+                "between burned and unburned parcels maps the fire's path "
+                "block by block."
+            ),
+            dataset_source_url=LAHAINA_POST_URL,
+            center=(-156.68, 20.88),
+            zoom=14.0,
+            basemap="streets",
+            opacity=1.0,
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
     OCEAN_FOREST_STORY,
+    LAHAINA_STORY,
 ]
 
 

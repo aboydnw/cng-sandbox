@@ -4,7 +4,7 @@ import type { Dataset } from "../src/types";
 import type { LayerConfig } from "../src/lib/story/types";
 
 function makeDataset(overrides: Partial<Dataset>): Dataset {
-  return {
+  const base = {
     tile_url:
       "/raster/collections/sandbox-x/tiles/WebMercatorQuad/{z}/{x}/{y}?assets=data",
     band_count: 1,
@@ -12,8 +12,8 @@ function makeDataset(overrides: Partial<Dataset>): Dataset {
     raster_max: 100,
     is_temporal: false,
     timesteps: [],
-    ...(overrides as Dataset),
-  } as Dataset;
+  };
+  return { ...base, ...overrides } as Dataset;
 }
 
 const lc: LayerConfig = {

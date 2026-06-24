@@ -3,6 +3,7 @@ import { Box } from "@chakra-ui/react";
 import { CategoricalLegend } from "./CategoricalLegend";
 import { ContinuousRamp } from "./ContinuousRamp";
 import { LegendItem } from "./LegendItem";
+import { RgbLegend } from "./RgbLegend";
 import type { MapLegendProps } from "./types";
 
 const POSITION_STYLES: Record<
@@ -95,6 +96,8 @@ export function MapLegend({
             >
               {layer.type === "continuous" ? (
                 <ContinuousRamp config={layer} orientation={orientation} />
+              ) : layer.type === "rgb" ? (
+                <RgbLegend config={layer} />
               ) : (
                 <CategoricalLegend config={layer} />
               )}

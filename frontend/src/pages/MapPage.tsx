@@ -35,6 +35,7 @@ import {
 } from "../lib/layers/dataExtent";
 import { ZoomPromptBanner } from "../components/ZoomPromptBanner";
 import { useColorScale, MapLegend } from "../lib/maptool";
+import { buildRasterLegend } from "../lib/story/rasterLegend";
 import { TemporalControls } from "../components/TemporalControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
 import { useZarrNode } from "../hooks/useZarrNode";
@@ -495,6 +496,14 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     colormap: controls.colormapName,
   });
 
+  const rasterLegend = buildRasterLegend({
+    bandCount: item?.bandCount ?? null,
+    title: item?.dataset ? displayName(item.dataset) : "",
+    domain,
+    colors,
+    isCategorical: controls.isCategorical,
+  });
+
   // --- Event handlers ---
   const onHover =
     controls.renderMode === "client" && controls.canClientRender
@@ -767,25 +776,16 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   </Box>
                 )}
               {!controls.isCategorical &&
-                controls.showingColormap &&
-                controls.renderMode !== "client" && (
+                controls.renderMode !== "client" &&
+                rasterLegend &&
+                (rasterLegend.type === "rgb" || controls.showingColormap) && (
                   <Box
                     position="absolute"
                     bottom={3}
                     left={3}
                     data-snapshot-overlay
                   >
-                    <MapLegend
-                      layers={[
-                        {
-                          type: "continuous" as const,
-                          id: "raster",
-                          title: item?.dataset ? displayName(item.dataset) : "",
-                          domain,
-                          colors,
-                        },
-                      ]}
-                    />
+                    <MapLegend layers={[rasterLegend]} />
                   </Box>
                 )}
 

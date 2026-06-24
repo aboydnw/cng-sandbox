@@ -37,9 +37,18 @@ export interface CategoricalLegendConfig {
   visible?: boolean;
 }
 
+export interface RgbLegendConfig {
+  type: "rgb";
+  id: string;
+  title: string;
+  toggler?: boolean;
+  visible?: boolean;
+}
+
 export type LegendLayerConfig =
   | ContinuousLegendConfig
-  | CategoricalLegendConfig;
+  | CategoricalLegendConfig
+  | RgbLegendConfig;
 export type LegendOrientation = "vertical" | "horizontal";
 export type LegendPosition =
   | "top-left"

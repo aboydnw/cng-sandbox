@@ -31,11 +31,9 @@ GEBCO_URL = "https://data.source.coop/alexgleith/gebco-2024/"
 GHRSST_URL = "https://data.source.coop/ausantarctic/ghrsst-mur-v2/"
 CARBON_URL = "https://data.source.coop/vizzuality/lg-land-carbon-data/"
 BUILDINGS_URL = "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
-MAXAR_LAHAINA_COLLECTION = (
+LAHAINA_URL = (
     "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
 )
-LAHAINA_PRE_URL = f"{MAXAR_LAHAINA_COLLECTION}#pre"
-LAHAINA_POST_URL = f"{MAXAR_LAHAINA_COLLECTION}#post"
 
 
 @dataclass(frozen=True)
@@ -472,12 +470,11 @@ OCEAN_FOREST_STORY = StorySeed(
 
 
 LAHAINA_STORY = StorySeed(
-    title="Lahaina: before and after the 2023 wildfire",
+    title="Anatomy of the Lahaina burn scar",
     description=(
-        "A side-by-side look at Lahaina, Maui, in high-resolution aerial "
-        "imagery from before and after the August 2023 wildfire — one of the "
-        "deadliest in modern U.S. history. Imagery © Maxar/Vantor Open Data "
-        "(CC-BY-NC 4.0)."
+        "High-resolution true-color satellite imagery of Lahaina, Maui, in the "
+        "days after the August 2023 wildfire — one of the deadliest in modern "
+        "U.S. history. Imagery © Maxar/Vantor Open Data (CC-BY-NC 4.0)."
     ),
     chapters=[
         ChapterSeed(
@@ -485,22 +482,23 @@ LAHAINA_STORY = StorySeed(
             title="A town on the water",
             narrative=(
                 "On **August 8, 2023**, a wind-driven wildfire swept through "
-                "Lahaina on the west coast of Maui. This story uses "
-                "high-resolution **true-color satellite imagery** from the "
-                "Maxar/Vantor Open Data Program to show the same streets "
-                "before and after.\n\n"
-                "Scroll to fly into town, then compare the two maps."
+                "Lahaina on the west coast of Maui. Within days, satellites "
+                "captured the aftermath in **high-resolution true-color "
+                "imagery** through the Maxar/Vantor Open Data Program.\n\n"
+                "Scroll to fly across the burn scar, then open the map at the "
+                "end to explore it yourself."
             ),
         ),
         ChapterSeed(
             type="scrollytelling",
-            title="Before the fire",
+            title="The burn scar from above",
             narrative=(
-                "Lahaina's historic waterfront and dense residential blocks, "
-                "imaged before August 2023. Note Front Street along the coast "
-                "and the tightly packed neighborhoods inland."
+                "A wide view of Lahaina after the fire. Entire blocks are "
+                "reduced to ash while the surrounding vegetation and coastline "
+                "remain — the sharp boundary of the burn scar is visible from "
+                "orbit."
             ),
-            dataset_source_url=LAHAINA_PRE_URL,
+            dataset_source_url=LAHAINA_URL,
             center=(-156.68, 20.88),
             zoom=14.5,
             basemap="streets",
@@ -510,31 +508,31 @@ LAHAINA_STORY = StorySeed(
         ),
         ChapterSeed(
             type="scrollytelling",
-            title="After the fire",
-            narrative=(
-                "The same footprint after the fire. Entire blocks are reduced "
-                "to ash while the surrounding vegetation and coastline remain — "
-                "the sharp boundary of the burn scar is visible from orbit."
-            ),
-            dataset_source_url=LAHAINA_POST_URL,
-            center=(-156.68, 20.88),
-            zoom=14.5,
-            basemap="streets",
-            opacity=1.0,
-            transition="instant",
-            overlay_position="right",
-        ),
-        ChapterSeed(
-            type="scrollytelling",
             title="The waterfront, block by block",
             narrative=(
                 "Zooming in on Front Street and the harbor. At this scale the "
                 "imagery resolves individual lots — you can trace which "
                 "structures stood and which were lost along the shoreline."
             ),
-            dataset_source_url=LAHAINA_POST_URL,
+            dataset_source_url=LAHAINA_URL,
             center=(-156.6792, 20.8722),
             zoom=16.0,
+            basemap="streets",
+            opacity=1.0,
+            transition="fly-to",
+            overlay_position="right",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Where the fire stopped",
+            narrative=(
+                "At the edges of the scar, the transition is abrupt: charred "
+                "parcels sit directly beside untouched greenery. The imagery "
+                "maps exactly where the fire's advance halted."
+            ),
+            dataset_source_url=LAHAINA_URL,
+            center=(-156.6845, 20.8901),
+            zoom=15.5,
             basemap="streets",
             opacity=1.0,
             transition="fly-to",
@@ -547,7 +545,7 @@ LAHAINA_STORY = StorySeed(
                 "True-color imagery like this is among the first data available "
                 "after a disaster. It guides search-and-rescue, scopes the "
                 "damage for recovery funding, and creates a permanent record of "
-                "what was there before.\n\n"
+                "the event.\n\n"
                 "Imagery © Maxar/Vantor Open Data, released under CC-BY-NC 4.0."
             ),
         ),
@@ -559,7 +557,7 @@ LAHAINA_STORY = StorySeed(
                 "between burned and unburned parcels maps the fire's path "
                 "block by block."
             ),
-            dataset_source_url=LAHAINA_POST_URL,
+            dataset_source_url=LAHAINA_URL,
             center=(-156.68, 20.88),
             zoom=14.0,
             basemap="streets",

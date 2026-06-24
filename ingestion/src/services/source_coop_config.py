@@ -102,32 +102,18 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
         kind="pmtiles",
         pmtiles_url="https://data.source.coop/vida/google-microsoft-osm-open-buildings/pmtiles/goog_msft_osm.pmtiles",
     ),
-    "maxar/lahaina-pre": SourceCoopProduct(
-        slug="maxar/lahaina-pre",
-        name="Lahaina before the 2023 wildfire (Maxar)",
-        description=(
-            "High-resolution true-color satellite imagery of Lahaina, Maui, "
-            "captured before the August 2023 wildfire. Imagery © Maxar/Vantor "
-            "Open Data (CC-BY-NC 4.0)."
-        ),
-        listing_url=f"{MAXAR_LAHAINA_COLLECTION}#pre",
-        kind="mosaic",
-        enumerator="maxar_event",
-        enumerator_args={"max_date": "2023-08-07T23:59:59Z", "max_items": 60},
-        is_temporal=False,
-    ),
-    "maxar/lahaina-post": SourceCoopProduct(
-        slug="maxar/lahaina-post",
+    "maxar/lahaina": SourceCoopProduct(
+        slug="maxar/lahaina",
         name="Lahaina after the 2023 wildfire (Maxar)",
         description=(
             "High-resolution true-color satellite imagery of Lahaina, Maui, "
-            "captured after the August 2023 wildfire. Imagery © Maxar/Vantor "
-            "Open Data (CC-BY-NC 4.0)."
+            "captured days after the August 2023 wildfire. Imagery © "
+            "Maxar/Vantor Open Data (CC-BY-NC 4.0)."
         ),
-        listing_url=f"{MAXAR_LAHAINA_COLLECTION}#post",
+        listing_url=MAXAR_LAHAINA_COLLECTION,
         kind="mosaic",
         enumerator="maxar_event",
-        enumerator_args={"min_date": "2023-08-09T00:00:00Z", "max_items": 60},
+        enumerator_args={"max_items": 80},
         is_temporal=False,
     ),
 }

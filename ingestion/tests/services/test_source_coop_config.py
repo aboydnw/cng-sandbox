@@ -15,8 +15,7 @@ def test_list_products_returns_expected_entries():
         "alexgleith/gebco-2024",
         "vizzuality/lg-land-carbon-data",
         "vida/google-microsoft-osm-open-buildings",
-        "maxar/lahaina-pre",
-        "maxar/lahaina-post",
+        "maxar/lahaina",
     }
 
 

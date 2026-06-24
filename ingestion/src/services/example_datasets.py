@@ -23,6 +23,7 @@ from sqlalchemy.orm import sessionmaker
 from src.models import Job
 from src.models.dataset import DatasetRow
 from src.services.enumerators import RemoteItem
+from src.services.enumerators.maxar import enumerate_maxar_event
 from src.services.enumerators.path_listing import enumerate_path_listing
 from src.services.enumerators.stac_sidecars import enumerate_stac_sidecars
 from src.services.pmtiles_register import (
@@ -66,6 +67,13 @@ async def run_enumerator(product: SourceCoopProduct) -> list[RemoteItem]:
             listing_url=product.listing_url,
             recursive=product.enumerator_args.get("recursive", False),
             start_prefix=product.enumerator_args.get("start_prefix", ""),
+        )
+    if product.enumerator == "maxar_event":
+        return await enumerate_maxar_event(
+            product.listing_url,
+            max_items=product.enumerator_args.get("max_items"),
+            min_date=product.enumerator_args.get("min_date"),
+            max_date=product.enumerator_args.get("max_date"),
         )
     raise ValueError(f"Unknown enumerator: {product.enumerator}")
 

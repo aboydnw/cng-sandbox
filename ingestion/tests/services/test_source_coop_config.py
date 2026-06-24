@@ -7,7 +7,7 @@ from src.services.source_coop_config import (
 )
 
 
-def test_list_products_returns_four_v1_entries():
+def test_list_products_returns_expected_entries():
     products = list_products()
     slugs = {p.slug for p in products}
     assert slugs == {
@@ -15,6 +15,7 @@ def test_list_products_returns_four_v1_entries():
         "alexgleith/gebco-2024",
         "vizzuality/lg-land-carbon-data",
         "vida/google-microsoft-osm-open-buildings",
+        "maxar/lahaina",
     }
 
 

@@ -18,6 +18,7 @@ from src.services.example_stories import (
     CARBON_URL,
     GEBCO_URL,
     GHRSST_URL,
+    LAHAINA_URL,
     OCEAN_FLOOR_STORY,
     relink_dead_chapter_dataset_ids,
     seed_example_stories,
@@ -79,6 +80,12 @@ def _seed_all_example_datasets(factory):
             ds_id="buildings-id",
             source_url=BUILDINGS_URL,
             filename="Buildings",
+        )
+        _seed_example_dataset(
+            session,
+            ds_id="lahaina-id",
+            source_url=LAHAINA_URL,
+            filename="Lahaina",
         )
         session.commit()
     finally:
@@ -276,6 +283,7 @@ def _reseed_example_datasets_with_new_ids(factory, suffix: str):
             (GHRSST_URL, "GHRSST"),
             (CARBON_URL, "Carbon"),
             (BUILDINGS_URL, "Buildings"),
+            (LAHAINA_URL, "Lahaina"),
         ]:
             _seed_example_dataset(
                 session,

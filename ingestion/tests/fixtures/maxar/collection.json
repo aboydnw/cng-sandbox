@@ -1,0 +1,8 @@
+{
+  "type": "Collection",
+  "id": "event-collection",
+  "links": [
+    {"rel": "item", "href": "item-a.json"},
+    {"rel": "item", "href": "item-b.json"}
+  ]
+}

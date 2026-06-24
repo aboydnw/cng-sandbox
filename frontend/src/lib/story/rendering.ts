@@ -11,6 +11,7 @@ import { datasetToMapItem, connectionToMapItem } from "../../hooks/useMapData";
 import { DEFAULT_LAYER_CONFIG, isMapBoundChapter } from "./types";
 import type {
   Chapter,
+  LayerConfig,
   ScrollytellingChapter,
   MapChapter,
   ProseChapter,
@@ -38,6 +39,34 @@ function makePcaRgbFillColor(
     }
     return [128, 128, 128, 200];
   };
+}
+
+export function buildDatasetServerTileUrl(
+  ds: Dataset,
+  lc: LayerConfig,
+  rescaleMin: number | null,
+  rescaleMax: number | null
+): string {
+  const base = ds.tile_url;
+  const sep = base.includes("?") ? "&" : "?";
+  let serverTileUrl = base;
+  if (ds.band_count === 1) {
+    const effColormap = lc.colormap_reversed ? `${lc.colormap}_r` : lc.colormap;
+    const effMin = rescaleMin ?? ds.raster_min;
+    const effMax = rescaleMax ?? ds.raster_max;
+    serverTileUrl = `${base}${sep}colormap_name=${effColormap}`;
+    if (effMin != null && effMax != null) {
+      serverTileUrl += `&rescale=${effMin},${effMax}`;
+    }
+  }
+  if (ds.is_temporal && ds.timesteps.length > 0) {
+    const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;
+    const tsIndex = Math.max(0, Math.min(raw, ds.timesteps.length - 1));
+    const ts = ds.timesteps[tsIndex];
+    const tsep = serverTileUrl.includes("?") ? "&" : "?";
+    serverTileUrl = `${serverTileUrl}${tsep}datetime=${encodeURIComponent(ts.datetime)}`;
+  }
+  return serverTileUrl;
 }
 
 export type ContentBlock =
@@ -293,21 +322,12 @@ export function buildLayersForChapter(
     const rescaleMin = lc.rescale_min ?? null;
     const rescaleMax = lc.rescale_max ?? null;
 
-    const base = ds.tile_url;
-    const sep = base.includes("?") ? "&" : "?";
-    const effColormap = lc.colormap_reversed ? `${lc.colormap}_r` : lc.colormap;
-    const effMin = rescaleMin ?? ds.raster_min;
-    const effMax = rescaleMax ?? ds.raster_max;
-    let serverTileUrl = `${base}${sep}colormap_name=${effColormap}`;
-    if (effMin != null && effMax != null) {
-      serverTileUrl += `&rescale=${effMin},${effMax}`;
-    }
-    if (ds.is_temporal && ds.timesteps.length > 0) {
-      const raw = Number.isInteger(lc.timestep) ? lc.timestep! : 0;
-      const tsIndex = Math.max(0, Math.min(raw, ds.timesteps.length - 1));
-      const ts = ds.timesteps[tsIndex];
-      serverTileUrl = `${serverTileUrl}&datetime=${encodeURIComponent(ts.datetime)}`;
-    }
+    const serverTileUrl = buildDatasetServerTileUrl(
+      ds,
+      lc,
+      rescaleMin,
+      rescaleMax
+    );
 
     const resolved = resolveRasterLayers({
       item,

@@ -112,6 +112,19 @@ async def _compute_remote_stats(
     return await asyncio.to_thread(_compute_remote_stats_sync, hrefs, max_samples)
 
 
+async def _resolve_raster_range(
+    band_count: int | None, hrefs: list[str]
+) -> tuple[float | None, float | None]:
+    """Compute display range for single-band rasters; skip for multi-band.
+
+    Multi-band (RGB) COGs render natively in titiler; a single-band-style
+    min/max would wash the image out, so return (None, None).
+    """
+    if band_count is not None and band_count > 1:
+        return None, None
+    return await _compute_remote_stats(hrefs)
+
+
 def _format_datetime_z(dt: datetime) -> str:
     """Format a datetime as ISO 8601 with a `Z` suffix for UTC.
 
@@ -194,7 +207,7 @@ async def register_remote_collection(
     )
 
     band_count, band_names, color_interp, dtype = await _read_band_meta(hrefs[0])
-    raster_min, raster_max = await _compute_remote_stats(hrefs)
+    raster_min, raster_max = await _resolve_raster_range(band_count, hrefs)
 
     overall_bbox = [
         min(b[0] for b in bboxes),  # type: ignore[index]

@@ -45,9 +45,7 @@ class SourceCoopProduct:
                 raise ValueError(f"{self.slug}: mosaic kind must not set pmtiles_url")
 
 
-MAXAR_LAHAINA_COLLECTION = (
-    "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
-)
+MAXAR_LAHAINA_COLLECTION = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
 
 
 _PRODUCTS: dict[str, SourceCoopProduct] = {
@@ -113,7 +111,11 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
         listing_url=MAXAR_LAHAINA_COLLECTION,
         kind="mosaic",
         enumerator="maxar_event",
-        enumerator_args={"max_items": 80},
+        enumerator_args={
+            "min_date": "2023-08-09T00:00:00Z",
+            "max_date": "2023-08-13T00:00:00Z",
+            "max_items": 80,
+        },
         is_temporal=False,
     ),
 }

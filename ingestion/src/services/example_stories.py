@@ -31,9 +31,7 @@ GEBCO_URL = "https://data.source.coop/alexgleith/gebco-2024/"
 GHRSST_URL = "https://data.source.coop/ausantarctic/ghrsst-mur-v2/"
 CARBON_URL = "https://data.source.coop/vizzuality/lg-land-carbon-data/"
 BUILDINGS_URL = "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
-LAHAINA_URL = (
-    "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
-)
+LAHAINA_URL = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
 
 
 @dataclass(frozen=True)

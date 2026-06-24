@@ -44,3 +44,10 @@ async def test_enumerate_maxar_event_filters_by_date(_patch_client):
     )
 
     assert [i.href for i in items] == ["https://maxar/a/visual.tif"]
+
+
+async def test_enumerate_maxar_event_rejects_naive_date_bound(_patch_client):
+    with pytest.raises(ValueError):
+        await enumerate_maxar_event(
+            "https://maxar/collection.json", max_date="2023-08-31"
+        )

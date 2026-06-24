@@ -322,7 +322,12 @@ export function buildLayersForChapter(
     const rescaleMin = lc.rescale_min ?? null;
     const rescaleMax = lc.rescale_max ?? null;
 
-    const serverTileUrl = buildDatasetServerTileUrl(ds, lc, rescaleMin, rescaleMax);
+    const serverTileUrl = buildDatasetServerTileUrl(
+      ds,
+      lc,
+      rescaleMin,
+      rescaleMax
+    );
 
     const resolved = resolveRasterLayers({
       item,

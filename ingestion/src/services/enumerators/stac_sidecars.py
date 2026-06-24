@@ -81,10 +81,20 @@ def pick_rgb_asset(stac_item: dict) -> dict | None:
         if not isinstance(asset, dict):
             continue
         roles = asset.get("roles") or []
-        if isinstance(roles, list) and "visual" in roles and asset.get("href"):
+        href = asset.get("href")
+        if (
+            isinstance(roles, list)
+            and "visual" in roles
+            and isinstance(href, str)
+            and href
+        ):
             return asset
     visual = assets.get("visual")
-    if isinstance(visual, dict) and visual.get("href"):
+    if (
+        isinstance(visual, dict)
+        and isinstance(visual.get("href"), str)
+        and visual.get("href")
+    ):
         return visual
     return _pick_data_asset(stac_item)
 

@@ -27,6 +27,10 @@ docker compose up -d --build   # start all services
 
 Open [http://localhost:5185](http://localhost:5185) in your browser.
 
+## Self-hosting
+
+Want to run your own instance and drive it from an AI client (Claude Desktop or Claude Code)? See [docs/self-hosting.md](docs/self-hosting.md) for the full clone → run → connect-via-MCP walkthrough.
+
 ## How it works
 
 1. Upload a file (or paste a URL)

@@ -44,7 +44,7 @@ class CngRcRender(BaseModel):
     rescale: tuple[float, float] | None
     opacity: float
     band: int | None
-    timestep: str | None
+    timestep: int | str | None
     colormap_reversed: bool = False
 
 

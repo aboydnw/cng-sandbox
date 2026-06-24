@@ -211,3 +211,40 @@ def test_export_resolves_dataset_to_cng_url(db_session):
     assert layer.source_url == "https://example.com/original.geojson"
     assert layer.cng_url == "https://r2.cng.devseed.com/data.parquet"
     assert layer.render.opacity == 0.8
+
+
+def test_export_accepts_integer_timestep(db_session):
+    ds = DatasetRow(
+        id="ds-temporal",
+        filename="precip",
+        dataset_type="raster",
+        format_pair="geotiff-to-cog",
+        tile_url="https://example.com/raster/collections/sandbox-ds-temporal/tiles/{z}/{x}/{y}",
+        metadata_json=json.dumps({"title": "Daily Precipitation"}),
+    )
+    db_session.add(ds)
+    db_session.commit()
+
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "scrollytelling",
+                "title": "Kristin Strikes",
+                "body": "",
+                "map_state": {"center": [-11, 39.5], "zoom": 6},
+                "layer_config": {
+                    "dataset_id": "ds-temporal",
+                    "colormap": "blues",
+                    "opacity": 0.9,
+                    "rescale_min": 0,
+                    "rescale_max": 80,
+                    "timestep": 58,
+                },
+            }
+        ],
+    )
+    config = story_export.build_config(row, db_session)
+    layer = next(iter(config.layers.values()))
+    assert layer.render.timestep == 58

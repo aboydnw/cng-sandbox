@@ -2,7 +2,10 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "extra-files": ["frontend/version.txt"]
+      "extra-files": [
+        "frontend/version.txt",
+        { "type": "toml", "path": "mcp/pyproject.toml", "jsonpath": "$.project.version" }
+      ]
     }
   },
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"

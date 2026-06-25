@@ -32,6 +32,9 @@ GHRSST_URL = "https://data.source.coop/ausantarctic/ghrsst-mur-v2/"
 CARBON_URL = "https://data.source.coop/vizzuality/lg-land-carbon-data/"
 BUILDINGS_URL = "https://data.source.coop/vida/google-microsoft-osm-open-buildings/"
 LAHAINA_URL = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
+HATAY_FLIGHT1_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63f21def525f0700077ed4e2/0/63f21def525f0700077ed4e3.tif"
+HATAY_DEFNE_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb7815ca43600005f4d91e/0/63eb7815ca43600005f4d91f.tif"
+HATAY_TURINCLU_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb8222ca43600005f4d925/0/63eb8222ca43600005f4d926.tif"
 
 
 @dataclass(frozen=True)
@@ -565,11 +568,110 @@ LAHAINA_STORY = StorySeed(
 )
 
 
+ANTAKYA_STORY = StorySeed(
+    title="Antakya from above: a city after the earthquake",
+    description=(
+        "Drone aerial imagery of Antakya (Hatay), Turkey, captured days after "
+        "the February 2023 earthquake — detail no satellite can resolve. "
+        "Imagery © OpenAerialMap contributors (CC-BY 4.0)."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="When the ground moved",
+            narrative=(
+                "On **February 6, 2023**, a magnitude 7.8 earthquake struck "
+                "southern Turkey and northern Syria. In the days that "
+                "followed, drones flew over Antakya and mapped the damage at "
+                "**centimeter resolution** — far sharper than any satellite.\n\n"
+                "Scroll to fly across the city, then open the map at the end "
+                "to explore it yourself."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="A district in ruins",
+            narrative=(
+                "A wide view over one Antakya district. Even at this zoom, "
+                "the pattern of collapse is unmistakable — standing blocks "
+                "beside heaps of rubble."
+            ),
+            dataset_source_url=HATAY_FLIGHT1_URL,
+            center=(36.199, 36.229),
+            zoom=16.0,
+            basemap="streets",
+            opacity=1.0,
+            transition="fly-to",
+            overlay_position="left",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Elektrik Mahallesi, building by building",
+            narrative=(
+                "At ~3 cm resolution in Defne's Elektrik neighborhood, the "
+                "imagery resolves individual structures — pancaked floors, "
+                "debris fields, and the narrow lanes rescue crews had to "
+                "clear."
+            ),
+            dataset_source_url=HATAY_DEFNE_URL,
+            center=(36.149, 36.198),
+            zoom=18.0,
+            basemap="streets",
+            opacity=1.0,
+            transition="fly-to",
+            overlay_position="right",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Akdeniz and Armutlu",
+            narrative=(
+                "A second neighborhood at the same fidelity. Cleared lots and "
+                "staging areas mark where response was already underway when "
+                "the drone flew."
+            ),
+            dataset_source_url=HATAY_TURINCLU_URL,
+            center=(36.147, 36.194),
+            zoom=18.0,
+            basemap="streets",
+            opacity=1.0,
+            transition="fly-to",
+            overlay_position="left",
+        ),
+        ChapterSeed(
+            type="prose",
+            title="What aerial sees that satellites can't",
+            narrative=(
+                "At a few centimeters per pixel, low-altitude aerial imagery "
+                "shows what satellites smear together: which floor failed, "
+                "where a façade fell, whether a lane is passable. That detail "
+                "drives search-and-rescue routing and damage assessment in "
+                "the first hours after a disaster.\n\n"
+                "Imagery © OpenAerialMap contributors, released under CC-BY 4.0."
+            ),
+        ),
+        ChapterSeed(
+            type="map",
+            title="Explore the imagery",
+            narrative=(
+                "Pan and zoom across the district. Zoom all the way in — the "
+                "imagery holds detail well past where satellite would blur."
+            ),
+            dataset_source_url=HATAY_FLIGHT1_URL,
+            center=(36.199, 36.229),
+            zoom=15.0,
+            basemap="streets",
+            opacity=1.0,
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
     OCEAN_FOREST_STORY,
     LAHAINA_STORY,
+    ANTAKYA_STORY,
 ]
 
 

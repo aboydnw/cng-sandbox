@@ -25,6 +25,7 @@ from src.models.dataset import DatasetRow
 from src.services.enumerators import RemoteItem
 from src.services.enumerators.maxar import enumerate_maxar_event
 from src.services.enumerators.path_listing import enumerate_path_listing
+from src.services.enumerators.single_cog import enumerate_single_cog
 from src.services.enumerators.stac_sidecars import enumerate_stac_sidecars
 from src.services.pmtiles_register import (
     PMTilesRegistrationError,
@@ -75,6 +76,8 @@ async def run_enumerator(product: SourceCoopProduct) -> list[RemoteItem]:
             min_date=product.enumerator_args.get("min_date"),
             max_date=product.enumerator_args.get("max_date"),
         )
+    if product.enumerator == "single_cog":
+        return await enumerate_single_cog(product.listing_url)
     raise ValueError(f"Unknown enumerator: {product.enumerator}")
 
 

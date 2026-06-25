@@ -16,6 +16,9 @@ def test_list_products_returns_expected_entries():
         "vizzuality/lg-land-carbon-data",
         "vida/google-microsoft-osm-open-buildings",
         "maxar/lahaina",
+        "openaerialmap/hatay-flight1",
+        "openaerialmap/hatay-defne",
+        "openaerialmap/hatay-turinclu",
     }
 
 

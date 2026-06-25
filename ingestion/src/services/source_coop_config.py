@@ -47,6 +47,10 @@ class SourceCoopProduct:
 
 MAXAR_LAHAINA_COLLECTION = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-Aug-23/collection.json"
 
+HATAY_FLIGHT1_COG = "https://oin-hotosm-temp.s3.amazonaws.com/63f21def525f0700077ed4e2/0/63f21def525f0700077ed4e3.tif"
+HATAY_DEFNE_COG = "https://oin-hotosm-temp.s3.amazonaws.com/63eb7815ca43600005f4d91e/0/63eb7815ca43600005f4d91f.tif"
+HATAY_TURINCLU_COG = "https://oin-hotosm-temp.s3.amazonaws.com/63eb8222ca43600005f4d925/0/63eb8222ca43600005f4d926.tif"
+
 
 _PRODUCTS: dict[str, SourceCoopProduct] = {
     "ausantarctic/ghrsst-mur-v2": SourceCoopProduct(
@@ -117,6 +121,42 @@ _PRODUCTS: dict[str, SourceCoopProduct] = {
             "max_items": 80,
         },
         is_temporal=False,
+    ),
+    "openaerialmap/hatay-flight1": SourceCoopProduct(
+        slug="openaerialmap/hatay-flight1",
+        name="Antakya district after the 2023 earthquake (aerial)",
+        description=(
+            "Drone aerial imagery (~6 cm) of an Antakya district captured days "
+            "after the February 2023 earthquake. Imagery © OpenAerialMap "
+            "contributors (CC-BY 4.0)."
+        ),
+        listing_url=HATAY_FLIGHT1_COG,
+        kind="mosaic",
+        enumerator="single_cog",
+    ),
+    "openaerialmap/hatay-defne": SourceCoopProduct(
+        slug="openaerialmap/hatay-defne",
+        name="Defne, Elektrik Mah. after the 2023 earthquake (aerial)",
+        description=(
+            "Ultra-high-resolution drone aerial imagery (~3 cm) of the Elektrik "
+            "Mahallesi neighborhood in Defne, Hatay, after the February 2023 "
+            "earthquake. Imagery © OpenAerialMap contributors (CC-BY 4.0)."
+        ),
+        listing_url=HATAY_DEFNE_COG,
+        kind="mosaic",
+        enumerator="single_cog",
+    ),
+    "openaerialmap/hatay-turinclu": SourceCoopProduct(
+        slug="openaerialmap/hatay-turinclu",
+        name="Turinclu (Akdeniz/Armutlu Mah.) after the 2023 earthquake (aerial)",
+        description=(
+            "Ultra-high-resolution drone aerial imagery (~4 cm) of the "
+            "Akdeniz and Armutlu neighborhoods in Hatay after the February "
+            "2023 earthquake. Imagery © OpenAerialMap contributors (CC-BY 4.0)."
+        ),
+        listing_url=HATAY_TURINCLU_COG,
+        kind="mosaic",
+        enumerator="single_cog",
     ),
 }
 

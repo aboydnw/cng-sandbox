@@ -18,6 +18,9 @@ from src.services.example_stories import (
     CARBON_URL,
     GEBCO_URL,
     GHRSST_URL,
+    HATAY_DEFNE_URL,
+    HATAY_FLIGHT1_URL,
+    HATAY_TURINCLU_URL,
     LAHAINA_URL,
     OCEAN_FLOOR_STORY,
     relink_dead_chapter_dataset_ids,
@@ -86,6 +89,24 @@ def _seed_all_example_datasets(factory):
             ds_id="lahaina-id",
             source_url=LAHAINA_URL,
             filename="Lahaina",
+        )
+        _seed_example_dataset(
+            session,
+            ds_id="hatay-f1-id",
+            source_url=HATAY_FLIGHT1_URL,
+            filename="Hatay F1",
+        )
+        _seed_example_dataset(
+            session,
+            ds_id="hatay-defne-id",
+            source_url=HATAY_DEFNE_URL,
+            filename="Hatay Defne",
+        )
+        _seed_example_dataset(
+            session,
+            ds_id="hatay-tur-id",
+            source_url=HATAY_TURINCLU_URL,
+            filename="Hatay Tur",
         )
         session.commit()
     finally:
@@ -284,6 +305,9 @@ def _reseed_example_datasets_with_new_ids(factory, suffix: str):
             (CARBON_URL, "Carbon"),
             (BUILDINGS_URL, "Buildings"),
             (LAHAINA_URL, "Lahaina"),
+            (HATAY_FLIGHT1_URL, "HatayF1"),
+            (HATAY_DEFNE_URL, "HatayDefne"),
+            (HATAY_TURINCLU_URL, "HatayTur"),
         ]:
             _seed_example_dataset(
                 session,

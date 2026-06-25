@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/aboydnw/cng-sandbox/compare/v2.9.0...v2.10.0) (2026-06-25)
+
+
+### Features
+
+* aerial example story (OpenAerialMap Hatay earthquake) ([#544](https://github.com/aboydnw/cng-sandbox/issues/544)) ([fed3d55](https://github.com/aboydnw/cng-sandbox/commit/fed3d5514d9f965d677a3d7f17f4de21e2b9b198))
+
 ## [2.9.0](https://github.com/aboydnw/cng-sandbox/compare/v2.8.0...v2.9.0) (2026-06-24)
 
 

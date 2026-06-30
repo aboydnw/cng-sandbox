@@ -11,14 +11,14 @@ requires-python = ">=3.12"
 # Install separately: pip install -e ../../skills/geo-conversions[all]
 # (setuptools doesn't support relative path deps in pyproject.toml)
 dependencies = [
-    "fastapi>=0.137.1",
+    "fastapi>=0.138.0",
     "uvicorn[standard]>=0.49.0",
     "python-multipart>=0.0.32",
-    "sse-starlette>=3.4.4",
+    "sse-starlette>=3.4.5",
     "obstore>=0.10.1",
     "python-magic>=0.4.27",
     "httpx>=0.27.0",
-    "pydantic-settings>=2.14.1",
+    "pydantic-settings>=2.14.2",
     "geopandas>=1.0.0",
     "sqlalchemy>=2.0.51",
     "geoalchemy2>=0.20.0",
@@ -33,12 +33,12 @@ dependencies = [
     "pillow>=12.2.0",
     "pandas>=3.0.3",
     "zstandard>=0.23.0",
-    "rio-tiler>=9.2.1",
+    "rio-tiler>=9.3.0",
     "pmtiles>=3.4.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=9.1.0", "pytest-asyncio>=1.4.0", "ruff==0.15.17"]
+dev = ["pytest>=9.1.1", "pytest-asyncio>=1.4.0", "ruff==0.15.18"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -72,7 +72,7 @@ asyncio_mode = "auto"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.0",
+    "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff==0.15.17",
+    "ruff==0.15.18",
 ]

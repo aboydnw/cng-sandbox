@@ -180,7 +180,12 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     if (map.isStyleLoaded()) run();
     else map.once("style.load", run);
     const unbind = bindStyleReapply(map as never, () => opts);
-    return unbind;
+    return () => {
+      // Cancel a still-pending style.load listener so a stale `run` closure
+      // (with outdated opts) can't fire after the deps have changed.
+      map.off("style.load", run);
+      unbind();
+    };
   }, [terrain, globe, buildings, allowTerrain]);
 
   const handleMove = useCallback(

@@ -72,6 +72,9 @@ export function apply3D(map: MapLike, opts: Apply3DOptions): void {
         0,
       ],
     });
+  } else {
+    // Clear any sky/fog carried over from a previous terrain/globe chapter.
+    map.setSky(undefined);
   }
 
   map.setProjection({ type: opts.globe ? "globe" : "mercator" });

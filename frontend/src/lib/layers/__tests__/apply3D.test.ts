@@ -89,4 +89,10 @@ describe("apply3D", () => {
       expect.objectContaining({ "atmosphere-blend": expect.any(Array) })
     );
   });
+
+  it("resets the sky when neither terrain nor globe is enabled", () => {
+    const map = mockMap();
+    apply3D(map as never, { globe: false, allowTerrain: true });
+    expect(map.setSky).toHaveBeenCalledWith(undefined);
+  });
 });

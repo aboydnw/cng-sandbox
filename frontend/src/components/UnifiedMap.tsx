@@ -56,6 +56,8 @@ interface DeckOverlayHandle {
   deck?: { canvas?: HTMLCanvasElement; redraw?: (reason?: string) => void };
 }
 
+const noop = () => {};
+
 function DeckOverlay({
   layers,
   onHover,
@@ -81,10 +83,11 @@ function DeckOverlay({
     onHover,
     onClick,
     getTooltip,
-    // Only forward onAfterRender when defined: deck's Deck class calls it
-    // unconditionally, so an explicit undefined overrides the noop default
-    // and throws (see UnifiedMap.test.tsx regression).
-    ...(onAfterRender ? { onAfterRender } : {}),
+    // MapboxOverlay.setProps merges into persistent internal props, so a
+    // previously-registered onAfterRender stays attached if we skip the key.
+    // Always forward a real function (noop when unset) to clear a stale
+    // callback and avoid deck's undefined-call crash.
+    onAfterRender: onAfterRender ?? noop,
   });
   useImperativeHandle(
     handleRef,

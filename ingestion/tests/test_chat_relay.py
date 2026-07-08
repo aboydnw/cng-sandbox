@@ -79,6 +79,15 @@ def test_post_chat_503_when_budget_exhausted(monkeypatch):
     assert resp.status_code == 503
 
 
+def test_post_chat_rejects_oversized_message(monkeypatch):
+    client = _client(monkeypatch)
+    resp = client.post(
+        "/api/chat",
+        json={"story_id": "s1", "messages": [{"role": "user", "content": "x" * 20000}]},
+    )
+    assert resp.status_code == 400
+
+
 def test_post_chat_streams_relayed_events(monkeypatch):
     client = _client(monkeypatch)
     resp = client.post(

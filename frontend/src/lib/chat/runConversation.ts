@@ -17,6 +17,7 @@ export interface RunConversationArgs {
   onText: (text: string) => void;
   onToolChip: (chip: ToolChip) => void;
   onDone: () => void;
+  onError?: (message: string) => void;
   signal?: AbortSignal;
   maxIterations?: number;
 }
@@ -52,6 +53,7 @@ export async function runConversation(
     onText,
     onToolChip,
     onDone,
+    onError,
     signal,
   } = args;
   const maxIterations = args.maxIterations ?? 8;
@@ -79,6 +81,7 @@ export async function runConversation(
           input: event.toolUse.input,
         });
       } else if (event.type === "error") {
+        onError?.(event.message ?? "The assistant hit an error.");
         onDone();
         return messages;
       }
@@ -124,6 +127,11 @@ export async function runConversation(
     messages.push({ role: "user", content: toolResults });
   }
 
+  // Exhausted maxIterations while the model was still calling tools — the turn
+  // was cut off, not completed. Tell the caller so it isn't shown as a clean end.
+  onError?.(
+    "Reached the tool-call limit for this turn — try a narrower question."
+  );
   onDone();
   return messages;
 }

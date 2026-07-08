@@ -74,6 +74,23 @@ def test_system_blocks_are_cacheable_and_padded():
     assert len(blocks[0]["text"]) >= 4096 * 4
 
 
+def test_malformed_chapters_json_does_not_raise():
+    session = _session()
+    story = StoryRow(
+        id="s2",
+        title="Bad Chapters",
+        description=None,
+        chapters_json="{not valid json",
+        published=True,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    session.add(story)
+    session.commit()
+    md = chat_context.build_story_context_markdown(story, session)
+    assert "Bad Chapters" in md
+
+
 def test_system_blocks_are_byte_stable_across_calls():
     session = _session()
     story = _story(session)

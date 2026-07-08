@@ -30,9 +30,20 @@ _CONNECTION_TYPE_MAP = {
 }
 
 
+def _parse_chapters(chapters_json: str | None) -> list:
+    """Parse a story's chapters JSON, tolerating malformed/missing values."""
+    if not chapters_json:
+        return []
+    try:
+        parsed = json.loads(chapters_json)
+    except (ValueError, TypeError):
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
 def build_config(story: StoryRow, session: Session) -> CngRcConfig:
     """Build a portable CngRcConfig from a StoryRow."""
-    chapters_raw = json.loads(story.chapters_json) if story.chapters_json else []
+    chapters_raw = _parse_chapters(story.chapters_json)
 
     layers: dict[str, CngRcLayer] = {}
     assets: dict[str, CngRcAsset] = {}

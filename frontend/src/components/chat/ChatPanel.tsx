@@ -75,9 +75,17 @@ export function ChatPanel({ storyId, bridgeRef, onClose }: ChatPanelProps) {
             chips: [...(msg.chips ?? []), chip],
           })),
         onDone: () => {},
+        onError: (message) => setError(message),
       });
       historyRef.current = finalMessages;
     } catch (e) {
+      // A user-initiated Stop aborts the fetch; that's not a failure to surface.
+      if (
+        controller.signal.aborted ||
+        (e instanceof Error && e.name === "AbortError")
+      ) {
+        return;
+      }
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setStreaming(false);
@@ -132,7 +140,7 @@ export function ChatPanel({ storyId, bridgeRef, onClose }: ChatPanelProps) {
           </IconButton>
         </Flex>
 
-        <Box flex={1} overflowY="auto" px={4} py={3}>
+        <Box flex={1} overflowY="auto" px={4} py={3} aria-live="polite">
           {messages.length === 0 && (
             <Text fontSize="sm" color="gray.500">
               Ask a question about this story&apos;s data. The assistant can

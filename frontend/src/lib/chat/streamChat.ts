@@ -38,7 +38,12 @@ export async function* streamChat({
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        buffer += decoder.decode();
+        const parsed = parseSseEvent(buffer);
+        if (parsed) yield parsed;
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
 
       let boundary = buffer.indexOf("\n\n");

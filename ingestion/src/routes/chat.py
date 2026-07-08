@@ -5,6 +5,7 @@ tool definitions, streams the Anthropic response over ``httpx``, and re-emits
 text/tool_use events as SSE. It never executes a tool; the browser does.
 """
 
+import json
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
@@ -165,6 +166,12 @@ def _budget_add(n: int) -> None:
     _budget["used"] += n
 
 
+# Payload-size guards so a caller can't smuggle a huge prompt past the turn cap
+# (which only counts messages, not their size).
+MAX_MESSAGE_CHARS = 16_384
+MAX_TOTAL_MESSAGE_CHARS = 262_144
+
+
 class ChatRequest(BaseModel):
     story_id: str
     messages: list[dict]
@@ -188,6 +195,15 @@ async def chat(request: Request, body: ChatRequest):
     user_turns = sum(1 for m in body.messages if m.get("role") == "user")
     if user_turns > settings.chat_max_turns:
         raise HTTPException(status_code=400, detail="Conversation too long")
+
+    total_chars = 0
+    for message in body.messages:
+        message_chars = len(json.dumps(message.get("content", "")))
+        if message_chars > MAX_MESSAGE_CHARS:
+            raise HTTPException(status_code=400, detail="Message too large")
+        total_chars += message_chars
+    if total_chars > MAX_TOTAL_MESSAGE_CHARS:
+        raise HTTPException(status_code=400, detail="Conversation payload too large")
 
     if _budget_remaining(settings) <= 0:
         raise HTTPException(

@@ -55,7 +55,9 @@ def _describe_connection(conn: ConnectionRow) -> list[str]:
         except (ValueError, TypeError):
             cats = None
         if isinstance(cats, dict):
-            labels = [str(v) for _, v in sorted(cats.items(), key=lambda kv: str(kv[0]))]
+            labels = [
+                str(v) for _, v in sorted(cats.items(), key=lambda kv: str(kv[0]))
+            ]
             lines.append(f"  - categories: {', '.join(labels)}")
         elif isinstance(cats, list):
             lines.append(f"  - categories: {', '.join(str(c) for c in cats)}")
@@ -83,10 +85,20 @@ def _describe_dataset(ds: DatasetRow) -> list[str]:
     return lines
 
 
+def _parse_chapters(chapters_json: str | None) -> list:
+    if not chapters_json:
+        return []
+    try:
+        parsed = json.loads(chapters_json)
+    except (ValueError, TypeError):
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
 def build_story_context_markdown(story: StoryRow, session: Session) -> str:
     """Human-readable story context: title, chapters, and per-chapter layers."""
     config = story_export.build_config(story, session)
-    chapters_raw = json.loads(story.chapters_json) if story.chapters_json else []
+    chapters_raw = _parse_chapters(story.chapters_json)
 
     parts: list[str] = []
     parts.append(f"# Story: {config.metadata.title}")
@@ -131,10 +143,26 @@ def build_story_context_markdown(story: StoryRow, session: Session) -> str:
     return "\n".join(parts)
 
 
+# Per-story cache of assembled system blocks. The output is deterministic per
+# story, so we key on (id, updated_at) — a publish/update bumps updated_at and
+# naturally invalidates the entry. Avoids re-reading the DB and rebuilding the
+# prompt on every conversational turn of the same session.
+_BLOCK_CACHE: dict[tuple, list[dict]] = {}
+
+
 def build_system_blocks(
     story: StoryRow, session: Session, *, min_tokens: int = 4096
 ) -> list[dict]:
     """Build the Anthropic ``system`` array — one cacheable, padded text block."""
+    cache_key = (
+        story.id,
+        story.updated_at.isoformat() if story.updated_at else "",
+        min_tokens,
+    )
+    cached = _BLOCK_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
     context = build_story_context_markdown(story, session)
     text = f"{context}\n\n{_INSTRUCTIONS}"
 
@@ -142,10 +170,12 @@ def build_system_blocks(
     if len(text) < floor:
         text = text + "\n\n" + _PAD * (((floor - len(text)) // len(_PAD)) + 1)
 
-    return [
+    blocks = [
         {
             "type": "text",
             "text": text,
             "cache_control": {"type": "ephemeral"},
         }
     ]
+    _BLOCK_CACHE[cache_key] = blocks
+    return blocks

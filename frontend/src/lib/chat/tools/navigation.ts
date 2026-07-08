@@ -46,12 +46,17 @@ export const navigationTools: ChatTool[] = [
     schema: goToChapterSchema,
     execute: async (input, bridge) => {
       const { chapter_index } = input as z.infer<typeof goToChapterSchema>;
-      bridge.goToChapter(chapter_index);
       const chapter = bridge
         .getChapters()
         .find((c) => c.index === chapter_index);
-      const title = chapter ? ` "${chapter.title}"` : "";
-      return { summary: `went to chapter ${chapter_index}${title}` };
+      if (!chapter) {
+        return {
+          summary: `no chapter ${chapter_index} in this story`,
+          isError: true,
+        };
+      }
+      bridge.goToChapter(chapter_index);
+      return { summary: `went to chapter ${chapter_index} "${chapter.title}"` };
     },
   },
   {

@@ -39,4 +39,32 @@ describe("navigation tools", () => {
     await t.execute(t.schema.parse({ layer_id: "L1", visible: false }), bridge);
     expect(bridge.setLayerVisibility).toHaveBeenCalledWith("L1", false);
   });
+
+  it("highlight_location pins via the bridge", async () => {
+    const bridge = { highlightLocation: vi.fn() } as unknown as AgentBridge;
+    const t = byName("highlight_location");
+    const input = t.schema.parse({
+      longitude: -118.5,
+      latitude: 34.2,
+      label: "Landmark",
+    });
+    const res = await t.execute(input, bridge);
+    expect(bridge.highlightLocation).toHaveBeenCalledWith(
+      -118.5,
+      34.2,
+      "Landmark"
+    );
+    expect(res.summary).toContain("Landmark");
+  });
+
+  it("go_to_chapter reports an error for an out-of-range index", async () => {
+    const bridge = {
+      goToChapter: vi.fn(),
+      getChapters: () => [{ index: 0, title: "Intro" }],
+    } as unknown as AgentBridge;
+    const t = byName("go_to_chapter");
+    const res = await t.execute(t.schema.parse({ chapter_index: 9 }), bridge);
+    expect(bridge.goToChapter).not.toHaveBeenCalled();
+    expect(res.isError).toBe(true);
+  });
 });

@@ -7,6 +7,14 @@ export const BASEMAPS: Record<string, string> = {
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
 };
 
+// Mapterhorn hosted terrain-RGB (terrarium encoding). Single constant so
+// self-hosting the source.coop PMTiles is a one-line config swap.
+export const TERRAIN_DEM_URL = "https://tiles.mapterhorn.com/{z}/{x}/{y}.png";
+export const TERRAIN_DEM_ATTRIBUTION = "Mapterhorn";
+// OpenFreeMap vector tiles carry render_height / render_min_height on the
+// `building` source-layer for fill-extrusion.
+export const BUILDINGS_SOURCE_URL = "https://tiles.openfreemap.org/planet";
+
 export const BRAND_COLOR = "#CF3F02";
 export const BRAND_COLOR_RGBA = [207, 63, 2] as const;
 

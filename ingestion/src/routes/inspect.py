@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 from urllib.parse import urlparse
 
@@ -8,7 +9,10 @@ from pydantic import BaseModel, Field
 
 from src.rate_limit import limiter
 from src.services.cog_checker import check_remote_is_cog
+from src.services.pointcloud_geo import wgs84_bounds
 from src.services.url_validation import SSRFError, raise_if_redirect, validate_url_safe
+
+LAS_HEADER_PROBE_BYTES = 65535
 
 router = APIRouter(prefix="/api", tags=["inspection"])
 
@@ -26,6 +30,7 @@ class InspectUrlResponse(BaseModel):
     is_cog: bool
     size_bytes: int | None = None
     bounds: list[float] | None = None
+    crs: str | None = None
     has_errors: bool = False
     error_detail: str | None = None
 
@@ -38,6 +43,8 @@ def _detect_format(url: str) -> tuple[str, bool]:
         return "pmtiles", False
     if path.endswith(".parquet"):
         return "parquet", False
+    if path.endswith(".laz"):
+        return "copc", False
     if path.endswith(".cog"):
         return "cog", True
     if path.endswith((".tif", ".tiff")):
@@ -45,6 +52,37 @@ def _detect_format(url: str) -> tuple[str, bool]:
     if path.endswith(".geojson"):
         return "geojson", False
     return "unknown", False
+
+
+def _probe_las_over_http(url: str) -> tuple[list[float] | None, str | None]:
+    """Range-read a LAS/LAZ/COPC header and return (WGS84 bounds, CRS).
+
+    Reads only the header region (VLRs, not the trailing EVLRs), so it works on
+    large remote COPC files without downloading the point data.
+    """
+    import laspy
+
+    try:
+        with httpx.Client(follow_redirects=False, timeout=10.0) as client:
+            response = client.get(
+                url, headers={"Range": f"bytes=0-{LAS_HEADER_PROBE_BYTES}"}
+            )
+            raise_if_redirect(response)
+            if not response.is_success:
+                return None, None
+        header = laspy.LasHeader.read_from(
+            io.BytesIO(response.content), read_evlrs=False
+        )
+        crs_obj = header.parse_crs()
+        if crs_obj is None:
+            return None, None
+        epsg = crs_obj.to_epsg()
+        crs = f"EPSG:{epsg}" if epsg else crs_obj.name
+        native = [header.x_min, header.y_min, header.x_max, header.y_max]
+        return wgs84_bounds(native, crs_obj.to_wkt()), crs
+    except Exception as exc:
+        logger.info("LAS probe failed for %s: %s", urlparse(url).path, exc)
+        return None, None
 
 
 async def _probe_size(url: str) -> tuple[int | None, str | None]:
@@ -83,6 +121,8 @@ async def inspect_url(request: Request, body: InspectUrlRequest) -> InspectUrlRe
     size_bytes: int | None = None
     error_detail: str | None = None
     has_errors = False
+    bounds: list[float] | None = None
+    crs: str | None = None
     if format_detected != "xyz":
         try:
             validate_url_safe(body.url)
@@ -99,11 +139,14 @@ async def inspect_url(request: Request, body: InspectUrlRequest) -> InspectUrlRe
         has_errors = error_detail is not None
         if format_detected == "tiff" and not has_errors:
             is_cog = await _probe_is_cog(body.url)
+        if format_detected == "copc":
+            bounds, crs = await asyncio.to_thread(_probe_las_over_http, body.url)
     return InspectUrlResponse(
         format=format_detected,
         is_cog=is_cog,
         size_bytes=size_bytes,
-        bounds=None,
+        bounds=bounds,
+        crs=crs,
         has_errors=has_errors,
         error_detail=error_detail,
     )

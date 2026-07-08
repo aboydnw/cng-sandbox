@@ -43,10 +43,11 @@ def scan_las_header(path: str) -> LasScan:
     with laspy.open(path) as reader:
         header = reader.header
         crs = header.parse_crs()
+        epsg = crs.to_epsg() if crs else None
         return LasScan(
             point_count=header.point_count,
             native_bounds=[header.x_min, header.y_min, header.x_max, header.y_max],
-            crs=f"EPSG:{crs.to_epsg()}" if crs and crs.to_epsg() else None,
+            crs=(f"EPSG:{epsg}" if epsg else crs.name) if crs else None,
             crs_wkt=crs.to_wkt() if crs else None,
         )
 
@@ -122,7 +123,7 @@ async def run_pointcloud_pipeline(
             )
 
         copc_url = f"/storage/{converted_key}"
-        bounds = wgs84_bounds(scan.native_bounds, scan.crs)
+        bounds = wgs84_bounds(scan.native_bounds, scan.crs_wkt or scan.crs)
 
         job.status = JobStatus.READY
         job.stage_progress = None

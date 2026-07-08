@@ -48,33 +48,35 @@ async def stream_anthropic(
     tool_blocks: dict[int, dict] = {}
 
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
-            async with client.stream(
+        async with (
+            httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client,
+            client.stream(
                 "POST", _ANTHROPIC_URL, headers=headers, json=body
-            ) as response:
-                if response.status_code != 200:
-                    await response.aread()
-                    yield {
-                        "event": "error",
-                        "data": json.dumps(
-                            {"message": "Upstream error", "status": response.status_code}
-                        ),
-                    }
-                    return
+            ) as response,
+        ):
+            if response.status_code != 200:
+                await response.aread()
+                yield {
+                    "event": "error",
+                    "data": json.dumps(
+                        {"message": "Upstream error", "status": response.status_code}
+                    ),
+                }
+                return
 
-                async for line in response.aiter_lines():
-                    if not line or not line.startswith("data:"):
-                        continue
-                    payload = line[len("data:") :].strip()
-                    if not payload or payload == "[DONE]":
-                        continue
-                    try:
-                        event = json.loads(payload)
-                    except json.JSONDecodeError:
-                        continue
+            async for line in response.aiter_lines():
+                if not line or not line.startswith("data:"):
+                    continue
+                payload = line[len("data:") :].strip()
+                if not payload or payload == "[DONE]":
+                    continue
+                try:
+                    event = json.loads(payload)
+                except json.JSONDecodeError:
+                    continue
 
-                    async for out in _handle_event(event, tool_blocks, on_output_tokens):
-                        yield out
+                async for out in _handle_event(event, tool_blocks, on_output_tokens):
+                    yield out
     except httpx.HTTPError:
         yield {
             "event": "error",

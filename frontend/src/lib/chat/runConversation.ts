@@ -101,7 +101,7 @@ export async function runConversation(
     for (const toolUse of toolUses) {
       const tool = toolByName.get(toolUse.name);
       let summary: string;
-      let isError = false;
+      let isError: boolean;
       if (!tool) {
         summary = `Unknown tool: ${toolUse.name}`;
         isError = true;

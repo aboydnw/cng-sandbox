@@ -72,7 +72,7 @@ function parseSseEvent(raw: string): StreamEvent | null {
   }
   if (dataLines.length === 0) return null;
 
-  let data: Record<string, unknown> = {};
+  let data: Record<string, unknown>;
   try {
     data = JSON.parse(dataLines.join("\n"));
   } catch {

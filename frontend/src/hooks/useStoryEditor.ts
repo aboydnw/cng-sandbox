@@ -12,6 +12,7 @@ import {
   type Chapter,
   type ChapterType,
   type LayerConfig,
+  type MapState,
   type ChapterRenderMetadata,
   DEFAULT_LAYER_CONFIG,
   createStory,
@@ -480,6 +481,17 @@ export function useStoryEditor() {
     }));
   }
 
+  function updateChapterMapState(partial: Partial<MapState>) {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) =>
+        ch.id === activeChapterId && isMapBoundChapter(ch)
+          ? { ...ch, map_state: { ...ch.map_state, ...partial } }
+          : ch
+      ),
+    }));
+  }
+
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
     try {
@@ -588,6 +600,7 @@ export function useStoryEditor() {
     updateChapterLayerConfig,
     updateChapterType,
     updateChapterOverlayPosition,
+    updateChapterMapState,
     updateChapter,
     handleDatasetReady,
     handlePublish,

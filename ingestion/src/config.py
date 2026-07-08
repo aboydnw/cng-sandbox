@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     github_token: str = ""
     github_repo: str = ""
 
+    # Reader-facing "Ask this map" agent
+    chat_enabled: bool = False
+    anthropic_api_key_chat: str = ""
+    chat_model: str = "claude-haiku-4-5"
+    chat_daily_token_budget: int = 2_000_000
+    chat_max_tokens: int = 1024
+    chat_rate_limit: str = "10/minute"
+    chat_max_turns: int = 20
+
     model_config = {"env_prefix": "", "case_sensitive": False}
 
 

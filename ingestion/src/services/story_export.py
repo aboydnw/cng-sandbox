@@ -1,6 +1,5 @@
 """Serialize a StoryRow to a portable CngRcConfig payload."""
 
-import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -19,6 +18,7 @@ from src.models.cng_rc import (
 from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
+from src.services import story_utils
 
 _CONNECTION_TYPE_MAP = {
     "cog": "raster-cog",
@@ -30,20 +30,9 @@ _CONNECTION_TYPE_MAP = {
 }
 
 
-def _parse_chapters(chapters_json: str | None) -> list:
-    """Parse a story's chapters JSON, tolerating malformed/missing values."""
-    if not chapters_json:
-        return []
-    try:
-        parsed = json.loads(chapters_json)
-    except (ValueError, TypeError):
-        return []
-    return parsed if isinstance(parsed, list) else []
-
-
 def build_config(story: StoryRow, session: Session) -> CngRcConfig:
     """Build a portable CngRcConfig from a StoryRow."""
-    chapters_raw = _parse_chapters(story.chapters_json)
+    chapters_raw = story_utils.parse_chapters(story.chapters_json)
 
     layers: dict[str, CngRcLayer] = {}
     assets: dict[str, CngRcAsset] = {}

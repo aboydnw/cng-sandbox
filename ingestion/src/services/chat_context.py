@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
-from src.services import story_export
+from src.services import story_export, story_utils
 
 _INSTRUCTIONS = """\
 # Your role
@@ -85,20 +85,10 @@ def _describe_dataset(ds: DatasetRow) -> list[str]:
     return lines
 
 
-def _parse_chapters(chapters_json: str | None) -> list:
-    if not chapters_json:
-        return []
-    try:
-        parsed = json.loads(chapters_json)
-    except (ValueError, TypeError):
-        return []
-    return parsed if isinstance(parsed, list) else []
-
-
 def build_story_context_markdown(story: StoryRow, session: Session) -> str:
     """Human-readable story context: title, chapters, and per-chapter layers."""
     config = story_export.build_config(story, session)
-    chapters_raw = _parse_chapters(story.chapters_json)
+    chapters_raw = story_utils.parse_chapters(story.chapters_json)
 
     parts: list[str] = []
     parts.append(f"# Story: {config.metadata.title}")

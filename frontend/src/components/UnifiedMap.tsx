@@ -11,7 +11,9 @@ import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { CameraState } from "../lib/layers/types";
+import type { TerrainState } from "../lib/story/types";
 import { resolveCameraCommand } from "./mapCamera";
+import { apply3D, bindStyleReapply } from "../lib/layers/apply3D";
 import { BASEMAPS, BasemapPicker } from "./MapShell";
 
 // Mirrors deck.gl's TooltipContent, which is not exported from
@@ -44,6 +46,10 @@ interface UnifiedMapProps {
   mapRef?: React.Ref<any>;
   enableSnapshot?: boolean;
   onAfterRender?: () => void;
+  terrain?: TerrainState;
+  globe?: boolean;
+  buildings?: boolean;
+  allowTerrain?: boolean;
 }
 
 interface DeckOverlayHandle {
@@ -115,6 +121,10 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     mapRef,
     enableSnapshot,
     onAfterRender,
+    terrain,
+    globe,
+    buildings,
+    allowTerrain,
   },
   ref
 ) {
@@ -151,6 +161,24 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     map[method](options);
     if (method === "jumpTo") programmaticRef.current = false;
   }, [camera, transitionDuration]);
+
+  // Apply 3D scene props (terrain/globe/buildings) via native MapLibre APIs.
+  // setStyle (basemap switch) wipes these, so re-apply on every styledata.
+  useEffect(() => {
+    const map = localMapRef.current?.getMap();
+    if (!map) return;
+    const opts = {
+      terrain,
+      globe,
+      buildings,
+      allowTerrain: allowTerrain ?? true,
+    };
+    const run = () => apply3D(map as never, opts);
+    if (map.isStyleLoaded()) run();
+    else map.once("style.load", run);
+    const unbind = bindStyleReapply(map as never, () => opts);
+    return unbind;
+  }, [terrain, globe, buildings, allowTerrain]);
 
   const handleMove = useCallback(
     (e: {

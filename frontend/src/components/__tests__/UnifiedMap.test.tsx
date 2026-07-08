@@ -49,7 +49,7 @@ describe("UnifiedMap", () => {
     expect(overlayCtorArgs[0].interleaved).toBe(false);
   });
 
-  it("does not forward onAfterRender to the overlay when the prop is omitted", () => {
+  it("forwards a noop onAfterRender when the prop is omitted (clears stale merged callback)", () => {
     overlayProps.length = 0;
     wrap(
       <UnifiedMap
@@ -60,7 +60,13 @@ describe("UnifiedMap", () => {
         onBasemapChange={() => {}}
       />
     );
-    expect(overlayProps.some((p) => "onAfterRender" in p)).toBe(false);
+    // MapboxOverlay.setProps merges into persistent props, so onAfterRender
+    // must always be a function — never absent — or a previously-registered
+    // callback would linger.
+    expect(overlayProps.length).toBeGreaterThan(0);
+    expect(
+      overlayProps.every((p) => typeof p.onAfterRender === "function")
+    ).toBe(true);
   });
 
   it("forwards onAfterRender to the overlay when provided", () => {

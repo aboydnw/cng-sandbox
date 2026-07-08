@@ -55,6 +55,9 @@ class ChapterSeed:
     timestep: int | None = None
     overlay_position: Literal["left", "right"] = "left"
     transition: Literal["fly-to", "instant"] = "fly-to"
+    terrain: dict | None = None
+    globe: bool = False
+    buildings: bool = False
 
 
 @dataclass(frozen=True)
@@ -87,6 +90,20 @@ OCEAN_FLOOR_STORY = StorySeed(
                 "the free-explore map at the end to wander the seafloor "
                 "yourself."
             ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="One connected ocean",
+            narrative=(
+                "Seen whole, the ocean is a single body of water wrapping "
+                "the planet — Pacific running into Southern into Atlantic "
+                "with no real edges.\n\n"
+                "Spin the globe to get your bearings, then we'll drop down "
+                "into five specific places on the seafloor."
+            ),
+            center=(-150.0, 5.0),
+            zoom=1.6,
+            globe=True,
         ),
         ChapterSeed(
             type="scrollytelling",
@@ -163,6 +180,21 @@ OCEAN_FLOOR_STORY = StorySeed(
             zoom=3.0,
             colormap="terrain",
             opacity=0.9,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Where the seafloor meets land",
+            narrative=(
+                "Relief doesn't stop at the waterline. Tilt the view over "
+                "the Andean coast and the ground climbs steeply out of the "
+                "Pacific — the same abyssal trench, now met by mountains.\n\n"
+                "This is a scene-setting stop: no data overlay, just the "
+                "shape of the terrain, exaggerated to read clearly."
+            ),
+            center=(-70.5, -33.0),
+            zoom=6.0,
+            pitch=60.0,
+            terrain={"enabled": True, "exaggeration": 1.5},
         ),
         ChapterSeed(
             type="map",
@@ -737,6 +769,9 @@ def _build_chapter_dict(
             "bearing": ch.bearing,
             "pitch": ch.pitch,
             "basemap": ch.basemap,
+            **({"terrain": ch.terrain} if ch.terrain else {}),
+            **({"globe": True} if ch.globe else {}),
+            **({"buildings": True} if ch.buildings else {}),
         },
         "transition": ch.transition,
         "overlay_position": ch.overlay_position,

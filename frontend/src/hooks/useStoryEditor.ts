@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useWorkspace } from "./useWorkspace";
 import { useSaveStatus } from "./useSaveStatus";
-import { FlyToInterpolator } from "@deck.gl/core";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -13,6 +12,7 @@ import {
   type Chapter,
   type ChapterType,
   type LayerConfig,
+  type MapState,
   type ChapterRenderMetadata,
   DEFAULT_LAYER_CONFIG,
   createStory,
@@ -54,7 +54,6 @@ export function useStoryEditor() {
   const [transitionDuration, setTransitionDuration] = useState<
     number | undefined
   >(undefined);
-  const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -482,6 +481,17 @@ export function useStoryEditor() {
     }));
   }
 
+  function updateChapterMapState(partial: Partial<MapState>) {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) =>
+        ch.id === activeChapterId && isMapBoundChapter(ch)
+          ? { ...ch, map_state: { ...ch.map_state, ...partial } }
+          : ch
+      ),
+    }));
+  }
+
   async function handleDatasetReady(datasetId: string) {
     setUploadModalOpen(false);
     try {
@@ -570,7 +580,6 @@ export function useStoryEditor() {
     viewSavedFlash,
     publishDialogOpen,
     transitionDuration,
-    flyToRef,
     mapContainerRef,
     allDatasets,
     allConnections,
@@ -591,6 +600,7 @@ export function useStoryEditor() {
     updateChapterLayerConfig,
     updateChapterType,
     updateChapterOverlayPosition,
+    updateChapterMapState,
     updateChapter,
     handleDatasetReady,
     handlePublish,

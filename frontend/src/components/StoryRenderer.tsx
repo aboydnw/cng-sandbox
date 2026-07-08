@@ -9,7 +9,6 @@ import {
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
-import { FlyToInterpolator } from "@deck.gl/core";
 import { ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
@@ -28,6 +27,8 @@ import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
 import type { ActiveLayer, AgentBridge } from "../lib/chat/types";
+import { chapterTransitionDuration } from "../lib/story/chapterTransition";
+import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 
 interface Highlight {
   id: string;
@@ -113,7 +114,6 @@ function ScrollytellingBlock({
   const [transitionDuration, setTransitionDuration] = useState<
     number | undefined
   >(undefined);
-  const flyToRef = useRef(new FlyToInterpolator());
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
   const activeIndexRef = useRef(0);
@@ -185,7 +185,7 @@ function ScrollytellingBlock({
 
     setBasemap(chapter.map_state.basemap);
 
-    setTransitionDuration(chapter.transition === "fly-to" ? 2500 : undefined);
+    setTransitionDuration(chapterTransitionDuration(chapter.transition));
 
     setCamera({
       longitude: chapter.map_state.center[0],
@@ -338,9 +338,10 @@ function ScrollytellingBlock({
             basemap={basemap}
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
-            transitionInterpolator={
-              transitionDuration ? flyToRef.current : undefined
-            }
+            terrain={activeChapter?.map_state.terrain}
+            globe={activeChapter?.map_state.globe}
+            buildings={activeChapter?.map_state.buildings}
+            allowTerrain={chapterAllowsTerrain(activeChapter?.layer_config)}
             interactive={false}
           />
         )}

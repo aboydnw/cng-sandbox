@@ -8,6 +8,7 @@ import type { MapChapter as MapChapterType } from "../lib/story";
 import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
 import { buildLayersForChapter } from "../lib/story/rendering";
+import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
@@ -147,6 +148,10 @@ export function MapChapter({
             layers={layers}
             basemap={basemap}
             onBasemapChange={setBasemap}
+            terrain={chapter.map_state.terrain}
+            globe={chapter.map_state.globe}
+            buildings={chapter.map_state.buildings}
+            allowTerrain={chapterAllowsTerrain(chapter.layer_config)}
           >
             {renderMetadata && (
               <Box position="absolute" top={3} right={3} zIndex={10}>

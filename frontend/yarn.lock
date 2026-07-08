@@ -475,6 +475,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@deck.gl/mapbox@npm:^9.3.4":
+  version: 9.3.6
+  resolution: "@deck.gl/mapbox@npm:9.3.6"
+  dependencies:
+    "@math.gl/web-mercator": "npm:^4.1.0"
+  peerDependencies:
+    "@deck.gl/core": ~9.3.0
+    "@luma.gl/core": ~9.3.3
+    "@math.gl/web-mercator": ^4.1.0
+  checksum: 10c0/420bcef03653adbbb294f9d4fbb92971e54e499287c23a4b51237cc66e8b519831e82fc0bbb82493080b366f5ca7a948d78e6c74853c855b7ebfbb64a83a5335
+  languageName: node
+  linkType: hard
+
 "@deck.gl/mesh-layers@npm:^9.3.4":
   version: 9.3.4
   resolution: "@deck.gl/mesh-layers@npm:9.3.4"
@@ -4311,6 +4324,7 @@ __metadata:
     "@deck.gl/extensions": "npm:^9.3.4"
     "@deck.gl/geo-layers": "npm:^9.3.4"
     "@deck.gl/layers": "npm:^9.3.4"
+    "@deck.gl/mapbox": "npm:^9.3.4"
     "@deck.gl/mesh-layers": "npm:^9.3.4"
     "@deck.gl/react": "npm:^9.3.4"
     "@deck.gl/widgets": "npm:^9.3.4"

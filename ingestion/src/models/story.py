@@ -41,12 +41,20 @@ class StoryRow(Base):
     forked_from_id = Column(String, nullable=True)
 
 
+class TerrainStatePayload(BaseModel):
+    enabled: bool
+    exaggeration: float
+
+
 class MapStatePayload(BaseModel):
     center: tuple[float, float]
     zoom: float
     bearing: float
     pitch: float
     basemap: str
+    terrain: TerrainStatePayload | None = None
+    globe: bool | None = None
+    buildings: bool | None = None
 
 
 class LayerConfigPayload(BaseModel):

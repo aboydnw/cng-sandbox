@@ -10,10 +10,10 @@ import type {
 } from "../../lib/chat/types";
 import { runConversation } from "../../lib/chat/runConversation";
 import { streamChat } from "../../lib/chat/streamChat";
+import { navigationTools } from "../../lib/chat/tools/navigation";
 
-// Registered client-side tools. Navigation tools (Task 5) and data tools
-// (Task 6) are spread in as they land.
-const tools: ChatTool[] = [];
+// Registered client-side tools. Data tools (Task 6) are spread in as they land.
+const tools: ChatTool[] = [...navigationTools];
 
 interface ChatPanelProps {
   storyId: string;

@@ -35,6 +35,8 @@ const mockItem: MapItem = {
   dataType: "raster",
   tileUrl: "/raster/tiles",
   bounds: null,
+  copcUrl: null,
+  pointCount: null,
   minZoom: null,
   maxZoom: null,
   bandCount: 1,

@@ -10,6 +10,8 @@ function rasterDatasetItem(overrides: Partial<MapItem> = {}): MapItem {
     dataType: "raster",
     tileUrl: "/raster/tile/x/y/z",
     bounds: [-10, -10, 10, 10],
+    copcUrl: null,
+    pointCount: null,
     minZoom: null,
     maxZoom: null,
     bandCount: 1,

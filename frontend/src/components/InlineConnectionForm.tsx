@@ -19,6 +19,7 @@ const TYPE_LABELS: Record<ConnectionType, string> = {
   xyz_vector: "XYZ Vector Tiles",
   geoparquet: "Remote GeoParquet",
   zarr: "Zarr",
+  copc: "COPC Point Cloud",
 };
 
 const ALL_TYPES: ConnectionType[] = [

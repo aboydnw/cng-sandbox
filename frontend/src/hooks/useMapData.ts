@@ -36,6 +36,8 @@ export function datasetToMapItem(ds: Dataset): MapItem {
     dataType: ds.dataset_type,
     tileUrl: ds.tile_url,
     bounds: ds.bounds,
+    copcUrl: ds.copc_url,
+    pointCount: ds.point_count,
     minZoom: ds.min_zoom,
     maxZoom: ds.max_zoom,
     bandCount: ds.band_count,
@@ -63,12 +65,19 @@ export function datasetToMapItem(ds: Dataset): MapItem {
   };
 }
 
-function getConnectionDataType(conn: Connection): "raster" | "vector" {
+function getConnectionDataType(
+  conn: Connection
+): "raster" | "vector" | "pointcloud" {
+  if (conn.connection_type === "copc") return "pointcloud";
   if (conn.connection_type === "xyz_vector") return "vector";
   if (conn.connection_type === "geoparquet") return "vector";
   if (conn.connection_type === "pmtiles" && conn.tile_type !== "raster")
     return "vector";
   return "raster";
+}
+
+interface CopcConfigShape {
+  point_count?: number | null;
 }
 
 interface ZarrConfigShape {
@@ -166,6 +175,11 @@ export function connectionToMapItem(conn: Connection): MapItem {
     dataType: getConnectionDataType(conn),
     tileUrl: buildConnectionTileUrl(conn),
     bounds: conn.bounds,
+    copcUrl: conn.connection_type === "copc" ? conn.url : null,
+    pointCount:
+      conn.connection_type === "copc"
+        ? ((conn.config as CopcConfigShape | null)?.point_count ?? null)
+        : null,
     minZoom: conn.min_zoom,
     maxZoom: conn.max_zoom,
     bandCount: isZarr ? 1 : conn.band_count,

@@ -59,6 +59,8 @@ function makeZarrItem(url: string): MapItem {
     dataType: "raster",
     tileUrl: "",
     bounds: null,
+    copcUrl: null,
+    pointCount: null,
     minZoom: null,
     maxZoom: null,
     bandCount: 1,

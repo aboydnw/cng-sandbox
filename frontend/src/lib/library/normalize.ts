@@ -7,7 +7,7 @@ export interface LibraryItem {
   id: string;
   kind: LibrarySource;
   name: string;
-  type: "raster" | "vector";
+  type: "raster" | "vector" | "pointcloud";
   source: { label: string; href?: string };
   addedAt: string;
   expiresAt: string | null;
@@ -31,8 +31,12 @@ export function datasetToLibraryItem(ds: Dataset): LibraryItem {
   };
 }
 
-function connectionTypeToKind(conn: Connection): "raster" | "vector" {
+function connectionTypeToKind(
+  conn: Connection
+): "raster" | "vector" | "pointcloud" {
   switch (conn.connection_type) {
+    case "copc":
+      return "pointcloud";
     case "cog":
     case "xyz_raster":
       return "raster";

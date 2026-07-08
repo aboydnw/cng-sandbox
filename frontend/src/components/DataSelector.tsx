@@ -9,7 +9,7 @@ export interface DataSelectorItem {
   id: string;
   name: string;
   source: MapItemSource;
-  dataType: "raster" | "vector";
+  dataType: "raster" | "vector" | "pointcloud";
   isZeroCopy?: boolean;
   isMosaic?: boolean;
   expiresAt?: string | null;

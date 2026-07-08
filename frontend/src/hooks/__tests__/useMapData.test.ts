@@ -32,6 +32,8 @@ const MOCK_DATASET: Dataset = {
   raster_min: 0,
   raster_max: 255,
   cog_url: "https://r2.example.com/test.tif",
+  copc_url: null,
+  point_count: null,
   parquet_url: null,
   min_zoom: null,
   max_zoom: null,

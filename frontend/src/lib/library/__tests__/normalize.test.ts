@@ -26,6 +26,8 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     pg_table: null,
     parquet_url: null,
     cog_url: null,
+    copc_url: null,
+    point_count: null,
     validation_results: [],
     credits: [],
     created_at: "2026-04-01T00:00:00Z",

@@ -22,7 +22,7 @@ interface NarrativeEditorProps {
   onNarrativeChange: (narrative: string) => void;
   layerConfig: LayerConfig;
   onLayerConfigChange: (config: LayerConfig) => void;
-  datasetType: "raster" | "vector";
+  datasetType: "raster" | "vector" | "pointcloud";
   datasets: Dataset[];
   connections?: Connection[];
   onUploadClick?: () => void;

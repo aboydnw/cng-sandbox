@@ -23,6 +23,7 @@ from src.services.example_stories import (
     HATAY_TURINCLU_URL,
     LAHAINA_URL,
     OCEAN_FLOOR_STORY,
+    _build_chapter_dict,
     relink_dead_chapter_dataset_ids,
     seed_example_stories,
 )
@@ -192,7 +193,9 @@ def test_seed_populates_chapter_layer_config_with_resolved_dataset_id():
     finally:
         session.close()
 
-    raster_chapter = next(c for c in chapters if c["type"] == "scrollytelling")
+    raster_chapter = next(
+        c for c in chapters if c["type"] == "scrollytelling" and c["layer_config"]
+    )
     assert raster_chapter["layer_config"]["dataset_id"] == "gebco-id"
     assert raster_chapter["layer_config"]["colormap"] == "terrain"
 
@@ -629,3 +632,12 @@ def test_relink_skips_user_authored_story_with_coincidental_title_match():
 
     for ch in chapters:
         assert ch["layer_config"]["dataset_id"] == "user-private-dead-id"
+
+
+def test_seed_emits_globe_and_terrain_map_state():
+    dicts = [
+        _build_chapter_dict(ch, i, None)
+        for i, ch in enumerate(OCEAN_FLOOR_STORY.chapters)
+    ]
+    assert any(d["map_state"].get("globe") for d in dicts)
+    assert any(d["map_state"].get("terrain") for d in dicts)

@@ -10,12 +10,20 @@ function uuid(): string {
   });
 }
 
+export interface TerrainState {
+  enabled: boolean;
+  exaggeration: number;
+}
+
 export interface MapState {
   center: [number, number];
   zoom: number;
   bearing: number;
   pitch: number;
   basemap: string;
+  terrain?: TerrainState;
+  globe?: boolean;
+  buildings?: boolean;
 }
 
 export interface LayerConfig {

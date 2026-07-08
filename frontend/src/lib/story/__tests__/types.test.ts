@@ -3,6 +3,7 @@ import {
   createScrollytellingChapter,
   createMapChapter,
   createProseChapter,
+  DEFAULT_MAP_STATE,
 } from "../types";
 
 describe("chapter factories", () => {
@@ -33,5 +34,31 @@ describe("chapter factories", () => {
     const ch = createScrollytellingChapter({ title: "Chapter X", order: 3 });
     expect(ch.title).toBe("Chapter X");
     expect(ch.order).toBe(3);
+  });
+});
+
+describe("MapState 3D fields (backward compatible)", () => {
+  it("DEFAULT_MAP_STATE has no 3D fields set", () => {
+    expect("terrain" in DEFAULT_MAP_STATE).toBe(false);
+    expect("globe" in DEFAULT_MAP_STATE).toBe(false);
+    expect("buildings" in DEFAULT_MAP_STATE).toBe(false);
+  });
+
+  it("createScrollytellingChapter passes through 3D map_state fields", () => {
+    const ch = createScrollytellingChapter({
+      map_state: {
+        center: [0, 0],
+        zoom: 2,
+        bearing: 0,
+        pitch: 60,
+        basemap: "streets",
+        terrain: { enabled: true, exaggeration: 1.5 },
+        globe: true,
+        buildings: true,
+      },
+    });
+    expect(ch.map_state.terrain).toEqual({ enabled: true, exaggeration: 1.5 });
+    expect(ch.map_state.globe).toBe(true);
+    expect(ch.map_state.buildings).toBe(true);
   });
 });

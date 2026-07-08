@@ -19,6 +19,7 @@ import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
 import { chapterTransitionDuration } from "../lib/story/chapterTransition";
+import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 
 function ScrollytellingBlock({
   chapters,
@@ -167,6 +168,7 @@ function ScrollytellingBlock({
             terrain={activeChapter?.map_state.terrain}
             globe={activeChapter?.map_state.globe}
             buildings={activeChapter?.map_state.buildings}
+            allowTerrain={chapterAllowsTerrain(activeChapter?.layer_config)}
             interactive={false}
           />
         )}

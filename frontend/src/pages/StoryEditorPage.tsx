@@ -22,6 +22,7 @@ import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
 import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
+import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 import { ChapterPreview } from "../components/editor/ChapterPreview";
 import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
 import { ChartChapterEditor } from "../components/editor/ChartChapterEditor";
@@ -327,6 +328,7 @@ export default function StoryEditorPage() {
               terrain={activeChapter.map_state.terrain}
               globe={activeChapter.map_state.globe}
               buildings={activeChapter.map_state.buildings}
+              allowTerrain={chapterAllowsTerrain(activeChapter.layer_config)}
             >
               {previewRenderMetadata && (
                 <Box position="absolute" top={3} right={3} zIndex={10}>

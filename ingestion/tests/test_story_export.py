@@ -248,3 +248,34 @@ def test_export_accepts_integer_timestep(db_session):
     config = story_export.build_config(row, db_session)
     layer = next(iter(config.layers.values()))
     assert layer.render.timestep == 58
+
+
+def test_export_strips_3d_map_state_fields(db_session):
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "map",
+                "title": "Globe",
+                "body": "",
+                "map_state": {
+                    "center": [10, 20],
+                    "zoom": 3,
+                    "bearing": 0,
+                    "pitch": 45,
+                    "terrain": {"enabled": True, "exaggeration": 1.5},
+                    "globe": True,
+                    "buildings": True,
+                },
+                "layer_config": None,
+            }
+        ],
+    )
+    config = story_export.build_config(row, db_session)
+    map_view = config.chapters[0].map
+    assert map_view is not None
+    dumped = map_view.model_dump()
+    assert "terrain" not in dumped
+    assert "globe" not in dumped
+    assert "buildings" not in dumped

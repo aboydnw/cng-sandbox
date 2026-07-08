@@ -71,7 +71,10 @@ describe("apply3D", () => {
     const on = mockMap();
     apply3D(on as never, { buildings: true, allowTerrain: true });
     expect(on.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "cng-buildings-3d", type: "fill-extrusion" })
+      expect.objectContaining({
+        id: "cng-buildings-3d",
+        type: "fill-extrusion",
+      })
     );
     const off = mockMap();
     off.getLayer = () => ({}) as never;

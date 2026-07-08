@@ -60,7 +60,17 @@ export function apply3D(map: MapLike, opts: Apply3DOptions): void {
       "sky-horizon-blend": 0.6,
       // Zoom-interpolated atmosphere for the globe: full atmosphere when
       // zoomed out (planet view), fading as the reader zooms into a region.
-      "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 0.5, 8, 0],
+      "atmosphere-blend": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        0,
+        1,
+        5,
+        0.5,
+        8,
+        0,
+      ],
     });
   }
 

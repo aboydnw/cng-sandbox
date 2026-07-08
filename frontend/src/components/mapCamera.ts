@@ -22,7 +22,10 @@ export function resolveCameraCommand(
     pitch: camera.pitch,
   };
   if (transitionDuration && transitionDuration > 0) {
-    return { method: "flyTo", options: { ...base, duration: transitionDuration } };
+    return {
+      method: "flyTo",
+      options: { ...base, duration: transitionDuration },
+    };
   }
   return { method: "jumpTo", options: base };
 }

@@ -1,10 +1,17 @@
-import { forwardRef, useCallback, useMemo, useRef } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 import { Box } from "@chakra-ui/react";
-import DeckGL from "@deck.gl/react";
-import { MapView, FlyToInterpolator } from "@deck.gl/core";
-import Map from "react-map-gl/maplibre";
+import { Map, useControl } from "react-map-gl/maplibre";
+import type { MapRef } from "react-map-gl/maplibre";
+import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { CameraState } from "../lib/layers/types";
+import { resolveCameraCommand } from "./mapCamera";
 import { BASEMAPS, BasemapPicker } from "./MapShell";
 
 // Mirrors deck.gl's TooltipContent, which is not exported from
@@ -30,7 +37,8 @@ interface UnifiedMapProps {
   getTooltip?: (info: PickingInfo) => TooltipContent;
   children?: React.ReactNode;
   transitionDuration?: number;
-  transitionInterpolator?: FlyToInterpolator;
+  /** @deprecated no longer used; camera moves via imperative flyTo/jumpTo. */
+  transitionInterpolator?: unknown;
   interactive?: boolean;
   onTransitionEnd?: () => void;
   hideBasemapPicker?: boolean;
@@ -38,6 +46,56 @@ interface UnifiedMapProps {
   mapRef?: React.Ref<any>;
   enableSnapshot?: boolean;
   onAfterRender?: () => void;
+}
+
+interface DeckOverlayHandle {
+  deck?: { canvas?: HTMLCanvasElement; redraw?: (reason?: string) => void };
+}
+
+function DeckOverlay({
+  layers,
+  onHover,
+  onClick,
+  getTooltip,
+  onAfterRender,
+  handleRef,
+}: {
+  layers: Layer[];
+  onHover?: (info: PickingInfo) => void;
+  onClick?: (info: PickingInfo) => void;
+  getTooltip?: UnifiedMapProps["getTooltip"];
+  onAfterRender?: () => void;
+  handleRef: React.MutableRefObject<DeckOverlayHandle | null>;
+}) {
+  // interleaved:false = overlaid mode (deck canvas on top, no depth interaction),
+  // matching today's visual behavior.
+  const overlay = useControl(
+    () => new MapboxOverlay({ interleaved: false, layers })
+  );
+  overlay.setProps({
+    layers,
+    onHover,
+    onClick,
+    getTooltip,
+    // Only forward onAfterRender when defined: deck's Deck class calls it
+    // unconditionally, so an explicit undefined overrides the noop default
+    // and throws (see UnifiedMap.test.tsx regression).
+    ...(onAfterRender ? { onAfterRender } : {}),
+  });
+  useImperativeHandle(
+    handleRef,
+    () => ({
+      get deck() {
+        // MapboxOverlay exposes the underlying Deck as `_deck`; expose it
+        // lazily via a getter so the snapshot/export consumers read the
+        // live canvas at read time (mirrors the old @deck.gl/react handle).
+        return (overlay as unknown as { _deck?: DeckOverlayHandle["deck"] })
+          ._deck;
+      },
+    }),
+    [overlay]
+  );
+  return null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +111,6 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     getTooltip,
     children,
     transitionDuration,
-    transitionInterpolator,
     interactive = true,
     onTransitionEnd,
     hideBasemapPicker = false,
@@ -63,86 +120,96 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   },
   ref
 ) {
-  const wasTransitioningRef = useRef(false);
+  const localMapRef = useRef<MapRef | null>(null);
+  const overlayHandleRef = useRef<DeckOverlayHandle | null>(null);
+  const programmaticRef = useRef(false);
 
-  const handleViewStateChange = useCallback(
-    ({
-      viewState,
-      interactionState,
-    }: {
+  useImperativeHandle(ref, () => ({
+    get deck() {
+      return overlayHandleRef.current?.deck;
+    },
+  }));
+
+  const setMapRef = useCallback(
+    (instance: MapRef | null) => {
+      localMapRef.current = instance;
+      if (typeof mapRef === "function") mapRef(instance);
+      else if (mapRef) {
+        (mapRef as React.MutableRefObject<MapRef | null>).current = instance;
+      }
+    },
+    [mapRef]
+  );
+
+  // Drive the camera imperatively: flyTo for transitions, jumpTo otherwise.
+  useEffect(() => {
+    const map = localMapRef.current?.getMap();
+    if (!map) return;
+    const { method, options } = resolveCameraCommand(
+      camera,
+      transitionDuration
+    );
+    programmaticRef.current = true;
+    map[method](options);
+    if (method === "jumpTo") programmaticRef.current = false;
+  }, [camera, transitionDuration]);
+
+  const handleMove = useCallback(
+    (e: {
       viewState: {
         longitude: number;
         latitude: number;
         zoom: number;
-        bearing?: number;
-        pitch?: number;
+        bearing: number;
+        pitch: number;
       };
-      interactionState?: { inTransition?: boolean };
     }) => {
+      if (programmaticRef.current) return;
+      const vs = e.viewState;
       onCameraChange({
-        longitude: viewState.longitude,
-        latitude: viewState.latitude,
-        zoom: viewState.zoom,
-        bearing: viewState.bearing ?? 0,
-        pitch: viewState.pitch ?? 0,
+        longitude: vs.longitude,
+        latitude: vs.latitude,
+        zoom: vs.zoom,
+        bearing: vs.bearing ?? 0,
+        pitch: vs.pitch ?? 0,
       });
-
-      const isTransitioning = interactionState?.inTransition ?? false;
-      if (wasTransitioningRef.current && !isTransitioning && onTransitionEnd) {
-        onTransitionEnd();
-      }
-      wasTransitioningRef.current = isTransitioning;
     },
-    [onCameraChange, onTransitionEnd]
+    [onCameraChange]
   );
 
-  const views = useMemo(() => new MapView({ repeat: true }), []);
-
-  const viewState = transitionDuration
-    ? { ...camera, transitionDuration, transitionInterpolator }
-    : camera;
+  const handleMoveEnd = useCallback(() => {
+    programmaticRef.current = false;
+    onTransitionEnd?.();
+  }, [onTransitionEnd]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <DeckGL
-        ref={ref}
-        viewState={viewState}
-        onViewStateChange={handleViewStateChange}
-        controller={
-          interactive
-            ? { dragRotate: true }
-            : {
-                dragPan: false,
-                dragRotate: false,
-                scrollZoom: false,
-                doubleClickZoom: false,
-                touchZoom: false,
-                touchRotate: false,
-                keyboard: false,
-              }
-        }
-        layers={layers}
-        views={views}
-        onHover={onHover}
-        onClick={onClick}
-        getTooltip={getTooltip}
-        // Only forward when defined: deck.gl's Deck class calls
-        // `this.props.onAfterRender()` unconditionally during _drawLayers, so
-        // an explicit `undefined` here overrides its `noop` default and throws.
-        {...(onAfterRender ? { onAfterRender } : {})}
+      <Map
+        ref={setMapRef}
+        mapStyle={BASEMAPS[basemap]}
+        initialViewState={{
+          longitude: camera.longitude,
+          latitude: camera.latitude,
+          zoom: camera.zoom,
+          bearing: camera.bearing,
+          pitch: camera.pitch,
+        }}
+        onMove={handleMove}
+        onMoveEnd={handleMoveEnd}
+        interactive={interactive}
+        // @ts-expect-error preserveDrawingBuffer forwarded to maplibre-gl
+        preserveDrawingBuffer={enableSnapshot ?? false}
+        style={{ width: "100%", height: "100%" }}
       >
-        <Map
-          ref={mapRef}
-          mapStyle={BASEMAPS[basemap]}
-          longitude={camera.longitude}
-          latitude={camera.latitude}
-          zoom={camera.zoom}
-          bearing={camera.bearing}
-          pitch={camera.pitch}
-          // @ts-expect-error preserveDrawingBuffer not in react-map-gl's Map prop types but forwarded to maplibre-gl
-          preserveDrawingBuffer={enableSnapshot ?? false}
+        <DeckOverlay
+          layers={layers}
+          onHover={onHover}
+          onClick={onClick}
+          getTooltip={getTooltip}
+          onAfterRender={onAfterRender}
+          handleRef={overlayHandleRef}
         />
-      </DeckGL>
+      </Map>
 
       {interactive && !hideBasemapPicker && (
         <Box

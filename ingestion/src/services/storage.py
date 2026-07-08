@@ -49,6 +49,12 @@ class StorageService:
         self._upload(local_path, key)
         return key
 
+    def upload_copc(self, local_path: str, dataset_id: str) -> str:
+        """Upload a .copc.laz file to S3. Returns the storage key."""
+        key = f"datasets/{dataset_id}/converted/data.copc.laz"
+        self._upload(local_path, key)
+        return key
+
     def upload_file(self, file_path: str, key: str) -> None:
         """Upload a local file to an explicit key."""
         self._upload(file_path, key)

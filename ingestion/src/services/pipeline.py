@@ -126,6 +126,25 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
             }
         )
         return credits
+    elif format_pair == FormatPair.LAS_TO_COPC:
+        credits.append(
+            {"tool": "PDAL", "url": "https://pdal.io", "role": "Converted by"}
+        )
+        credits.append(
+            {
+                "tool": "copc.js",
+                "url": "https://github.com/connormanning/copc",
+                "role": "Streamed by",
+            }
+        )
+        credits.append(
+            {
+                "tool": "MapLibre",
+                "url": "https://maplibre.org",
+                "role": "Map rendered by",
+            }
+        )
+        return credits
 
     if format_pair.dataset_type == DatasetType.RASTER:
         credits.append(

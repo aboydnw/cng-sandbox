@@ -354,6 +354,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
         return {"status": "ok"}
 
     from src.routes.bug_report import router as bug_report_router
+    from src.routes.chat import router as chat_router
     from src.routes.connect_remote import router as connect_remote_router
     from src.routes.connect_source_coop import router as connect_source_coop_router
     from src.routes.connections import router as connections_router
@@ -382,6 +383,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(inspect_router)
     app.include_router(zarr_proxy_router)
     app.include_router(validation_router)
+    app.include_router(chat_router)
 
     return app
 

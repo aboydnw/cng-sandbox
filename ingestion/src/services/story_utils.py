@@ -7,11 +7,22 @@ from sqlalchemy.orm import Session
 from src.models.story import StoryRow
 
 
+def parse_chapters(chapters_json: str | None) -> list:
+    """Parse a story's chapters JSON, tolerating malformed/missing values."""
+    if not chapters_json:
+        return []
+    try:
+        parsed = json.loads(chapters_json)
+    except (ValueError, TypeError):
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
 def _story_references_dataset(row: StoryRow, dataset_id: str) -> bool:
     """Check whether a single story row references the given dataset."""
     if row.dataset_id == dataset_id:
         return True
-    chapters = json.loads(row.chapters_json) if row.chapters_json else []
+    chapters = parse_chapters(row.chapters_json)
     for ch in chapters:
         lc = ch.get("layer_config") or {}
         if lc.get("dataset_id") == dataset_id:
@@ -38,7 +49,7 @@ def build_story_count_map(session: Session) -> dict[str, int]:
         seen: set[str] = set()
         if row.dataset_id:
             seen.add(row.dataset_id)
-        chapters = json.loads(row.chapters_json) if row.chapters_json else []
+        chapters = parse_chapters(row.chapters_json)
         for ch in chapters:
             lc = ch.get("layer_config") or {}
             did = lc.get("dataset_id")

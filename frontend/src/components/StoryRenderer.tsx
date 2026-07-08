@@ -1,7 +1,15 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
+import { ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
@@ -18,8 +26,62 @@ import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
+import type { ActiveLayer, AgentBridge } from "../lib/chat/types";
 import { chapterTransitionDuration } from "../lib/story/chapterTransition";
 import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
+
+interface Highlight {
+  id: string;
+  longitude: number;
+  latitude: number;
+  label: string;
+}
+
+function resolveActiveLayers(
+  chapter: ScrollytellingChapter | undefined,
+  datasetMap: Map<string, Dataset | null>,
+  connectionMap: Map<string, Connection> | undefined,
+  layerVisibility: Record<string, boolean>
+): ActiveLayer[] {
+  const lc = chapter?.layer_config;
+  if (!lc) return [];
+  const visibleOf = (id: string) => layerVisibility[id] !== false;
+
+  if (lc.connection_id && connectionMap) {
+    const conn = connectionMap.get(lc.connection_id);
+    if (!conn) return [];
+    const base = {
+      layer_id: lc.connection_id,
+      label: conn.name,
+      visible: visibleOf(lc.connection_id),
+    };
+    if (conn.connection_type === "cog") {
+      return [{ ...base, type: "raster-cog", cogUrl: conn.url }];
+    }
+    if (conn.connection_type === "zarr") {
+      return [{ ...base, type: "zarr", cogUrl: conn.url }];
+    }
+    return [{ ...base, type: "vector-geoparquet" }];
+  }
+
+  const ds = datasetMap.get(lc.dataset_id);
+  if (!ds) return [];
+  const base = {
+    layer_id: lc.dataset_id,
+    label: ds.title ?? ds.filename,
+    visible: visibleOf(lc.dataset_id),
+  };
+  if (ds.dataset_type === "raster") {
+    return [{ ...base, type: "raster-cog", cogUrl: ds.cog_url ?? undefined }];
+  }
+  return [
+    {
+      ...base,
+      type: "vector-geoparquet",
+      collectionId: ds.pg_table ?? ds.id,
+    },
+  ];
+}
 
 function ScrollytellingBlock({
   chapters,
@@ -27,14 +89,20 @@ function ScrollytellingBlock({
   datasetMap,
   connectionMap,
   onChapterClick,
+  registerBridge,
 }: {
   chapters: ScrollytellingChapter[];
   startIndex: number;
   datasetMap: Map<string, Dataset | null>;
   connectionMap?: Map<string, Connection>;
   onChapterClick?: (chapterId: string) => void;
+  registerBridge?: (bridge: AgentBridge) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [layerVisibility, setLayerVisibility] = useState<
+    Record<string, boolean>
+  >({});
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [camera, setCamera] = useState<CameraState>({
     longitude: chapters[0].map_state.center[0],
     latitude: chapters[0].map_state.center[1],
@@ -48,6 +116,17 @@ function ScrollytellingBlock({
   >(undefined);
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
+  const activeIndexRef = useRef(0);
+  const highlightTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const timeouts = highlightTimeouts.current;
+    return () => timeouts.forEach(clearTimeout);
+  }, []);
 
   useEffect(() => {
     if (datasetMap.size === 0) return;
@@ -130,7 +209,7 @@ function ScrollytellingBlock({
     return new Map();
   }, [activeConnId, zarrNode]);
 
-  const { layers, renderMetadata } = useMemo(
+  const { layers: chapterLayers, renderMetadata } = useMemo(
     () =>
       buildLayersForChapter(
         chapters[activeIndex],
@@ -141,10 +220,104 @@ function ScrollytellingBlock({
     [datasetMap, connectionMap, activeIndex, chapters, zarrNodeMap]
   );
 
+  const activeLayerId =
+    activeChapter?.layer_config?.connection_id ??
+    activeChapter?.layer_config?.dataset_id;
+  const activeLayerHidden = activeLayerId
+    ? layerVisibility[activeLayerId] === false
+    : false;
+
+  const layers = useMemo(() => {
+    const base = activeLayerHidden ? [] : chapterLayers;
+    if (highlights.length === 0) return base;
+    return [
+      ...base,
+      new ScatterplotLayer<Highlight>({
+        id: "agent-highlights",
+        data: highlights,
+        getPosition: (h) => [h.longitude, h.latitude],
+        getRadius: 10,
+        radiusUnits: "pixels",
+        getFillColor: [232, 122, 46, 220],
+        getLineColor: [255, 255, 255, 255],
+        lineWidthUnits: "pixels",
+        getLineWidth: 2,
+        stroked: true,
+      }),
+      new TextLayer<Highlight>({
+        id: "agent-highlight-labels",
+        data: highlights,
+        getPosition: (h) => [h.longitude, h.latitude],
+        getText: (h) => h.label,
+        getSize: 13,
+        getColor: [60, 40, 30, 255],
+        getPixelOffset: [0, -16],
+        fontFamily: "system-ui, sans-serif",
+      }),
+    ];
+  }, [activeLayerHidden, chapterLayers, highlights]);
+
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
     setTransitionDuration(undefined);
   }, []);
+
+  const layerVisibilityRef = useRef(layerVisibility);
+  useEffect(() => {
+    layerVisibilityRef.current = layerVisibility;
+  }, [layerVisibility]);
+
+  const bridge = useMemo<AgentBridge>(
+    () => ({
+      flyTo: (longitude, latitude, zoom, pitch, bearing) => {
+        setTransitionDuration(2500);
+        setCamera({
+          longitude,
+          latitude,
+          zoom,
+          bearing: bearing ?? 0,
+          pitch: pitch ?? 0,
+        });
+      },
+      goToChapter: (index) => {
+        const local = index - startIndex;
+        const steps = stepsRef.current?.querySelectorAll("[data-step]");
+        const el = steps?.[local] as HTMLElement | undefined;
+        el?.scrollIntoView({ behavior: "smooth" });
+      },
+      setLayerVisibility: (layerId, visible) => {
+        setLayerVisibility((prev) => ({ ...prev, [layerId]: visible }));
+      },
+      highlightLocation: (longitude, latitude, label) => {
+        const id = `${startIndex}-${longitude}-${latitude}-${label}`;
+        setHighlights((prev) => [
+          ...prev.filter((h) => h.id !== id),
+          { id, longitude, latitude, label },
+        ]);
+        const timeout = setTimeout(() => {
+          setHighlights((prev) => prev.filter((h) => h.id !== id));
+        }, 8000);
+        highlightTimeouts.current.push(timeout);
+      },
+      getActiveLayers: () =>
+        resolveActiveLayers(
+          chapters[activeIndexRef.current],
+          datasetMap,
+          connectionMap,
+          layerVisibilityRef.current
+        ),
+      getChapters: () =>
+        chapters.map((chapter, i) => ({
+          index: startIndex + i,
+          title: chapter.title,
+        })),
+    }),
+    [chapters, startIndex, datasetMap, connectionMap]
+  );
+
+  useEffect(() => {
+    registerBridge?.(bridge);
+  }, [registerBridge, bridge]);
 
   const hasConnection =
     activeChapter?.layer_config?.connection_id &&
@@ -292,20 +465,51 @@ export function StoryRenderer({
   datasetMap,
   connectionMap,
   onChapterClick,
+  agentBridgeRef,
 }: {
   story: Story;
   datasetMap: Map<string, Dataset | null>;
   connectionMap?: Map<string, Connection>;
   onChapterClick?: (chapterId: string) => void;
+  agentBridgeRef?: React.RefObject<AgentBridge | null>;
 }) {
   const sortedChapters = useMemo(
     () => [...story.chapters].sort((a, b) => a.order - b.order),
     [story]
   );
 
+  // The active ScrollytellingBlock registers its live bridge here; the exposed
+  // handle delegates to it, falling back to a chapter list + no-ops before any
+  // scrolly block has mounted (or for non-scrolly stories).
+  const bridgeDelegateRef = useRef<AgentBridge | null>(null);
+  useImperativeHandle(
+    agentBridgeRef,
+    () => ({
+      flyTo: (...args) => bridgeDelegateRef.current?.flyTo(...args),
+      goToChapter: (index) => bridgeDelegateRef.current?.goToChapter(index),
+      setLayerVisibility: (id, visible) =>
+        bridgeDelegateRef.current?.setLayerVisibility(id, visible),
+      highlightLocation: (...args) =>
+        bridgeDelegateRef.current?.highlightLocation(...args),
+      getActiveLayers: () => bridgeDelegateRef.current?.getActiveLayers() ?? [],
+      getChapters: () =>
+        bridgeDelegateRef.current?.getChapters() ??
+        sortedChapters.map((chapter, index) => ({
+          index,
+          title: chapter.title,
+        })),
+    }),
+    [sortedChapters]
+  );
+
   const contentBlocks = useMemo(
     () => groupChaptersIntoBlocks(sortedChapters),
     [sortedChapters]
+  );
+
+  const firstScrollyBlockIndex = useMemo(
+    () => contentBlocks.findIndex((block) => block.type === "scrollytelling"),
+    [contentBlocks]
   );
 
   return (
@@ -421,6 +625,13 @@ export function StoryRenderer({
             datasetMap={datasetMap}
             connectionMap={connectionMap}
             onChapterClick={onChapterClick}
+            registerBridge={
+              blockIndex === firstScrollyBlockIndex
+                ? (bridge) => {
+                    bridgeDelegateRef.current = bridge;
+                  }
+                : undefined
+            }
           />
         );
       })}

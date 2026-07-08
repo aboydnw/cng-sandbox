@@ -54,6 +54,7 @@ VALID_CONNECTION_TYPES = {
     "pmtiles",
     "geoparquet",
     "zarr",
+    "copc",
 }
 VALID_TILE_TYPES = {"raster", "vector", None}
 

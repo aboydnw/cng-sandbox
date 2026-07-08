@@ -37,8 +37,6 @@ interface UnifiedMapProps {
   getTooltip?: (info: PickingInfo) => TooltipContent;
   children?: React.ReactNode;
   transitionDuration?: number;
-  /** @deprecated no longer used; camera moves via imperative flyTo/jumpTo. */
-  transitionInterpolator?: unknown;
   interactive?: boolean;
   onTransitionEnd?: () => void;
   hideBasemapPicker?: boolean;

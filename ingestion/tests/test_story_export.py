@@ -85,6 +85,37 @@ def test_export_resolves_connection_to_source_url(db_session):
     assert layer.render.rescale == (0, 1000)
 
 
+def test_export_maps_copc_connection_to_copc_layer_type(db_session):
+    conn = ConnectionRow(
+        id="conn-copc",
+        name="Autzen",
+        url="https://example.com/a.copc.laz",
+        connection_type="copc",
+        tile_url=None,
+        bounds_json=None,
+        workspace_id="ws-test",
+    )
+    db_session.add(conn)
+    db_session.commit()
+
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "map",
+                "title": "Lidar",
+                "body": "",
+                "map_state": {"center": [-123.07, 44.05], "zoom": 12},
+                "layer_config": {"connection_id": "conn-copc", "opacity": 1.0},
+            }
+        ],
+    )
+    config = story_export.build_config(row, db_session)
+    layer = next(iter(config.layers.values()))
+    assert layer.type == "copc"
+
+
 def test_export_image_chapter_carries_nested_payload(db_session):
     image_payload = {
         "asset_id": "asset-1",

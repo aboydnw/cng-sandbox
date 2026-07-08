@@ -49,7 +49,7 @@ class CngRcRender(BaseModel):
 
 
 class CngRcLayer(BaseModel):
-    type: Literal["raster-cog", "vector-geoparquet", "pmtiles", "xyz"]
+    type: Literal["raster-cog", "vector-geoparquet", "pmtiles", "xyz", "copc"]
     source_url: str | None
     cng_url: str | None
     label: str | None

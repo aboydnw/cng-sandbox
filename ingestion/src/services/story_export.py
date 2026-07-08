@@ -27,6 +27,7 @@ _CONNECTION_TYPE_MAP = {
     "xyz_raster": "xyz",
     "xyz_vector": "xyz",
     "zarr": "zarr",
+    "copc": "copc",
 }
 
 

@@ -25,6 +25,57 @@ def test_interactive_export_returns_zip_with_manifest(
     assert manifest["chapters"][0]["type"] == "prose"
 
 
+def test_interactive_export_excludes_copc_layer(client):
+    conn_resp = client.post(
+        "/api/connections",
+        json={
+            "name": "Autzen",
+            "connection_type": "copc",
+            "url": "https://example.com/a.copc.laz",
+        },
+    )
+    assert conn_resp.status_code == 201
+    conn_id = conn_resp.json()["id"]
+
+    story_resp = client.post(
+        "/api/stories",
+        json={
+            "title": "Lidar Story",
+            "description": "",
+            "published": True,
+            "chapters": [
+                {
+                    "id": "ch-map",
+                    "order": 0,
+                    "type": "map",
+                    "title": "Points",
+                    "narrative": "",
+                    "map_state": {
+                        "center": [-123.07, 44.05],
+                        "zoom": 12,
+                        "bearing": 0,
+                        "pitch": 0,
+                        "basemap": "streets",
+                    },
+                    "layer_config": {
+                        "dataset_id": "unused",
+                        "connection_id": conn_id,
+                        "colormap": "viridis",
+                        "opacity": 1.0,
+                        "basemap": "streets",
+                    },
+                }
+            ],
+        },
+    )
+    assert story_resp.status_code == 201, story_resp.text
+    story_id = story_resp.json()["id"]
+
+    response = client.post(f"/api/stories/{story_id}/export/interactive")
+    assert response.status_code == 400
+    assert "not yet supported" in response.json()["detail"]
+
+
 def test_interactive_export_rejects_unknown_story(client):
     response = client.post("/api/stories/does-not-exist/export/interactive")
     assert response.status_code == 404

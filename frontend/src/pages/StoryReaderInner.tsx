@@ -1,6 +1,11 @@
+import { useRef, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { StoryRenderer } from "../components/StoryRenderer";
 import { BugReportLink } from "../components/BugReportLink";
+import { AskThisMapButton } from "../components/chat/AskThisMapButton";
+import { ChatPanel } from "../components/chat/ChatPanel";
+import { useChatConfig } from "../lib/chat/useChatConfig";
+import type { AgentBridge } from "../lib/chat/types";
 import type { Story } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 
@@ -10,6 +15,7 @@ interface StoryReaderInnerProps {
   connectionMap: Map<string, Connection>;
   embed?: boolean;
   shared?: boolean;
+  chatEligible?: boolean;
 }
 
 export function StoryReaderInner({
@@ -18,7 +24,13 @@ export function StoryReaderInner({
   connectionMap,
   embed = false,
   shared = false,
+  chatEligible = false,
 }: StoryReaderInnerProps) {
+  const agentBridgeRef = useRef<AgentBridge | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const { enabled: chatEnabled } = useChatConfig();
+  const showChat = chatEligible && chatEnabled;
+
   return (
     <Box h="100vh" display="flex" flexDirection="column">
       {!embed && (
@@ -48,8 +60,20 @@ export function StoryReaderInner({
           story={story}
           datasetMap={datasetMap}
           connectionMap={connectionMap}
+          agentBridgeRef={agentBridgeRef}
         />
       </Box>
+
+      {showChat && !chatOpen && (
+        <AskThisMapButton onClick={() => setChatOpen(true)} />
+      )}
+      {showChat && chatOpen && (
+        <ChatPanel
+          storyId={story.id}
+          bridgeRef={agentBridgeRef}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
     </Box>
   );
 }

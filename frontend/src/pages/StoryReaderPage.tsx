@@ -182,6 +182,7 @@ export default function StoryReaderPage({
       connectionMap={connectionMap}
       embed={embed}
       shared={shared}
+      chatEligible={!configParam}
     />
   );
 }

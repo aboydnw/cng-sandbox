@@ -1,4 +1,11 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
@@ -19,6 +26,7 @@ import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
+import type { AgentBridge } from "../lib/chat/types";
 
 function ScrollytellingBlock({
   chapters,
@@ -291,15 +299,36 @@ export function StoryRenderer({
   datasetMap,
   connectionMap,
   onChapterClick,
+  agentBridgeRef,
 }: {
   story: Story;
   datasetMap: Map<string, Dataset | null>;
   connectionMap?: Map<string, Connection>;
   onChapterClick?: (chapterId: string) => void;
+  agentBridgeRef?: React.RefObject<AgentBridge | null>;
 }) {
   const sortedChapters = useMemo(
     () => [...story.chapters].sort((a, b) => a.order - b.order),
     [story]
+  );
+
+  // No-op bridge until a ScrollytellingBlock claims the ref (Task 5). Keeps
+  // the chat panel functional (chapter list resolves) before map control lands.
+  useImperativeHandle(
+    agentBridgeRef,
+    () => ({
+      flyTo: () => {},
+      goToChapter: () => {},
+      setLayerVisibility: () => {},
+      highlightLocation: () => {},
+      getActiveLayers: () => [],
+      getChapters: () =>
+        sortedChapters.map((chapter, index) => ({
+          index,
+          title: chapter.title,
+        })),
+    }),
+    [sortedChapters]
   );
 
   const contentBlocks = useMemo(

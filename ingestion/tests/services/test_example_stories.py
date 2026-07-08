@@ -194,9 +194,7 @@ def test_seed_populates_chapter_layer_config_with_resolved_dataset_id():
         session.close()
 
     raster_chapter = next(
-        c
-        for c in chapters
-        if c["type"] == "scrollytelling" and c["layer_config"]
+        c for c in chapters if c["type"] == "scrollytelling" and c["layer_config"]
     )
     assert raster_chapter["layer_config"]["dataset_id"] == "gebco-id"
     assert raster_chapter["layer_config"]["colormap"] == "terrain"

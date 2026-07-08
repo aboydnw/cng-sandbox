@@ -89,7 +89,7 @@ TOOL_DEFINITIONS = [
     ),
     Tool(
         name="create_connection",
-        description="Create a new external tile source connection (zarr, cog, pmtiles, xyz, geoparquet).",
+        description="Create a new external tile source connection (zarr, cog, pmtiles, xyz, geoparquet, copc).",
         inputSchema={
             "type": "object",
             "properties": {
@@ -97,7 +97,7 @@ TOOL_DEFINITIONS = [
                 "url": {"type": "string", "description": "URL or S3 URI for the tile source"},
                 "connection_type": {
                     "type": "string",
-                    "description": "One of: zarr, cog, pmtiles, xyz, geoparquet",
+                    "description": "One of: zarr, cog, pmtiles, xyz, geoparquet, copc",
                 },
                 "bounds": {
                     "type": "array",
@@ -125,8 +125,13 @@ TOOL_DEFINITIONS = [
                 "colormap": {"type": "string"},
                 "rescale_min": {"type": "number"},
                 "rescale_max": {"type": "number"},
+                "color_mode": {
+                    "type": "string",
+                    "enum": ["elevation", "intensity", "classification", "rgb"],
+                    "description": "Point-cloud (copc) coloring mode; use instead of colormap",
+                },
             },
-            "required": ["dataset_id", "colormap"],
+            "required": ["dataset_id"],
         },
     ),
     Tool(
@@ -140,7 +145,7 @@ TOOL_DEFINITIONS = [
     ),
     Tool(
         name="ingest_url",
-        description="Ingest a remote geospatial file (GeoTIFF, GeoJSON, Shapefile .zip, NetCDF, HDF5) into a dataset. Waits for conversion to finish and returns the dataset ID.",
+        description="Ingest a remote geospatial file (GeoTIFF, GeoJSON, Shapefile .zip, NetCDF, HDF5, LAS/LAZ point clouds) into a dataset. Waits for conversion to finish and returns the dataset ID.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -310,9 +315,10 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
             return [await validate_layer_config_tool(
                 client,
                 dataset_id=arguments["dataset_id"],
-                colormap=arguments["colormap"],
+                colormap=arguments.get("colormap"),
                 rescale_min=arguments.get("rescale_min"),
                 rescale_max=arguments.get("rescale_max"),
+                color_mode=arguments.get("color_mode"),
             )]
         if name == "get_job_status":
             return [await get_job_status_tool(client, job_id=arguments["job_id"])]

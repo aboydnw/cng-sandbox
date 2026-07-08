@@ -78,7 +78,7 @@ Create a new external tile source connection.
 **Input**:
 - `name` (string)
 - `url` (string)
-- `connection_type` (string): one of `zarr`, `cog`, `pmtiles`, `xyz`, `geoparquet`
+- `connection_type` (string): one of `zarr`, `cog`, `pmtiles`, `xyz`, `geoparquet`, `copc`
 - `bounds` (array, optional): `[west, south, east, north]`
 - `min_zoom` / `max_zoom` (integer, optional)
 - `tile_type` (string, optional): tile image format (e.g. `png`, `webp`)
@@ -89,7 +89,7 @@ Create a new external tile source connection.
 
 ### validate_layer_config
 Check if a layer configuration is valid before creating a chapter.
-**Input**: `dataset_id`, `colormap`, optional `rescale_min`/`rescale_max`
+**Input**: `dataset_id`, optional `colormap`, `rescale_min`/`rescale_max`, and `color_mode` (`elevation`/`intensity`/`classification`/`rgb`) for point-cloud (copc) layers. Provide either a `colormap` (raster) or a `color_mode` (copc).
 
 ## Ingestion & export
 

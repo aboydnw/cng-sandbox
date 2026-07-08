@@ -45,3 +45,26 @@ async def test_validate_layer_config_with_rescale(mock_http_client):
     )
     assert "Rescale" in result.text
     assert "0" in result.text and "100" in result.text
+
+
+@pytest.mark.asyncio
+async def test_validate_layer_config_copc_color_mode_no_colormap(mock_http_client):
+    mock_http_client.post = AsyncMock(return_value=_make_response({"valid": True}))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await validate_layer_config_tool(
+        client, dataset_id="ds_1", color_mode="elevation"
+    )
+    assert isinstance(result, TextContent)
+    assert "Valid" in result.text
+    assert "elevation" in result.text
+    sent = mock_http_client.post.call_args.kwargs["json"]
+    assert sent["color_mode"] == "elevation"
+    assert "colormap" not in sent
+
+
+@pytest.mark.asyncio
+async def test_validate_layer_config_requires_colormap_or_color_mode(mock_http_client):
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await validate_layer_config_tool(client, dataset_id="ds_1")
+    assert isinstance(result, TextContent)
+    assert "Error" in result.text

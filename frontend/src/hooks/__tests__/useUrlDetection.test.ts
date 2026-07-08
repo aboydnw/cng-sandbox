@@ -25,6 +25,23 @@ describe("detectUrlRoute", () => {
     expect(result.route).toBe("pmtiles");
   });
 
+  it("routes .copc.laz URLs to copc connection", async () => {
+    const inspect = vi.fn().mockResolvedValue({
+      format: "copc",
+      is_cog: false,
+      size_bytes: 123,
+      bounds: [-123.08, 44.05, -123.06, 44.06],
+      crs: "EPSG:2992",
+    });
+    const result = await detectUrlRoute(
+      "https://example.com/autzen-classified.copc.laz",
+      { inspect }
+    );
+    expect(result.route).toBe("copc");
+    expect(result.crs).toBe("EPSG:2992");
+    expect(result.bounds).toEqual([-123.08, 44.05, -123.06, 44.06]);
+  });
+
   it("routes .parquet URLs to geoparquet modal (rule 3)", async () => {
     const result = await detectUrlRoute("https://cdn.example.com/data.parquet");
     expect(result.route).toBe("parquet");

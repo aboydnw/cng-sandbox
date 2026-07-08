@@ -192,6 +192,17 @@ export function buildLayersForChapter(
       };
     }
 
+    if (conn.connection_type === "copc") {
+      return {
+        layers: [],
+        renderMetadata: {
+          renderMode: "client",
+          reason: "point cloud",
+          sizeBytes: null,
+        },
+      };
+    }
+
     const tileUrl = buildConnectionTileUrl(conn);
 
     if (conn.connection_type === "pmtiles" && conn.tile_type === "vector") {
@@ -316,6 +327,17 @@ export function buildLayersForChapter(
 
   const ds = datasetMap.get(lc.dataset_id);
   if (!ds) return { layers: [] };
+
+  if (ds.dataset_type === "pointcloud") {
+    return {
+      layers: [],
+      renderMetadata: {
+        renderMode: "client",
+        reason: "point cloud",
+        sizeBytes: null,
+      },
+    };
+  }
 
   if (ds.dataset_type === "raster") {
     const item = datasetToMapItem(ds);

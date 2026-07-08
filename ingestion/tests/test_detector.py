@@ -29,6 +29,15 @@ def test_detect_netcdf():
     assert detect_format("sst.nc") == FormatPair.NETCDF_TO_COG
 
 
+def test_detect_format_accepts_laz():
+    assert detect_format("scan.laz") == FormatPair.LAS_TO_COPC
+    assert detect_format("scan.las") == FormatPair.LAS_TO_COPC
+
+
+def test_validate_magic_bytes_laz():
+    validate_magic_bytes("tests/fixtures/tiny.laz", FormatPair.LAS_TO_COPC)
+
+
 def test_detect_unsupported():
     with pytest.raises(UnsupportedFormatError):
         detect_format("data.xlsx")

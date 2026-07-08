@@ -36,6 +36,11 @@ _MIME_WHITELIST: dict[FormatPair, set[str]] = {
         "application/x-hdf",
         "application/octet-stream",
     },
+    FormatPair.LAS_TO_COPC: {
+        "application/octet-stream",
+        "application/vnd.las",
+        "application/vnd.laszip",
+    },
 }
 
 
@@ -47,7 +52,7 @@ def detect_format(filename: str) -> FormatPair:
     except ValueError as exc:
         raise UnsupportedFormatError(
             f"Unsupported file format: '{ext}'. "
-            f"Accepted: .tif, .tiff, .shp, .zip, .geojson, .json, .nc, .h5, .hdf5"
+            f"Accepted: .tif, .tiff, .shp, .zip, .geojson, .json, .nc, .h5, .hdf5, .las, .laz"
         ) from exc
 
 

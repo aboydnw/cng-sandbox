@@ -164,6 +164,9 @@ function ScrollytellingBlock({
             basemap={basemap}
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
+            terrain={activeChapter?.map_state.terrain}
+            globe={activeChapter?.map_state.globe}
+            buildings={activeChapter?.map_state.buildings}
             interactive={false}
           />
         )}

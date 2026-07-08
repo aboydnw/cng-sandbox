@@ -147,6 +147,9 @@ export function MapChapter({
             layers={layers}
             basemap={basemap}
             onBasemapChange={setBasemap}
+            terrain={chapter.map_state.terrain}
+            globe={chapter.map_state.globe}
+            buildings={chapter.map_state.buildings}
           >
             {renderMetadata && (
               <Box position="absolute" top={3} right={3} zIndex={10}>

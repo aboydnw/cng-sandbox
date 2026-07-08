@@ -324,6 +324,9 @@ export default function StoryEditorPage() {
               basemap={basemap}
               onBasemapChange={setBasemap}
               transitionDuration={transitionDuration}
+              terrain={activeChapter.map_state.terrain}
+              globe={activeChapter.map_state.globe}
+              buildings={activeChapter.map_state.buildings}
             >
               {previewRenderMetadata && (
                 <Box position="absolute" top={3} right={3} zIndex={10}>

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useWorkspace } from "./useWorkspace";
 import { useSaveStatus } from "./useSaveStatus";
-import { FlyToInterpolator } from "@deck.gl/core";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -54,7 +53,6 @@ export function useStoryEditor() {
   const [transitionDuration, setTransitionDuration] = useState<
     number | undefined
   >(undefined);
-  const flyToRef = useRef(new FlyToInterpolator());
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -570,7 +568,6 @@ export function useStoryEditor() {
     viewSavedFlash,
     publishDialogOpen,
     transitionDuration,
-    flyToRef,
     mapContainerRef,
     allDatasets,
     allConnections,

@@ -77,7 +77,6 @@ export default function StoryEditorPage() {
     viewSavedFlash,
     publishDialogOpen,
     transitionDuration,
-    flyToRef,
     mapContainerRef,
     allDatasets,
     allConnections,
@@ -325,9 +324,6 @@ export default function StoryEditorPage() {
               basemap={basemap}
               onBasemapChange={setBasemap}
               transitionDuration={transitionDuration}
-              transitionInterpolator={
-                transitionDuration ? flyToRef.current : undefined
-              }
             >
               {previewRenderMetadata && (
                 <Box position="absolute" top={3} right={3} zIndex={10}>

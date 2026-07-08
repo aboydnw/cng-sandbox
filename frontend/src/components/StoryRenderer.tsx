@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
-import { FlyToInterpolator } from "@deck.gl/core";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
@@ -19,6 +18,7 @@ import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
+import { chapterTransitionDuration } from "../lib/story/chapterTransition";
 
 function ScrollytellingBlock({
   chapters,
@@ -45,7 +45,6 @@ function ScrollytellingBlock({
   const [transitionDuration, setTransitionDuration] = useState<
     number | undefined
   >(undefined);
-  const flyToRef = useRef(new FlyToInterpolator());
   const stepsRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
 
@@ -106,7 +105,7 @@ function ScrollytellingBlock({
 
     setBasemap(chapter.map_state.basemap);
 
-    setTransitionDuration(chapter.transition === "fly-to" ? 2500 : undefined);
+    setTransitionDuration(chapterTransitionDuration(chapter.transition));
 
     setCamera({
       longitude: chapter.map_state.center[0],
@@ -165,9 +164,6 @@ function ScrollytellingBlock({
             basemap={basemap}
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
-            transitionInterpolator={
-              transitionDuration ? flyToRef.current : undefined
-            }
             interactive={false}
           />
         )}

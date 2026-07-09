@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { migrateStory } from "../migration";
+import { chapterAllowsTerrain } from "../terrainPolicy";
 import type { Story } from "../types";
 
 function makeOldStory(): Record<string, unknown> {
@@ -204,6 +205,156 @@ describe("migrateStory", () => {
     expect(migrated.chapters[0].type).toBe("prose");
     expect("map_state" in migrated.chapters[0]).toBe(false);
     expect("layer_config" in migrated.chapters[0]).toBe(false);
+  });
+
+  it("does not backfill the story dataset into chapters with an explicit null layer_config", () => {
+    const old = {
+      id: "s-3",
+      dataset_id: "ds-gebco",
+      chapters: [
+        {
+          id: "scene",
+          order: 0,
+          type: "scrollytelling",
+          title: "The Himalaya",
+          narrative: "",
+          map_state: {
+            center: [86.925, 27.988],
+            zoom: 9,
+            bearing: 20,
+            pitch: 68,
+            basemap: "streets",
+            terrain: { enabled: true, exaggeration: 1.5 },
+          },
+          transition: "fly-to",
+          overlay_position: "left",
+          layer_config: null,
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(old);
+    const ch = migrated.chapters[0];
+    expect(ch.type).toBe("scrollytelling");
+    if (ch.type === "scrollytelling") {
+      expect(ch.layer_config.dataset_id).toBe("");
+      expect(ch.layer_config.connection_id).toBeUndefined();
+    }
+  });
+
+  it("still backfills the story dataset when layer_config is absent (legacy story)", () => {
+    const old = {
+      id: "s-4",
+      dataset_id: "ds-legacy",
+      chapters: [
+        {
+          id: "legacy",
+          order: 0,
+          title: "Legacy",
+          narrative: "",
+          map_state: {
+            center: [0, 0],
+            zoom: 2,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          },
+          transition: "fly-to",
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(old);
+    const ch = migrated.chapters[0];
+    expect(ch.type === "scrollytelling" && ch.layer_config.dataset_id).toBe(
+      "ds-legacy"
+    );
+  });
+
+  it("keeps terrain allowed on seeded scene chapters after migration", () => {
+    const seeded = {
+      id: "high-places",
+      title: "Earth's high places",
+      dataset_id: "ds-gebco",
+      chapters: [
+        {
+          id: "globe",
+          order: 0,
+          type: "scrollytelling",
+          title: "One planet, seen whole",
+          narrative: "",
+          map_state: {
+            center: [80, 20],
+            zoom: 1.7,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+            globe: true,
+          },
+          transition: "fly-to",
+          overlay_position: "left",
+          layer_config: null,
+        },
+        {
+          id: "himalaya",
+          order: 1,
+          type: "scrollytelling",
+          title: "The Himalaya",
+          narrative: "",
+          map_state: {
+            center: [86.925, 27.988],
+            zoom: 9,
+            bearing: 20,
+            pitch: 68,
+            basemap: "streets",
+            terrain: { enabled: true, exaggeration: 1.5 },
+          },
+          transition: "fly-to",
+          overlay_position: "left",
+          layer_config: null,
+        },
+        {
+          id: "data",
+          order: 2,
+          type: "scrollytelling",
+          title: "Global relief",
+          narrative: "",
+          map_state: {
+            center: [0, 0],
+            zoom: 2,
+            bearing: 0,
+            pitch: 0,
+            basemap: "streets",
+          },
+          transition: "fly-to",
+          overlay_position: "left",
+          layer_config: {
+            dataset_id: "ds-gebco",
+            colormap: "gist_earth",
+            opacity: 0.9,
+            basemap: "streets",
+          },
+        },
+      ],
+    } as Record<string, unknown>;
+
+    const migrated = migrateStory(seeded);
+    const [globe, himalaya, data] = migrated.chapters;
+    if (
+      globe.type !== "scrollytelling" ||
+      himalaya.type !== "scrollytelling" ||
+      data.type !== "scrollytelling"
+    ) {
+      throw new Error("expected scrollytelling chapters");
+    }
+    expect(chapterAllowsTerrain(globe.layer_config)).toBe(true);
+    expect(chapterAllowsTerrain(himalaya.layer_config)).toBe(true);
+    expect(himalaya.map_state.terrain).toEqual({
+      enabled: true,
+      exaggeration: 1.5,
+    });
+    expect(globe.map_state.globe).toBe(true);
+    expect(chapterAllowsTerrain(data.layer_config)).toBe(false);
   });
 
   it("preserves map_state and layer_config on scrollytelling and map chapters", () => {

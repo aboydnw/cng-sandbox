@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from slowapi.util import get_remote_address
 from sse_starlette.sse import EventSourceResponse
 
 from src.config import Settings, get_settings
@@ -186,7 +187,9 @@ async def chat_config(request: Request):
 @router.post("/chat")
 # Static string: slowapi's decorator needs a literal. The configurable
 # settings.chat_rate_limit is retained for documentation and future wiring.
-@limiter.limit("10/minute")
+# Keyed on IP alone (not the shared workspace+IP key func): X-Workspace-Id is
+# client-controlled, so rotating it would otherwise mint unlimited buckets.
+@limiter.limit("10/minute", key_func=get_remote_address)
 async def chat(request: Request, body: ChatRequest):
     settings = getattr(request.app.state, "settings", None) or get_settings()
     if not chat_available(settings):

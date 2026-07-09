@@ -88,6 +88,29 @@ def test_post_chat_rejects_oversized_message(monkeypatch):
     assert resp.status_code == 400
 
 
+def test_chat_rate_limit_shared_across_workspace_rotation(monkeypatch):
+    from src.rate_limit import limiter
+
+    client = _client(monkeypatch)
+    limiter.reset()
+    try:
+        statuses = []
+        for i in range(12):
+            resp = client.post(
+                "/api/chat",
+                json={
+                    "story_id": "s1",
+                    "messages": [{"role": "user", "content": "q"}],
+                },
+                headers={"X-Workspace-Id": f"ws{i:06d}"},
+            )
+            statuses.append(resp.status_code)
+    finally:
+        limiter.reset()
+    assert statuses[0] == 200
+    assert 429 in statuses
+
+
 def test_post_chat_streams_relayed_events(monkeypatch):
     client = _client(monkeypatch)
     resp = client.post(

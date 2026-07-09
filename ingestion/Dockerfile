@@ -51,9 +51,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # via micromamba into a dedicated prefix. Symlink only the `pdal` binary onto
 # PATH (not the whole env bin, which would shadow the system python3 with
 # conda's). RPATH lets the symlinked binary find its own libs.
-COPY --from=mambaorg/micromamba:latest /bin/micromamba /usr/local/bin/micromamba
+# Pin both the micromamba binary and the pdal version so a silent upstream bump
+# can't change conversion behavior. pdal 2.10.2 / micromamba 2.8.1 are the
+# versions resolved at the time of writing (2026-07).
+COPY --from=mambaorg/micromamba:2.8.1 /bin/micromamba /usr/local/bin/micromamba
 ENV MAMBA_ROOT_PREFIX=/opt/conda
-RUN micromamba create -y -p /opt/pdal -c conda-forge pdal \
+RUN micromamba create -y -p /opt/pdal -c conda-forge 'pdal=2.10.2' \
     && micromamba clean --all --yes \
     && ln -s /opt/pdal/bin/pdal /usr/local/bin/pdal
 

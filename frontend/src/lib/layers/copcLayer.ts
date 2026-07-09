@@ -23,6 +23,14 @@ export interface CopcControlHandle {
 export const DEFAULT_COPC_POINT_BUDGET = 5_000_000;
 
 /**
+ * CSS class applied to the plugin's built-in control panel so the app can hide
+ * it (see `styles.css`). The app renders its own brand-consistent point-cloud
+ * controls, so the plugin's panel would be a duplicate. Color mode, point size,
+ * and streaming are driven imperatively through the returned handle instead.
+ */
+export const HIDDEN_CONTROL_CLASS = "cng-lidar-control-hidden";
+
+/**
  * Thin adapter over `maplibre-gl-lidar`'s `LidarControl`. Isolates the plugin
  * surface in one file so the lifecycle hook and its tests can mock it.
  */
@@ -36,11 +44,12 @@ export function buildCopcControl(opts: CopcControlOptions): CopcControlHandle {
 
   const control = new LidarControl({
     collapsed: true,
+    className: HIDDEN_CONTROL_CLASS,
     colorScheme: colorMode,
     pointSize,
     copcLoadingMode: "dynamic",
     streamingPointBudget: pointBudget,
-    autoZoom: true,
+    autoZoom: false,
     shareUrl: false,
     restoreFromUrl: false,
   });

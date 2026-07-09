@@ -1,6 +1,8 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text, Slider } from "@chakra-ui/react";
 import { useRef } from "react";
-import type { ChapterType, LayerConfig } from "../lib/story";
+import { Globe, Mountains, Buildings } from "@phosphor-icons/react";
+import type { ChapterType, LayerConfig, MapState } from "../lib/story";
+import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 import type { Connection, Dataset, MapItemSource, Timestep } from "../types";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
@@ -28,6 +30,8 @@ interface NarrativeEditorProps {
   overlayPosition: "left" | "right";
   onOverlayPositionChange: (position: "left" | "right") => void;
   temporalTimesteps?: Timestep[];
+  mapState: MapState;
+  onMapStateChange: (partial: Partial<MapState>) => void;
 }
 
 export function NarrativeEditor({
@@ -47,6 +51,8 @@ export function NarrativeEditor({
   overlayPosition,
   onOverlayPositionChange,
   temporalTimesteps,
+  mapState,
+  onMapStateChange,
 }: NarrativeEditorProps) {
   const narrativeRef = useRef<HTMLTextAreaElement>(null);
 
@@ -148,6 +154,116 @@ export function NarrativeEditor({
                 {pos}
               </Box>
             ))}
+          </Flex>
+        </Box>
+      )}
+
+      {showMapControls && (
+        <Box mt={4}>
+          <Text
+            fontSize="xs"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing="0.5px"
+            color="brand.brown"
+            mb={2}
+          >
+            3D
+          </Text>
+
+          <Flex align="center" justify="space-between" mb={1}>
+            <Flex align="center" gap={2}>
+              <Mountains size={16} color="#CF3F02" />
+              <Text fontSize="sm">Terrain</Text>
+            </Flex>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="terrain"
+              disabled={!chapterAllowsTerrain(layerConfig)}
+              checked={!!mapState.terrain?.enabled}
+              onChange={(e) =>
+                onMapStateChange({
+                  terrain: {
+                    enabled: e.target.checked,
+                    exaggeration: mapState.terrain?.exaggeration ?? 1,
+                  },
+                })
+              }
+              style={{
+                accentColor: "#CF3F02",
+                cursor: chapterAllowsTerrain(layerConfig)
+                  ? "pointer"
+                  : "not-allowed",
+              }}
+            />
+          </Flex>
+          {!chapterAllowsTerrain(layerConfig) && (
+            <Text fontSize="xs" color="gray.500" mb={2}>
+              Terrain is off for chapters with data layers — data can&apos;t
+              drape on 3D terrain yet.
+            </Text>
+          )}
+
+          {mapState.terrain?.enabled && chapterAllowsTerrain(layerConfig) && (
+            <Box mb={2}>
+              <Text fontSize="xs" color="gray.600" mb={1}>
+                Exaggeration: {(mapState.terrain?.exaggeration ?? 1).toFixed(1)}
+                ×
+              </Text>
+              <Slider.Root
+                min={0.5}
+                max={3}
+                step={0.1}
+                value={[mapState.terrain?.exaggeration ?? 1]}
+                onValueChange={({ value }: { value: number[] }) =>
+                  onMapStateChange({
+                    terrain: { enabled: true, exaggeration: value[0] },
+                  })
+                }
+              >
+                <Slider.Control>
+                  <Slider.Track>
+                    <Slider.Range />
+                  </Slider.Track>
+                  <Slider.Thumb index={0}>
+                    <Slider.HiddenInput />
+                  </Slider.Thumb>
+                </Slider.Control>
+              </Slider.Root>
+            </Box>
+          )}
+
+          <Flex align="center" justify="space-between" mb={2}>
+            <Flex align="center" gap={2}>
+              <Globe size={16} color="#CF3F02" />
+              <Text fontSize="sm">Globe</Text>
+            </Flex>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="globe"
+              checked={!!mapState.globe}
+              onChange={(e) => onMapStateChange({ globe: e.target.checked })}
+              style={{ accentColor: "#CF3F02", cursor: "pointer" }}
+            />
+          </Flex>
+
+          <Flex align="center" justify="space-between">
+            <Flex align="center" gap={2}>
+              <Buildings size={16} color="#CF3F02" />
+              <Text fontSize="sm">Buildings</Text>
+            </Flex>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="buildings"
+              checked={!!mapState.buildings}
+              onChange={(e) =>
+                onMapStateChange({ buildings: e.target.checked })
+              }
+              style={{ accentColor: "#CF3F02", cursor: "pointer" }}
+            />
           </Flex>
         </Box>
       )}

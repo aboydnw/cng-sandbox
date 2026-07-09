@@ -9,8 +9,7 @@ export const ZARR_NOT_CONSOLIDATED =
   "`zarr.json` (v3) to enumerate variables. Enter a variable path below to probe a single array directly.";
 
 export type ZarrCompatibility =
-  | { kind: "ok" }
-  | { kind: "incompatible"; reason: string };
+  { kind: "ok" } | { kind: "incompatible"; reason: string };
 
 /** Above this length, the time coord is decimated to ~5000 evenly-spaced samples. */
 const MAX_TIME_STEPS_DECODED = 5000;

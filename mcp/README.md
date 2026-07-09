@@ -60,6 +60,11 @@ Create a new story.
 - `title` (string)
 - `description` (string)
 - `chapters` (array): each with `title`, `narrative`, `map_state`, and `layer_config` (containing `dataset_id` or `connection_id`)
+  - `map_state`: `{ center: [lng, lat], zoom, bearing, pitch, basemap }` plus optional 3D fields:
+    - `terrain`: `{ enabled: bool, exaggeration: number }` — 3D terrain relief. Ignored when the chapter has a bound data layer (data can't drape on terrain in v1); use terrain on scene-setting chapters only.
+    - `globe`: `bool` — globe projection with atmosphere; works with data layers.
+    - `buildings`: `bool` — extruded 3D buildings (OpenFreeMap).
+    - Omit these for a flat 2D map. Portable/archival HTML exports ignore 3D fields and render flat.
 
 ### update_story
 Modify an existing story.

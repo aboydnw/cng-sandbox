@@ -10,12 +10,20 @@ function uuid(): string {
   });
 }
 
+export interface TerrainState {
+  enabled: boolean;
+  exaggeration: number;
+}
+
 export interface MapState {
   center: [number, number];
   zoom: number;
   bearing: number;
   pitch: number;
   basemap: string;
+  terrain?: TerrainState;
+  globe?: boolean;
+  buildings?: boolean;
 }
 
 export interface LayerConfig {
@@ -34,12 +42,7 @@ export interface LayerConfig {
 }
 
 export type ChapterType =
-  | "scrollytelling"
-  | "prose"
-  | "map"
-  | "image"
-  | "video"
-  | "chart";
+  "scrollytelling" | "prose" | "map" | "image" | "video" | "chart";
 
 interface BaseChapter {
   id: string;
@@ -111,9 +114,7 @@ export interface DatasetHistogramSource {
 }
 
 export type ChartSource =
-  | CsvSource
-  | DatasetTimeseriesSource
-  | DatasetHistogramSource;
+  CsvSource | DatasetTimeseriesSource | DatasetHistogramSource;
 
 export interface ChartViz {
   kind: "line" | "bar";

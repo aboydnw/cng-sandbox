@@ -123,9 +123,11 @@ The frontend's Vite dev server proxies `/api` → ingestion, `/cog` → COG tile
 
 ## Frontend
 
-Built with React 19, Chakra UI v3, MapLibre GL JS (vector maps), and deck.gl (raster maps). A small set of vendored utilities from `@maptool/core` live in `src/lib/maptool/`.
+Built with React 19, Chakra UI v3, MapLibre GL JS, and deck.gl. `UnifiedMap` composites the two: a `react-map-gl/maplibre` map is the root and owns the camera and basemap, and deck.gl draws raster/vector layers on top via a `MapboxOverlay` (`@deck.gl/mapbox`). A small set of vendored utilities from `@maptool/core` live in `src/lib/maptool/`.
 
 A separate Vite library workspace at `frontend/archive-runtime/` builds the interactive-export runtime (a single `bundle.js` + `bundle.css`) that the ingestion service embeds into archival HTML exports. The ingestion Dockerfile builds this bundle in a dedicated stage and copies it to `/app/runtime_assets`; `ingestion/src/services/interactive_export/html_shell.py` emits a real shell loading the bundle when it's available.
+
+A reader-facing "Ask this map" chat agent lives in `src/lib/chat/` (conversation loop, SSE client, and 8 `zod`-validated client-side tools that drive the map) and `src/components/chat/` (panel + entry button). It streams from the ingestion `/api/chat` SSE relay and is gated on `GET /api/chat/config`; the backend never executes tools — they run in the browser. See the chat endpoints in [docs/api-reference.md](docs/api-reference.md).
 
 ### Running tests
 

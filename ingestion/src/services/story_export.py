@@ -1,6 +1,5 @@
 """Serialize a StoryRow to a portable CngRcConfig payload."""
 
-import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -19,6 +18,7 @@ from src.models.cng_rc import (
 from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
+from src.services import story_utils
 
 _CONNECTION_TYPE_MAP = {
     "cog": "raster-cog",
@@ -32,7 +32,7 @@ _CONNECTION_TYPE_MAP = {
 
 def build_config(story: StoryRow, session: Session) -> CngRcConfig:
     """Build a portable CngRcConfig from a StoryRow."""
-    chapters_raw = json.loads(story.chapters_json) if story.chapters_json else []
+    chapters_raw = story_utils.parse_chapters(story.chapters_json)
 
     layers: dict[str, CngRcLayer] = {}
     assets: dict[str, CngRcAsset] = {}

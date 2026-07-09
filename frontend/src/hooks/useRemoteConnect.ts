@@ -3,11 +3,7 @@ import { workspaceFetch } from "../lib/api";
 import { config } from "../config";
 
 type RemoteConnectPhase =
-  | "idle"
-  | "discovering"
-  | "preview"
-  | "ingesting"
-  | "error";
+  "idle" | "discovering" | "preview" | "ingesting" | "error";
 
 interface DiscoverResult {
   files: { url: string; filename: string }[];

@@ -21,7 +21,12 @@ import { ExportDialog } from "../components/ExportDialog";
 import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
-import { isMapBoundChapter, DEFAULT_LAYER_CONFIG } from "../lib/story";
+import {
+  isMapBoundChapter,
+  DEFAULT_LAYER_CONFIG,
+  DEFAULT_MAP_STATE,
+} from "../lib/story";
+import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 import { ChapterPreview } from "../components/editor/ChapterPreview";
 import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
 import { ChartChapterEditor } from "../components/editor/ChartChapterEditor";
@@ -77,7 +82,6 @@ export default function StoryEditorPage() {
     viewSavedFlash,
     publishDialogOpen,
     transitionDuration,
-    flyToRef,
     mapContainerRef,
     allDatasets,
     allConnections,
@@ -99,6 +103,7 @@ export default function StoryEditorPage() {
     updateChapterLayerConfig,
     updateChapterType,
     updateChapterOverlayPosition,
+    updateChapterMapState,
     updateChapter,
     handleDatasetReady,
     handlePublish,
@@ -325,9 +330,10 @@ export default function StoryEditorPage() {
               basemap={basemap}
               onBasemapChange={setBasemap}
               transitionDuration={transitionDuration}
-              transitionInterpolator={
-                transitionDuration ? flyToRef.current : undefined
-              }
+              terrain={activeChapter.map_state.terrain}
+              globe={activeChapter.map_state.globe}
+              buildings={activeChapter.map_state.buildings}
+              allowTerrain={chapterAllowsTerrain(activeChapter.layer_config)}
             >
               {previewRenderMetadata && (
                 <Box position="absolute" top={3} right={3} zIndex={10}>
@@ -458,6 +464,12 @@ export default function StoryEditorPage() {
               }
               onOverlayPositionChange={updateChapterOverlayPosition}
               temporalTimesteps={activeDatasetTimesteps}
+              mapState={
+                isMapBoundChapter(activeChapter)
+                  ? activeChapter.map_state
+                  : DEFAULT_MAP_STATE
+              }
+              onMapStateChange={updateChapterMapState}
             />
           ) : (
             <Flex h="100%" align="center" justify="center">

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from pydantic import ValidationError
 
@@ -358,3 +360,72 @@ def test_unknown_chapter_type_rejected():
     }
     with pytest.raises(ValidationError):
         StoryCreate(chapters=[payload])
+
+
+def _chapter_with_3d():
+    return {
+        "id": "c1",
+        "order": 0,
+        "type": "scrollytelling",
+        "title": "Globe intro",
+        "narrative": "",
+        "map_state": {
+            "center": [0, 0],
+            "zoom": 2,
+            "bearing": 0,
+            "pitch": 45,
+            "basemap": "streets",
+            "terrain": {"enabled": True, "exaggeration": 1.5},
+            "globe": True,
+            "buildings": True,
+        },
+        "layer_config": {
+            "dataset_id": "x",
+            "colormap": "viridis",
+            "opacity": 0.8,
+            "basemap": "streets",
+        },
+        "transition": "fly-to",
+        "overlay_position": "left",
+    }
+
+
+def test_map_state_3d_fields_survive_pydantic_write_path():
+    story = StoryCreate(chapters=[_chapter_with_3d()])
+    # Mirrors routes/stories.py: chapters are re-serialized via model_dump()
+    # before being stored. The 3D fields must not be dropped there.
+    dumped = json.loads(json.dumps([ch.model_dump() for ch in story.chapters]))
+    ms = dumped[0]["map_state"]
+    assert ms["terrain"] == {"enabled": True, "exaggeration": 1.5}
+    assert ms["globe"] is True
+    assert ms["buildings"] is True
+
+
+def test_map_state_omits_3d_fields_when_absent():
+    payload = _chapter_with_3d()
+    del payload["map_state"]["terrain"]
+    del payload["map_state"]["globe"]
+    del payload["map_state"]["buildings"]
+    story = StoryCreate(chapters=[payload])
+    ms = story.chapters[0].map_state
+    assert ms.terrain is None
+    assert ms.globe is None
+    assert ms.buildings is None
+
+
+def test_map_state_3d_fields_round_trip_in_db(db_session):
+    chapters = [_chapter_with_3d()]
+    row = StoryRow(
+        id="s-3d",
+        title="3D",
+        chapters_json=json.dumps(chapters),
+    )
+    db_session.add(row)
+    db_session.commit()
+    db_session.expire_all()
+
+    loaded = db_session.get(StoryRow, "s-3d")
+    ms = json.loads(loaded.chapters_json)[0]["map_state"]
+    assert ms["terrain"] == {"enabled": True, "exaggeration": 1.5}
+    assert ms["globe"] is True
+    assert ms["buildings"] is True

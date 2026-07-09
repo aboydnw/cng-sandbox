@@ -77,6 +77,13 @@ Binary assets uploaded to support story chapters (image chapters and chart chapt
 - `POST /api/connect-remote` — Connect remote files as a mosaic or temporal dataset. Rate-limited to 30/hour
 - `POST /api/connect-source-coop` — Register a curated source.coop product as a zero-copy pgSTAC collection (v1 products: `ausantarctic/ghrsst-mur-v2`, `alexgleith/gebco-2024`, `vizzuality/lg-land-carbon-data`, `vida/google-microsoft-osm-open-buildings`). Raster products (`kind="mosaic"`) run a STAC/path enumerator and register as pgSTAC mosaics; PMTiles products (`kind="pmtiles"`) read the remote PMTiles v3 header for bounds/zoom and register as a `FormatPair.PMTILES` vector dataset pointing at the source URL.
 
+## Reader chat agent ("Ask this map")
+
+Reader-facing conversational agent scoped to a single published or example story. The backend is a thin relay: it assembles a deterministic, cacheable per-story system prompt (built from the same reads as the story exporter, in `src/services/chat_context.py`) plus 8 tool definitions, then proxies the Anthropic Messages API stream (`src/services/chat_relay.py`). It never executes a tool — the browser runs the 8 client-side tools (`fly_to`, `go_to_chapter`, `set_layer_visibility`, `highlight_location`, `query_point`, `get_area_statistics`, `query_features`, `get_timeseries`) and drives the map. Disabled by default; active only when `CHAT_ENABLED=true` and `ANTHROPIC_API_KEY_CHAT` is set (chat settings live in `src/config.py`: `chat_model`, `chat_max_tokens`, `chat_max_turns`, `chat_daily_token_budget`, `chat_rate_limit`).
+
+- `GET /api/chat/config` — Probe returning `{"enabled": bool}` so the frontend can show or hide the chat entry point. No auth.
+- `POST /api/chat` — SSE relay; body `{"story_id": str, "messages": [...]}`. Streams `text`, `tool_use`, `done`, and `error` events (the browser executes any `tool_use` locally). Returns 404 when chat is disabled or the story is not published/example, 400 if the conversation exceeds `chat_max_turns`, and 503 when the in-process daily output-token budget (`chat_daily_token_budget`, resets on UTC date rollover) is exhausted. Rate-limited to 10/minute.
+
 ## Other
 
 - `POST /api/bug-report` — Submit a bug report (creates a GitHub issue). Rate-limited to 5/hour

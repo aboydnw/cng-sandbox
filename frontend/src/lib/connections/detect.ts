@@ -11,6 +11,9 @@ export function detectConnectionType(url: string): ConnectionType | null {
   if (trimmed.endsWith(".pmtiles")) {
     return "pmtiles";
   }
+  if (trimmed.endsWith(".laz")) {
+    return "copc";
+  }
   if (trimmed.endsWith(".zarr")) {
     return "zarr";
   }

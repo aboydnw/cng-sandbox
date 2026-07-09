@@ -6,6 +6,7 @@ import {
   extractNameFromUrl,
   probePMTiles,
   probeCOG,
+  probeCOPC,
 } from "../lib/connections";
 import type { ProbeMetadata } from "../lib/connections";
 import { connectionsApi } from "../lib/api";
@@ -27,6 +28,7 @@ const ALL_TYPES: ConnectionType[] = [
   "pmtiles",
   "xyz_raster",
   "xyz_vector",
+  "copc",
 ];
 
 interface InlineConnectionFormProps {
@@ -71,20 +73,24 @@ export function InlineConnectionForm({
       setName(extractedName);
     }
 
-    if (detected === "pmtiles" || detected === "cog") {
+    if (detected === "pmtiles" || detected === "cog" || detected === "copc") {
       setProbing(true);
       try {
         const metadata =
           detected === "pmtiles"
             ? await probePMTiles(url)
-            : await probeCOG(url);
+            : detected === "copc"
+              ? await probeCOPC(url)
+              : await probeCOG(url);
         setProbeMetadata(metadata);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         setProbeWarning(
           detected === "pmtiles"
             ? `Could not read PMTiles header — file may not be valid PMTiles v3. ${msg}`
-            : `Could not read COG metadata. ${msg}`
+            : detected === "copc"
+              ? `Could not read point cloud metadata. ${msg}`
+              : `Could not read COG metadata. ${msg}`
         );
       } finally {
         setProbing(false);

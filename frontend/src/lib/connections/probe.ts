@@ -39,6 +39,27 @@ export async function probePMTiles(url: string): Promise<ProbeMetadata> {
   };
 }
 
+export async function probeCOPC(url: string): Promise<ProbeMetadata> {
+  const resp = await fetch("/api/inspect-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  if (!resp.ok) throw new Error(`COPC probe failed: ${resp.status}`);
+  const data = await resp.json();
+  if (data.has_errors) {
+    throw new Error(data.error_detail || "Could not inspect point cloud");
+  }
+  return {
+    tileType: "raster",
+    bounds: data.bounds ?? null,
+    minZoom: null,
+    maxZoom: null,
+    bandCount: null,
+    rescale: null,
+  };
+}
+
 export async function probeCOG(url: string): Promise<ProbeMetadata> {
   const encodedUrl = encodeURIComponent(url);
   const [tjResp, infoResp] = await Promise.all([

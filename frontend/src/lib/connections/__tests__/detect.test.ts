@@ -65,6 +65,18 @@ describe("detectConnectionType", () => {
       detectConnectionType("https://data.source.coop/store.zarr?token=abc")
     ).toBe("zarr");
   });
+
+  it("detects .copc.laz as copc", () => {
+    expect(
+      detectConnectionType(
+        "https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz"
+      )
+    ).toBe("copc");
+  });
+
+  it("detects a bare .laz as copc", () => {
+    expect(detectConnectionType("https://example.com/scan.laz")).toBe("copc");
+  });
 });
 
 describe("extractNameFromUrl", () => {

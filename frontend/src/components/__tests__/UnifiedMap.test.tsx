@@ -23,6 +23,8 @@ vi.mock("react-map-gl/maplibre", () => ({
   ),
   // useControl runs the factory once and returns the control instance.
   useControl: (factory: () => unknown) => factory(),
+  // CopcController calls useMap(); no live map in this render.
+  useMap: () => ({ current: null }),
 }));
 
 import { UnifiedMap } from "../UnifiedMap";

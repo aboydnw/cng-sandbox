@@ -6,12 +6,15 @@ import {
   useRef,
 } from "react";
 import { Box } from "@chakra-ui/react";
-import { Map, useControl } from "react-map-gl/maplibre";
+import { Map, useControl, useMap } from "react-map-gl/maplibre";
 import type { MapRef } from "react-map-gl/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import type { CameraState } from "../lib/layers/types";
 import type { TerrainState } from "../lib/story/types";
+import type { MapItem } from "../types";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
+import { useCopcLayer } from "../hooks/useCopcLayer";
 import { resolveCameraCommand } from "./mapCamera";
 import { apply3D, bindStyleReapply } from "../lib/layers/apply3D";
 import { BASEMAPS, BasemapPicker } from "./MapShell";
@@ -50,6 +53,29 @@ interface UnifiedMapProps {
   globe?: boolean;
   buildings?: boolean;
   allowTerrain?: boolean;
+  /** When set, streams this COPC point cloud onto the map via maplibre-gl-lidar. */
+  copcItem?: MapItem | null;
+  copcColorMode?: CopcColorMode;
+  copcPointSize?: number;
+}
+
+/**
+ * Bridges the point-cloud lifecycle hook to the live MapLibre map. Rendered
+ * inside <Map> so `useMap()` resolves the instance react-map-gl owns.
+ */
+function CopcController({
+  item,
+  colorMode,
+  pointSize,
+}: {
+  item: MapItem | null;
+  colorMode?: CopcColorMode;
+  pointSize?: number;
+}) {
+  const { current } = useMap();
+  const map = current?.getMap() ?? null;
+  useCopcLayer(map ?? null, item, { colorMode, pointSize });
+  return null;
 }
 
 interface DeckOverlayHandle {
@@ -128,6 +154,9 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     globe,
     buildings,
     allowTerrain,
+    copcItem,
+    copcColorMode,
+    copcPointSize,
   },
   ref
 ) {
@@ -242,6 +271,11 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
           getTooltip={getTooltip}
           onAfterRender={onAfterRender}
           handleRef={overlayHandleRef}
+        />
+        <CopcController
+          item={copcItem ?? null}
+          colorMode={copcColorMode}
+          pointSize={copcPointSize}
         />
       </Map>
 

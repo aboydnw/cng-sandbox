@@ -151,7 +151,7 @@ def test_seed_is_idempotent_on_repeat_call():
 
 
 def test_seed_skips_story_when_dataset_missing():
-    """With only GEBCO registered, only the GEBCO-only story seeds."""
+    """With only GEBCO registered, only stories whose datasets are all GEBCO seed."""
     _, factory = _make_db()
     session = factory()
     try:
@@ -173,7 +173,14 @@ def test_seed_skips_story_when_dataset_missing():
     finally:
         session.close()
 
-    assert titles == {OCEAN_FLOOR_STORY.title}
+    gebco_only = {
+        s.title
+        for s in ALL_STORIES
+        if {ch.dataset_source_url for ch in s.chapters if ch.dataset_source_url}
+        <= {GEBCO_URL}
+    }
+    assert OCEAN_FLOOR_STORY.title in gebco_only
+    assert titles == gebco_only
 
 
 def test_seed_populates_chapter_layer_config_with_resolved_dataset_id():

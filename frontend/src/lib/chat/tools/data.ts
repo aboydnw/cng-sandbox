@@ -2,6 +2,20 @@ import { z } from "zod";
 import { config } from "../../../config";
 import type { ActiveLayer, ChatTool } from "../types";
 
+const TOOL_FETCH_TIMEOUT_MS = 15000;
+
+/**
+ * `fetch` bounded by a timeout so a hung tiler can't stall the conversation
+ * tool-execution loop indefinitely. Aborts and rejects after the deadline.
+ */
+function fetchWithTimeout(
+  url: string,
+  init?: RequestInit,
+  timeoutMs = TOOL_FETCH_TIMEOUT_MS
+): Promise<Response> {
+  return fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+}
+
 const queryPointSchema = z
   .object({ longitude: z.number(), latitude: z.number() })
   .strict();
@@ -47,7 +61,7 @@ export const dataTools: ChatTool[] = [
       for (const layer of layers) {
         const url = `${config.cogTilerUrl}/point/${longitude},${latitude}?url=${encodeURIComponent(layer.cogUrl!)}`;
         try {
-          const resp = await fetch(url);
+          const resp = await fetchWithTimeout(url);
           if (!resp.ok) {
             parts.push(`${layer.label ?? layer.layer_id}: unavailable`);
             continue;
@@ -98,7 +112,7 @@ export const dataTools: ChatTool[] = [
       };
       const url = `${config.cogTilerUrl}/statistics?url=${encodeURIComponent(layer.cogUrl!)}`;
       try {
-        const resp = await fetch(url, {
+        const resp = await fetchWithTimeout(url, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(feature),
@@ -143,7 +157,7 @@ export const dataTools: ChatTool[] = [
       }
       const url = `${config.vectorTilerUrl}/collections/${collectionId}/items?${params.toString()}`;
       try {
-        const resp = await fetch(url);
+        const resp = await fetchWithTimeout(url);
         if (!resp.ok)
           return { summary: "Feature query failed.", isError: true };
         const data = await resp.json();

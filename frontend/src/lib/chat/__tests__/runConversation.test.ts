@@ -95,6 +95,34 @@ describe("runConversation tool loop", () => {
     expect(done).toBe(true);
   });
 
+  it("preserves an assistant turn on max_tokens with no text so history stays alternating", async () => {
+    const stream = vi.fn().mockImplementationOnce(async function* () {
+      yield {
+        type: "tool_use",
+        toolUse: { id: "t1", name: "fly_to", input: {} },
+      };
+      yield { type: "done", stopReason: "max_tokens" };
+    });
+    const tool: ChatTool = {
+      name: "fly_to",
+      schema: { parse: (x: unknown) => x } as never,
+      execute: vi.fn(),
+    };
+    const messages = await runConversation({
+      userText: "long question",
+      history: [],
+      tools: [tool],
+      bridge: {} as never,
+      streamChat: stream as never,
+      onText: () => {},
+      onToolChip: () => {},
+      onDone: () => {},
+      onError: () => {},
+    });
+    expect(messages.at(-1)?.role).toBe("assistant");
+    expect(messages.at(-2)?.role).toBe("user");
+  });
+
   it("returns is_error tool_result when a tool throws, letting the model recover", async () => {
     const stream = vi
       .fn()

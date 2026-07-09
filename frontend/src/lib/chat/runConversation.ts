@@ -96,9 +96,14 @@ export async function runConversation(
       const textBlocks = coalesceText(
         assistantBlocks.filter((block) => block.type === "text")
       );
-      if (textBlocks.length > 0) {
-        messages.push({ role: "assistant", content: textBlocks });
-      }
+      // Always record an assistant turn so history keeps user/assistant
+      // alternation — otherwise it ends on the user turn and the next request
+      // sends two user messages in a row (schema/turn-order failure).
+      messages.push({
+        role: "assistant",
+        content:
+          textBlocks.length > 0 ? textBlocks : [{ type: "text", text: "…" }],
+      });
       onError?.(
         "The response was cut short before it finished — try a narrower question."
       );

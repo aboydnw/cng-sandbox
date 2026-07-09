@@ -30,6 +30,7 @@ import {
   migrateStory,
   buildLayersForChapter,
 } from "../lib/story";
+import { captureCameraToChapter } from "../lib/story/cameraCapture";
 import type { Connection, Dataset } from "../types";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
@@ -246,24 +247,9 @@ export function useStoryEditor() {
     if (autoCaptureRef.current) clearTimeout(autoCaptureRef.current);
     autoCaptureRef.current = setTimeout(() => {
       if (!activeChapterId) return;
-      updateStory((s) => ({
-        ...s,
-        chapters: s.chapters.map((ch) =>
-          ch.id === activeChapterId &&
-          (ch.type === "scrollytelling" || ch.type === "map")
-            ? {
-                ...ch,
-                map_state: {
-                  center: [c.longitude, c.latitude] as [number, number],
-                  zoom: c.zoom,
-                  bearing: c.bearing,
-                  pitch: c.pitch,
-                  basemap,
-                },
-              }
-            : ch
-        ),
-      }));
+      updateStory((s) =>
+        captureCameraToChapter(s, activeChapterId, c, basemap)
+      );
       setViewSavedFlash(true);
       setTimeout(() => setViewSavedFlash(false), 1500);
     }, 800);

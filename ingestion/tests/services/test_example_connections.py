@@ -218,7 +218,13 @@ def test_curated_zarr_seed_is_well_formed():
     for seed in EXAMPLE_CONNECTIONS:
         assert seed.name
         assert seed.url.startswith("https://")
-        assert seed.connection_type in {"zarr", "cog", "pmtiles", "xyz_raster"}
+        assert seed.connection_type in {
+            "zarr",
+            "cog",
+            "pmtiles",
+            "xyz_raster",
+            "copc",
+        }
         if seed.connection_type == "zarr":
             assert "variable" in seed.config
             if "timeDim" in seed.config and not seed.zarr_time_dim:
@@ -438,6 +444,31 @@ def test_seed_skips_time_probe_for_existing_rows(monkeypatch, db_session_factory
         example_connections.seed_example_connections(db_session_factory)
 
     assert calls == []
+
+
+def test_autzen_copc_seed_is_registered(monkeypatch, db_session_factory):
+    from src.services import example_connections
+
+    monkeypatch.setattr(
+        example_connections,
+        "_probe_zarr_timesteps",
+        lambda *args, **kwargs: [],
+    )
+    example_connections.seed_example_connections(db_session_factory)
+
+    session = db_session_factory()
+    try:
+        row = (
+            session.query(ConnectionRow)
+            .filter(ConnectionRow.connection_type == "copc")
+            .one()
+        )
+        assert row.is_example is True
+        assert row.workspace_id is None
+        assert "autzen" in row.url
+        assert row.config["color_mode"] == "elevation"
+    finally:
+        session.close()
 
 
 def test_ftw_predictions_seed_has_inlined_4d_config():

@@ -22,3 +22,7 @@ Any service that uses GDAL to read from R2 (the raster tiler, plus the ingestion
 - `AWS_S3_ENDPOINT` — hostname only (`<account>.r2.cloudflarestorage.com`), required by GDAL < 3.11
 - `AWS_HTTPS=YES`
 - `AWS_VIRTUAL_HOSTING=FALSE` — forces path-style URLs (required for R2)
+
+## PDAL (point-cloud conversion)
+
+The ingestion image installs **PDAL** (`pdal` from apt, in the runtime stage of `ingestion/Dockerfile`) so the point-cloud pipeline can shell out to `pdal translate … --writers.copc.forward=all` to convert LAS/LAZ uploads to COPC. The CLI is all that's used (no Python bindings). The backend CI job (`.github/workflows/ci.yml`) also installs `pdal` so the conversion + validation tests run. COPC output is stored to R2 and streamed directly by the browser — it does not pass through a tiler, so no tiler env-vars apply.

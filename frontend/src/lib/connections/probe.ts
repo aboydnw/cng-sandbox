@@ -1,7 +1,7 @@
 import { PMTiles } from "pmtiles";
 
 export interface ProbeMetadata {
-  tileType: "raster" | "vector";
+  tileType: "raster" | "vector" | null;
   bounds: [number, number, number, number] | null;
   minZoom: number | null;
   maxZoom: number | null;
@@ -51,7 +51,7 @@ export async function probeCOPC(url: string): Promise<ProbeMetadata> {
     throw new Error(data.error_detail || "Could not inspect point cloud");
   }
   return {
-    tileType: "raster",
+    tileType: null,
     bounds: data.bounds ?? null,
     minZoom: null,
     maxZoom: null,

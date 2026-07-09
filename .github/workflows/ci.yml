@@ -23,7 +23,13 @@ jobs:
           python-version: "3.13"
 
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y libmagic1 gdal-bin pdal
+        run: sudo apt-get update && sudo apt-get install -y libmagic1 gdal-bin
+
+      - name: Install PDAL (conda-forge)
+        run: |
+          curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+          ./bin/micromamba create -y -p "$HOME/pdal-env" -c conda-forge pdal
+          echo "$HOME/pdal-env/bin" >> "$GITHUB_PATH"
 
       - name: Install cng-toolkit
         run: pip install -e "../geo-conversions[all]"

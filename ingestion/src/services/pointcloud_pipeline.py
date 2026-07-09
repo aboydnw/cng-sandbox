@@ -29,6 +29,8 @@ _NO_CRS_ERROR = (
     "Re-export it with a CRS and try again."
 )
 
+_PDAL_TIMEOUT_SECONDS = 600
+
 
 @dataclass
 class LasScan:
@@ -54,11 +56,23 @@ def scan_las_header(path: str) -> LasScan:
 
 def convert_las_to_copc(input_path: str, output_path: str) -> None:
     """Convert LAS/LAZ to COPC using PDAL's writers.copc."""
-    result = subprocess.run(
-        ["pdal", "translate", input_path, output_path, "--writers.copc.forward=all"],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            [
+                "pdal",
+                "translate",
+                input_path,
+                output_path,
+                "--writers.copc.forward=all",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=_PDAL_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"pdal translate timed out after {_PDAL_TIMEOUT_SECONDS}s"
+        ) from exc
     if result.returncode != 0:
         raise RuntimeError(f"pdal translate failed: {result.stderr}")
 
@@ -91,7 +105,10 @@ async def run_pointcloud_pipeline(
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            out_filename = os.path.splitext(job.filename)[0] + ".copc.laz"
+            # basename() strips any path components in the (user-supplied)
+            # filename so a crafted name can't escape the temp dir.
+            safe_stem = os.path.splitext(os.path.basename(job.filename))[0]
+            out_filename = f"{safe_stem}.copc.laz"
             output_path = os.path.join(tmpdir, out_filename)
 
             job.status = JobStatus.CONVERTING

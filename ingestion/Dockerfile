@@ -44,8 +44,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 \
     curl \
     tippecanoe \
-    pdal \
     && rm -rf /var/lib/apt/lists/*
+
+# PDAL CLI for LAS/LAZ -> COPC conversion. Debian trixie's apt has no `pdal`
+# package (dropped during a GDAL transition), so install it from conda-forge
+# via micromamba into a dedicated prefix and put it on PATH.
+COPY --from=mambaorg/micromamba:latest /bin/micromamba /usr/local/bin/micromamba
+ENV MAMBA_ROOT_PREFIX=/opt/conda
+RUN micromamba create -y -p /opt/pdal -c conda-forge pdal \
+    && micromamba clean --all --yes
+ENV PATH="/opt/pdal/bin:${PATH}"
 
 # Copy installed Python packages from builder
 COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages

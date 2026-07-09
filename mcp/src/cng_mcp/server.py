@@ -89,7 +89,7 @@ TOOL_DEFINITIONS = [
     ),
     Tool(
         name="create_connection",
-        description="Create a new external tile source connection (zarr, cog, pmtiles, xyz, geoparquet, copc).",
+        description="Create a new external tile source connection (zarr, cog, pmtiles, xyz_raster, xyz_vector, geoparquet, copc).",
         inputSchema={
             "type": "object",
             "properties": {
@@ -97,7 +97,7 @@ TOOL_DEFINITIONS = [
                 "url": {"type": "string", "description": "URL or S3 URI for the tile source"},
                 "connection_type": {
                     "type": "string",
-                    "description": "One of: zarr, cog, pmtiles, xyz, geoparquet, copc",
+                    "description": "One of: zarr, cog, pmtiles, xyz_raster, xyz_vector, geoparquet, copc",
                 },
                 "bounds": {
                     "type": "array",

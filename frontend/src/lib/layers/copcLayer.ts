@@ -1,10 +1,7 @@
 import { LidarControl } from "maplibre-gl-lidar";
 
 export type CopcColorMode =
-  | "elevation"
-  | "intensity"
-  | "classification"
-  | "rgb";
+  "elevation" | "intensity" | "classification" | "rgb";
 
 export interface CopcControlOptions {
   url: string;

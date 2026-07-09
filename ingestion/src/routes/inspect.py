@@ -63,16 +63,24 @@ def _probe_las_over_http(url: str) -> tuple[list[float] | None, str | None]:
     import laspy
 
     try:
-        with httpx.Client(follow_redirects=False, timeout=10.0) as client:
-            response = client.get(
-                url, headers={"Range": f"bytes=0-{LAS_HEADER_PROBE_BYTES}"}
-            )
+        with (
+            httpx.Client(follow_redirects=False, timeout=10.0) as client,
+            client.stream(
+                "GET", url, headers={"Range": f"bytes=0-{LAS_HEADER_PROBE_BYTES}"}
+            ) as response,
+        ):
             raise_if_redirect(response)
             if not response.is_success:
                 return None, None
-        header = laspy.LasHeader.read_from(
-            io.BytesIO(response.content), read_evlrs=False
-        )
+            # Cap the read: a non-compliant server may ignore the Range header
+            # and stream the whole (multi-GB) file, so stop once we have the
+            # header region regardless of what the server sends.
+            buffer = bytearray()
+            for chunk in response.iter_bytes():
+                buffer.extend(chunk)
+                if len(buffer) > LAS_HEADER_PROBE_BYTES:
+                    break
+        header = laspy.LasHeader.read_from(io.BytesIO(bytes(buffer)), read_evlrs=False)
         crs_obj = header.parse_crs()
         if crs_obj is None:
             return None, None

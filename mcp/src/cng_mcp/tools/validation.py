@@ -24,7 +24,13 @@ async def validate_layer_config_tool(
     if not dataset_id:
         return TextContent(type="text", text="Error: dataset_id is required")
     if not color_mode and not colormap:
-        return TextContent(type="text", text="Error: colormap is required")
+        return TextContent(
+            type="text",
+            text=(
+                "Error: colormap is required (or color_mode for "
+                "point-cloud/copc layers)"
+            ),
+        )
 
     result = await client.validate_layer_config(
         dataset_id=dataset_id,

@@ -78,7 +78,7 @@ Create a new external tile source connection.
 **Input**:
 - `name` (string)
 - `url` (string)
-- `connection_type` (string): one of `zarr`, `cog`, `pmtiles`, `xyz`, `geoparquet`, `copc`
+- `connection_type` (string): one of `zarr`, `cog`, `pmtiles`, `xyz_raster`, `xyz_vector`, `geoparquet`, `copc`
 - `bounds` (array, optional): `[west, south, east, north]`
 - `min_zoom` / `max_zoom` (integer, optional)
 - `tile_type` (string, optional): tile image format (e.g. `png`, `webp`)

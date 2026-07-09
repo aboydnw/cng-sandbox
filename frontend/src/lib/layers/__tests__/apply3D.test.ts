@@ -4,11 +4,18 @@ import { apply3D } from "../apply3D";
 function mockMap() {
   const sources = new Set<string>();
   const layers = new Set<string>();
+  let terrain: { source: string; exaggeration: number } | null = null;
+  let projection: { type: string } | undefined;
   return {
-    calls: [] as string[],
-    setTerrain: vi.fn((_v: unknown) => {}),
+    setTerrain: vi.fn((v: { source: string; exaggeration: number } | null) => {
+      terrain = v;
+    }),
+    getTerrain: () => terrain,
     setSky: vi.fn(),
-    setProjection: vi.fn(),
+    setProjection: vi.fn((v: { type: string }) => {
+      projection = v;
+    }),
+    getProjection: () => projection,
     getSource: (id: string) => (sources.has(id) ? {} : undefined),
     addSource: vi.fn((id: string) => sources.add(id)),
     removeSource: vi.fn((id: string) => sources.delete(id)),
@@ -36,22 +43,69 @@ describe("apply3D", () => {
     expect(map.setSky).toHaveBeenCalled();
   });
 
-  it("ignores terrain when data layers are present (allowTerrain=false)", () => {
+  it("skips setTerrain when re-applied with an identical config", () => {
     const map = mockMap();
+    const opts = {
+      terrain: { enabled: true, exaggeration: 1.5 },
+      allowTerrain: true,
+    };
+    apply3D(map as never, opts);
+    apply3D(map as never, opts);
+    expect(map.setTerrain).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-sets terrain when the exaggeration changes", () => {
+    const map = mockMap();
+    apply3D(map as never, {
+      terrain: { enabled: true, exaggeration: 1 },
+      allowTerrain: true,
+    });
+    apply3D(map as never, {
+      terrain: { enabled: true, exaggeration: 2 },
+      allowTerrain: true,
+    });
+    expect(map.setTerrain).toHaveBeenCalledTimes(2);
+    expect(map.setTerrain).toHaveBeenLastCalledWith(
+      expect.objectContaining({ exaggeration: 2 })
+    );
+  });
+
+  it("disables terrain when data layers are present (allowTerrain=false)", () => {
+    const map = mockMap();
+    apply3D(map as never, {
+      terrain: { enabled: true, exaggeration: 2 },
+      allowTerrain: true,
+    });
     apply3D(map as never, {
       terrain: { enabled: true, exaggeration: 2 },
       allowTerrain: false,
     });
-    expect(map.setTerrain).toHaveBeenCalledWith(null);
+    expect(map.setTerrain).toHaveBeenLastCalledWith(null);
+    expect(map.getTerrain()).toBeNull();
   });
 
-  it("disables terrain when flag is off", () => {
+  it("removes the DEM source when terrain toggles off", () => {
+    const map = mockMap();
+    apply3D(map as never, {
+      terrain: { enabled: true, exaggeration: 1.5 },
+      allowTerrain: true,
+    });
+    apply3D(map as never, {
+      terrain: { enabled: false, exaggeration: 1.5 },
+      allowTerrain: true,
+    });
+    expect(map.setTerrain).toHaveBeenLastCalledWith(null);
+    expect(map.removeSource).toHaveBeenCalledWith("cng-terrain-dem");
+  });
+
+  it("does not touch terrain or the DEM source when already off", () => {
     const map = mockMap();
     apply3D(map as never, {
       terrain: { enabled: false, exaggeration: 1 },
       allowTerrain: true,
     });
-    expect(map.setTerrain).toHaveBeenCalledWith(null);
+    expect(map.setTerrain).not.toHaveBeenCalled();
+    expect(map.removeSource).not.toHaveBeenCalled();
   });
 
   it("globe on sets globe projection; globe off sets mercator", () => {
@@ -67,19 +121,32 @@ describe("apply3D", () => {
     );
   });
 
-  it("buildings on adds a fill-extrusion layer; off removes it", () => {
-    const on = mockMap();
-    apply3D(on as never, { buildings: true, allowTerrain: true });
-    expect(on.addLayer).toHaveBeenCalledWith(
+  it("skips setProjection when the projection is unchanged", () => {
+    const map = mockMap();
+    apply3D(map as never, { globe: true, allowTerrain: true });
+    apply3D(map as never, { globe: true, allowTerrain: true });
+    expect(map.setProjection).toHaveBeenCalledTimes(1);
+  });
+
+  it("buildings on adds a fill-extrusion layer; off removes layer and source", () => {
+    const map = mockMap();
+    apply3D(map as never, { buildings: true, allowTerrain: true });
+    expect(map.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "cng-buildings-3d",
         type: "fill-extrusion",
       })
     );
-    const off = mockMap();
-    off.getLayer = () => ({}) as never;
-    apply3D(off as never, { buildings: false, allowTerrain: true });
-    expect(off.removeLayer).toHaveBeenCalledWith("cng-buildings-3d");
+    apply3D(map as never, { buildings: false, allowTerrain: true });
+    expect(map.removeLayer).toHaveBeenCalledWith("cng-buildings-3d");
+    expect(map.removeSource).toHaveBeenCalledWith("cng-buildings-src");
+  });
+
+  it("does not remove buildings when they were never added", () => {
+    const map = mockMap();
+    apply3D(map as never, { buildings: false, allowTerrain: true });
+    expect(map.removeLayer).not.toHaveBeenCalled();
+    expect(map.removeSource).not.toHaveBeenCalled();
   });
 
   it("enables sky with a zoom-interpolated atmosphere-blend when globe is on", () => {

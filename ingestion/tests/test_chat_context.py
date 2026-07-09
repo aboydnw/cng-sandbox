@@ -91,6 +91,35 @@ def test_malformed_chapters_json_does_not_raise():
     assert "Bad Chapters" in md
 
 
+def test_block_cache_evicts_oldest_entry_past_cap(monkeypatch):
+    from collections import OrderedDict
+
+    session = _session()
+    monkeypatch.setattr(chat_context, "_BLOCK_CACHE", OrderedDict())
+    monkeypatch.setattr(chat_context, "_BLOCK_CACHE_MAX", 2)
+    stories = []
+    for i in range(3):
+        story = StoryRow(
+            id=f"cache-{i}",
+            title=f"Story {i}",
+            description=None,
+            chapters_json="[]",
+            published=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        session.add(story)
+        session.commit()
+        stories.append(story)
+
+    for story in stories:
+        chat_context.build_system_blocks(story, session)
+
+    assert len(chat_context._BLOCK_CACHE) == 2
+    cached_ids = [key[0] for key in chat_context._BLOCK_CACHE]
+    assert cached_ids == ["cache-1", "cache-2"]
+
+
 def test_system_blocks_are_byte_stable_across_calls():
     session = _session()
     story = _story(session)

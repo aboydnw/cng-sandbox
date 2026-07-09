@@ -7,6 +7,7 @@ unsorted dict iteration — so Anthropic prompt caching can reuse the prefix.
 """
 
 import json
+from collections import OrderedDict
 
 from sqlalchemy.orm import Session
 
@@ -135,8 +136,10 @@ def build_story_context_markdown(story: StoryRow, session: Session) -> str:
 # Per-story cache of assembled system blocks. The output is deterministic per
 # story, so we key on (id, updated_at) — a publish/update bumps updated_at and
 # naturally invalidates the entry. Avoids re-reading the DB and rebuilding the
-# prompt on every conversational turn of the same session.
-_BLOCK_CACHE: dict[tuple, list[dict]] = {}
+# prompt on every conversational turn of the same session. LRU-bounded so stale
+# (story, updated_at) keys can't accumulate without limit.
+_BLOCK_CACHE: OrderedDict[tuple, list[dict]] = OrderedDict()
+_BLOCK_CACHE_MAX = 128
 
 
 def build_system_blocks(
@@ -150,6 +153,7 @@ def build_system_blocks(
     )
     cached = _BLOCK_CACHE.get(cache_key)
     if cached is not None:
+        _BLOCK_CACHE.move_to_end(cache_key)
         return cached
 
     context = build_story_context_markdown(story, session)
@@ -167,4 +171,6 @@ def build_system_blocks(
         }
     ]
     _BLOCK_CACHE[cache_key] = blocks
+    while len(_BLOCK_CACHE) > _BLOCK_CACHE_MAX:
+        _BLOCK_CACHE.popitem(last=False)
     return blocks

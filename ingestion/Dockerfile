@@ -52,9 +52,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # PATH (not the whole env bin, which would shadow the system python3 with
 # conda's). RPATH lets the symlinked binary find its own libs.
 # Pin both the micromamba binary and the pdal version so a silent upstream bump
-# can't change conversion behavior. pdal 2.10.2 / micromamba 2.8.1 are the
-# versions resolved at the time of writing (2026-07).
-COPY --from=mambaorg/micromamba:2.8.1 /bin/micromamba /usr/local/bin/micromamba
+# can't change conversion behavior. The image is pinned by digest (the :2.8.1
+# tag is mutable); pdal 2.10.2 / micromamba 2.8.1 are the versions resolved at
+# the time of writing (2026-07). We stop at a digest-pinned base + a pinned pdal
+# rather than a full conda lockfile: the conda solver can still move transitive
+# build deps, but a lockfile is disproportionate maintenance for a single CLI
+# tool used only for the offline LAS->COPC step.
+COPY --from=mambaorg/micromamba:2.8.1@sha256:fb18405d6004af757a38ec498a078240b4fd5549146990a484c28bb7e78aace4 /bin/micromamba /usr/local/bin/micromamba
 ENV MAMBA_ROOT_PREFIX=/opt/conda
 RUN micromamba create -y -p /opt/pdal -c conda-forge 'pdal=2.10.2' \
     && micromamba clean --all --yes \

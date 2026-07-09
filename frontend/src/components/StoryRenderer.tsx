@@ -121,6 +121,19 @@ function ScrollytellingBlock({
   const highlightTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const mapRef = useRef<MapRef | null>(null);
   const markerRegistry = useRef<Map<string, MarkerHandle>>(new Map());
+  const [mapReady, setMapReady] = useState(false);
+
+  // Callback ref for the map: on (re)mount, drop any marker handles bound to a
+  // previous map instance and flip `mapReady` so the highlight effect below
+  // replays active highlights onto the fresh map (they'd otherwise be lost if a
+  // highlight arrived while the map was unmounted between chapter types).
+  const handleMapRef = useCallback((instance: MapRef | null) => {
+    mapRef.current = instance;
+    const registry = markerRegistry.current;
+    for (const handle of registry.values()) handle.remove();
+    registry.clear();
+    setMapReady(instance != null);
+  }, []);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -245,7 +258,7 @@ function ScrollytellingBlock({
     reconcileHighlightMarkers(highlights, registry, (h) =>
       createHighlightMarker(map, h)
     );
-  }, [highlights]);
+  }, [highlights, mapReady]);
 
   useEffect(() => {
     const registry = markerRegistry.current;
@@ -342,7 +355,7 @@ function ScrollytellingBlock({
       <Box position="sticky" top={0} h="100vh" zIndex={0}>
         {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
           <UnifiedMap
-            mapRef={mapRef}
+            mapRef={handleMapRef}
             camera={camera}
             onCameraChange={handleCameraChange}
             layers={layers}

@@ -34,13 +34,10 @@ interface UseLayerBuilderOptions {
   rescaleMax: number | null;
   colormapReversed: boolean;
   effectiveCategories?:
-    | { value: number; color: string; label: string }[]
-    | null;
+    { value: number; color: string; label: string }[] | null;
   onVectorClick?: (info: PickingInfo) => void;
   zarrNode?:
-    | zarr.Group<zarr.Readable>
-    | zarr.Array<zarr.DataType, zarr.Readable>
-    | null;
+    zarr.Group<zarr.Readable> | zarr.Array<zarr.DataType, zarr.Readable> | null;
 }
 
 function hexToRgb(hex: string): [number, number, number] {

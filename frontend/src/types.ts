@@ -76,12 +76,7 @@ export interface Dataset {
 }
 
 export type ConnectionType =
-  | "xyz_raster"
-  | "xyz_vector"
-  | "cog"
-  | "pmtiles"
-  | "geoparquet"
-  | "zarr";
+  "xyz_raster" | "xyz_vector" | "cog" | "pmtiles" | "geoparquet" | "zarr";
 
 export interface ZarrConnectionConfig {
   variable: string;

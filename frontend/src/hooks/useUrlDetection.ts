@@ -2,13 +2,7 @@ import { useState, useCallback } from "react";
 import { workspaceFetch } from "../lib/api";
 
 export type UrlRoute =
-  | "xyz"
-  | "pmtiles"
-  | "parquet"
-  | "cog"
-  | "convert-url"
-  | "discover"
-  | "zarr";
+  "xyz" | "pmtiles" | "parquet" | "cog" | "convert-url" | "discover" | "zarr";
 
 export interface UrlDetectionResult {
   route: UrlRoute;

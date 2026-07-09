@@ -4,8 +4,7 @@ import { createZarrStore } from "../lib/zarr/zarrFetch";
 import type { MapItem } from "../types";
 
 export type ZarrNode =
-  | zarr.Group<zarr.Readable>
-  | zarr.Array<zarr.DataType, zarr.Readable>;
+  zarr.Group<zarr.Readable> | zarr.Array<zarr.DataType, zarr.Readable>;
 
 export interface UseZarrNodeResult {
   node: ZarrNode | null;
@@ -36,9 +35,7 @@ export function useZarrNode(item: MapItem | null): UseZarrNodeResult {
   const variable = isZarr
     ? ((
         item.connection!.config as
-          | { variable?: string | null }
-          | null
-          | undefined
+          { variable?: string | null } | null | undefined
       )?.variable ?? null)
     : null;
 

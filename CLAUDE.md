@@ -159,7 +159,7 @@ Full endpoint catalog (uploads, jobs, datasets, stories, connections, remote dis
 
 ### Example datasets, stories, and connections
 
-On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list currently ships two entries (IMERG Final Precipitation and Fields of The World zarrs). Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
+On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories visible to every workspace. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list currently ships three entries (IMERG Final Precipitation and Fields of The World zarrs, plus the Autzen Stadium COPC point cloud). Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
 
 ### Conversion pipeline
 

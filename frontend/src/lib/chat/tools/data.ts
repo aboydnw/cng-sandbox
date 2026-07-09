@@ -86,8 +86,7 @@ export const dataTools: ChatTool[] = [
           return { summary: "Statistics unavailable.", isError: true };
         const data = await resp.json();
         const firstBand = data[Object.keys(data)[0]] as
-          | { min: number; max: number; mean: number }
-          | undefined;
+          { min: number; max: number; mean: number } | undefined;
         if (!firstBand) return { summary: "No statistics returned." };
         return {
           summary: `area min ${fmt(firstBand.min)}, max ${fmt(firstBand.max)}, mean ${fmt(firstBand.mean)} (band 1)`,

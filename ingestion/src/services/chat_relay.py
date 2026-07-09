@@ -144,9 +144,7 @@ async def _handle_event(
     if etype == "message_stop":
         yield {
             "event": "done",
-            "data": json.dumps(
-                {"stop_reason": state.get("stop_reason") or "end_turn"}
-            ),
+            "data": json.dumps({"stop_reason": state.get("stop_reason") or "end_turn"}),
         }
         return
 

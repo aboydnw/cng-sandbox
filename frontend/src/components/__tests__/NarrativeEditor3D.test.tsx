@@ -40,6 +40,46 @@ describe("NarrativeEditor 3D section", () => {
     );
   });
 
+  it("editing COPC color mode writes color_mode into layer_config", () => {
+    const onLayerConfigChange = vi.fn();
+    const { getByDisplayValue } = wrap(
+      <NarrativeEditor
+        {...baseProps}
+        datasetType="pointcloud"
+        layerConfig={{ ...DEFAULT_LAYER_CONFIG, dataset_id: "pc-1" }}
+        mapState={{ ...DEFAULT_MAP_STATE }}
+        onMapStateChange={() => {}}
+        onLayerConfigChange={onLayerConfigChange}
+      />
+    );
+    fireEvent.change(getByDisplayValue("Elevation"), {
+      target: { value: "intensity" },
+    });
+    expect(onLayerConfigChange).toHaveBeenCalledWith(
+      expect.objectContaining({ color_mode: "intensity" })
+    );
+  });
+
+  it("editing COPC point size writes point_size into layer_config", () => {
+    const onLayerConfigChange = vi.fn();
+    const { getByLabelText } = wrap(
+      <NarrativeEditor
+        {...baseProps}
+        datasetType="pointcloud"
+        layerConfig={{ ...DEFAULT_LAYER_CONFIG, dataset_id: "pc-1" }}
+        mapState={{ ...DEFAULT_MAP_STATE }}
+        onMapStateChange={() => {}}
+        onLayerConfigChange={onLayerConfigChange}
+      />
+    );
+    fireEvent.change(getByLabelText("Point size"), {
+      target: { value: "5" },
+    });
+    expect(onLayerConfigChange).toHaveBeenCalledWith(
+      expect.objectContaining({ point_size: 5 })
+    );
+  });
+
   it("disables the terrain switch when the chapter has a bound dataset", () => {
     const { getByLabelText } = wrap(
       <NarrativeEditor

@@ -946,6 +946,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 !!item.dataset?.is_categorical
               }
               onDatasetUpdated={refresh}
+              copcColorMode={isPointCloud ? copcColorMode : undefined}
+              copcPointSize={isPointCloud ? copcPointSize : undefined}
               shared={shared}
               savePreferredColormap={
                 !shared && item?.dataType === "raster" && !itemIsExample

@@ -4,6 +4,7 @@ import { Box, Text } from "@chakra-ui/react";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import type { MapItem, Connection } from "../types";
 import type { RenderMode } from "../hooks/useMapControls";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { DataSwitcher } from "./DataSwitcher";
 import { RasterSidebarControls } from "./RasterSidebarControls";
 import { VectorSidebarControls } from "./VectorSidebarControls";
@@ -66,6 +67,9 @@ interface MapSidePanelProps {
   canMarkCategorical: boolean;
   canMarkContinuous: boolean;
   onDatasetUpdated: () => void;
+  // Point cloud (COPC) style — persisted into a saved story chapter
+  copcColorMode?: CopcColorMode;
+  copcPointSize?: number;
   // Shared view
   shared?: boolean;
   savePreferredColormap?: {
@@ -110,6 +114,8 @@ export function MapSidePanel({
   canMarkCategorical,
   canMarkContinuous,
   onDatasetUpdated,
+  copcColorMode,
+  copcPointSize,
   shared = false,
   savePreferredColormap,
 }: MapSidePanelProps) {
@@ -284,7 +290,15 @@ export function MapSidePanel({
       {/* Story CTA — available for both datasets and connections */}
       {!shared && (
         <Box mt={4}>
-          <SaveAsStoryChapter dataset={ds} connection={item.connection} />
+          <SaveAsStoryChapter
+            dataset={ds}
+            connection={item.connection}
+            copcStyle={
+              copcColorMode != null && copcPointSize != null
+                ? { colorMode: copcColorMode, pointSize: copcPointSize }
+                : undefined
+            }
+          />
         </Box>
       )}
     </Box>

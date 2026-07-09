@@ -153,6 +153,62 @@ describe("SaveAsStoryChapter", () => {
     expect(savedStory.chapters[1].layer_config.dataset_id).toBe("ds-1");
   });
 
+  it("writes the current COPC color mode and point size into the saved chapter", async () => {
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      {
+        id: "u-1",
+        title: "My draft",
+        is_example: false,
+        chapters: [
+          { id: "c0", order: 0, type: "prose", title: "x", narrative: "" },
+        ],
+      },
+    ]);
+    (getStoryFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "u-1",
+      title: "My draft",
+      description: null,
+      dataset_id: null,
+      dataset_ids: [],
+      chapters: [
+        { id: "c0", order: 0, type: "prose", title: "x", narrative: "" },
+      ],
+      published: false,
+      is_example: false,
+    });
+    (saveStoryToServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "u-1",
+    });
+
+    const pointCloud = {
+      ...baseDataset,
+      id: "pc-1",
+      dataset_type: "pointcloud",
+    };
+    renderWithRouter(
+      <SaveAsStoryChapter
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        dataset={pointCloud as any}
+        connection={null}
+        copcStyle={{ colorMode: "classification", pointSize: 4.5 }}
+      />
+    );
+    const trigger = await screen.findByRole("button", {
+      name: /save as story chapter/i,
+    });
+    const user = userEvent.setup();
+    await user.click(trigger);
+    await user.click(
+      await screen.findByRole("menuitem", { name: /my draft/i })
+    );
+    const savedStory = (saveStoryToServer as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    expect(savedStory.chapters[1].layer_config.color_mode).toBe(
+      "classification"
+    );
+    expect(savedStory.chapters[1].layer_config.point_size).toBe(4.5);
+  });
+
   it("derives next chapter order from max(order)+1, not array length", async () => {
     (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       {

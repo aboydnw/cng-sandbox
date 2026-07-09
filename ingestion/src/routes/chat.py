@@ -27,7 +27,7 @@ def chat_available(settings: Settings) -> bool:
     return settings.chat_enabled and bool(settings.anthropic_api_key_chat)
 
 
-# 8 tool definitions — names and params match the frontend zod executors
+# 7 tool definitions — names and params match the frontend zod executors
 # byte-for-byte (Tasks 5 & 6). The last tool carries the cache_control breakpoint
 # so the whole tools array is cached alongside the system prompt.
 CHAT_TOOLS: list[dict] = [
@@ -125,19 +125,6 @@ CHAT_TOOLS: list[dict] = [
                 "cql2_filter": {"type": "string"},
             },
             "required": [],
-        },
-    },
-    {
-        "name": "get_timeseries",
-        "description": "A compact time series at a point for temporal layers.",
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {
-                "longitude": {"type": "number"},
-                "latitude": {"type": "number"},
-            },
-            "required": ["longitude", "latitude"],
         },
         "cache_control": {"type": "ephemeral"},
     },

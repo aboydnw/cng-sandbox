@@ -35,7 +35,6 @@ the reader as a chip, so narrate briefly and let the tool result speak.
 - query_point(longitude, latitude): read raster/zarr values at a point.
 - get_area_statistics(bbox): min/max/mean for a [w, s, e, n] box.
 - query_features(collection_id?, cql2_filter?): count + sample vector features.
-- get_timeseries(longitude, latitude): a compact time series at a point.
 """
 
 _PAD = (

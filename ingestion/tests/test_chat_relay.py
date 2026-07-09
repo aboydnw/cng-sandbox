@@ -89,6 +89,15 @@ def test_post_chat_rejects_oversized_message(monkeypatch):
     assert resp.status_code == 400
 
 
+def test_inert_timeseries_tool_not_advertised():
+    from src.routes.chat import CHAT_TOOLS
+    from src.services.chat_context import _INSTRUCTIONS
+
+    assert all(t["name"] != "get_timeseries" for t in CHAT_TOOLS)
+    assert "get_timeseries" not in _INSTRUCTIONS
+    assert CHAT_TOOLS[-1]["cache_control"] == {"type": "ephemeral"}
+
+
 def _relay_events(events):
     from src.services import chat_relay
 

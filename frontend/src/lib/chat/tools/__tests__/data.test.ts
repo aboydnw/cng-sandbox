@@ -34,6 +34,50 @@ describe("data tools", () => {
     expect(res.summary).toContain("27.4");
   });
 
+  it("get_area_statistics POSTs a GeoJSON polygon and reads feature-keyed stats", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        type: "Feature",
+        properties: {
+          statistics: { b1: { min: 1, max: 9, mean: 4.5 } },
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const bridge = {
+      getActiveLayers: () => [
+        {
+          layer_id: "L1",
+          type: "raster-cog",
+          cogUrl: "https://x/y.tif",
+          label: "SST",
+        },
+      ],
+    } as unknown as AgentBridge;
+    const t = byName("get_area_statistics");
+    const res = await t.execute(
+      t.schema.parse({ bbox: [-10, -5, 10, 5] }),
+      bridge
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/statistics?url=");
+    expect(url).not.toContain("bbox=");
+    expect(init.method).toBe("POST");
+    const body = JSON.parse(init.body as string);
+    expect(body.geometry.type).toBe("Polygon");
+    expect(body.geometry.coordinates[0]).toEqual([
+      [-10, -5],
+      [10, -5],
+      [10, 5],
+      [-10, 5],
+      [-10, -5],
+    ]);
+    expect(res.summary).toContain("min 1");
+    expect(res.summary).toContain("max 9");
+    expect(res.summary).toContain("mean 4.50");
+  });
+
   it("query_features returns a count and small sample, not raw features", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

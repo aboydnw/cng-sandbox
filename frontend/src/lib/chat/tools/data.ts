@@ -79,14 +79,41 @@ export const dataTools: ChatTool[] = [
         return { summary: "No raster layer is currently shown to summarize." };
       }
       const layer = layers[0];
-      const url = `${config.cogTilerUrl}/statistics?url=${encodeURIComponent(layer.cogUrl!)}&bbox=${bbox.join(",")}`;
+      const [w, s, e, n] = bbox;
+      const feature = {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [w, s],
+              [e, s],
+              [e, n],
+              [w, n],
+              [w, s],
+            ],
+          ],
+        },
+      };
+      const url = `${config.cogTilerUrl}/statistics?url=${encodeURIComponent(layer.cogUrl!)}`;
       try {
-        const resp = await fetch(url);
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(feature),
+        });
         if (!resp.ok)
           return { summary: "Statistics unavailable.", isError: true };
         const data = await resp.json();
-        const firstBand = data[Object.keys(data)[0]] as
-          { min: number; max: number; mean: number } | undefined;
+        const stats: Record<
+          string,
+          { min: number; max: number; mean: number }
+        > =
+          data?.properties?.statistics ??
+          data?.features?.[0]?.properties?.statistics ??
+          {};
+        const firstBand = stats[Object.keys(stats)[0]];
         if (!firstBand) return { summary: "No statistics returned." };
         return {
           summary: `area min ${fmt(firstBand.min)}, max ${fmt(firstBand.max)}, mean ${fmt(firstBand.mean)} (band 1)`,

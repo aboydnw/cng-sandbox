@@ -4,6 +4,7 @@ import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 
 const overlayProps: Record<string, unknown>[] = [];
 const overlayCtorArgs: Record<string, unknown>[] = [];
+const mapProps: Record<string, unknown>[] = [];
 
 vi.mock("@deck.gl/mapbox", () => ({
   MapboxOverlay: class {
@@ -18,9 +19,12 @@ vi.mock("@deck.gl/mapbox", () => ({
 }));
 
 vi.mock("react-map-gl/maplibre", () => ({
-  Map: (props: Record<string, unknown>) => (
-    <div data-testid="maplibre-mock">{props.children as React.ReactNode}</div>
-  ),
+  Map: (props: Record<string, unknown>) => {
+    mapProps.push(props);
+    return (
+      <div data-testid="maplibre-mock">{props.children as React.ReactNode}</div>
+    );
+  },
   // useControl runs the factory once and returns the control instance.
   useControl: (factory: () => unknown) => factory(),
   // CopcController calls useMap(); no live map in this render.
@@ -69,6 +73,42 @@ describe("UnifiedMap", () => {
     expect(
       overlayProps.every((p) => typeof p.onAfterRender === "function")
     ).toBe(true);
+  });
+
+  it("passes preserveDrawingBuffer via canvasContextAttributes when snapshot is enabled", () => {
+    mapProps.length = 0;
+    wrap(
+      <UnifiedMap
+        camera={camera}
+        onCameraChange={() => {}}
+        layers={[]}
+        basemap="streets"
+        onBasemapChange={() => {}}
+        enableSnapshot
+      />
+    );
+    // maplibre-gl 5.x only honors preserveDrawingBuffer inside
+    // canvasContextAttributes; a top-level prop is a silent no-op.
+    expect(mapProps[0].canvasContextAttributes).toEqual({
+      preserveDrawingBuffer: true,
+    });
+    expect("preserveDrawingBuffer" in mapProps[0]).toBe(false);
+  });
+
+  it("defaults canvasContextAttributes.preserveDrawingBuffer to false", () => {
+    mapProps.length = 0;
+    wrap(
+      <UnifiedMap
+        camera={camera}
+        onCameraChange={() => {}}
+        layers={[]}
+        basemap="streets"
+        onBasemapChange={() => {}}
+      />
+    );
+    expect(mapProps[0].canvasContextAttributes).toEqual({
+      preserveDrawingBuffer: false,
+    });
   });
 
   it("forwards onAfterRender to the overlay when provided", () => {

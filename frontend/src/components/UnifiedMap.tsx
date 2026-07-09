@@ -255,8 +255,9 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         onMove={handleMove}
         onMoveEnd={handleMoveEnd}
         interactive={interactive}
-        // @ts-expect-error preserveDrawingBuffer forwarded to maplibre-gl
-        preserveDrawingBuffer={enableSnapshot ?? false}
+        canvasContextAttributes={{
+          preserveDrawingBuffer: enableSnapshot ?? false,
+        }}
         style={{ width: "100%", height: "100%" }}
       >
         <DeckOverlay

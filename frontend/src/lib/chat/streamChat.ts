@@ -98,7 +98,11 @@ function parseSseEvent(raw: string): StreamEvent | null {
     };
   }
   if (eventName === "done") {
-    return { type: "done" };
+    return {
+      type: "done",
+      stopReason:
+        typeof data.stop_reason === "string" ? data.stop_reason : undefined,
+    };
   }
   if (eventName === "error") {
     return { type: "error", message: String(data.message ?? "error") };

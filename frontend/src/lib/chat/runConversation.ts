@@ -67,6 +67,7 @@ export async function runConversation(
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     const assistantBlocks: ContentBlock[] = [];
     const toolUses: ToolUse[] = [];
+    let stopReason: string | undefined;
 
     for await (const event of streamChat({ messages, signal })) {
       if (event.type === "text") {
@@ -80,11 +81,29 @@ export async function runConversation(
           name: event.toolUse.name,
           input: event.toolUse.input,
         });
+      } else if (event.type === "done") {
+        stopReason = event.stopReason;
       } else if (event.type === "error") {
         onError?.(event.message ?? "The assistant hit an error.");
         onDone();
         return messages;
       }
+    }
+
+    if (stopReason === "max_tokens") {
+      // The turn was truncated mid-stream: any tool_use blocks may carry
+      // partially-parsed input, so don't execute them — tell the reader.
+      const textBlocks = coalesceText(
+        assistantBlocks.filter((block) => block.type === "text")
+      );
+      if (textBlocks.length > 0) {
+        messages.push({ role: "assistant", content: textBlocks });
+      }
+      onError?.(
+        "The response was cut short before it finished — try a narrower question."
+      );
+      onDone();
+      return messages;
     }
 
     if (toolUses.length === 0) {

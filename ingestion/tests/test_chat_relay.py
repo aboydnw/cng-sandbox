@@ -1,3 +1,4 @@
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -86,6 +87,46 @@ def test_post_chat_rejects_oversized_message(monkeypatch):
         json={"story_id": "s1", "messages": [{"role": "user", "content": "x" * 20000}]},
     )
     assert resp.status_code == 400
+
+
+def _relay_events(events):
+    from src.services import chat_relay
+
+    async def _run():
+        out = []
+        tokens = []
+        tool_blocks = {}
+        state = {}
+        for event in events:
+            async for item in chat_relay._handle_event(
+                event, tool_blocks, state, tokens.append
+            ):
+                out.append(item)
+        return out, tokens
+
+    return asyncio.run(_run())
+
+
+def test_stop_reason_from_message_delta_is_relayed():
+    out, tokens = _relay_events(
+        [
+            {
+                "type": "message_delta",
+                "delta": {"stop_reason": "max_tokens"},
+                "usage": {"output_tokens": 7},
+            },
+            {"type": "message_stop"},
+        ]
+    )
+    assert tokens == [7]
+    done = [e for e in out if e["event"] == "done"]
+    assert json.loads(done[0]["data"])["stop_reason"] == "max_tokens"
+
+
+def test_stop_reason_defaults_to_end_turn():
+    out, _ = _relay_events([{"type": "message_stop"}])
+    done = [e for e in out if e["event"] == "done"]
+    assert json.loads(done[0]["data"])["stop_reason"] == "end_turn"
 
 
 def test_chat_rate_limit_shared_across_workspace_rotation(monkeypatch):

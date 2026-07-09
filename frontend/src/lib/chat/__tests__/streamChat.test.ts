@@ -34,7 +34,7 @@ describe("streamChat SSE parsing", () => {
     ]);
     expect(events).toEqual([
       { type: "text", text: "hi" },
-      expect.objectContaining({ type: "done" }),
+      { type: "done", stopReason: "end_turn" },
     ]);
   });
 

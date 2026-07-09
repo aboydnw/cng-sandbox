@@ -24,7 +24,7 @@ export interface ToolUse {
 export type StreamEvent =
   | { type: "text"; text: string }
   | { type: "tool_use"; toolUse: ToolUse }
-  | { type: "done" }
+  | { type: "done"; stopReason?: string }
   | { type: "error"; message?: string };
 
 export interface StreamChatArgs {

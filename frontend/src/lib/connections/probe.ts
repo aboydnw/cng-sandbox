@@ -1,7 +1,7 @@
 import { PMTiles } from "pmtiles";
 
 export interface ProbeMetadata {
-  tileType: "raster" | "vector";
+  tileType: "raster" | "vector" | null;
   bounds: [number, number, number, number] | null;
   minZoom: number | null;
   maxZoom: number | null;
@@ -34,6 +34,27 @@ export async function probePMTiles(url: string): Promise<ProbeMetadata> {
     bounds,
     minZoom: header.minZoom ?? null,
     maxZoom: header.maxZoom ?? null,
+    bandCount: null,
+    rescale: null,
+  };
+}
+
+export async function probeCOPC(url: string): Promise<ProbeMetadata> {
+  const resp = await fetch("/api/inspect-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  if (!resp.ok) throw new Error(`COPC probe failed: ${resp.status}`);
+  const data = await resp.json();
+  if (data.has_errors) {
+    throw new Error(data.error_detail || "Could not inspect point cloud");
+  }
+  return {
+    tileType: null,
+    bounds: data.bounds ?? null,
+    minZoom: null,
+    maxZoom: null,
     bandCount: null,
     rescale: null,
   };

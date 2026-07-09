@@ -35,6 +35,7 @@ dependencies = [
     "zstandard>=0.23.0",
     "rio-tiler>=9.3.0",
     "pmtiles>=3.4.0",
+    "laspy[lazrs]>=2.5.0",
 ]
 
 [project.optional-dependencies]

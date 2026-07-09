@@ -12,7 +12,7 @@ async def ingest_url_tool(
     wait: bool = True,
     timeout: float = 600.0,
 ) -> TextContent:
-    """Ingest a remote geospatial file (GeoTIFF, GeoJSON, Shapefile zip, NetCDF, HDF5)."""
+    """Ingest a remote geospatial file (GeoTIFF, GeoJSON, Shapefile zip, NetCDF, HDF5, LAS/LAZ)."""
     if not url or not url.strip():
         return TextContent(type="text", text="Error: url is required.")
 

@@ -9,6 +9,8 @@ import type { CameraState } from "../lib/layers/types";
 import type { Connection, Dataset } from "../types";
 import { buildLayersForChapter } from "../lib/story/rendering";
 import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
+import { connectionToMapItem, datasetToMapItem } from "../hooks/useMapData";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
@@ -76,6 +78,18 @@ export function MapChapter({
     const datasetMap = new Map<string, Dataset | null>([[dataset.id, dataset]]);
     return buildLayersForChapter(interactiveChapter, datasetMap, undefined);
   }, [dataset, connection, chapter, activeTimestepIndex, zarrNode]);
+
+  const copcItem = useMemo(() => {
+    if (connection?.connection_type === "copc")
+      return connectionToMapItem(connection);
+    if (dataset?.dataset_type === "pointcloud")
+      return datasetToMapItem(dataset);
+    return null;
+  }, [connection, dataset]);
+  const copcColorMode =
+    (chapter.layer_config.color_mode as CopcColorMode | undefined) ??
+    "elevation";
+  const copcPointSize = chapter.layer_config.point_size ?? 2;
 
   return (
     <Box maxW="900px" mx="auto" px={8} py={12}>
@@ -152,6 +166,9 @@ export function MapChapter({
             globe={chapter.map_state.globe}
             buildings={chapter.map_state.buildings}
             allowTerrain={chapterAllowsTerrain(chapter.layer_config)}
+            copcItem={copcItem}
+            copcColorMode={copcColorMode}
+            copcPointSize={copcPointSize}
           >
             {renderMetadata && (
               <Box position="absolute" top={3} right={3} zIndex={10}>

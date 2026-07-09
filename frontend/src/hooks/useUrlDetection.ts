@@ -2,7 +2,14 @@ import { useState, useCallback } from "react";
 import { workspaceFetch } from "../lib/api";
 
 export type UrlRoute =
-  "xyz" | "pmtiles" | "parquet" | "cog" | "convert-url" | "discover" | "zarr";
+  | "xyz"
+  | "pmtiles"
+  | "parquet"
+  | "cog"
+  | "convert-url"
+  | "discover"
+  | "zarr"
+  | "copc";
 
 export interface UrlDetectionResult {
   route: UrlRoute;
@@ -10,12 +17,16 @@ export interface UrlDetectionResult {
   format: string;
   isCog: boolean;
   sizeBytes: number | null;
+  bounds?: [number, number, number, number] | null;
+  crs?: string | null;
 }
 
 interface InspectUrlResponse {
   format: string;
   is_cog: boolean;
   size_bytes: number | null;
+  bounds?: [number, number, number, number] | null;
+  crs?: string | null;
   has_errors?: boolean;
   error_detail?: string | null;
 }
@@ -84,6 +95,20 @@ export async function detectUrlRoute(
       format: "zarr",
       isCog: false,
       sizeBytes: null,
+    };
+  }
+
+  // COPC point clouds (.copc.laz or .laz)
+  if (pathEndsWith(url, ".laz")) {
+    const probe = await inspect(url);
+    return {
+      route: "copc",
+      url,
+      format: "copc",
+      isCog: false,
+      sizeBytes: probe.size_bytes,
+      bounds: probe.bounds ?? null,
+      crs: probe.crs ?? null,
     };
   }
 

@@ -107,6 +107,13 @@ EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
             "proj:code": "EPSG:4326",
         },
     ),
+    ExampleConnectionSeed(
+        name="Autzen Stadium (classified lidar)",
+        url="https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz",
+        connection_type="copc",
+        bounds=[-123.0750, 44.0497, -123.0625, 44.0628],
+        config={"color_mode": "elevation", "point_size": 2.0},
+    ),
 ]
 
 

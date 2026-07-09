@@ -12,15 +12,20 @@ router = APIRouter(prefix="/api")
 
 class ValidateLayerConfigBody(BaseModel):
     dataset_id: str
-    colormap: str
+    colormap: str | None = None
     rescale_min: float | None = None
     rescale_max: float | None = None
+    color_mode: str | None = None
 
 
 @router.post("/validate-layer-config")
 def validate_layer_config(body: ValidateLayerConfigBody, request: Request):
-    """Check that a dataset exists and colormap is non-empty before creating a story chapter."""
-    if not body.colormap or not body.colormap.strip():
+    """Check that a dataset exists and coloring is specified before creating a chapter.
+
+    Raster layers need a colormap; point-cloud (copc) layers use color_mode
+    instead, so a colormap is not required when color_mode is provided.
+    """
+    if not body.color_mode and (not body.colormap or not body.colormap.strip()):
         return {"valid": False, "error": "colormap is required"}
     workspace_id = request.headers.get("x-workspace-id", "")
     session = get_session(request)

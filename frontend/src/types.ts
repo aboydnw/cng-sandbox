@@ -1,4 +1,4 @@
-export type DatasetType = "raster" | "vector";
+export type DatasetType = "raster" | "vector" | "pointcloud";
 
 export type JobStatus =
   | "pending"
@@ -49,6 +49,8 @@ export interface Dataset {
   pg_table: string | null;
   parquet_url: string | null;
   cog_url: string | null;
+  copc_url: string | null;
+  point_count: number | null;
   validation_results: ValidationCheck[];
   credits: Credit[];
   created_at: string;
@@ -76,7 +78,13 @@ export interface Dataset {
 }
 
 export type ConnectionType =
-  "xyz_raster" | "xyz_vector" | "cog" | "pmtiles" | "geoparquet" | "zarr";
+  | "xyz_raster"
+  | "xyz_vector"
+  | "cog"
+  | "pmtiles"
+  | "geoparquet"
+  | "zarr"
+  | "copc";
 
 export interface ZarrConnectionConfig {
   variable: string;
@@ -186,9 +194,11 @@ export interface MapItem {
   id: string;
   name: string;
   source: MapItemSource;
-  dataType: "raster" | "vector";
+  dataType: "raster" | "vector" | "pointcloud";
   tileUrl: string;
   bounds: [number, number, number, number] | null;
+  copcUrl: string | null;
+  pointCount: number | null;
   minZoom: number | null;
   maxZoom: number | null;
   bandCount: number | null;

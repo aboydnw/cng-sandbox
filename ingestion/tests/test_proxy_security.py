@@ -115,6 +115,40 @@ def test_proxy_does_not_follow_redirects(client, monkeypatch):
     assert resp.status_code == 502
 
 
+def test_proxy_allows_laz(client, monkeypatch):
+    monkeypatch.setattr(
+        "src.routes.proxy.socket.getaddrinfo",
+        lambda *a, **kw: [(None, None, None, None, ("93.184.216.34", 0))],
+    )
+
+    class FakeSmallResponse:
+        status_code: ClassVar[int] = 200
+        headers: ClassVar[dict[str, str]] = {"content-type": "application/octet-stream"}
+
+        async def aiter_bytes(self, chunk_size=None):
+            yield b"LASF"
+
+        async def aclose(self):
+            pass
+
+    class FakeSmallClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def build_request(self, method, url, headers=None):
+            return None
+
+        async def send(self, request, stream=False, **kwargs):
+            return FakeSmallResponse()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr("src.routes.proxy.httpx.AsyncClient", FakeSmallClient)
+    resp = client.get("/api/proxy?url=https://example.com/autzen-classified.copc.laz")
+    assert resp.status_code == 200
+
+
 def test_proxy_returns_502_on_dns_failure(client, monkeypatch):
     def raise_gaierror(*a, **kw):
         raise socket.gaierror("Name not resolved")

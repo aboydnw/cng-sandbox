@@ -73,6 +73,13 @@ def check_render_mode_allowed(
     if desired_mode != "client":
         return "Invalid render_mode"
 
+    if (
+        isinstance(row, ConnectionRow)
+        and row.connection_type == "copc"
+        and desired_mode == "client"
+    ):
+        return "Point clouds are not client-rendered COGs"
+
     inputs = (
         _dataset_inputs(row) if isinstance(row, DatasetRow) else _connection_inputs(row)
     )

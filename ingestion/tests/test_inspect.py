@@ -24,6 +24,24 @@ def test_inspect_url_detects_pmtiles(client, monkeypatch):
     assert body["has_errors"] is False
 
 
+def test_inspect_copc_url_detects_format(client, monkeypatch):
+    async def fake_probe_size(url):
+        return 123, None
+
+    monkeypatch.setattr("src.routes.inspect._probe_size", fake_probe_size)
+    monkeypatch.setattr(
+        "src.routes.inspect._probe_las_over_http",
+        lambda url: ([-123.08, 44.05, -123.06, 44.06], "EPSG:2992"),
+    )
+    resp = client.post(
+        "/api/inspect-url", json={"url": "https://example.com/a.copc.laz"}
+    )
+    body = resp.json()
+    assert body["format"] == "copc"
+    assert body["crs"] == "EPSG:2992"
+    assert body["bounds"] is not None
+
+
 def test_inspect_url_detects_parquet(client, monkeypatch):
     fake_resp = MagicMock(status_code=200, headers={"content-length": "42"})
 

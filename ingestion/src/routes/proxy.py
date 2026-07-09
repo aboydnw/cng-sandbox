@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
-ALLOWED_EXTENSIONS = (".pmtiles", ".tif", ".tiff")
+ALLOWED_EXTENSIONS = (".pmtiles", ".tif", ".tiff", ".laz")
 
 MAX_RESPONSE_BYTES = 50 * 1024 * 1024  # 50 MB
 

@@ -43,6 +43,8 @@ import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
 import { detectCadence } from "../utils/temporal";
 import { MapSidePanel } from "../components/MapSidePanel";
+import { CopcControls } from "../components/CopcControls";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { useMapData } from "../hooks/useMapData";
 import { useMapControls } from "../hooks/useMapControls";
 import { useRasterOverrides } from "../hooks/useRasterOverrides";
@@ -181,6 +183,12 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     }
   }, [item, controls.colormapName, controls.colormapReversed, refresh]);
 
+  // --- Point cloud (COPC) controls ---
+  const isPointCloud = item?.dataType === "pointcloud";
+  const [copcColorMode, setCopcColorMode] =
+    useState<CopcColorMode>("elevation");
+  const [copcPointSize, setCopcPointSize] = useState(2);
+
   // --- Camera ---
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [basemap, setBasemap] = useState("streets");
@@ -193,9 +201,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       const size = el
         ? { width: el.clientWidth, height: el.clientHeight }
         : undefined;
-      setCamera(cameraFromBounds(item.bounds, size));
+      // Point clouds read better pitched into a 3D perspective.
+      const base = cameraFromBounds(item.bounds, size);
+      setCamera(isPointCloud ? { ...base, pitch: 45 } : base);
     }
-  }, [item?.id, boundsKey]);
+  }, [item?.id, boundsKey, isPointCloud]);
 
   // --- Zoom prompt for layers whose tiles only exist at higher zooms ---
   const [zoomPromptDismissed, setZoomPromptDismissed] = useState(false);
@@ -711,6 +721,9 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               getTooltip={getTooltip}
               hideBasemapPicker={shared}
               enableSnapshot={shared}
+              copcItem={isPointCloud ? item : null}
+              copcColorMode={copcColorMode}
+              copcPointSize={copcPointSize}
             >
               {showZoomBanner && item?.minZoom != null && (
                 <ZoomPromptBanner
@@ -718,6 +731,28 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   onZoomToData={handleZoomToData}
                   onDismiss={() => setZoomPromptDismissed(true)}
                 />
+              )}
+              {isPointCloud && (
+                <Box
+                  position="absolute"
+                  top={3}
+                  right={3}
+                  bg="white"
+                  borderWidth="1px"
+                  borderColor="brand.border"
+                  borderRadius="6px"
+                  shadow="sm"
+                  p={3}
+                  w="200px"
+                >
+                  <CopcControls
+                    colorMode={copcColorMode}
+                    onColorModeChange={setCopcColorMode}
+                    pointSize={copcPointSize}
+                    onPointSizeChange={setCopcPointSize}
+                    pointCount={item?.pointCount ?? null}
+                  />
+                </Box>
               )}
               {shared &&
                 !(isServerGeoParquet && needsConversion) &&

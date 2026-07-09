@@ -38,7 +38,8 @@ export interface LayerConfig {
   rescale_max?: number | null;
   colormap_reversed?: boolean;
   color_property?: string | null;
-  color_mode?: "rgb" | null;
+  color_mode?: "rgb" | "elevation" | "intensity" | "classification" | null;
+  point_size?: number | null;
 }
 
 export type ChapterType =

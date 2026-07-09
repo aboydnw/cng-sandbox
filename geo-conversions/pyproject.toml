@@ -14,7 +14,8 @@ raster = ["rasterio", "rio-cogeo", "numpy", "pyproj"]
 vector = ["geopandas", "pyarrow", "shapely"]
 netcdf = ["xarray", "netcdf4", "rasterio", "rio-cogeo", "numpy", "pyproj"]
 hdf5 = ["h5py", "rasterio", "rio-cogeo", "numpy"]
-all = ["rasterio", "rio-cogeo", "numpy", "pyproj", "geopandas", "pyarrow", "shapely", "xarray", "netcdf4", "h5py"]
+pointcloud = ["laspy[lazrs]>=2.5.0", "pyproj"]
+all = ["rasterio", "rio-cogeo", "numpy", "pyproj", "geopandas", "pyarrow", "shapely", "xarray", "netcdf4", "h5py", "laspy[lazrs]>=2.5.0"]
 
 [project.scripts]
 cng = "cli:main"
@@ -27,6 +28,7 @@ packages = [
     "geojson_to_geoparquet",
     "netcdf_to_cog",
     "hdf5_to_cog",
+    "las_to_copc",
     "cng_shared",
 ]
 
@@ -36,6 +38,7 @@ shapefile_to_geoparquet = "shapefile-to-geoparquet"
 geojson_to_geoparquet = "geojson-to-geoparquet"
 netcdf_to_cog = "netcdf-to-cog"
 hdf5_to_cog = "hdf5-to-cog"
+las_to_copc = "las-to-copc"
 cng_shared = "shared"
 
 [tool.setuptools.package-data]
@@ -44,4 +47,5 @@ shapefile_to_geoparquet = ["scripts/*.py"]
 geojson_to_geoparquet = ["scripts/*.py"]
 netcdf_to_cog = ["scripts/*.py"]
 hdf5_to_cog = ["scripts/*.py"]
+las_to_copc = ["scripts/*.py"]
 cng_shared = ["scripts/*.py"]

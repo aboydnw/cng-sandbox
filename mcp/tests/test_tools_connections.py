@@ -74,6 +74,28 @@ async def test_create_connection_tool_geoparquet(mock_http_client):
 
 
 @pytest.mark.asyncio
+async def test_create_connection_tool_copc(mock_http_client):
+    created = {
+        "id": "conn_copc_001",
+        "name": "Autzen",
+        "url": "https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz",
+        "connection_type": "copc",
+    }
+    mock_http_client.post = AsyncMock(return_value=_make_response(created))
+    client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
+    result = await create_connection_tool(
+        client,
+        name="Autzen",
+        url="https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz",
+        connection_type="copc",
+        config={"color_mode": "elevation", "point_size": 2.0},
+    )
+    assert isinstance(result, TextContent)
+    assert "conn_copc_001" in result.text
+    assert "copc" in result.text
+
+
+@pytest.mark.asyncio
 async def test_create_connection_tool_requires_fields(mock_http_client):
     client = SandboxAPIClient(api_url="http://localhost:8086", http_client=mock_http_client)
     result = await create_connection_tool(client, name="", url="s3://x/", connection_type="zarr")

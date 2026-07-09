@@ -28,6 +28,28 @@ def test_validate_layer_config_empty_colormap(client):
     assert "error" in body
 
 
+def test_validate_layer_config_color_mode_without_colormap(client, db_session):
+    from src.models.dataset import DatasetRow
+
+    ds = DatasetRow(
+        id="ds-copc",
+        filename="scan.copc.laz",
+        dataset_type="pointcloud",
+        format_pair="las-to-copc",
+        tile_url="/storage/datasets/ds-copc/converted/data.copc.laz",
+        workspace_id="testABCD",
+    )
+    db_session.add(ds)
+    db_session.commit()
+
+    resp = client.post(
+        "/api/validate-layer-config",
+        json={"dataset_id": "ds-copc", "color_mode": "elevation"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["valid"] is True
+
+
 def test_validate_layer_config_valid_dataset(client, db_session):
     from src.models.dataset import DatasetRow
 

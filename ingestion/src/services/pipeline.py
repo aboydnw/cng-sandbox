@@ -126,6 +126,25 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
             }
         )
         return credits
+    elif format_pair == FormatPair.LAS_TO_COPC:
+        credits.append(
+            {"tool": "PDAL", "url": "https://pdal.io", "role": "Converted by"}
+        )
+        credits.append(
+            {
+                "tool": "copc.js",
+                "url": "https://github.com/connormanning/copc",
+                "role": "Streamed by",
+            }
+        )
+        credits.append(
+            {
+                "tool": "MapLibre",
+                "url": "https://maplibre.org",
+                "role": "Map rendered by",
+            }
+        )
+        return credits
 
     if format_pair.dataset_type == DatasetType.RASTER:
         credits.append(
@@ -457,6 +476,25 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
         format_pair = detect_format(job.filename)
         job.format_pair = format_pair
         validate_magic_bytes(input_path, format_pair)
+
+        # Point clouds have their own pipeline (scan -> PDAL COPC -> store to R2,
+        # no pgSTAC/tipg registration). python-magic reports .laz as
+        # application/octet-stream, so guard on the LASF signature before
+        # dispatching.
+        if format_pair == FormatPair.LAS_TO_COPC:
+            with open(input_path, "rb") as fh:
+                if fh.read(4) != b"LASF":
+                    job.status = JobStatus.FAILED
+                    job.error = (
+                        "This file is not a valid LAS/LAZ point cloud "
+                        "(missing LASF signature)."
+                    )
+                    return
+            from src.services.pointcloud_pipeline import run_pointcloud_pipeline
+
+            await run_pointcloud_pipeline(job, input_path, db_session_factory)
+            return
+
         original_file_size = os.path.getsize(input_path)
 
         # Variable selection for HDF5/NetCDF

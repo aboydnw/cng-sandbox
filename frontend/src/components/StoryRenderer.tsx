@@ -23,6 +23,8 @@ import {
   buildLayersForChapter,
 } from "../lib/story/rendering";
 import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
+import { connectionToMapItem, datasetToMapItem } from "../hooks/useMapData";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
 import type { Story, ScrollytellingChapter } from "../lib/story";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
@@ -326,6 +328,18 @@ function ScrollytellingBlock({
     ? datasetMap.get(activeChapter.layer_config.dataset_id)
     : undefined;
 
+  const copcItem = useMemo(() => {
+    if (activeConn?.connection_type === "copc")
+      return connectionToMapItem(activeConn);
+    if (activeDataset && activeDataset.dataset_type === "pointcloud")
+      return datasetToMapItem(activeDataset);
+    return null;
+  }, [activeConn, activeDataset]);
+  const copcColorMode =
+    (activeChapter?.layer_config?.color_mode as CopcColorMode | undefined) ??
+    "elevation";
+  const copcPointSize = activeChapter?.layer_config?.point_size ?? 2;
+
   return (
     <Box position="relative">
       {/* Sticky map — stays fixed in viewport while steps scroll past */}
@@ -343,6 +357,9 @@ function ScrollytellingBlock({
             buildings={activeChapter?.map_state.buildings}
             allowTerrain={chapterAllowsTerrain(activeChapter?.layer_config)}
             interactive={false}
+            copcItem={copcItem}
+            copcColorMode={copcColorMode}
+            copcPointSize={copcPointSize}
           />
         )}
         {renderMetadata && !(activeDataset === null && !hasConnection) && (

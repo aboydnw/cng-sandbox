@@ -65,6 +65,19 @@ def test_patch_render_mode_404_for_missing(client, db_session):
     assert resp.status_code == 404
 
 
+def test_patch_render_mode_client_rejected_for_copc(client, db_session):
+    conn_id = _insert_connection(
+        db_session,
+        connection_type="copc",
+        url="https://example.com/a.copc.laz",
+    )
+    resp = client.patch(
+        f"/api/connections/{conn_id}/render-mode",
+        json={"render_mode": "client"},
+    )
+    assert resp.status_code == 400
+
+
 def test_patch_render_mode_null_clears(client, db_session):
     conn_id = _insert_connection(db_session)
     resp = client.patch(

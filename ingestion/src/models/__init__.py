@@ -23,6 +23,7 @@ class JobStatus(StrEnum):
 class DatasetType(StrEnum):
     RASTER = "raster"
     VECTOR = "vector"
+    POINTCLOUD = "pointcloud"
 
 
 class FormatPair(StrEnum):
@@ -32,6 +33,7 @@ class FormatPair(StrEnum):
     NETCDF_TO_COG = "netcdf-to-cog"
     HDF5_TO_COG = "hdf5-to-cog"
     PMTILES = "pmtiles"
+    LAS_TO_COPC = "las-to-copc"
 
     @staticmethod
     def from_extension(ext: str) -> "FormatPair":
@@ -48,6 +50,8 @@ class FormatPair(StrEnum):
             ".h5": FormatPair.HDF5_TO_COG,
             ".hdf5": FormatPair.HDF5_TO_COG,
             ".pmtiles": FormatPair.PMTILES,
+            ".las": FormatPair.LAS_TO_COPC,
+            ".laz": FormatPair.LAS_TO_COPC,
         }
         if ext not in mapping:
             raise ValueError(f"Unsupported format: {ext}")
@@ -61,6 +65,8 @@ class FormatPair(StrEnum):
             FormatPair.HDF5_TO_COG,
         ):
             return DatasetType.RASTER
+        if self == FormatPair.LAS_TO_COPC:
+            return DatasetType.POINTCLOUD
         return DatasetType.VECTOR
 
 
@@ -132,6 +138,8 @@ class Dataset(BaseModel):
     pg_table: str | None = None
     parquet_url: str | None = None
     cog_url: str | None = None
+    copc_url: str | None = None
+    point_count: int | None = None
     validation_results: list[ValidationCheck] = []
     credits: list[dict] = []
     is_temporal: bool = False

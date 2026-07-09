@@ -43,6 +43,8 @@ const BASE_DATASET: Dataset = {
   pg_table: null,
   parquet_url: null,
   cog_url: null,
+  copc_url: null,
+  point_count: null,
   validation_results: [],
   credits: [],
   created_at: "2024-01-01T00:00:00Z",
@@ -502,5 +504,59 @@ describe("buildLayersForChapter with raster dataset", () => {
     );
     expect(layers.length).toBeGreaterThan(0);
     expect(renderMetadata).toBeUndefined();
+  });
+});
+
+describe("buildLayersForChapter — copc point clouds", () => {
+  const COPC_CONNECTION: Connection = {
+    ...BASE_CONNECTION,
+    id: "conn-copc",
+    name: "Autzen",
+    url: "https://example.com/a.copc.laz",
+    connection_type: "copc",
+    tile_type: null,
+  };
+
+  it("yields no deck.gl layers for a copc connection chapter", () => {
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "",
+        connection_id: "conn-copc",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "streets",
+      },
+    });
+    const { layers, renderMetadata } = buildLayersForChapter(
+      chapter,
+      new Map<string, Dataset | null>(),
+      new Map([["conn-copc", COPC_CONNECTION]])
+    );
+    expect(layers).toEqual([]);
+    expect(renderMetadata?.reason).toBe("point cloud");
+  });
+
+  it("yields no deck.gl layers for a pointcloud dataset chapter", () => {
+    const ds: Dataset = {
+      ...BASE_DATASET,
+      id: "ds-pc",
+      dataset_type: "pointcloud",
+      copc_url: "/storage/datasets/ds-pc/converted/data.copc.laz",
+    };
+    const chapter = createChapter({
+      layer_config: {
+        dataset_id: "ds-pc",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "streets",
+      },
+    });
+    const { layers, renderMetadata } = buildLayersForChapter(
+      chapter,
+      new Map<string, Dataset | null>([["ds-pc", ds]]),
+      undefined
+    );
+    expect(layers).toEqual([]);
+    expect(renderMetadata?.reason).toBe("point cloud");
   });
 });

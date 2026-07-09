@@ -120,16 +120,21 @@ class SandboxAPIClient:
     async def validate_layer_config(
         self,
         dataset_id: str,
-        colormap: str,
+        colormap: Optional[str] = None,
         rescale_min: Optional[float] = None,
         rescale_max: Optional[float] = None,
+        color_mode: Optional[str] = None,
     ) -> dict[str, Any]:
         """Validate a layer configuration before creating a chapter."""
-        payload: dict[str, Any] = {"dataset_id": dataset_id, "colormap": colormap}
+        payload: dict[str, Any] = {"dataset_id": dataset_id}
+        if colormap is not None:
+            payload["colormap"] = colormap
         if rescale_min is not None:
             payload["rescale_min"] = rescale_min
         if rescale_max is not None:
             payload["rescale_max"] = rescale_max
+        if color_mode is not None:
+            payload["color_mode"] = color_mode
         response = await self.http_client.post(
             f"{self.api_url}/api/validate-layer-config",
             json=payload,

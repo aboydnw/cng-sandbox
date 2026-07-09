@@ -34,6 +34,9 @@ def check_copc_vlr_present(output_path: str) -> CheckResult:
     )
 
 
+_PDAL_INFO_TIMEOUT_SECONDS = 120
+
+
 def check_copc_hierarchy_readable(output_path: str) -> CheckResult:
     """Check that PDAL can read the COPC octree hierarchy without error."""
     try:
@@ -41,9 +44,16 @@ def check_copc_hierarchy_readable(output_path: str) -> CheckResult:
             ["pdal", "info", "--summary", output_path],
             capture_output=True,
             text=True,
+            timeout=_PDAL_INFO_TIMEOUT_SECONDS,
         )
     except FileNotFoundError:
         return CheckResult("COPC hierarchy", False, "pdal CLI not available")
+    except subprocess.TimeoutExpired:
+        return CheckResult(
+            "COPC hierarchy",
+            False,
+            f"pdal info timed out after {_PDAL_INFO_TIMEOUT_SECONDS}s",
+        )
     if result.returncode == 0:
         return CheckResult("COPC hierarchy", True, "pdal read the hierarchy summary")
     return CheckResult(
@@ -60,19 +70,45 @@ def check_point_count_preserved(input_path: str, output_path: str) -> CheckResul
     return CheckResult("Point count", False, f"Source: {src}, Output: {dst}")
 
 
-def _epsg(header) -> int | None:
-    crs = header.parse_crs()
-    return crs.to_epsg() if crs else None
-
-
 def check_crs_preserved(input_path: str, output_path: str) -> CheckResult:
-    """Check that the CRS (EPSG) is preserved."""
-    src = _epsg(_header(input_path))
-    dst = _epsg(_header(output_path))
-    if src == dst:
-        return CheckResult("CRS preserved", True, f"EPSG:{src}")
+    """Check that the CRS is preserved.
+
+    Compares EPSG codes when both sides expose one. For WKT-only or compound
+    CRSes that have no EPSG code, ``to_epsg()`` returns None on both sides, so
+    comparing EPSG alone would pass vacuously (None == None) even when the
+    conversion dropped or altered the projection — exactly the compound-CRS
+    class this conversion targets. In that case fall back to comparing the CRS
+    objects directly. A missing output CRS is always a failure: the ingestion
+    guard rejects a source with no CRS before conversion, so the input is known
+    to have had one.
+    """
+    src = _header(input_path).parse_crs()
+    dst = _header(output_path).parse_crs()
+
+    if src is None:
+        return CheckResult("CRS preserved", False, "Source has no CRS")
+    if dst is None:
+        return CheckResult(
+            "CRS preserved", False, "Output dropped the CRS (source had one)"
+        )
+
+    src_epsg = src.to_epsg()
+    dst_epsg = dst.to_epsg()
+    if src_epsg is not None and dst_epsg is not None:
+        if src_epsg == dst_epsg:
+            return CheckResult("CRS preserved", True, f"EPSG:{src_epsg}")
+        return CheckResult(
+            "CRS preserved",
+            False,
+            f"Source: EPSG:{src_epsg}, Output: EPSG:{dst_epsg}",
+        )
+
+    if src.equals(dst):
+        return CheckResult("CRS preserved", True, f"WKT match ({src.name})")
     return CheckResult(
-        "CRS preserved", False, f"Source: EPSG:{src}, Output: EPSG:{dst}"
+        "CRS preserved",
+        False,
+        f"CRS mismatch (no EPSG): source={src.name}, output={dst.name}",
     )
 
 

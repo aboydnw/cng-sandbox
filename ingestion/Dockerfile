@@ -48,12 +48,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # PDAL CLI for LAS/LAZ -> COPC conversion. Debian trixie's apt has no `pdal`
 # package (dropped during a GDAL transition), so install it from conda-forge
-# via micromamba into a dedicated prefix and put it on PATH.
+# via micromamba into a dedicated prefix. Symlink only the `pdal` binary onto
+# PATH (not the whole env bin, which would shadow the system python3 with
+# conda's). RPATH lets the symlinked binary find its own libs.
 COPY --from=mambaorg/micromamba:latest /bin/micromamba /usr/local/bin/micromamba
 ENV MAMBA_ROOT_PREFIX=/opt/conda
 RUN micromamba create -y -p /opt/pdal -c conda-forge pdal \
-    && micromamba clean --all --yes
-ENV PATH="/opt/pdal/bin:${PATH}"
+    && micromamba clean --all --yes \
+    && ln -s /opt/pdal/bin/pdal /usr/local/bin/pdal
 
 # Copy installed Python packages from builder
 COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages

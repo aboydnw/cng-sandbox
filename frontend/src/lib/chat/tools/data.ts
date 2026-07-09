@@ -6,14 +6,20 @@ const TOOL_FETCH_TIMEOUT_MS = 15000;
 
 /**
  * `fetch` bounded by a timeout so a hung tiler can't stall the conversation
- * tool-execution loop indefinitely. Aborts and rejects after the deadline.
+ * tool-execution loop indefinitely. Aborts and rejects after the deadline. A
+ * caller-supplied `init.signal` (e.g. a shared per-tool-call deadline) is
+ * combined with the per-request timeout so whichever fires first wins.
  */
 function fetchWithTimeout(
   url: string,
   init?: RequestInit,
   timeoutMs = TOOL_FETCH_TIMEOUT_MS
 ): Promise<Response> {
-  return fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, timeout])
+    : timeout;
+  return fetch(url, { ...init, signal });
 }
 
 const queryPointSchema = z
@@ -58,10 +64,13 @@ export const dataTools: ChatTool[] = [
         return { summary: "No raster layer is currently shown to sample." };
       }
       const parts: string[] = [];
+      // One deadline for the whole serial loop, so N visible rasters can't
+      // stack N separate timeouts and blow past the turn budget.
+      const deadline = AbortSignal.timeout(TOOL_FETCH_TIMEOUT_MS);
       for (const layer of layers) {
         const url = `${config.cogTilerUrl}/point/${longitude},${latitude}?url=${encodeURIComponent(layer.cogUrl!)}`;
         try {
-          const resp = await fetchWithTimeout(url);
+          const resp = await fetchWithTimeout(url, { signal: deadline });
           if (!resp.ok) {
             parts.push(`${layer.label ?? layer.layer_id}: unavailable`);
             continue;

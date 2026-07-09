@@ -84,9 +84,7 @@ function migrateChapter(
   // dataset into it. Only chapters where layer_config is absent entirely
   // are genuine legacy shapes that need the backfill.
   const rawLayerConfig = raw.layer_config as
-    | Partial<LayerConfig>
-    | null
-    | undefined;
+    Partial<LayerConfig> | null | undefined;
   const layer_config: LayerConfig = {
     ...DEFAULT_LAYER_CONFIG,
     ...rawLayerConfig,

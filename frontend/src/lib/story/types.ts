@@ -43,12 +43,7 @@ export interface LayerConfig {
 }
 
 export type ChapterType =
-  | "scrollytelling"
-  | "prose"
-  | "map"
-  | "image"
-  | "video"
-  | "chart";
+  "scrollytelling" | "prose" | "map" | "image" | "video" | "chart";
 
 interface BaseChapter {
   id: string;
@@ -120,9 +115,7 @@ export interface DatasetHistogramSource {
 }
 
 export type ChartSource =
-  | CsvSource
-  | DatasetTimeseriesSource
-  | DatasetHistogramSource;
+  CsvSource | DatasetTimeseriesSource | DatasetHistogramSource;
 
 export interface ChartViz {
   kind: "line" | "bar";

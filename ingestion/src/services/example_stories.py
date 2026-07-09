@@ -698,12 +698,140 @@ ANTAKYA_STORY = StorySeed(
 )
 
 
+HIGH_PLACES_STORY = StorySeed(
+    title="Earth's high places",
+    description=(
+        "A 3D tour of the planet's great mountains — spin the globe, tilt into "
+        "exaggerated terrain over the Himalaya and the Andes, rise through a city "
+        "built into the peaks, then explore global relief. Try the **Ask this "
+        "map** button to fly between the stops. Built on open elevation data."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="The high places",
+            narrative=(
+                "Mountains are the hardest part of the planet to picture from a "
+                "flat map. Height is the whole story, and a top-down view throws "
+                "it away.\n\n"
+                "This story leans on the map's **3D scene** instead — a globe, "
+                "exaggerated terrain, and extruded buildings — to put the "
+                "vertical back in. Scroll through five stops from orbit down to "
+                "street level, then open the free-explore map at the end.\n\n"
+                "There's also an **Ask this map** button. Ask it to fly to the "
+                "Andes, jump to a chapter, or explain what a stop is showing — "
+                "it drives the map for you."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="One planet, seen whole",
+            narrative=(
+                "Start from orbit. On the globe the great mountain belts read as "
+                "seams across the continents — the Himalaya arcing along southern "
+                "Asia, the Andes running the length of South America.\n\n"
+                "These are the collision zones, where plates push into each other "
+                "and the crust has nowhere to go but up. We'll drop into two of "
+                "them."
+            ),
+            center=(80.0, 20.0),
+            zoom=1.7,
+            globe=True,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="The Himalaya",
+            narrative=(
+                "Where the Indian plate drives into Asia, the ground has buckled "
+                "into the highest range on Earth — fourteen peaks above 8,000 m, "
+                "**Everest** the tallest of them.\n\n"
+                "Tilt into the terrain and the relief is exaggerated so the "
+                "ridges and valleys read clearly. This is a scene-setting stop: "
+                "no data overlay, just the shape of the land."
+            ),
+            center=(86.925, 27.988),
+            zoom=9.0,
+            pitch=68.0,
+            bearing=20.0,
+            terrain={"enabled": True, "exaggeration": 1.5},
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="The Andes",
+            narrative=(
+                "On the other side of the planet, the Andes run more than "
+                "7,000 km down the western edge of South America — the longest "
+                "continental mountain range there is, thrown up where the Nazca "
+                "plate dives under the continent.\n\n"
+                "Near the Argentina-Chile border sits **Aconcagua**, at 6,961 m "
+                "the highest peak outside Asia. Tilt across the spine and watch "
+                "the terrain climb straight out of the lowlands."
+            ),
+            center=(-70.011, -32.653),
+            zoom=8.5,
+            pitch=66.0,
+            bearing=-25.0,
+            terrain={"enabled": True, "exaggeration": 1.5},
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="A city in the mountains",
+            narrative=(
+                "People live in these ranges too. **Kathmandu** sits in a "
+                "bowl-shaped valley at about 1,400 m, ringed by Himalayan "
+                "foothills.\n\n"
+                "Drop to street level and the buildings rise in 3D — extruded "
+                "from open building-footprint data. It's a different kind of "
+                "terrain: the built one."
+            ),
+            center=(85.324, 27.7172),
+            zoom=15.5,
+            pitch=55.0,
+            bearing=20.0,
+            buildings=True,
+        ),
+        ChapterSeed(
+            type="map",
+            title="Explore the world's relief",
+            narrative=(
+                "Now the whole planet's elevation, from the **GEBCO 2024** global "
+                "model. Pan and zoom anywhere: trace the Rockies, the Alps, the "
+                "East African Rift, or the deep ocean trenches on the other end "
+                "of the scale.\n\n"
+                "Ask the map to take you somewhere, or toggle the relief layer "
+                "on and off to compare it with the basemap."
+            ),
+            dataset_source_url=GEBCO_URL,
+            center=(30.0, 25.0),
+            zoom=2.0,
+            colormap="terrain",
+            opacity=0.9,
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Built from open data",
+            narrative=(
+                "Every layer here is open. Terrain relief comes from the "
+                "**Mapterhorn** global DEM, the 3D buildings from **OpenFreeMap** "
+                "vector tiles, and the elevation model from **GEBCO 2024**, "
+                "distributed as cloud-optimized GeoTIFFs via [source.coop]"
+                "(https://source.coop/alexgleith/gebco-2024).\n\n"
+                "Fork this story to reuse its 3D map states, or start from "
+                "scratch and add your own data on top. And keep using **Ask this "
+                "map** — it can navigate any published story like this one."
+            ),
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
     OCEAN_FOREST_STORY,
     LAHAINA_STORY,
     ANTAKYA_STORY,
+    HIGH_PLACES_STORY,
 ]
 
 

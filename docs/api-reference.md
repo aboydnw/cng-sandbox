@@ -40,6 +40,7 @@ Read this when working on any endpoint under `/api/*`, adding new routes, debugg
 ## Stories (shareable map narratives)
 
 - `POST /api/stories` — Create a story with chapters linking to datasets
+  - Chapters are a discriminated union on `type`. A `type: "flyover"` chapter (scroll-scrubbed 3D camera flight) carries: `keyframes` (array of `{ center: [lng, lat], zoom, bearing, pitch, caption? }`, ≥2 to render as a flight; fewer degrades to a plain map chapter), `map_state` (basemap + 3D flags; pose fields are ignored — keyframe 0 is the entry camera), optional `layer_config` (omit for the common terrain/buildings scene-setter — a bound data layer disables terrain), and `scroll_length` (number, default `1`; scroll-distance multiplier, ~one viewport height per keyframe segment). Same shape accepted by `PATCH /api/stories/{id}`.
 - `GET /api/stories` — List stories belonging to the caller's workspace plus any story flagged `is_example=True` (example stories are visible to every workspace). Requires `X-Workspace-Id` header (returns 400 without it). Each story includes `expires_at` (ISO timestamp, `created_at` + the 30-day retention window); always `null` for example stories, which never expire.
 - `GET /api/stories/examples` — Public list of example stories (`is_example=True`); no `X-Workspace-Id` header required. Used by the public landing page to render the example carousel without provisioning a workspace.
 - `GET /api/stories/{id}` — Get a story by ID

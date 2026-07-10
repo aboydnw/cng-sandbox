@@ -69,7 +69,9 @@ export function setKeyframeCaption(
   if (index < 0 || index >= list.length) return list;
   return list.map((k, i) => {
     if (i !== index) return k;
-    const { caption: _dropped, ...rest } = k;
-    return caption ? { ...rest, caption } : rest;
+    if (caption) return { ...k, caption };
+    const next = { ...k };
+    delete next.caption;
+    return next;
   });
 }

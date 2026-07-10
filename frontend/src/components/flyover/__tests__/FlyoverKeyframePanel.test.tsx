@@ -56,6 +56,17 @@ describe("FlyoverKeyframePanel", () => {
     expect(next.id).toBe(chapter.id);
   });
 
+  it("reorders keyframes with the move up/down buttons (keyboard path)", async () => {
+    const { onChange } = renderPanel();
+    // Second row's "up" button swaps keyframes 0 and 1.
+    await userEvent.click(
+      screen.getAllByRole("button", { name: /move keyframe up/i })[1]
+    );
+    const next = onChange.mock.calls[0][0];
+    expect(next.keyframes[0].caption).toBeUndefined();
+    expect(next.keyframes[1].caption).toBe("a");
+  });
+
   it("deletes a keyframe", async () => {
     const { onChange } = renderPanel();
     await userEvent.click(

@@ -442,23 +442,24 @@ export function useStoryEditor() {
           ? datasetMap.get(inheritedDatasetId)
           : undefined;
         if (type === "flyover") {
+          // Re-selecting flyover on a flyover chapter preserves the author's
+          // keyframes/captions/layer_config (mirrors the image/video branches).
+          if (ch.type === "flyover") return ch;
           return createFlyoverChapter({
             ...base,
             keyframes: [captureKeyframe(camera)],
             map_state: isMapBoundChapter(ch)
               ? { ...ch.map_state }
-              : ch.type === "flyover"
-                ? { ...ch.map_state }
-                : {
-                    center: [camera.longitude, camera.latitude] as [
-                      number,
-                      number,
-                    ],
-                    zoom: camera.zoom,
-                    bearing: camera.bearing,
-                    pitch: camera.pitch,
-                    basemap,
-                  },
+              : {
+                  center: [camera.longitude, camera.latitude] as [
+                    number,
+                    number,
+                  ],
+                  zoom: camera.zoom,
+                  bearing: camera.bearing,
+                  pitch: camera.pitch,
+                  basemap,
+                },
             ...(isMapBoundChapter(ch) && ch.layer_config.dataset_id
               ? { layer_config: { ...ch.layer_config } }
               : {}),

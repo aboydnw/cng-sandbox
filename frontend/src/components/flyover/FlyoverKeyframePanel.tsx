@@ -3,6 +3,8 @@ import { Box, Button, Flex, IconButton, Text } from "@chakra-ui/react";
 import {
   AirplaneLanding,
   ArrowsClockwise,
+  CaretDown,
+  CaretUp,
   CrosshairSimple,
   DotsSixVertical,
   Eye,
@@ -138,6 +140,28 @@ export function FlyoverKeyframePanel({
           <Box as="span" color="gray.400" cursor="grab" aria-hidden>
             <DotsSixVertical size={16} />
           </Box>
+          <Flex direction="column">
+            <IconButton
+              aria-label="Move keyframe up"
+              size="2xs"
+              variant="ghost"
+              color="brand.brown"
+              disabled={i === 0}
+              onClick={() => update(moveKeyframe(keyframes, i, i - 1))}
+            >
+              <CaretUp size={10} />
+            </IconButton>
+            <IconButton
+              aria-label="Move keyframe down"
+              size="2xs"
+              variant="ghost"
+              color="brand.brown"
+              disabled={i === keyframes.length - 1}
+              onClick={() => update(moveKeyframe(keyframes, i, i + 1))}
+            >
+              <CaretDown size={10} />
+            </IconButton>
+          </Flex>
           <Flex
             align="center"
             justify="center"

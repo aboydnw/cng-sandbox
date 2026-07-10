@@ -1,3 +1,5 @@
+import itertools
+
 from src.services.example_stories import (
     ALL_STORIES,
     GEBCO_URL,
@@ -33,7 +35,7 @@ def test_flyover_keyframes_are_well_formed_and_gentle():
         assert set(k) >= {"center", "zoom", "bearing", "pitch"}
         assert len(k["center"]) == 2
     zooms = [k["zoom"] for k in kfs]
-    for a, b in zip(zooms, zooms[1:]):
+    for a, b in itertools.pairwise(zooms):
         assert abs(b - a) <= 3  # under the editor's pop-in warning threshold
 
 

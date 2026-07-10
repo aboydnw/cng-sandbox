@@ -28,7 +28,8 @@ const exampleConnection: Connection = {
   feature_count: null,
   file_size: null,
   is_shared: false,
-  is_example: true,
+  is_example: false,
+  is_example_copy: true,
   preferred_colormap: null,
   preferred_colormap_reversed: null,
   config: { variable: "tas", rescaleMin: 0, rescaleMax: 1 },
@@ -40,7 +41,7 @@ const userConnection: Connection = {
   ...exampleConnection,
   id: "ws-1",
   name: "User Zarr",
-  is_example: false,
+  is_example_copy: false,
 };
 
 vi.mock("../../lib/api", () => ({
@@ -78,21 +79,17 @@ function renderDataPage() {
   );
 }
 
-describe("DataPage example connection gating", () => {
-  it("lists example connections under example data without a delete button", async () => {
+describe("DataPage example copy rows", () => {
+  it("shows an Example badge on seeded example copies in the main table", async () => {
     renderDataPage();
 
     await waitFor(() => {
       expect(screen.getByText("Example Zarr")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Example data")).toBeInTheDocument();
-
     const exampleRow = screen.getByText("Example Zarr").closest("tr");
     expect(exampleRow).not.toBeNull();
-    expect(exampleRow!.querySelector("button")?.textContent ?? "").not.toMatch(
-      /delete/i
-    );
+    expect(exampleRow!.textContent).toMatch(/example/i);
   });
 
   it("shows the delete button on user-owned connections", async () => {

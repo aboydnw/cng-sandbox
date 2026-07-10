@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Table,
+  Text,
+} from "@chakra-ui/react";
 import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
@@ -11,7 +19,6 @@ import { workspaceFetch, connectionsApi } from "../lib/api";
 import type { Dataset, Connection } from "../types";
 import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
-import { detectCadence, formatDateRangeBadge } from "../utils/temporal";
 import {
   datasetToLibraryItem,
   connectionToLibraryItem,
@@ -121,156 +128,6 @@ export default function DataPage() {
           </Link>
         </Flex>
 
-        {(() => {
-          const exampleDatasets = datasets.filter((d) => d.is_example);
-          const exampleConnections = connections.filter((c) => c.is_example);
-          if (exampleDatasets.length === 0 && exampleConnections.length === 0) {
-            return null;
-          }
-          return (
-            <Box mb={8}>
-              <Heading size="md" color="gray.700" mb={3}>
-                Example data
-              </Heading>
-              <Text fontSize="13px" color="gray.500" mb={3}>
-                Public datasets and connections shared with every workspace.
-              </Text>
-              <Table.Root size="sm" tableLayout="fixed">
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeader>Name</Table.ColumnHeader>
-                    <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                    <Table.ColumnHeader w="120px">Source</Table.ColumnHeader>
-                    <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {exampleDatasets.map((ds) => (
-                    <Table.Row key={`dataset-${ds.id}`}>
-                      <Table.Cell>
-                        <Link to={workspacePath(`/map/${ds.id}`)}>
-                          <Text
-                            color="brand.orange"
-                            _hover={{ textDecoration: "underline" }}
-                            fontWeight={500}
-                            truncate
-                            title={ds.filename}
-                          >
-                            {displayName(ds)}
-                          </Text>
-                        </Link>
-                        {ds.title ? (
-                          <Text fontSize="11px" color="fg.subtle" mt={0.5}>
-                            {ds.filename}
-                          </Text>
-                        ) : null}
-                        {ds.is_temporal && ds.timesteps.length > 0 && (
-                          <Text fontSize="xs" color="fg.subtle" mt={0.5}>
-                            {formatDateRangeBadge(
-                              ds.timesteps[0].datetime,
-                              ds.timesteps[ds.timesteps.length - 1].datetime,
-                              ds.timesteps.length,
-                              detectCadence(ds.timesteps.map((t) => t.datetime))
-                            )}
-                          </Text>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={600}
-                          textTransform="uppercase"
-                          color={
-                            ds.dataset_type === "raster"
-                              ? "purple.600"
-                              : "teal.600"
-                          }
-                        >
-                          {ds.dataset_type}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text fontSize="sm" color="gray.500">
-                          Uploaded
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text fontSize="sm" color="gray.600">
-                          {ds.created_at ? timeAgo(ds.created_at) : "—"}
-                        </Text>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                  {exampleConnections.map((conn) => {
-                    const item = connectionToLibraryItem(conn);
-                    return (
-                      <Table.Row key={`connection-${conn.id}`}>
-                        <Table.Cell>
-                          <Link to={workspacePath(item.detailHref)}>
-                            <Text
-                              color="brand.orange"
-                              _hover={{ textDecoration: "underline" }}
-                              fontWeight={500}
-                              truncate
-                              title={conn.name}
-                            >
-                              {conn.name}
-                            </Text>
-                          </Link>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Text
-                            fontSize="xs"
-                            fontWeight={600}
-                            textTransform="uppercase"
-                            color={
-                              item.type === "raster" ? "purple.600" : "teal.600"
-                            }
-                          >
-                            {item.type}
-                          </Text>
-                        </Table.Cell>
-                        <Table.Cell>
-                          {item.source.href ? (
-                            <a
-                              href={item.source.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={item.source.label}
-                              style={{
-                                color: "var(--chakra-colors-gray-500)",
-                                fontSize: 13,
-                              }}
-                            >
-                              <Text
-                                fontSize="sm"
-                                color="gray.500"
-                                truncate
-                                title={item.source.label}
-                              >
-                                {item.source.label}
-                              </Text>
-                            </a>
-                          ) : (
-                            <Text fontSize="sm" color="gray.500">
-                              {item.source.label}
-                            </Text>
-                          )}
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Text fontSize="sm" color="gray.600">
-                            {conn.created_at ? timeAgo(conn.created_at) : "—"}
-                          </Text>
-                        </Table.Cell>
-                      </Table.Row>
-                    );
-                  })}
-                </Table.Body>
-              </Table.Root>
-            </Box>
-          );
-        })()}
-
         <Heading size="md" color="gray.700" mb={3}>
           Your data
         </Heading>
@@ -343,17 +200,28 @@ export default function DataPage() {
                   {userItems.map((item) => (
                     <Table.Row key={`${item.kind}-${item.id}`}>
                       <Table.Cell>
-                        <Link to={workspacePath(item.detailHref)}>
-                          <Text
-                            color="brand.orange"
-                            _hover={{ textDecoration: "underline" }}
-                            fontWeight={500}
-                            truncate
-                            title={item.name}
-                          >
-                            {item.name}
-                          </Text>
-                        </Link>
+                        <Flex align="center" gap={2}>
+                          <Link to={workspacePath(item.detailHref)}>
+                            <Text
+                              color="brand.orange"
+                              _hover={{ textDecoration: "underline" }}
+                              fontWeight={500}
+                              truncate
+                              title={item.name}
+                            >
+                              {item.name}
+                            </Text>
+                          </Link>
+                          {item.isExampleCopy && (
+                            <Badge
+                              size="sm"
+                              bg="brand.bgSubtle"
+                              color="brand.brown"
+                            >
+                              Example
+                            </Badge>
+                          )}
+                        </Flex>
                       </Table.Cell>
                       <Table.Cell>
                         <Text

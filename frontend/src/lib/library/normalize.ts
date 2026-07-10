@@ -12,6 +12,7 @@ export interface LibraryItem {
   addedAt: string;
   expiresAt: string | null;
   detailHref: string;
+  isExampleCopy: boolean;
   raw:
     | { kind: "dataset"; dataset: Dataset }
     | { kind: "connection"; connection: Connection };
@@ -27,6 +28,7 @@ export function datasetToLibraryItem(ds: Dataset): LibraryItem {
     addedAt: ds.created_at,
     expiresAt: ds.expires_at ?? null,
     detailHref: `/map/${ds.id}`,
+    isExampleCopy: ds.is_example_copy ?? false,
     raw: { kind: "dataset", dataset: ds },
   };
 }
@@ -60,6 +62,7 @@ export function connectionToLibraryItem(conn: Connection): LibraryItem {
     addedAt: conn.created_at,
     expiresAt: null,
     detailHref: `/map/connection/${conn.id}`,
+    isExampleCopy: conn.is_example_copy ?? false,
     raw: { kind: "connection", connection: conn },
   };
 }

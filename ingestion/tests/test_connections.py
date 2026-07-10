@@ -779,7 +779,7 @@ def test_connection_row_is_example_defaults_false(client):
     assert body["is_example"] is False
 
 
-def test_list_connections_includes_example_rows_for_any_workspace(client, db_session):
+def test_list_connections_excludes_master_examples(client, db_session):
     from src.models.connection import ConnectionRow
 
     db_session.add(
@@ -804,7 +804,7 @@ def test_list_connections_includes_example_rows_for_any_workspace(client, db_ses
     response = fresh_client.get("/api/connections")
     assert response.status_code == 200
     body = response.json()
-    assert any(c["id"] == "seeded-zarr" and c["is_example"] for c in body)
+    assert not any(c["id"] == "seeded-zarr" for c in body)
 
 
 def test_connection_row_persists_config_dict(db_session):

@@ -8,7 +8,6 @@ from typing import Annotated
 import posthog
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import TypeAdapter
-from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from src.dependencies import get_session
@@ -66,6 +65,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         chapters=[_coerce_chapter(ch) for ch in chapters],
         published=row.published,
         is_example=bool(row.is_example),
+        is_example_copy=bool(row.is_example_copy),
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
         expires_at=expires_at.isoformat() if expires_at else None,
@@ -115,11 +115,7 @@ async def list_stories(request: Request):
     try:
         rows = (
             session.query(StoryRow)
-            .filter(
-                or_(
-                    StoryRow.workspace_id == workspace_id, StoryRow.is_example.is_(True)
-                )
-            )
+            .filter(StoryRow.workspace_id == workspace_id)
             .order_by(StoryRow.created_at.desc())
             .all()
         )

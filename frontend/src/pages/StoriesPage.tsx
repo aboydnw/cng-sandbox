@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Table,
+  Text,
+} from "@chakra-ui/react";
 import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
@@ -116,17 +124,28 @@ export default function StoriesPage() {
               {userStories.map((story) => (
                 <Table.Row key={story.id}>
                   <Table.Cell>
-                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
-                      <Text
-                        color="brand.orange"
-                        _hover={{ textDecoration: "underline" }}
-                        fontWeight={500}
-                        truncate
-                        title={story.title}
-                      >
-                        {story.title}
-                      </Text>
-                    </Link>
+                    <Flex align="center" gap={2}>
+                      <Link to={workspacePath(`/story/${story.id}/edit`)}>
+                        <Text
+                          color="brand.orange"
+                          _hover={{ textDecoration: "underline" }}
+                          fontWeight={500}
+                          truncate
+                          title={story.title}
+                        >
+                          {story.title}
+                        </Text>
+                      </Link>
+                      {story.is_example_copy && (
+                        <Badge
+                          size="sm"
+                          bg="brand.bgSubtle"
+                          color="brand.brown"
+                        >
+                          Example
+                        </Badge>
+                      )}
+                    </Flex>
                   </Table.Cell>
                   <Table.Cell>
                     <Text

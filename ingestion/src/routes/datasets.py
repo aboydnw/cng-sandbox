@@ -59,16 +59,9 @@ async def list_datasets(request: Request):
     validate_workspace_id(workspace_id)
     session = get_session(request)
     try:
-        from sqlalchemy import or_
-
         rows = (
             session.query(DatasetRow)
-            .filter(
-                or_(
-                    DatasetRow.workspace_id == workspace_id,
-                    DatasetRow.is_example.is_(True),
-                )
-            )
+            .filter(DatasetRow.workspace_id == workspace_id)
             .order_by(DatasetRow.created_at.desc())
             .all()
         )
@@ -240,6 +233,10 @@ async def delete_dataset_endpoint(dataset_id: str, request: Request):
             )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
+        if row.is_example_copy:
+            session.delete(row)
+            session.commit()
+            return {"id": dataset_id, "deleted": True}
         storage = StorageService()
         result = await delete_dataset(session, dataset_id, storage=storage)
         return result

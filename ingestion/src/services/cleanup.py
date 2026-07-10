@@ -33,6 +33,7 @@ async def cleanup_expired_rows(
         session.query(DatasetRow)
         .filter(
             DatasetRow.is_example.is_(False),
+            DatasetRow.is_example_copy.is_(False),
             or_(
                 (DatasetRow.expires_at.isnot(None)) & (DatasetRow.expires_at < now),
                 (DatasetRow.expires_at.is_(None)) & (DatasetRow.created_at < cutoff),
@@ -52,7 +53,11 @@ async def cleanup_expired_rows(
 
     expired_stories = (
         session.query(StoryRow)
-        .filter(StoryRow.is_example.is_(False), StoryRow.created_at < cutoff)
+        .filter(
+            StoryRow.is_example.is_(False),
+            StoryRow.is_example_copy.is_(False),
+            StoryRow.created_at < cutoff,
+        )
         .all()
     )
     for row in expired_stories:

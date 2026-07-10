@@ -275,8 +275,8 @@ def test_storage_delete_prefix():
         obstore.get(store, "datasets/ds-001/file2")
 
 
-def test_list_datasets_includes_examples(client, app):
-    """Example datasets appear in the list regardless of workspace."""
+def test_list_datasets_excludes_master_examples(client, app):
+    """Master example rows are cloned per workspace, not surfaced globally."""
     from datetime import UTC, datetime
 
     from src.models.dataset import DatasetRow
@@ -329,7 +329,7 @@ def test_list_datasets_includes_examples(client, app):
     resp = client.get("/api/datasets")
     assert resp.status_code == 200
     ids = {d["id"] for d in resp.json()}
-    assert "example-gebco" in ids
+    assert "example-gebco" not in ids
     assert "mine" in ids
     assert "other" not in ids
 

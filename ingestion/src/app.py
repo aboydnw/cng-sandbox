@@ -18,6 +18,9 @@ from src.models.base import Base
 from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
 from src.models.story_asset import StoryAssetRow  # noqa: F401 — ensures table creation
+from src.models.workspace_example_state import (  # noqa: F401 — ensures table creation
+    WorkspaceExampleStateRow,
+)
 from src.rate_limit import limiter, rate_limit_exceeded_handler
 from src.services.cleanup import cleanup_expired_rows
 from src.state import jobs, scan_store, scan_store_lock
@@ -241,6 +244,12 @@ def _migrate_schema(engine):
         ("stories", "workspace_id", "TEXT"),
         ("datasets", "workspace_id", "TEXT"),
         ("stories", "forked_from_id", "TEXT"),
+        ("datasets", "is_example_copy", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("datasets", "seeded_from_id", "TEXT"),
+        ("connections", "is_example_copy", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("connections", "seeded_from_id", "TEXT"),
+        ("stories", "is_example_copy", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("stories", "seeded_from_id", "TEXT"),
     ]
 
     # SQLite cannot express ALTER COLUMN ... DROP NOT NULL; it is also
@@ -367,6 +376,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     from src.routes.story_assets import router as story_assets_router
     from src.routes.upload import router as upload_router
     from src.routes.validation import router as validation_router
+    from src.routes.workspace_examples import router as workspace_examples_router
     from src.routes.zarr_proxy import router as zarr_proxy_router
 
     app.include_router(upload_router)
@@ -384,6 +394,7 @@ def create_app(settings=None, lifespan=None) -> FastAPI:
     app.include_router(zarr_proxy_router)
     app.include_router(validation_router)
     app.include_router(chat_router)
+    app.include_router(workspace_examples_router)
 
     return app
 

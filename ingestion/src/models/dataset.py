@@ -24,6 +24,8 @@ class DatasetRow(Base):
     workspace_id = Column(String, nullable=True)
     expires_at = Column(DateTime, nullable=True)
     is_example = Column(Boolean, nullable=False, default=False)
+    is_example_copy = Column(Boolean, nullable=False, default=False)
+    seeded_from_id = Column(String, nullable=True)
     is_shared = Column(Boolean, nullable=False, default=False)
     render_mode = Column(String, nullable=True)
     preferred_colormap = Column(String, nullable=True)
@@ -49,6 +51,8 @@ class DatasetRow(Base):
             "workspace_id": self.workspace_id,
             "expires_at": expires_at.isoformat() if expires_at else None,
             "is_example": bool(self.is_example),
+            "is_example_copy": bool(self.is_example_copy),
+            "seeded_from_id": self.seeded_from_id,
             "is_shared": bool(self.is_shared),
             "render_mode": self.render_mode,
             "preferred_colormap": self.preferred_colormap,

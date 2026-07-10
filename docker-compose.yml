@@ -165,6 +165,9 @@ services:
       CHECK_DISK_FREE_SPACE: "FALSE"
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_REPO: ${GITHUB_REPO:-}
+      POSTHOG_PROJECT_TOKEN: ${POSTHOG_PROJECT_TOKEN:-phc_oxpVV4DNHYkpFRJWozYq8S8F9HnxXxc4CqHY7y9fJnBh}
+      POSTHOG_HOST: ${POSTHOG_HOST:-https://us.i.posthog.com}
+      POSTHOG_DISABLED: ${POSTHOG_DISABLED:-false}
     depends_on:
       database:
         condition: service_healthy

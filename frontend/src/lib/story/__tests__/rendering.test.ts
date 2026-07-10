@@ -17,8 +17,13 @@ vi.mock("../../layers/zarrLayer", () => ({
   buildZarrLayer: (opts: unknown) => mockZarrLayer(opts),
 }));
 
-import { buildLayersForChapter } from "../rendering";
-import { createChapter } from "../types";
+import { buildLayersForChapter, groupChaptersIntoBlocks } from "../rendering";
+import {
+  createChapter,
+  createScrollytellingChapter,
+  createFlyoverChapter,
+  DEFAULT_LAYER_CONFIG,
+} from "../types";
 import type { Dataset, Connection } from "../../../types";
 
 const BASE_DATASET: Dataset = {
@@ -558,5 +563,46 @@ describe("buildLayersForChapter — copc point clouds", () => {
     );
     expect(layers).toEqual([]);
     expect(renderMetadata?.reason).toBe("point cloud");
+  });
+});
+
+describe("flyover blocks and layers", () => {
+  it("groupChaptersIntoBlocks emits a flyover block that breaks a scrolly run", () => {
+    const chapters = [
+      createScrollytellingChapter({ order: 0 }),
+      createFlyoverChapter({ order: 1 }),
+      createScrollytellingChapter({ order: 2 }),
+    ];
+    const blocks = groupChaptersIntoBlocks(chapters);
+    expect(blocks.map((b) => b.type)).toEqual([
+      "scrollytelling",
+      "flyover",
+      "scrollytelling",
+    ]);
+    const fly = blocks[1];
+    if (fly.type === "flyover") expect(fly.index).toBe(1);
+  });
+
+  it("buildLayersForChapter returns no layers for a flyover without layer_config", () => {
+    const result = buildLayersForChapter(
+      createFlyoverChapter(),
+      new Map(),
+      new Map()
+    );
+    expect(result.layers).toEqual([]);
+  });
+
+  it("buildLayersForChapter builds layers for a flyover with a vector dataset", () => {
+    const ds: Dataset = {
+      ...BASE_DATASET,
+      id: "ds-vec-fly",
+      dataset_type: "vector",
+      tile_url: "/vector/tiles/{z}/{x}/{y}",
+    };
+    const ch = createFlyoverChapter({
+      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: ds.id },
+    });
+    const result = buildLayersForChapter(ch, new Map([[ds.id, ds]]), new Map());
+    expect(result.layers.length).toBeGreaterThan(0);
   });
 });

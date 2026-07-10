@@ -310,3 +310,32 @@ def test_export_strips_3d_map_state_fields(db_session):
     assert "terrain" not in dumped
     assert "globe" not in dumped
     assert "buildings" not in dumped
+
+
+def test_build_config_passes_flyover_chapters_through(db_session):
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "order": 0,
+                "type": "flyover",
+                "title": "Fly",
+                "narrative": "",
+                "keyframes": [
+                    {"center": [0, 0], "zoom": 4, "bearing": 0, "pitch": 45},
+                    {"center": [1, 1], "zoom": 5, "bearing": 90, "pitch": 45},
+                ],
+                "map_state": {
+                    "center": [0, 0],
+                    "zoom": 4,
+                    "bearing": 0,
+                    "pitch": 45,
+                    "basemap": "streets",
+                },
+                "scroll_length": 1,
+            }
+        ],
+    )
+    config = story_export.build_config(row, db_session)
+    assert config.chapters[0].type == "flyover"

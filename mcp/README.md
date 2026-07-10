@@ -65,6 +65,11 @@ Create a new story.
     - `globe`: `bool` — globe projection with atmosphere; works with data layers.
     - `buildings`: `bool` — extruded 3D buildings (OpenFreeMap).
     - Omit these for a flat 2D map. Portable/archival HTML exports ignore 3D fields and render flat.
+- Chapter `type` may be `"flyover"`: a scroll-scrubbed 3D camera flight. Flyover chapters add:
+  - `keyframes` (array, >= 2 to fly): `{ center: [lng, lat], zoom, bearing, pitch, caption? }` — the camera path, interpolated smoothly in reader scroll order. `caption` is markdown shown as the camera passes that keyframe.
+  - `scroll_length` (number, default 1): scroll distance multiplier (~one viewport height per keyframe segment at 1).
+  - `layer_config` is optional; as with other chapters, terrain is ignored when a data layer is bound. The best flyovers are terrain/buildings scene-setters with no data layer.
+  - `map_state` pose fields are ignored — keyframe 0 is the entry camera. Compute keyframes from dataset bounds for an easy orbit: fix `center`/`zoom`/`pitch`, sweep `bearing` across ~180° in 5 steps.
 
 ### update_story
 Modify an existing story.
@@ -126,7 +131,7 @@ Delete an external tile source connection by ID.
 **Input**: `connection_id` (string)
 
 ### export_story_interactive
-Build and download a story's self-contained interactive HTML bundle (`.zip`) to a local path. Stories with zarr layers or scrolly chapters needing snapshots return an error.
+Build and download a story's self-contained interactive HTML bundle (`.zip`) to a local path. Stories with zarr layers, flyover chapters, or scrolly chapters needing snapshots return an error.
 **Input**: `story_id` (string), `output_path` (string)
 
 ## Resources

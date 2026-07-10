@@ -18,6 +18,8 @@ export type {
   MapState,
   StoryIndexEntry,
   LayerConfig,
+  FlyoverChapter,
+  FlyoverKeyframe,
 } from "./types";
 export {
   DEFAULT_MAP_STATE,
@@ -29,8 +31,12 @@ export {
   createImageChapter,
   createVideoChapter,
   createChartChapter,
+  createFlyoverChapter,
   createStory,
   isMapBoundChapter,
+  isFlyoverChapter,
+  flyoverEntryMapState,
+  flyoverFallbackMapChapter,
 } from "./types";
 export { listStories, getStory, saveStory, deleteStory } from "./storage";
 export {

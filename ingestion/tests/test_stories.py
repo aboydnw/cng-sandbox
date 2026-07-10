@@ -317,7 +317,7 @@ def test_list_examples_returns_examples_without_workspace_header(app, db_session
     assert all(r["is_example"] is True for r in rows)
 
 
-def test_list_stories_includes_example_rows_from_other_workspaces(client, db_session):
+def test_list_stories_excludes_master_examples(client, db_session):
     now = datetime.now(UTC)
     caller_ws = "testABCD"  # matches the client fixture header
 
@@ -362,7 +362,7 @@ def test_list_stories_includes_example_rows_from_other_workspaces(client, db_ses
     resp = client.get("/api/stories")
     assert resp.status_code == 200
     ids = {s["id"] for s in resp.json()}
-    assert "system-example" in ids
+    assert "system-example" not in ids
     assert "caller-own" in ids
     assert "other-private" not in ids
 

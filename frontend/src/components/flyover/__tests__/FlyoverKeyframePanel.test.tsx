@@ -100,4 +100,40 @@ describe("FlyoverKeyframePanel", () => {
     expect(pose.zoom).toBeGreaterThanOrEqual(4);
     expect(pose.zoom).toBeLessThanOrEqual(5);
   });
+
+  it("Orbit appends 5 keyframes from the current view", async () => {
+    const { onChange } = renderPanel();
+    await userEvent.click(screen.getByRole("button", { name: /^orbit$/i }));
+    const next = onChange.mock.calls[0][0];
+    expect(next.keyframes).toHaveLength(chapter.keyframes.length + 5);
+    expect(next.keyframes.at(-1)!.center).toEqual([10, 20]); // current camera center
+  });
+
+  it("Approach appends 3 keyframes ending at the current view", async () => {
+    const { onChange } = renderPanel();
+    await userEvent.click(screen.getByRole("button", { name: /^approach$/i }));
+    const next = onChange.mock.calls[0][0];
+    expect(next.keyframes).toHaveLength(chapter.keyframes.length + 3);
+    expect(next.keyframes.at(-1)!.zoom).toBe(8);
+  });
+
+  it("shows a soft zoom-gap warning for >3-level jumps", () => {
+    const gappy = createFlyoverChapter({
+      keyframes: [
+        { center: [0, 0], zoom: 2, bearing: 0, pitch: 0 },
+        { center: [0, 0], zoom: 9, bearing: 0, pitch: 0 },
+      ],
+    });
+    render(
+      <ChakraProvider value={system}>
+        <FlyoverKeyframePanel
+          chapter={gappy}
+          onChange={vi.fn()}
+          currentCamera={camera}
+          onPreviewPose={vi.fn()}
+        />
+      </ChakraProvider>
+    );
+    expect(screen.getByText(/tiles may pop in/i)).toBeInTheDocument();
+  });
 });

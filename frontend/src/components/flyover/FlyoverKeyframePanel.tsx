@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Box, Button, Flex, IconButton, Text } from "@chakra-ui/react";
 import {
+  AirplaneLanding,
   ArrowsClockwise,
   CrosshairSimple,
   DotsSixVertical,
   Eye,
   Trash,
+  Warning,
 } from "@phosphor-icons/react";
 import type { CameraState } from "../../lib/layers/types";
 import { interpolateFlyover } from "../../lib/story/flyover/interpolate";
+import {
+  orbitKeyframes,
+  approachKeyframes,
+  zoomGapWarnings,
+} from "../../lib/story/flyover/generators";
 import {
   addKeyframe,
   captureKeyframe,
@@ -76,6 +83,41 @@ export function FlyoverKeyframePanel({
         <CrosshairSimple size={16} weight="bold" />
         Add keyframe from current view
       </Button>
+
+      <Flex gap={2} mb={3}>
+        <Button
+          flex={1}
+          size="xs"
+          variant="outline"
+          color="brand.brown"
+          borderColor="brand.border"
+          onClick={() =>
+            update([
+              ...keyframes,
+              ...orbitKeyframes(captureKeyframe(currentCamera)),
+            ])
+          }
+        >
+          <ArrowsClockwise size={14} />
+          Orbit
+        </Button>
+        <Button
+          flex={1}
+          size="xs"
+          variant="outline"
+          color="brand.brown"
+          borderColor="brand.border"
+          onClick={() =>
+            update([
+              ...keyframes,
+              ...approachKeyframes(captureKeyframe(currentCamera)),
+            ])
+          }
+        >
+          <AirplaneLanding size={14} />
+          Approach
+        </Button>
+      </Flex>
 
       {keyframes.map((k, i) => (
         <Flex
@@ -171,6 +213,18 @@ export function FlyoverKeyframePanel({
           >
             <Trash size={14} />
           </IconButton>
+        </Flex>
+      ))}
+
+      {zoomGapWarnings(keyframes).map((i) => (
+        <Flex key={i} align="flex-start" gap={1.5} mt={2} color="brand.brown">
+          <Box as="span" mt="2px" flexShrink={0}>
+            <Warning size={14} />
+          </Box>
+          <Text fontSize="xs">
+            Big zoom jump between keyframes {i + 1}→{i + 2} — tiles may pop in
+            during the flight. Consider an in-between keyframe.
+          </Text>
         </Flex>
       ))}
 

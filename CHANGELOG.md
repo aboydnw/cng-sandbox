@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.10.0](https://github.com/aboydnw/cng-sandbox/compare/v2.9.0...v2.10.0) (2026-07-10)
+
+
+### Features
+
+* 3D basemap scene-setting — terrain, globe, buildings (Phase B) ([#556](https://github.com/aboydnw/cng-sandbox/issues/556)) ([51cceac](https://github.com/aboydnw/cng-sandbox/commit/51cceac9adc6b42af0768e220bab73cb7acf2772))
+* 3D flyover scrollytelling ([#562](https://github.com/aboydnw/cng-sandbox/issues/562)) ([a172115](https://github.com/aboydnw/cng-sandbox/commit/a172115bb6316183a8a8f79abf8986aae6ad1668))
+* aerial example story (OpenAerialMap Hatay earthquake) ([#544](https://github.com/aboydnw/cng-sandbox/issues/544)) ([fed3d55](https://github.com/aboydnw/cng-sandbox/commit/fed3d5514d9f965d677a3d7f17f4de21e2b9b198))
+* COPC point cloud support ([#559](https://github.com/aboydnw/cng-sandbox/issues/559)) ([2786a69](https://github.com/aboydnw/cng-sandbox/commit/2786a692582be86f2e8c38c10df947d6b39a7d99))
+* seed "Earth's high places" 3D example story ([#558](https://github.com/aboydnw/cng-sandbox/issues/558)) ([db23b5f](https://github.com/aboydnw/cng-sandbox/commit/db23b5f2a6b0c2460f6c625908030822118e524b))
+* seed every workspace with removable example data ([#563](https://github.com/aboydnw/cng-sandbox/issues/563)) ([4db264c](https://github.com/aboydnw/cng-sandbox/commit/4db264c3eea64561546e1237b28fb6a221c51ad8))
+* story reader agent ("Ask this map") ([#557](https://github.com/aboydnw/cng-sandbox/issues/557)) ([6c35612](https://github.com/aboydnw/cng-sandbox/commit/6c35612b89d3bafd007b6f63b79bc53b5720c596))
+
+
+### Bug Fixes
+
+* post-merge review findings for 3D, COPC, and reader-agent features ([#561](https://github.com/aboydnw/cng-sandbox/issues/561)) ([47fc507](https://github.com/aboydnw/cng-sandbox/commit/47fc507fdc80a127116cdcd5497e24115f16d357))
+
 ## [2.9.0](https://github.com/aboydnw/cng-sandbox/compare/v2.8.0...v2.9.0) (2026-06-24)
 
 

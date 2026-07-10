@@ -7,7 +7,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import TypeAdapter
-from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from src.dependencies import get_session
@@ -105,11 +104,7 @@ async def list_stories(request: Request):
     try:
         rows = (
             session.query(StoryRow)
-            .filter(
-                or_(
-                    StoryRow.workspace_id == workspace_id, StoryRow.is_example.is_(True)
-                )
-            )
+            .filter(StoryRow.workspace_id == workspace_id)
             .order_by(StoryRow.created_at.desc())
             .all()
         )

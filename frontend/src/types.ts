@@ -69,6 +69,7 @@ export interface Dataset {
   is_mosaic: boolean;
   is_zero_copy: boolean;
   is_example?: boolean;
+  is_example_copy?: boolean;
   is_shared: boolean;
   render_mode?: "client" | "server" | null;
   preferred_colormap: string | null;
@@ -128,6 +129,7 @@ export interface Connection {
   file_size: number | null;
   is_shared: boolean;
   is_example?: boolean;
+  is_example_copy?: boolean;
   render_mode?: "client" | "server" | null;
   preferred_colormap: string | null;
   preferred_colormap_reversed: boolean | null;

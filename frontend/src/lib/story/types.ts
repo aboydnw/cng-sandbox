@@ -153,6 +153,7 @@ export interface Story {
   updated_at: string;
   published: boolean;
   is_example?: boolean;
+  is_example_copy?: boolean;
   expires_at?: string | null;
 }
 

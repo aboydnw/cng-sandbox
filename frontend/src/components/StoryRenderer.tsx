@@ -13,6 +13,7 @@ import type { MapRef } from "react-map-gl/maplibre";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
+import { FlyoverBlock } from "./FlyoverBlock";
 import { ImageChapterRenderer } from "./ImageChapterRenderer";
 import { VideoChapterRenderer } from "./VideoChapterRenderer";
 import { ChartChapterRenderer } from "./ChartChapterRenderer";
@@ -26,6 +27,7 @@ import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import { connectionToMapItem, datasetToMapItem } from "../hooks/useMapData";
 import type { CopcColorMode } from "../lib/layers/copcLayer";
 import type { Story, ScrollytellingChapter } from "../lib/story";
+import { flyoverFallbackMapChapter } from "../lib/story/types";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
 import type { ActiveLayer, AgentBridge } from "../lib/chat/types";
@@ -641,6 +643,44 @@ export function StoryRenderer({
                 chapterIndex={block.index}
               />
             </Box>
+          );
+        }
+
+        if (block.type === "flyover") {
+          if (block.chapter.keyframes.length < 2) {
+            const fallback = flyoverFallbackMapChapter(block.chapter);
+            const ds = datasetMap.get(fallback.layer_config.dataset_id) ?? null;
+            const conn = fallback.layer_config.connection_id
+              ? connectionMap?.get(fallback.layer_config.connection_id)
+              : undefined;
+            return (
+              <Box
+                key={block.chapter.id}
+                onClick={
+                  onChapterClick
+                    ? () => onChapterClick(block.chapter.id)
+                    : undefined
+                }
+                cursor={onChapterClick ? "pointer" : undefined}
+              >
+                <MapChapter
+                  chapter={fallback}
+                  chapterIndex={block.index}
+                  dataset={ds}
+                  connection={conn}
+                />
+              </Box>
+            );
+          }
+          return (
+            <FlyoverBlock
+              key={block.chapter.id}
+              chapter={block.chapter}
+              chapterIndex={block.index}
+              datasetMap={datasetMap}
+              connectionMap={connectionMap}
+              onChapterClick={onChapterClick}
+            />
           );
         }
 

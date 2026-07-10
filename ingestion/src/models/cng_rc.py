@@ -31,7 +31,9 @@ class CngRcMapView(BaseModel):
 
 class CngRcChapter(BaseModel):
     id: str
-    type: Literal["prose", "map", "scrollytelling", "image", "video", "chart"]
+    type: Literal[
+        "prose", "map", "scrollytelling", "image", "video", "chart", "flyover"
+    ]
     title: str | None
     body: str | None
     map: CngRcMapView | None

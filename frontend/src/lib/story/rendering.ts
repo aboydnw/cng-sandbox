@@ -18,6 +18,7 @@ import type {
   ImageChapter,
   VideoChapter,
   ChartChapter,
+  FlyoverChapter,
 } from "./types";
 import type { Dataset, Connection } from "../../types";
 import type { ZarrNode } from "../../hooks/useZarrNode";
@@ -79,7 +80,8 @@ export type ContentBlock =
   | { type: "map"; chapter: MapChapter; index: number }
   | { type: "image"; chapter: ImageChapter; index: number }
   | { type: "video"; chapter: VideoChapter; index: number }
-  | { type: "chart"; chapter: ChartChapter; index: number };
+  | { type: "chart"; chapter: ChartChapter; index: number }
+  | { type: "flyover"; chapter: FlyoverChapter; index: number };
 
 export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
   const blocks: ContentBlock[] = [];
@@ -116,6 +118,9 @@ export function groupChaptersIntoBlocks(chapters: Chapter[]): ContentBlock[] {
         case "chart":
           blocks.push({ type: "chart", chapter: ch, index: i });
           break;
+        case "flyover":
+          blocks.push({ type: "flyover", chapter: ch, index: i });
+          break;
         default: {
           const _exhaustive: never = ch;
           void _exhaustive;
@@ -150,7 +155,9 @@ export function buildLayersForChapter(
   connectionMap?: Map<string, Connection>,
   zarrNodeMap?: Map<string, ZarrNode>
 ): ChapterLayerResult {
-  if (!isMapBoundChapter(chapter)) return { layers: [] };
+  if (!isMapBoundChapter(chapter) && chapter.type !== "flyover") {
+    return { layers: [] };
+  }
   const lc = chapter.layer_config ?? DEFAULT_LAYER_CONFIG;
 
   if (lc.connection_id && connectionMap) {

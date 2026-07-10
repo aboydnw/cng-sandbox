@@ -44,6 +44,17 @@ interface UnifiedMapProps {
   transitionDuration?: number;
   interactive?: boolean;
   onTransitionEnd?: () => void;
+  /**
+   * An external scrub is driving the map imperatively (e.g. a flyover): suppress
+   * the camera-echo effect, onCameraChange, and onTransitionEnd so 60fps jumpTo
+   * calls don't re-enter the camera-prop loop.
+   */
+  scrubbing?: boolean;
+  /**
+   * MapLibre constructor-only symbol/raster fade duration in ms — per map
+   * instance, so a flyover's map is created with 0 and "restores" by unmounting.
+   */
+  fadeDuration?: number;
   hideBasemapPicker?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mapRef?: React.Ref<any>;
@@ -146,6 +157,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     transitionDuration,
     interactive = true,
     onTransitionEnd,
+    scrubbing,
+    fadeDuration,
     hideBasemapPicker = false,
     mapRef,
     enableSnapshot,
@@ -163,6 +176,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   const localMapRef = useRef<MapRef | null>(null);
   const overlayHandleRef = useRef<DeckOverlayHandle | null>(null);
   const programmaticRef = useRef(false);
+  const scrubbingRef = useRef(false);
+  scrubbingRef.current = scrubbing ?? false;
 
   useImperativeHandle(ref, () => ({
     get deck() {
@@ -182,7 +197,10 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   );
 
   // Drive the camera imperatively: flyTo for transitions, jumpTo otherwise.
+  // While scrubbing, an external caller owns the camera through the map ref;
+  // echoing the (frozen) camera prop would fight it at 60fps.
   useEffect(() => {
+    if (scrubbing) return;
     const map = localMapRef.current?.getMap();
     if (!map) return;
     const { method, options } = resolveCameraCommand(
@@ -192,7 +210,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     programmaticRef.current = true;
     map[method](options);
     if (method === "jumpTo") programmaticRef.current = false;
-  }, [camera, transitionDuration]);
+  }, [camera, transitionDuration, scrubbing]);
 
   // Apply 3D scene props (terrain/globe/buildings) via native MapLibre APIs.
   // setStyle (basemap switch) wipes these, so re-apply on every style reload.
@@ -222,7 +240,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         pitch: number;
       };
     }) => {
-      if (programmaticRef.current) return;
+      if (programmaticRef.current || scrubbingRef.current) return;
       const vs = e.viewState;
       onCameraChange({
         longitude: vs.longitude,
@@ -237,6 +255,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
 
   const handleMoveEnd = useCallback(() => {
     programmaticRef.current = false;
+    if (scrubbingRef.current) return;
     onTransitionEnd?.();
   }, [onTransitionEnd]);
 
@@ -255,6 +274,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         onMove={handleMove}
         onMoveEnd={handleMoveEnd}
         interactive={interactive}
+        fadeDuration={fadeDuration}
         canvasContextAttributes={{
           preserveDrawingBuffer: enableSnapshot ?? false,
         }}

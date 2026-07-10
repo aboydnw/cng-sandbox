@@ -7,6 +7,7 @@ export const CHAPTER_TYPE_LABELS: Record<ChapterType, string> = {
   image: "Image",
   video: "Video",
   chart: "Chart",
+  flyover: "3D flyover",
 };
 
 export const CHAPTER_TYPE_DESCRIPTIONS: Record<ChapterType, string> = {
@@ -17,4 +18,5 @@ export const CHAPTER_TYPE_DESCRIPTIONS: Record<ChapterType, string> = {
   image: "Show an image with an optional caption; click to view full screen",
   video: "Embed a YouTube or Vimeo video",
   chart: "Interactive chart from a CSV upload or an existing dataset",
+  flyover: "Camera flies along a keyframe path as the reader scrolls",
 };

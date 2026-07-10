@@ -18,6 +18,9 @@ from src.models.base import Base
 from src.models.connection import ConnectionRow  # noqa: F401 — ensures table creation
 from src.models.dataset import DatasetRow  # noqa: F401 — ensures table creation
 from src.models.story_asset import StoryAssetRow  # noqa: F401 — ensures table creation
+from src.models.workspace_example_state import (  # noqa: F401 — ensures table creation
+    WorkspaceExampleStateRow,
+)
 from src.rate_limit import limiter, rate_limit_exceeded_handler
 from src.services.cleanup import cleanup_expired_rows
 from src.state import jobs, scan_store, scan_store_lock

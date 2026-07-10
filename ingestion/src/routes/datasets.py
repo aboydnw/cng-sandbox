@@ -2,6 +2,7 @@
 
 import json
 
+import posthog
 import rasterio.errors
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
@@ -111,6 +112,15 @@ async def share_dataset(dataset_id: str, body: SharePayload, request: Request):
         row.is_shared = body.is_shared
         session.commit()
         session.refresh(row)
+        posthog.capture(
+            distinct_id=workspace_id,
+            event="dataset_shared",
+            properties={
+                "dataset_id": dataset_id,
+                "is_shared": body.is_shared,
+                "dataset_type": row.dataset_type,
+            },
+        )
         d = row.to_dict()
         d["story_count"] = len(find_stories_referencing_dataset(session, row.id))
         return d
@@ -238,7 +248,16 @@ async def delete_dataset_endpoint(dataset_id: str, request: Request):
             session.commit()
             return {"id": dataset_id, "deleted": True}
         storage = StorageService()
+        dataset_type = row.dataset_type
         result = await delete_dataset(session, dataset_id, storage=storage)
+        posthog.capture(
+            distinct_id=workspace_id,
+            event="dataset_deleted",
+            properties={
+                "dataset_id": dataset_id,
+                "dataset_type": dataset_type,
+            },
+        )
         return result
     finally:
         session.close()

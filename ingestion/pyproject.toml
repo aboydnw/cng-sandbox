@@ -36,6 +36,7 @@ dependencies = [
     "rio-tiler>=9.3.0",
     "pmtiles>=3.4.0",
     "laspy[lazrs]>=2.5.0",
+    "posthog>=3.0.0",
 ]
 
 [project.optional-dependencies]

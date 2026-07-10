@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
+import posthog
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -160,6 +161,17 @@ async def upload_file(
     job.workspace_id = workspace_id
     jobs[job.id] = job
 
+    ext = os.path.splitext(file.filename)[1].lower()
+    posthog.capture(
+        distinct_id=workspace_id or "anonymous",
+        event="file_uploaded",
+        properties={
+            "file_extension": ext,
+            "job_id": job.id,
+            "dataset_id": job.dataset_id,
+        },
+    )
+
     background_tasks.add_task(
         _run_and_cleanup, job, tmp_path, request.app.state.db_session_factory
     )
@@ -250,6 +262,16 @@ async def convert_url(
     job = Job(filename=filename)
     job.workspace_id = workspace_id
     jobs[job.id] = job
+
+    posthog.capture(
+        distinct_id=workspace_id or "anonymous",
+        event="url_converted",
+        properties={
+            "file_extension": os.path.splitext(filename)[1].lower(),
+            "job_id": job.id,
+            "dataset_id": job.dataset_id,
+        },
+    )
 
     background_tasks.add_task(
         _run_and_cleanup, job, tmp_path, request.app.state.db_session_factory
@@ -381,6 +403,18 @@ async def upload_temporal(
     job = Job(filename=filenames[0])
     job.workspace_id = workspace_id
     jobs[job.id] = job
+
+    ext = os.path.splitext(filenames[0])[1].lower() if filenames else ""
+    posthog.capture(
+        distinct_id=workspace_id or "anonymous",
+        event="temporal_upload_started",
+        properties={
+            "file_count": len(filenames),
+            "file_extension": ext,
+            "job_id": job.id,
+            "dataset_id": job.dataset_id,
+        },
+    )
 
     background_tasks.add_task(
         _run_temporal_and_cleanup,

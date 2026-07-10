@@ -8,6 +8,7 @@ import uuid
 from datetime import UTC, datetime
 
 import httpx
+import posthog
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
@@ -245,6 +246,16 @@ async def create_connection(
         session.add(row)
         session.commit()
         session.refresh(row)
+        posthog.capture(
+            distinct_id=workspace_id,
+            event="connection_created",
+            properties={
+                "connection_id": row.id,
+                "connection_type": body.connection_type,
+                "is_categorical": is_categorical,
+                "server_conversion": is_server_conversion,
+            },
+        )
         if is_server_conversion:
             background_tasks.add_task(
                 _run_conversion_bg,

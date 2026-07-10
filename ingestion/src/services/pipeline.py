@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import UTC
 
 import httpx
+import posthog
 
 from src.config import get_settings
 from src.models import (
@@ -785,10 +786,35 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
         persist_dataset(db_session_factory, dataset)
 
+        posthog.capture(
+            distinct_id=job.workspace_id or "anonymous",
+            event="dataset_conversion_completed",
+            properties={
+                "job_id": job.id,
+                "dataset_id": job.dataset_id,
+                "dataset_type": dataset.dataset_type.value
+                if dataset.dataset_type
+                else None,
+                "format_pair": format_pair.value if format_pair else None,
+                "file_extension": os.path.splitext(job.filename)[1].lower(),
+            },
+        )
+
     except Exception as e:
         logger.exception("Pipeline failed for job %s", job.id)
         job.status = JobStatus.FAILED
         job.error = map_pipeline_error(e)
+
+        posthog.capture(
+            distinct_id=job.workspace_id or "anonymous",
+            event="dataset_conversion_failed",
+            properties={
+                "job_id": job.id,
+                "dataset_id": job.dataset_id,
+                "file_extension": os.path.splitext(job.filename)[1].lower(),
+                "error_message": str(e)[:200],
+            },
+        )
 
 
 async def _wait_for_tipg_collection(dataset_id: str, timeout: float = 30.0) -> bool:

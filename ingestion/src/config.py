@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     chat_rate_limit: str = "10/minute"
     chat_max_turns: int = 20
 
+    # PostHog analytics
+    posthog_project_token: str = ""
+    posthog_host: str = "https://us.i.posthog.com"
+    posthog_disabled: bool = False
+
     model_config = {"env_prefix": "", "case_sensitive": False}
 
 

@@ -9,10 +9,8 @@ import {
   generateWorkspaceId,
   WORKSPACE_STORAGE_KEY,
 } from "../hooks/useWorkspace";
-import {
-  forkStoryOnServer,
-  listExampleStoriesFromServer,
-} from "../lib/story/api";
+import { listExampleStoriesFromServer } from "../lib/story/api";
+import { seedExampleData } from "../lib/examples/api";
 import { setWorkspaceId } from "../lib/api";
 import { inferDataType } from "../lib/story/dataType";
 import type { Story } from "../lib/story/types";
@@ -44,13 +42,19 @@ export default function LandingPage() {
       .catch(() => {});
   }, []);
 
-  const startStory = () => {
+  const startStory = async () => {
     const id = generateWorkspaceId();
     localStorage.setItem(STORAGE_KEY, id);
+    setWorkspaceId(id);
+    try {
+      await seedExampleData(id);
+    } catch {
+      // Seeding is best-effort; the workspace still opens.
+    }
     navigate(`/w/${id}/story/new`);
   };
 
-  const cloneExampleAndOpenEditor = async (story: Story) => {
+  const openExampleStory = async (story: Story) => {
     if (cloneInFlightRef.current) return;
     cloneInFlightRef.current = true;
     setCloningId(story.id);
@@ -58,8 +62,9 @@ export default function LandingPage() {
     localStorage.setItem(STORAGE_KEY, id);
     setWorkspaceId(id);
     try {
-      const forked = await forkStoryOnServer(story.id);
-      navigate(`/w/${id}/story/${forked.id}/edit`);
+      const { story_id_map } = await seedExampleData(id);
+      const cloneId = story_id_map[story.id];
+      navigate(`/w/${id}/story/${cloneId}/edit`);
     } catch {
       cloneInFlightRef.current = false;
       setCloningId(null);
@@ -168,7 +173,7 @@ export default function LandingPage() {
                   title={story.title}
                   chapterCount={story.chapters.length}
                   dataType={inferDataType(story)}
-                  onClick={() => cloneExampleAndOpenEditor(story)}
+                  onClick={() => openExampleStory(story)}
                   loading={cloningId === story.id}
                   compact={false}
                 />

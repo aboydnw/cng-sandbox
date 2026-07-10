@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useParams, Navigate, useLocation } from "react-router-dom";
 import { setWorkspaceId } from "../lib/api";
+import { seedExampleData } from "../lib/examples/api";
 
 export const WORKSPACE_STORAGE_KEY = "myWorkspaceId";
 const STORAGE_KEY = WORKSPACE_STORAGE_KEY;
@@ -25,6 +26,7 @@ function getOrCreateHomeWorkspaceId(): string {
   if (existing) return existing;
   const newId = generateWorkspaceId();
   localStorage.setItem(STORAGE_KEY, newId);
+  void seedExampleData(newId).catch(() => {});
   return newId;
 }
 

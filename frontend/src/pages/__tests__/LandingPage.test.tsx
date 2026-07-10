@@ -13,7 +13,12 @@ import LandingPage from "../LandingPage";
 
 vi.mock("../../lib/story/api", () => ({
   listExampleStoriesFromServer: vi.fn().mockResolvedValue([]),
-  forkStoryOnServer: vi.fn(),
+}));
+
+vi.mock("../../lib/examples/api", () => ({
+  seedExampleData: vi
+    .fn()
+    .mockResolvedValue({ state: "seeded", story_id_map: {} }),
 }));
 
 function WorkspaceTarget() {
@@ -74,10 +79,10 @@ describe("LandingPage", () => {
     );
   });
 
-  it("'Start a story' creates a workspace and navigates to it", () => {
+  it("'Start a story' creates a workspace and navigates to it", async () => {
     renderLanding();
     fireEvent.click(screen.getByRole("button", { name: /start a story/i }));
-    expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+    expect(await screen.findByTestId("workspace-target")).toBeInTheDocument();
   });
 
   it("'Start a story' navigates straight to the story editor", async () => {
@@ -95,9 +100,10 @@ describe("LandingPage", () => {
     );
   });
 
-  it("clicking an example card forks the example and opens its editor", async () => {
-    const { listExampleStoriesFromServer, forkStoryOnServer } =
+  it("clicking an example card seeds a workspace and opens the cloned story", async () => {
+    const { listExampleStoriesFromServer } =
       await import("../../lib/story/api");
+    const { seedExampleData } = await import("../../lib/examples/api");
     (
       listExampleStoriesFromServer as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce([
@@ -113,13 +119,9 @@ describe("LandingPage", () => {
         updated_at: "2026-05-12T00:00:00Z",
       },
     ]);
-    (forkStoryOnServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: "forked-77",
-      title: "Example Flood Story",
-      description: null,
-      chapters: [],
-      is_example: false,
-      published: false,
+    (seedExampleData as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      state: "seeded",
+      story_id_map: { "example-1": "clone-1" },
     });
     renderLanding();
     const card = await screen.findByRole("button", {
@@ -127,12 +129,12 @@ describe("LandingPage", () => {
     });
     fireEvent.click(card);
     await waitFor(() => {
-      expect(forkStoryOnServer).toHaveBeenCalledWith("example-1");
+      expect(seedExampleData).toHaveBeenCalled();
     });
     await waitFor(() => {
       expect(screen.getByTestId("workspace-target")).toHaveAttribute(
         "data-rest",
-        "/story/forked-77/edit"
+        "/story/clone-1/edit"
       );
     });
   });

@@ -1,8 +1,21 @@
 # Example Datasets and Stories
 
-Read this when touching `src/services/example_datasets.py`, `src/services/example_stories.py`, the `is_example` flag, or the source.coop seeding logic.
+Read this when touching `src/services/example_datasets.py`, `src/services/example_stories.py`, `src/services/example_workspace.py`, the `is_example` / `is_example_copy` flags, or the source.coop seeding logic.
 
-On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and are surfaced to every workspace's `GET /api/datasets` response so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly. PMTiles-kind products are registered via `src/services/pmtiles_register.py`, which probes the first 127 bytes of the remote file (`src/services/pmtiles_header.py`) to extract bounds, min/max zoom, and verify the tile type is MVT; mosaic-kind products are enumerated and registered via `register_remote_collection`.
+## Per-workspace example copies (current model)
+
+The `is_example=True` rows (datasets, stories, connections) are a **master set**. They are no longer surfaced directly in a workspace's `GET /api/datasets|stories|connections` list responses. Instead, each workspace gets its own **editable clones** of the master set, flagged `is_example_copy=True`.
+
+- `src/services/example_workspace.py` — `seed_workspace_examples` clean-slate clones every master into a workspace (datasets → connections → stories), rewriting story chapter `dataset_id`/`connection_id` references to the cloned ids; `remove_workspace_examples` deletes those clones. Cloning is metadata-only: clones reuse the master's `tile_url`/`stac_collection_id`/`source_url`, so no pgSTAC/R2 work happens and deleting a clone is a shallow DB-row delete (never tears down shared storage). The individual `DELETE /api/datasets/{id}` route and the cleanup sweep both special-case `is_example_copy` for this reason.
+- `POST/DELETE/GET /api/workspaces/{id}/examples` — seed (also "add back"), remove, and report state. State (`seeded`/`removed`) lives in the `workspace_example_state` table so auto-seed fires once for a new workspace and a workspace that removed examples is not re-seeded.
+- The frontend calls `POST …/examples` when it mints a brand-new workspace id (landing-page buttons + home-redirect mint), and the Data page exposes a Remove/Add example-data toggle.
+- The public `GET /api/stories/examples` endpoint still reads the master rows so the landing carousel works without a workspace.
+
+The master `is_example` rows themselves are still seeded exactly as described below.
+
+## Master seeding (source.coop products)
+
+On startup, the ingestion service runs a background task (`src/services/example_datasets.py`) that registers the curated source.coop products as shared "example" datasets. These rows carry `is_example=True`, are owned by no workspace, cannot be deleted or modified via the API, and serve as the clone source (and the public-carousel source) so a fresh deploy never has an empty library. The task is idempotent across restarts (it skips products whose `listing_url` is already present on an example row) and registers fast products before slow ones so the gallery populates quickly. PMTiles-kind products are registered via `src/services/pmtiles_register.py`, which probes the first 127 bytes of the remote file (`src/services/pmtiles_header.py`) to extract bounds, min/max zoom, and verify the tile type is MVT; mosaic-kind products are enumerated and registered via `register_remote_collection`.
 
 Example dataset primary keys are **deterministic**: each row's `id` is `uuid5(EXAMPLE_DATASET_NAMESPACE, source_url)`, derived via `example_dataset_id(source_url)`. This guarantees that a database wipe + re-seed produces the same dataset IDs, so any story chapters (in example stories or forks) that reference them keep resolving. **Never change `EXAMPLE_DATASET_NAMESPACE` or the way the ID is derived** — doing so would orphan every example dataset row and every chapter referencing one. A startup migration (`migrate_example_dataset_ids`) renames legacy example rows that still carry their historical random uuid4 ID to the deterministic one; `tile_url` and `stac_collection_id` are left alone because they were baked at original registration time and continue to function as opaque tokens against the existing pgSTAC collection.
 

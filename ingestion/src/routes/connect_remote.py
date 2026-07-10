@@ -2,6 +2,7 @@
 
 import os
 
+import posthog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import field_validator
@@ -110,6 +111,22 @@ async def connect_remote(
     job = Job(filename=display_name)
     job.workspace_id = workspace_id
     jobs[job.id] = job
+
+    posthog.capture(
+        distinct_id=workspace_id or "anonymous",
+        event="remote_source_connected",
+        properties={
+            "job_id": job.id,
+            "dataset_id": job.dataset_id,
+            "file_count": len(body.files),
+            "mode": body.mode,
+            "dominant_extension": os.path.splitext(body.files[0].get("filename", ""))[
+                1
+            ].lower()
+            if body.files
+            else "",
+        },
+    )
 
     background_tasks.add_task(
         run_remote_pipeline,

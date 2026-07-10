@@ -5,6 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 
+import posthog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -305,6 +306,12 @@ def _migrate_schema(engine):
 
 @asynccontextmanager
 async def _default_lifespan(app: FastAPI):
+    settings = get_settings()
+    if not settings.posthog_disabled and settings.posthog_project_token:
+        posthog.api_key = settings.posthog_project_token
+        posthog.host = settings.posthog_host
+        posthog.debug = False
+
     Base.metadata.create_all(app.state.db_engine)
     _migrate_schema(app.state.db_engine)
     cleanup_task = asyncio.create_task(_cleanup_scans())
@@ -318,6 +325,9 @@ async def _default_lifespan(app: FastAPI):
     examples_task.cancel()
     stories_task.cancel()
     connections_task.cancel()
+
+    if not settings.posthog_disabled and settings.posthog_project_token:
+        posthog.flush()
 
 
 def create_app(settings=None, lifespan=None) -> FastAPI:

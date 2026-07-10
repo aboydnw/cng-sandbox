@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated
 
+import posthog
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import TypeAdapter
 from sqlalchemy import or_
@@ -90,6 +91,15 @@ async def create_story(body: StoryCreate, request: Request):
         session.add(row)
         session.commit()
         session.refresh(row)
+        posthog.capture(
+            distinct_id=workspace_id or "anonymous",
+            event="story_created",
+            properties={
+                "story_id": row.id,
+                "chapter_count": len(body.chapters),
+                "published": body.published,
+            },
+        )
         return _row_to_response(row)
     finally:
         session.close()
@@ -176,6 +186,15 @@ async def export_story_interactive(
     request: Request,
     scrolly_pngs: Annotated[list[UploadFile], File()] = [],  # noqa: B006
 ):
+    workspace_id = request.headers.get("x-workspace-id", "")
+    posthog.capture(
+        distinct_id=workspace_id or "anonymous",
+        event="story_exported",
+        properties={
+            "story_id": story_id,
+            "scrolly_png_count": len(scrolly_pngs),
+        },
+    )
     return await interactive_export_endpoint.handle_interactive_export(
         story_id=story_id,
         request=request,
@@ -198,6 +217,7 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
             )
         if row.workspace_id != workspace_id:
             raise HTTPException(status_code=403, detail="Forbidden")
+        prev_published = row.published
         if body.title is not None:
             row.title = body.title
         if body.description is not None:
@@ -209,6 +229,15 @@ async def update_story(story_id: str, body: StoryUpdate, request: Request):
         row.updated_at = datetime.now(UTC)
         session.commit()
         session.refresh(row)
+        if body.published is not None and body.published != prev_published:
+            posthog.capture(
+                distinct_id=workspace_id,
+                event="story_published",
+                properties={
+                    "story_id": story_id,
+                    "published": body.published,
+                },
+            )
         return _row_to_response(row)
     finally:
         session.close()
@@ -266,6 +295,15 @@ async def fork_story(story_id: str, request: Request):
                 return _row_to_response(racing)
             raise
         session.refresh(forked)
+        posthog.capture(
+            distinct_id=workspace_id,
+            event="story_forked",
+            properties={
+                "story_id": forked.id,
+                "forked_from_id": story_id,
+                "is_example_source": bool(source.is_example),
+            },
+        )
         return _row_to_response(forked)
     finally:
         session.close()

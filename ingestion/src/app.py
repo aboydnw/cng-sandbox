@@ -241,6 +241,12 @@ def _migrate_schema(engine):
         ("stories", "workspace_id", "TEXT"),
         ("datasets", "workspace_id", "TEXT"),
         ("stories", "forked_from_id", "TEXT"),
+        ("datasets", "is_example_copy", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("datasets", "seeded_from_id", "TEXT"),
+        ("connections", "is_example_copy", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("connections", "seeded_from_id", "TEXT"),
+        ("stories", "is_example_copy", "BOOLEAN NOT NULL DEFAULT FALSE"),
+        ("stories", "seeded_from_id", "TEXT"),
     ]
 
     # SQLite cannot express ALTER COLUMN ... DROP NOT NULL; it is also

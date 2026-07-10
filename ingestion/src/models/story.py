@@ -39,6 +39,8 @@ class StoryRow(Base):
     )
     workspace_id = Column(String, nullable=True)
     forked_from_id = Column(String, nullable=True)
+    is_example_copy = Column(Boolean, nullable=False, default=False)
+    seeded_from_id = Column(String, nullable=True)
 
 
 class TerrainStatePayload(BaseModel):
@@ -203,6 +205,7 @@ class StoryResponse(BaseModel):
     chapters: list[ChapterPayload]
     published: bool
     is_example: bool = False
+    is_example_copy: bool = False
     created_at: str
     updated_at: str
     expires_at: str | None = None

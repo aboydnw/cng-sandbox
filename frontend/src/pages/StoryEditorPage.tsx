@@ -13,6 +13,7 @@ import { useStoryEditor } from "../hooks/useStoryEditor";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
+import { FlyoverKeyframePanel } from "../components/flyover/FlyoverKeyframePanel";
 import { VideoChapterEditor } from "../components/editor/VideoChapterEditor";
 import { UploadModal } from "../components/UploadModal";
 import { ConnectionModal } from "../components/ConnectionModal";
@@ -105,6 +106,7 @@ export default function StoryEditorPage() {
     updateChapterOverlayPosition,
     updateChapterMapState,
     updateChapter,
+    previewFlyoverPose,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,
@@ -315,7 +317,9 @@ export default function StoryEditorPage() {
         </Box>
 
         {/* Center: editable map for map-bound chapters; live preview otherwise */}
-        {activeChapter && isMapBoundChapter(activeChapter) ? (
+        {activeChapter &&
+        (isMapBoundChapter(activeChapter) ||
+          activeChapter.type === "flyover") ? (
           <Box ref={mapContainerRef} flex={1} position="relative">
             {firstUnseen === "map" && (
               <TooltipCard
@@ -333,7 +337,11 @@ export default function StoryEditorPage() {
               terrain={activeChapter.map_state.terrain}
               globe={activeChapter.map_state.globe}
               buildings={activeChapter.map_state.buildings}
-              allowTerrain={chapterAllowsTerrain(activeChapter.layer_config)}
+              allowTerrain={chapterAllowsTerrain(
+                "layer_config" in activeChapter
+                  ? activeChapter.layer_config
+                  : undefined
+              )}
             >
               {previewRenderMetadata && (
                 <Box position="absolute" top={3} right={3} zIndex={10}>
@@ -363,6 +371,7 @@ export default function StoryEditorPage() {
               )}
               {!viewSavedFlash &&
                 activeChapter &&
+                activeChapter.type !== "flyover" &&
                 (() => {
                   const ms = activeChapter.map_state;
                   const differs =
@@ -439,38 +448,50 @@ export default function StoryEditorPage() {
               onChapterTypeChange={updateChapterType}
             />
           ) : activeChapter ? (
-            <NarrativeEditor
-              chapterType={activeChapter.type}
-              onChapterTypeChange={updateChapterType}
-              title={activeChapter.title}
-              narrative={activeChapter.narrative}
-              onTitleChange={updateChapterTitle}
-              onNarrativeChange={updateChapterNarrative}
-              layerConfig={
-                isMapBoundChapter(activeChapter)
-                  ? activeChapter.layer_config
-                  : DEFAULT_LAYER_CONFIG
-              }
-              onLayerConfigChange={updateChapterLayerConfig}
-              datasetType={activeDataset?.dataset_type ?? "raster"}
-              datasets={allDatasets}
-              connections={allConnections}
-              onUploadClick={() => setUploadModalOpen(true)}
-              onAddConnectionClick={() => setConnectionModalOpen(true)}
-              overlayPosition={
-                activeChapter.type === "scrollytelling"
-                  ? (activeChapter.overlay_position ?? "left")
-                  : "left"
-              }
-              onOverlayPositionChange={updateChapterOverlayPosition}
-              temporalTimesteps={activeDatasetTimesteps}
-              mapState={
-                isMapBoundChapter(activeChapter)
-                  ? activeChapter.map_state
-                  : DEFAULT_MAP_STATE
-              }
-              onMapStateChange={updateChapterMapState}
-            />
+            <>
+              <NarrativeEditor
+                chapterType={activeChapter.type}
+                onChapterTypeChange={updateChapterType}
+                title={activeChapter.title}
+                narrative={activeChapter.narrative}
+                onTitleChange={updateChapterTitle}
+                onNarrativeChange={updateChapterNarrative}
+                layerConfig={
+                  "layer_config" in activeChapter && activeChapter.layer_config
+                    ? activeChapter.layer_config
+                    : DEFAULT_LAYER_CONFIG
+                }
+                onLayerConfigChange={updateChapterLayerConfig}
+                datasetType={activeDataset?.dataset_type ?? "raster"}
+                datasets={allDatasets}
+                connections={allConnections}
+                onUploadClick={() => setUploadModalOpen(true)}
+                onAddConnectionClick={() => setConnectionModalOpen(true)}
+                overlayPosition={
+                  activeChapter.type === "scrollytelling"
+                    ? (activeChapter.overlay_position ?? "left")
+                    : "left"
+                }
+                onOverlayPositionChange={updateChapterOverlayPosition}
+                temporalTimesteps={activeDatasetTimesteps}
+                mapState={
+                  "map_state" in activeChapter
+                    ? activeChapter.map_state
+                    : DEFAULT_MAP_STATE
+                }
+                onMapStateChange={updateChapterMapState}
+              />
+              {activeChapter.type === "flyover" && (
+                <Box px={4} pb={6}>
+                  <FlyoverKeyframePanel
+                    chapter={activeChapter}
+                    onChange={updateChapter}
+                    currentCamera={camera}
+                    onPreviewPose={previewFlyoverPose}
+                  />
+                </Box>
+              )}
+            </>
           ) : (
             <Flex h="100%" align="center" justify="center">
               <Text color="gray.400">Select a chapter to edit</Text>

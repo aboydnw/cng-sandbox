@@ -394,3 +394,144 @@ describe("migrateStory", () => {
     }
   });
 });
+
+describe("flyover migration", () => {
+  const rawFlyover = {
+    id: "fly-1",
+    order: 2,
+    type: "flyover",
+    title: "Around the peak",
+    narrative: "",
+    keyframes: [
+      { center: [86.9, 27.9], zoom: 11, bearing: 0, pitch: 60, caption: "hi" },
+      { center: [86.95, 28.0], zoom: 11, bearing: 90, pitch: 60 },
+    ],
+    scroll_length: 1.5,
+    map_state: {
+      center: [86.9, 27.9],
+      zoom: 11,
+      bearing: 0,
+      pitch: 60,
+      basemap: "streets",
+      terrain: { enabled: true, exaggeration: 1.5 },
+    },
+  };
+
+  it("preserves flyover chapters through migration", () => {
+    const migrated = migrateStory({
+      id: "s-f",
+      dataset_id: null,
+      chapters: [rawFlyover],
+    });
+    const ch = migrated.chapters[0];
+    expect(ch.type).toBe("flyover");
+    if (ch.type === "flyover") {
+      expect(ch.keyframes).toHaveLength(2);
+      expect(ch.keyframes[0].caption).toBe("hi");
+      expect(ch.scroll_length).toBe(1.5);
+      expect(ch.map_state.terrain).toEqual({
+        enabled: true,
+        exaggeration: 1.5,
+      });
+    }
+  });
+
+  it("does NOT backfill story dataset_id into flyover layer_config (terrain trap)", () => {
+    const migrated = migrateStory({
+      id: "s-f2",
+      dataset_id: "ds-abc",
+      chapters: [rawFlyover],
+    });
+    const ch = migrated.chapters[0];
+    expect(ch.type).toBe("flyover");
+    expect((ch as { layer_config?: unknown }).layer_config).toBeUndefined();
+  });
+
+  it("keeps an explicit flyover layer_config that names a dataset", () => {
+    const migrated = migrateStory({
+      id: "s-f3",
+      dataset_id: "ds-abc",
+      chapters: [
+        {
+          ...rawFlyover,
+          layer_config: {
+            dataset_id: "ds-real",
+            colormap: "viridis",
+            opacity: 0.8,
+            basemap: "streets",
+          },
+        },
+      ],
+    });
+    const ch = migrated.chapters[0];
+    if (ch.type === "flyover") {
+      expect(ch.layer_config?.dataset_id).toBe("ds-real");
+    }
+    expect(migrated.dataset_ids).toContain("ds-real");
+  });
+
+  it("drops malformed keyframes and defaults scroll_length", () => {
+    const migrated = migrateStory({
+      chapters: [
+        {
+          ...rawFlyover,
+          keyframes: [rawFlyover.keyframes[0], { zoom: "bad" }, null],
+          scroll_length: -2,
+        },
+      ],
+    });
+    const ch = migrated.chapters[0];
+    if (ch.type === "flyover") {
+      expect(ch.keyframes).toHaveLength(1);
+      expect(ch.scroll_length).toBe(1);
+    }
+  });
+
+  it("survives migration in the exact shape the high-places seed emits", () => {
+    // Mirror of ingestion _build_chapter_dict output for the flyover seed —
+    // NOTE the story-level dataset_id is set (GEBCO), which must NOT leak in.
+    const seeded = {
+      id: "seed-story",
+      dataset_id: "ds-gebco",
+      chapters: [
+        {
+          id: "seed-fly",
+          order: 3,
+          type: "flyover",
+          title: "Around the roof of the world",
+          narrative: "Now let the camera do the climbing.",
+          keyframes: [
+            {
+              center: [86.925, 27.988],
+              zoom: 11,
+              bearing: -40,
+              pitch: 62,
+              caption: "Everest",
+            },
+            { center: [86.93, 27.99], zoom: 11.2, bearing: 5, pitch: 62 },
+            { center: [86.935, 27.992], zoom: 11.4, bearing: 50, pitch: 60 },
+            { center: [86.93, 27.99], zoom: 11.2, bearing: 95, pitch: 60 },
+            { center: [86.925, 27.988], zoom: 11, bearing: 140, pitch: 62 },
+          ],
+          scroll_length: 1,
+          map_state: {
+            center: [86.925, 27.988],
+            zoom: 11,
+            bearing: -40,
+            pitch: 62,
+            basemap: "streets",
+            terrain: { enabled: true, exaggeration: 1.5 },
+          },
+        },
+      ],
+    };
+    const migrated = migrateStory(seeded);
+    const ch = migrated.chapters[0];
+    expect(ch.type).toBe("flyover");
+    if (ch.type === "flyover") {
+      expect(ch.keyframes).toHaveLength(5);
+      expect(ch.map_state.terrain?.enabled).toBe(true);
+      expect(ch.layer_config).toBeUndefined(); // terrain stays allowed
+    }
+  });
+});

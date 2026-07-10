@@ -168,13 +168,30 @@ class ChartChapter(_BaseChapter):
     chart: ChartPayload
 
 
+class FlyoverKeyframePayload(BaseModel):
+    center: tuple[float, float]
+    zoom: float
+    bearing: float
+    pitch: float
+    caption: str | None = None
+
+
+class FlyoverChapter(_BaseChapter):
+    type: Literal["flyover"]
+    keyframes: list[FlyoverKeyframePayload]
+    map_state: MapStatePayload
+    layer_config: LayerConfigPayload | None = None
+    scroll_length: float = 1
+
+
 ChapterPayload = Annotated[
     ScrollytellingChapter
     | MapChapter
     | ProseChapter
     | ImageChapter
     | VideoChapter
-    | ChartChapter,
+    | ChartChapter
+    | FlyoverChapter,
     Field(discriminator="type"),
 ]
 

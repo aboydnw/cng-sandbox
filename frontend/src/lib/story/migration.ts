@@ -4,6 +4,7 @@ import {
   type Story,
   type MapState,
   type LayerConfig,
+  type FlyoverKeyframe,
   DEFAULT_MAP_STATE,
   DEFAULT_LAYER_CONFIG,
   createProseChapter,
@@ -12,6 +13,7 @@ import {
   createImageChapter,
   createChartChapter,
   createVideoChapter,
+  createFlyoverChapter,
 } from "./types";
 import type { VideoProvider } from "./video";
 
@@ -25,7 +27,8 @@ function migrateChapter(
     raw.type === "scrollytelling" ||
     raw.type === "image" ||
     raw.type === "video" ||
-    raw.type === "chart"
+    raw.type === "chart" ||
+    raw.type === "flyover"
       ? raw.type
       : raw.map_state || raw.layer_config
         ? "scrollytelling"
@@ -76,6 +79,56 @@ function migrateChapter(
     return createChartChapter({
       ...base,
       ...(raw.chart ? { chart: raw.chart as ChartChapter["chart"] } : {}),
+    });
+  }
+
+  if (type === "flyover") {
+    const rawKfs = Array.isArray(raw.keyframes) ? raw.keyframes : [];
+    const keyframes = rawKfs.flatMap((k): FlyoverKeyframe[] => {
+      if (k == null || typeof k !== "object") return [];
+      const kf = k as Record<string, unknown>;
+      const center = kf.center;
+      if (
+        !Array.isArray(center) ||
+        center.length !== 2 ||
+        typeof center[0] !== "number" ||
+        typeof center[1] !== "number" ||
+        typeof kf.zoom !== "number" ||
+        typeof kf.bearing !== "number" ||
+        typeof kf.pitch !== "number"
+      ) {
+        return [];
+      }
+      return [
+        {
+          center: [center[0], center[1]],
+          zoom: kf.zoom,
+          bearing: kf.bearing,
+          pitch: kf.pitch,
+          ...(typeof kf.caption === "string" && kf.caption
+            ? { caption: kf.caption }
+            : {}),
+        },
+      ];
+    });
+    const rawLc = raw.layer_config as Partial<LayerConfig> | null | undefined;
+    const scrollLength =
+      typeof raw.scroll_length === "number" && raw.scroll_length > 0
+        ? raw.scroll_length
+        : 1;
+    return createFlyoverChapter({
+      ...base,
+      keyframes,
+      scroll_length: scrollLength,
+      map_state: {
+        ...DEFAULT_MAP_STATE,
+        ...(raw.map_state as Partial<MapState> | undefined),
+      },
+      // Deliberately no storyDatasetId backfill: absent layer_config stays
+      // absent so chapterAllowsTerrain(ch.layer_config) remains true.
+      ...(rawLc && (rawLc.dataset_id || rawLc.connection_id)
+        ? { layer_config: { ...DEFAULT_LAYER_CONFIG, ...rawLc } }
+        : {}),
     });
   }
 

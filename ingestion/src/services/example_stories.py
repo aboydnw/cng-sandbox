@@ -25,7 +25,7 @@ from src.models.story import StoryRow
 
 logger = logging.getLogger(__name__)
 
-ChapterType = Literal["scrollytelling", "prose", "map"]
+ChapterType = Literal["scrollytelling", "prose", "map", "flyover"]
 
 GEBCO_URL = "https://data.source.coop/alexgleith/gebco-2024/"
 GHRSST_URL = "https://data.source.coop/ausantarctic/ghrsst-mur-v2/"
@@ -58,6 +58,8 @@ class ChapterSeed:
     terrain: dict | None = None
     globe: bool = False
     buildings: bool = False
+    keyframes: tuple[dict, ...] | None = None
+    scroll_length: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -756,6 +758,65 @@ HIGH_PLACES_STORY = StorySeed(
             terrain={"enabled": True, "exaggeration": 1.5},
         ),
         ChapterSeed(
+            type="flyover",
+            title="Around the roof of the world",
+            narrative=(
+                "Now let the camera do the climbing. As you scroll, the view "
+                "sweeps half an orbit around **Everest** — the summit pyramid, "
+                "the Western Cwm, and the long ridgelines trading places as "
+                "the bearing turns.\n\n"
+                "Scroll slowly and the ridges rotate; scroll fast and the "
+                "camera catches up smoothly behind you."
+            ),
+            center=(86.925, 27.988),
+            zoom=11.0,
+            pitch=62.0,
+            bearing=-40.0,
+            terrain={"enabled": True, "exaggeration": 1.5},
+            keyframes=(
+                {
+                    "center": [86.925, 27.988],
+                    "zoom": 11.0,
+                    "bearing": -40.0,
+                    "pitch": 62.0,
+                    "caption": (
+                        "Everest from the southwest — the summit pyramid dead ahead."
+                    ),
+                },
+                {
+                    "center": [86.93, 27.99],
+                    "zoom": 11.2,
+                    "bearing": 5.0,
+                    "pitch": 62.0,
+                },
+                {
+                    "center": [86.935, 27.992],
+                    "zoom": 11.4,
+                    "bearing": 50.0,
+                    "pitch": 60.0,
+                    "caption": (
+                        "Turning east over the Khumbu — Lhotse and Nuptse "
+                        "swing into view."
+                    ),
+                },
+                {
+                    "center": [86.93, 27.99],
+                    "zoom": 11.2,
+                    "bearing": 95.0,
+                    "pitch": 60.0,
+                },
+                {
+                    "center": [86.925, 27.988],
+                    "zoom": 11.0,
+                    "bearing": 140.0,
+                    "pitch": 62.0,
+                    "caption": (
+                        "Half an orbit later: the same mountain, a different mountain."
+                    ),
+                },
+            ),
+        ),
+        ChapterSeed(
             type="scrollytelling",
             title="The Andes",
             narrative=(
@@ -870,6 +931,27 @@ def _build_chapter_dict(
     order: int,
     dataset_id: str | None,
 ) -> dict:
+    if ch.type == "flyover":
+        return {
+            "id": str(uuid.uuid4()),
+            "order": order,
+            "type": "flyover",
+            "title": ch.title,
+            "narrative": ch.narrative,
+            "keyframes": [dict(k) for k in ch.keyframes or ()],
+            "scroll_length": ch.scroll_length,
+            "map_state": {
+                "center": [ch.center[0], ch.center[1]],
+                "zoom": ch.zoom,
+                "bearing": ch.bearing,
+                "pitch": ch.pitch,
+                "basemap": ch.basemap,
+                **({"terrain": ch.terrain} if ch.terrain else {}),
+                **({"globe": True} if ch.globe else {}),
+                **({"buildings": True} if ch.buildings else {}),
+            },
+        }
+
     layer_config: dict | None = None
     if ch.type != "prose" and dataset_id:
         layer_config = {

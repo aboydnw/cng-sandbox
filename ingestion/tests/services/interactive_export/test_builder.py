@@ -590,3 +590,25 @@ def test_video_chapter_inlines_youtube_thumbnail(monkeypatch):
     assert "assets/vid1-thumb.jpg" in archive.namelist()
     manifest = json.loads(archive.read("manifest.json"))
     assert manifest["chapters"][0]["thumbnail_src"] == "assets/vid1-thumb.jpg"
+
+
+def _flyover_config() -> CngRcConfig:
+    config = _empty_config()
+    config.chapters.append(
+        CngRcChapter(
+            id="c1", type="flyover", title="Fly", body=None, map=None, layers=[]
+        )
+    )
+    return config
+
+
+def test_flyover_rejection_maps_to_client_error():
+    # endpoint.py returns 400 (not 500) only when the ValueError message
+    # contains "not yet supported" — this substring is a functional contract.
+    with pytest.raises(ValueError, match="not yet supported"):
+        builder.build_interactive_export(
+            config=_flyover_config(),
+            chapters_raw=[{"id": "c1", "type": "flyover"}],
+            chart_data_by_chapter={},
+            scrolly_pngs={},
+        )

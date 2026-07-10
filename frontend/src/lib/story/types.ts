@@ -1,4 +1,7 @@
 import type { VideoProvider } from "./video";
+import type { FlyoverKeyframe } from "./flyover/types";
+
+export type { FlyoverKeyframe } from "./flyover/types";
 
 function uuid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -43,7 +46,7 @@ export interface LayerConfig {
 }
 
 export type ChapterType =
-  "scrollytelling" | "prose" | "map" | "image" | "video" | "chart";
+  "scrollytelling" | "prose" | "map" | "image" | "video" | "chart" | "flyover";
 
 interface BaseChapter {
   id: string;
@@ -134,13 +137,26 @@ export interface ChartChapter extends BaseChapter {
   chart: { source: ChartSource; viz: ChartViz };
 }
 
+export interface FlyoverChapter extends BaseChapter {
+  type: "flyover";
+  /** >= 2 required to render as a flyover; fewer degrades to a map chapter. */
+  keyframes: FlyoverKeyframe[];
+  /** Basemap + 3D flags. Pose fields are ignored — keyframe 0 is the entry camera. */
+  map_state: MapState;
+  /** Same terrain-vs-data policy as map/scrolly chapters. Absent by default. */
+  layer_config?: LayerConfig;
+  /** Scroll distance multiplier; ≈100vh per keyframe segment at 1. */
+  scroll_length: number;
+}
+
 export type Chapter =
   | ScrollytellingChapter
   | MapChapter
   | ProseChapter
   | ImageChapter
   | VideoChapter
-  | ChartChapter;
+  | ChartChapter
+  | FlyoverChapter;
 
 export interface Story {
   id: string;
@@ -262,6 +278,19 @@ export function createChartChapter(
   };
 }
 
+export function createFlyoverChapter(
+  overrides: Partial<FlyoverChapter> = {}
+): FlyoverChapter {
+  return {
+    ...baseFields(overrides),
+    type: "flyover",
+    keyframes: overrides.keyframes ?? [],
+    map_state: overrides.map_state ?? { ...DEFAULT_MAP_STATE },
+    scroll_length: overrides.scroll_length ?? 1,
+    ...(overrides.layer_config ? { layer_config: overrides.layer_config } : {}),
+  };
+}
+
 /** Backwards-compat alias used by older callers. Defaults to scrollytelling. */
 export function createChapter(
   overrides: Partial<ScrollytellingChapter> = {}
@@ -313,4 +342,34 @@ export function isMapBoundChapter(
   ch: Chapter
 ): ch is ScrollytellingChapter | MapChapter {
   return ch.type === "scrollytelling" || ch.type === "map";
+}
+
+export function isFlyoverChapter(ch: Chapter): ch is FlyoverChapter {
+  return ch.type === "flyover";
+}
+
+/** Keyframe 0 spliced into map_state: the chapter's entry/snapshot camera. */
+export function flyoverEntryMapState(ch: FlyoverChapter): MapState {
+  const k0 = ch.keyframes[0];
+  if (!k0) return ch.map_state;
+  return {
+    ...ch.map_state,
+    center: k0.center,
+    zoom: k0.zoom,
+    bearing: k0.bearing,
+    pitch: k0.pitch,
+  };
+}
+
+/** <2-keyframe degradation: render as a plain map chapter at the entry pose. */
+export function flyoverFallbackMapChapter(ch: FlyoverChapter): MapChapter {
+  return {
+    id: ch.id,
+    order: ch.order,
+    title: ch.title,
+    narrative: ch.narrative,
+    type: "map",
+    map_state: flyoverEntryMapState(ch),
+    layer_config: ch.layer_config ?? { ...DEFAULT_LAYER_CONFIG },
+  };
 }

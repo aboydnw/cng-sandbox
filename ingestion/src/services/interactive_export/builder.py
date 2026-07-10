@@ -357,6 +357,10 @@ def build_interactive_export(
                 entry = _build_image_chapter(raw, assets_dir)
             elif t == "video":
                 entry = _build_video_chapter(raw, assets_dir)
+            elif t == "flyover":
+                raise ValueError(
+                    "flyover chapters are not yet supported in interactive export"
+                )
             else:
                 raise ValueError(f"unknown chapter type: {t!r}")
             manifest_chapters.append(entry)

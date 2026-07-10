@@ -23,13 +23,17 @@ import {
   createImageChapter,
   createVideoChapter,
   createChartChapter,
+  createFlyoverChapter,
   isMapBoundChapter,
+  flyoverEntryMapState,
   createStoryOnServer,
   getStoryFromServer,
   saveStoryToServer,
   migrateStory,
   buildLayersForChapter,
 } from "../lib/story";
+import type { CameraPose } from "../lib/story/flyover/types";
+import { captureKeyframe } from "../lib/story/flyover/keyframes";
 import { captureCameraToChapter } from "../lib/story/cameraCapture";
 import type { Connection, Dataset } from "../types";
 import { config } from "../config";
@@ -227,15 +231,22 @@ export function useStoryEditor() {
   function selectChapter(chapterId: string) {
     setActiveChapterId(chapterId);
     const chapter = story?.chapters.find((c) => c.id === chapterId);
-    if (chapter && isMapBoundChapter(chapter)) {
-      setBasemap(chapter.map_state.basemap);
+    if (!chapter) return;
+    const ms =
+      chapter.type === "flyover"
+        ? flyoverEntryMapState(chapter)
+        : isMapBoundChapter(chapter)
+          ? chapter.map_state
+          : null;
+    if (ms) {
+      setBasemap(ms.basemap);
       setTransitionDuration(1000);
       setCamera({
-        longitude: chapter.map_state.center[0],
-        latitude: chapter.map_state.center[1],
-        zoom: chapter.map_state.zoom,
-        bearing: chapter.map_state.bearing,
-        pitch: chapter.map_state.pitch,
+        longitude: ms.center[0],
+        latitude: ms.center[1],
+        zoom: ms.zoom,
+        bearing: ms.bearing,
+        pitch: ms.pitch,
       });
     }
   }
@@ -247,6 +258,10 @@ export function useStoryEditor() {
     if (autoCaptureRef.current) clearTimeout(autoCaptureRef.current);
     autoCaptureRef.current = setTimeout(() => {
       if (!activeChapterId) return;
+      // Flyover poses are captured explicitly via the keyframe panel, never
+      // autosaved into map_state (and no misleading "View saved" flash).
+      const active = story?.chapters.find((ch) => ch.id === activeChapterId);
+      if (active?.type === "flyover") return;
       updateStory((s) =>
         captureCameraToChapter(s, activeChapterId, c, basemap)
       );
@@ -256,15 +271,22 @@ export function useStoryEditor() {
   }
 
   function resetView() {
-    if (!activeChapter || !isMapBoundChapter(activeChapter)) return;
-    setBasemap(activeChapter.map_state.basemap);
+    if (!activeChapter) return;
+    const ms =
+      activeChapter.type === "flyover"
+        ? flyoverEntryMapState(activeChapter)
+        : isMapBoundChapter(activeChapter)
+          ? activeChapter.map_state
+          : null;
+    if (!ms) return;
+    setBasemap(ms.basemap);
     setTransitionDuration(1000);
     setCamera({
-      longitude: activeChapter.map_state.center[0],
-      latitude: activeChapter.map_state.center[1],
-      zoom: activeChapter.map_state.zoom,
-      bearing: activeChapter.map_state.bearing,
-      pitch: activeChapter.map_state.pitch,
+      longitude: ms.center[0],
+      latitude: ms.center[1],
+      zoom: ms.zoom,
+      bearing: ms.bearing,
+      pitch: ms.pitch,
     });
   }
 
@@ -357,13 +379,17 @@ export function useStoryEditor() {
     const prevConfig =
       activeChapter && isMapBoundChapter(activeChapter)
         ? activeChapter.layer_config
-        : undefined;
+        : activeChapter?.type === "flyover"
+          ? activeChapter.layer_config
+          : undefined;
 
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
         ch.id === activeChapterId &&
-        (ch.type === "scrollytelling" || ch.type === "map")
+        (ch.type === "scrollytelling" ||
+          ch.type === "map" ||
+          ch.type === "flyover")
           ? { ...ch, layer_config: layerConfig }
           : ch
       ),
@@ -415,30 +441,61 @@ export function useStoryEditor() {
         const inheritedDataset = inheritedDatasetId
           ? datasetMap.get(inheritedDatasetId)
           : undefined;
+        if (type === "flyover") {
+          return createFlyoverChapter({
+            ...base,
+            keyframes: [captureKeyframe(camera)],
+            map_state: isMapBoundChapter(ch)
+              ? { ...ch.map_state }
+              : ch.type === "flyover"
+                ? { ...ch.map_state }
+                : {
+                    center: [camera.longitude, camera.latitude] as [
+                      number,
+                      number,
+                    ],
+                    zoom: camera.zoom,
+                    bearing: camera.bearing,
+                    pitch: camera.pitch,
+                    basemap,
+                  },
+            ...(isMapBoundChapter(ch) && ch.layer_config.dataset_id
+              ? { layer_config: { ...ch.layer_config } }
+              : {}),
+          });
+        }
         const mapFields = isMapBoundChapter(ch)
           ? { map_state: ch.map_state, layer_config: ch.layer_config }
-          : {
-              map_state: {
-                center: [camera.longitude, camera.latitude] as [number, number],
-                zoom: camera.zoom,
-                bearing: camera.bearing,
-                pitch: camera.pitch,
-                basemap,
-              },
-              layer_config: {
-                ...DEFAULT_LAYER_CONFIG,
-                dataset_id: inheritedDatasetId,
-                colormap:
-                  inheritedDataset?.preferred_colormap ??
-                  DEFAULT_LAYER_CONFIG.colormap,
-                ...(inheritedDataset?.preferred_colormap_reversed != null
-                  ? {
-                      colormap_reversed:
-                        inheritedDataset.preferred_colormap_reversed,
-                    }
-                  : {}),
-              },
-            };
+          : ch.type === "flyover"
+            ? {
+                map_state: flyoverEntryMapState(ch),
+                layer_config: ch.layer_config ?? DEFAULT_LAYER_CONFIG,
+              }
+            : {
+                map_state: {
+                  center: [camera.longitude, camera.latitude] as [
+                    number,
+                    number,
+                  ],
+                  zoom: camera.zoom,
+                  bearing: camera.bearing,
+                  pitch: camera.pitch,
+                  basemap,
+                },
+                layer_config: {
+                  ...DEFAULT_LAYER_CONFIG,
+                  dataset_id: inheritedDatasetId,
+                  colormap:
+                    inheritedDataset?.preferred_colormap ??
+                    DEFAULT_LAYER_CONFIG.colormap,
+                  ...(inheritedDataset?.preferred_colormap_reversed != null
+                    ? {
+                        colormap_reversed:
+                          inheritedDataset.preferred_colormap_reversed,
+                      }
+                    : {}),
+                },
+              };
         if (type === "map") return createMapChapter({ ...base, ...mapFields });
         const scrollyFields =
           ch.type === "scrollytelling"
@@ -471,11 +528,23 @@ export function useStoryEditor() {
     updateStory((s) => ({
       ...s,
       chapters: s.chapters.map((ch) =>
-        ch.id === activeChapterId && isMapBoundChapter(ch)
+        ch.id === activeChapterId &&
+        (isMapBoundChapter(ch) || ch.type === "flyover")
           ? { ...ch, map_state: { ...ch.map_state, ...partial } }
           : ch
       ),
     }));
+  }
+
+  function previewFlyoverPose(pose: CameraPose, animate = false) {
+    setTransitionDuration(animate ? 600 : undefined);
+    setCamera({
+      longitude: pose.center[0],
+      latitude: pose.center[1],
+      zoom: pose.zoom,
+      bearing: pose.bearing,
+      pitch: pose.pitch,
+    });
   }
 
   async function handleDatasetReady(datasetId: string) {
@@ -588,6 +657,7 @@ export function useStoryEditor() {
     updateChapterOverlayPosition,
     updateChapterMapState,
     updateChapter,
+    previewFlyoverPose,
     handleDatasetReady,
     handlePublish,
     handleUnpublish,

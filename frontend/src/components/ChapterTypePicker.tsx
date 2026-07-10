@@ -6,6 +6,7 @@ import {
   Image,
   VideoCamera,
   ChartLine,
+  PaperPlaneTilt,
 } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import type { ChapterType } from "../lib/story";
@@ -26,6 +27,7 @@ const CHAPTER_TYPE_OPTIONS: ChapterTypeOption[] = [
   { type: "image", icon: <Image size={16} /> },
   { type: "video", icon: <VideoCamera size={16} /> },
   { type: "chart", icon: <ChartLine size={16} /> },
+  { type: "flyover", icon: <PaperPlaneTilt size={16} /> },
 ];
 
 interface ChapterTypePickerProps {

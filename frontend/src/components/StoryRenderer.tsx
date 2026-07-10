@@ -9,7 +9,7 @@ import {
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
-import { ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import type { MapRef } from "react-map-gl/maplibre";
 import { UnifiedMap } from "./UnifiedMap";
 import { ProseChapter } from "./ProseChapter";
 import { MapChapter } from "./MapChapter";
@@ -31,13 +31,12 @@ import type { ZarrNode } from "../hooks/useZarrNode";
 import type { ActiveLayer, AgentBridge } from "../lib/chat/types";
 import { chapterTransitionDuration } from "../lib/story/chapterTransition";
 import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
-
-interface Highlight {
-  id: string;
-  longitude: number;
-  latitude: number;
-  label: string;
-}
+import {
+  reconcileHighlightMarkers,
+  createHighlightMarker,
+  type Highlight,
+  type MarkerHandle,
+} from "../lib/layers/highlightMarkers";
 
 function resolveActiveLayers(
   chapter: ScrollytellingChapter | undefined,
@@ -120,6 +119,21 @@ function ScrollytellingBlock({
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
   const activeIndexRef = useRef(0);
   const highlightTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const mapRef = useRef<MapRef | null>(null);
+  const markerRegistry = useRef<Map<string, MarkerHandle>>(new Map());
+  const [mapReady, setMapReady] = useState(false);
+
+  // Callback ref for the map: on (re)mount, drop any marker handles bound to a
+  // previous map instance and flip `mapReady` so the highlight effect below
+  // replays active highlights onto the fresh map (they'd otherwise be lost if a
+  // highlight arrived while the map was unmounted between chapter types).
+  const handleMapRef = useCallback((instance: MapRef | null) => {
+    mapRef.current = instance;
+    const registry = markerRegistry.current;
+    for (const handle of registry.values()) handle.remove();
+    registry.clear();
+    setMapReady(instance != null);
+  }, []);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -229,35 +243,30 @@ function ScrollytellingBlock({
     ? layerVisibility[activeLayerId] === false
     : false;
 
-  const layers = useMemo(() => {
-    const base = activeLayerHidden ? [] : chapterLayers;
-    if (highlights.length === 0) return base;
-    return [
-      ...base,
-      new ScatterplotLayer<Highlight>({
-        id: "agent-highlights",
-        data: highlights,
-        getPosition: (h) => [h.longitude, h.latitude],
-        getRadius: 10,
-        radiusUnits: "pixels",
-        getFillColor: [232, 122, 46, 220],
-        getLineColor: [255, 255, 255, 255],
-        lineWidthUnits: "pixels",
-        getLineWidth: 2,
-        stroked: true,
-      }),
-      new TextLayer<Highlight>({
-        id: "agent-highlight-labels",
-        data: highlights,
-        getPosition: (h) => [h.longitude, h.latitude],
-        getText: (h) => h.label,
-        getSize: 13,
-        getColor: [60, 40, 30, 255],
-        getPixelOffset: [0, -16],
-        fontFamily: "system-ui, sans-serif",
-      }),
-    ];
-  }, [activeLayerHidden, chapterLayers, highlights]);
+  const layers = useMemo(
+    () => (activeLayerHidden ? [] : chapterLayers),
+    [activeLayerHidden, chapterLayers]
+  );
+
+  // Render agent highlights as maplibre Markers (not deck layers) so they
+  // track terrain elevation and sit on elevated peaks instead of sinking to
+  // ellipsoid height 0.
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    const registry = markerRegistry.current;
+    if (!map) return;
+    reconcileHighlightMarkers(highlights, registry, (h) =>
+      createHighlightMarker(map, h)
+    );
+  }, [highlights, mapReady]);
+
+  useEffect(() => {
+    const registry = markerRegistry.current;
+    return () => {
+      for (const handle of registry.values()) handle.remove();
+      registry.clear();
+    };
+  }, []);
 
   const handleCameraChange = useCallback((c: CameraState) => {
     setCamera(c);
@@ -346,6 +355,7 @@ function ScrollytellingBlock({
       <Box position="sticky" top={0} h="100vh" zIndex={0}>
         {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
           <UnifiedMap
+            mapRef={handleMapRef}
             camera={camera}
             onCameraChange={handleCameraChange}
             layers={layers}

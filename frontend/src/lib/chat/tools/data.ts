@@ -2,6 +2,26 @@ import { z } from "zod";
 import { config } from "../../../config";
 import type { ActiveLayer, ChatTool } from "../types";
 
+const TOOL_FETCH_TIMEOUT_MS = 15000;
+
+/**
+ * `fetch` bounded by a timeout so a hung tiler can't stall the conversation
+ * tool-execution loop indefinitely. Aborts and rejects after the deadline. A
+ * caller-supplied `init.signal` (e.g. a shared per-tool-call deadline) is
+ * combined with the per-request timeout so whichever fires first wins.
+ */
+function fetchWithTimeout(
+  url: string,
+  init?: RequestInit,
+  timeoutMs = TOOL_FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, timeout])
+    : timeout;
+  return fetch(url, { ...init, signal });
+}
+
 const queryPointSchema = z
   .object({ longitude: z.number(), latitude: z.number() })
   .strict();
@@ -44,10 +64,13 @@ export const dataTools: ChatTool[] = [
         return { summary: "No raster layer is currently shown to sample." };
       }
       const parts: string[] = [];
+      // One deadline for the whole serial loop, so N visible rasters can't
+      // stack N separate timeouts and blow past the turn budget.
+      const deadline = AbortSignal.timeout(TOOL_FETCH_TIMEOUT_MS);
       for (const layer of layers) {
         const url = `${config.cogTilerUrl}/point/${longitude},${latitude}?url=${encodeURIComponent(layer.cogUrl!)}`;
         try {
-          const resp = await fetch(url);
+          const resp = await fetchWithTimeout(url, { signal: deadline });
           if (!resp.ok) {
             parts.push(`${layer.label ?? layer.layer_id}: unavailable`);
             continue;
@@ -79,14 +102,41 @@ export const dataTools: ChatTool[] = [
         return { summary: "No raster layer is currently shown to summarize." };
       }
       const layer = layers[0];
-      const url = `${config.cogTilerUrl}/statistics?url=${encodeURIComponent(layer.cogUrl!)}&bbox=${bbox.join(",")}`;
+      const [w, s, e, n] = bbox;
+      const feature = {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [w, s],
+              [e, s],
+              [e, n],
+              [w, n],
+              [w, s],
+            ],
+          ],
+        },
+      };
+      const url = `${config.cogTilerUrl}/statistics?url=${encodeURIComponent(layer.cogUrl!)}`;
       try {
-        const resp = await fetch(url);
+        const resp = await fetchWithTimeout(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(feature),
+        });
         if (!resp.ok)
           return { summary: "Statistics unavailable.", isError: true };
         const data = await resp.json();
-        const firstBand = data[Object.keys(data)[0]] as
-          { min: number; max: number; mean: number } | undefined;
+        const stats: Record<
+          string,
+          { min: number; max: number; mean: number }
+        > =
+          data?.properties?.statistics ??
+          data?.features?.[0]?.properties?.statistics ??
+          {};
+        const firstBand = stats[Object.keys(stats)[0]];
         if (!firstBand) return { summary: "No statistics returned." };
         return {
           summary: `area min ${fmt(firstBand.min)}, max ${fmt(firstBand.max)}, mean ${fmt(firstBand.mean)} (band 1)`,
@@ -116,7 +166,7 @@ export const dataTools: ChatTool[] = [
       }
       const url = `${config.vectorTilerUrl}/collections/${collectionId}/items?${params.toString()}`;
       try {
-        const resp = await fetch(url);
+        const resp = await fetchWithTimeout(url);
         if (!resp.ok)
           return { summary: "Feature query failed.", isError: true };
         const data = await resp.json();

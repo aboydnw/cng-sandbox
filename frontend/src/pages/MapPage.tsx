@@ -189,6 +189,14 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     useState<CopcColorMode>("elevation");
   const [copcPointSize, setCopcPointSize] = useState(2);
 
+  // Reset point-cloud styling when the selected item changes so one cloud's
+  // tuned color mode / point size doesn't carry over (and get saved) onto the
+  // next.
+  useEffect(() => {
+    setCopcColorMode("elevation");
+    setCopcPointSize(2);
+  }, [item?.id]);
+
   // --- Camera ---
   const [camera, setCamera] = useState<CameraState>(DEFAULT_CAMERA);
   const [basemap, setBasemap] = useState("streets");
@@ -946,6 +954,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 !!item.dataset?.is_categorical
               }
               onDatasetUpdated={refresh}
+              copcColorMode={isPointCloud ? copcColorMode : undefined}
+              copcPointSize={isPointCloud ? copcPointSize : undefined}
               shared={shared}
               savePreferredColormap={
                 !shared && item?.dataType === "raster" && !itemIsExample

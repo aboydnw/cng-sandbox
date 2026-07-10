@@ -18,7 +18,11 @@ vi.mock("maplibre-gl-lidar", () => ({
   },
 }));
 
-import { buildCopcControl, DEFAULT_COPC_POINT_BUDGET } from "../copcLayer";
+import {
+  buildCopcControl,
+  DEFAULT_COPC_POINT_BUDGET,
+  HIDDEN_CONTROL_CLASS,
+} from "../copcLayer";
 
 describe("buildCopcControl", () => {
   beforeEach(() => {
@@ -45,6 +49,16 @@ describe("buildCopcControl", () => {
     buildCopcControl({ url: "u" });
     expect(ctorSpy).toHaveBeenCalledWith(
       expect.objectContaining({ streamingPointBudget: 5_000_000 })
+    );
+  });
+
+  it("disables plugin autoZoom and hides its built-in panel", () => {
+    buildCopcControl({ url: "u" });
+    expect(ctorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        autoZoom: false,
+        className: HIDDEN_CONTROL_CLASS,
+      })
     );
   });
 

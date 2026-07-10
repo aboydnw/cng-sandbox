@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from slowapi.util import get_remote_address
 from sse_starlette.sse import EventSourceResponse
 
 from src.config import Settings, get_settings
@@ -26,7 +27,7 @@ def chat_available(settings: Settings) -> bool:
     return settings.chat_enabled and bool(settings.anthropic_api_key_chat)
 
 
-# 8 tool definitions — names and params match the frontend zod executors
+# 7 tool definitions — names and params match the frontend zod executors
 # byte-for-byte (Tasks 5 & 6). The last tool carries the cache_control breakpoint
 # so the whole tools array is cached alongside the system prompt.
 CHAT_TOOLS: list[dict] = [
@@ -125,19 +126,6 @@ CHAT_TOOLS: list[dict] = [
             },
             "required": [],
         },
-    },
-    {
-        "name": "get_timeseries",
-        "description": "A compact time series at a point for temporal layers.",
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {
-                "longitude": {"type": "number"},
-                "latitude": {"type": "number"},
-            },
-            "required": ["longitude", "latitude"],
-        },
         "cache_control": {"type": "ephemeral"},
     },
 ]
@@ -186,7 +174,9 @@ async def chat_config(request: Request):
 @router.post("/chat")
 # Static string: slowapi's decorator needs a literal. The configurable
 # settings.chat_rate_limit is retained for documentation and future wiring.
-@limiter.limit("10/minute")
+# Keyed on IP alone (not the shared workspace+IP key func): X-Workspace-Id is
+# client-controlled, so rotating it would otherwise mint unlimited buckets.
+@limiter.limit("10/minute", key_func=get_remote_address)
 async def chat(request: Request, body: ChatRequest):
     settings = getattr(request.app.state, "settings", None) or get_settings()
     if not chat_available(settings):

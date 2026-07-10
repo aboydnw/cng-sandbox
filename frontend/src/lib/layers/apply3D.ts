@@ -19,8 +19,10 @@ export interface Apply3DOptions {
 
 // Minimal structural type; the real maplibre Map satisfies it.
 interface MapLike {
+  getTerrain(): { source?: string; exaggeration?: number } | null | undefined;
   setTerrain(v: unknown): void;
   setSky(v?: unknown): void;
+  getProjection(): { type?: unknown } | null | undefined;
   setProjection(v: { type: string }): void;
   getSource(id: string): unknown;
   addSource(id: string, spec: unknown): void;
@@ -44,12 +46,21 @@ export function apply3D(map: MapLike, opts: Apply3DOptions): void {
         attribution: TERRAIN_DEM_ATTRIBUTION,
       });
     }
-    map.setTerrain({
-      source: DEM_SOURCE_ID,
-      exaggeration: opts.terrain?.exaggeration ?? 1,
-    });
+    // setTerrain constructs a new Terrain + RenderToTexture each call, so
+    // skip it when the current terrain already matches (keeps slider drags
+    // and styledata/sourcedata re-applies cheap).
+    const exaggeration = opts.terrain?.exaggeration ?? 1;
+    const current = map.getTerrain();
+    if (
+      !current ||
+      current.source !== DEM_SOURCE_ID ||
+      current.exaggeration !== exaggeration
+    ) {
+      map.setTerrain({ source: DEM_SOURCE_ID, exaggeration });
+    }
   } else {
-    map.setTerrain(null);
+    if (map.getTerrain()) map.setTerrain(null);
+    if (map.getSource(DEM_SOURCE_ID)) map.removeSource(DEM_SOURCE_ID);
   }
 
   if (terrainOn || opts.globe) {
@@ -77,7 +88,10 @@ export function apply3D(map: MapLike, opts: Apply3DOptions): void {
     map.setSky(undefined);
   }
 
-  map.setProjection({ type: opts.globe ? "globe" : "mercator" });
+  const projection = opts.globe ? "globe" : "mercator";
+  if (map.getProjection()?.type !== projection) {
+    map.setProjection({ type: projection });
+  }
 
   if (opts.buildings) {
     if (!map.getSource(BUILDINGS_SOURCE_ID)) {
@@ -100,8 +114,13 @@ export function apply3D(map: MapLike, opts: Apply3DOptions): void {
         },
       });
     }
-  } else if (map.getLayer(BUILDINGS_LAYER_ID)) {
-    map.removeLayer(BUILDINGS_LAYER_ID);
+  } else {
+    if (map.getLayer(BUILDINGS_LAYER_ID)) {
+      map.removeLayer(BUILDINGS_LAYER_ID);
+    }
+    if (map.getSource(BUILDINGS_SOURCE_ID)) {
+      map.removeSource(BUILDINGS_SOURCE_ID);
+    }
   }
 }
 
@@ -111,7 +130,16 @@ interface MapEvents extends MapLike {
   isStyleLoaded(): boolean;
 }
 
-/** Re-apply 3D style props whenever the style reloads (basemap switch). */
+/**
+ * Re-apply 3D style props whenever the style reloads (basemap switch).
+ *
+ * react-map-gl's diffed `setStyle` often fires `styledata` before the style
+ * finishes loading, and no later `styledata` is guaranteed — so terrain, sky
+ * and globe would silently drop. Mirror the pattern react-maplibre uses for
+ * its own terrain re-application: listen on `style.load` AND `sourcedata`
+ * (sources arriving late are what terrain needs) as well as `styledata`.
+ * apply3D is idempotent (Fix 5), so the extra invocations are cheap.
+ */
 export function bindStyleReapply(
   map: MapEvents,
   getOpts: () => Apply3DOptions
@@ -120,6 +148,12 @@ export function bindStyleReapply(
     if (!map.isStyleLoaded()) return;
     apply3D(map, getOpts());
   };
+  map.on("style.load", handler);
   map.on("styledata", handler);
-  return () => map.off("styledata", handler);
+  map.on("sourcedata", handler);
+  return () => {
+    map.off("style.load", handler);
+    map.off("styledata", handler);
+    map.off("sourcedata", handler);
+  };
 }

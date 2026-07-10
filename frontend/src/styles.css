@@ -29,3 +29,13 @@ body,
 * {
   box-sizing: border-box;
 }
+
+/*
+ * Hide the maplibre-gl-lidar plugin's built-in control panel. The app renders
+ * its own brand-consistent point-cloud controls (CopcControls); the plugin
+ * panel would be a duplicate. Class set via LidarControl's `className` option
+ * (see HIDDEN_CONTROL_CLASS in lib/layers/copcLayer.ts).
+ */
+.cng-lidar-control-hidden {
+  display: none !important;
+}

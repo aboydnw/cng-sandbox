@@ -9,6 +9,8 @@ import { displayName } from "../utils/dataset";
 import { CalendarPopover } from "./CalendarPopover";
 import { ChapterTypePicker } from "./ChapterTypePicker";
 import { ColormapDropdown } from "./ColormapDropdown";
+import { CopcControls } from "./CopcControls";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { DataSelector } from "./DataSelector";
 import type { DataSelectorItem } from "./DataSelector";
 import { MarkdownToolbar } from "./MarkdownToolbar";
@@ -64,6 +66,9 @@ export function NarrativeEditor({
   const selectedDataset = datasets.find(
     (ds) => ds.id === layerConfig.dataset_id
   );
+  const isPointCloud =
+    datasetType === "pointcloud" ||
+    selectedConnection?.connection_type === "copc";
   const showColormap =
     datasetType === "raster" &&
     !(selectedConnection?.connection_type === "xyz_raster");
@@ -478,6 +483,21 @@ export function NarrativeEditor({
                   </label>
                 </Flex>
               </Box>
+            )}
+            {isPointCloud && (
+              <CopcControls
+                colorMode={
+                  (layerConfig.color_mode as CopcColorMode | undefined) ??
+                  "elevation"
+                }
+                onColorModeChange={(mode) =>
+                  onLayerConfigChange({ ...layerConfig, color_mode: mode })
+                }
+                pointSize={layerConfig.point_size ?? 2}
+                onPointSizeChange={(size) =>
+                  onLayerConfigChange({ ...layerConfig, point_size: size })
+                }
+              />
             )}
             <Box>
               <Flex justify="space-between" mb={1}>

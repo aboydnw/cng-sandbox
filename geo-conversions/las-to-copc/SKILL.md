@@ -34,7 +34,7 @@ Convert a file with PDAL and validate the result. `--writers.copc.forward=all` c
 | `check_copc_vlr_present` | The COPC info VLR (`user_id="copc"`, `record_id=1`) is present — i.e. the output really is COPC, not plain LAZ. |
 | `check_copc_hierarchy_readable` | `pdal info --summary` reads the octree hierarchy without error. |
 | `check_point_count_preserved` | Header point count is identical on both sides. |
-| `check_crs_preserved` | `parse_crs().to_epsg()` is identical on both sides. |
+| `check_crs_preserved` | CRS is preserved: EPSG codes match when both sides have one, else `CRS.equals` on the WKT (so WKT-only / compound CRSes can't pass vacuously); a dropped output CRS fails. |
 | `check_bounds_match` | Header min/max x/y/z match within a 1e-3 tolerance. |
 
 ## Known complexity
@@ -46,7 +46,10 @@ Convert a file with PDAL and validate the result. `--writers.copc.forward=all` c
 
 - **`writers.copc` drops the CRS without `forward=all`.** A bare `pdal translate in.laz out.copc.laz` can produce a COPC whose header omits the projection VLR, so the browser cannot reproject the points and the layer renders at [0,0] or not at all. Fix: always pass `--writers.copc.forward=all` so the source SRS/header fields carry through. `check_crs_preserved` catches a dropped CRS.
 - **python-magic reports `.laz` as `application/octet-stream`.** LAZ has no dedicated libmagic signature, so MIME-based format detection is ambiguous. The sandbox pipeline adds a stricter guard that reads the first 4 bytes and requires the `LASF` magic. Any format check that trusts MIME alone will misroute or reject valid LAZ files.
+- **`check_crs_preserved` passed vacuously for WKT-only / compound CRSes.** The check compared `parse_crs().to_epsg()` on both sides. A WKT-only or compound CRS has no EPSG code, so `to_epsg()` returns None on both the source and the output; `None == None` reported "preserved (EPSG:None)" even when the conversion silently dropped or altered the projection — the exact CRS class this conversion targets. Fix: only compare EPSG when both sides expose one; otherwise compare the CRS objects with `pyproj.CRS.equals`, and treat a missing output CRS (source had one) as a hard failure.
+- **`pdal info` in `check_copc_hierarchy_readable` had no timeout.** `pdal translate` was bounded (600s) but the hierarchy-read `subprocess.run(["pdal","info",...])` was not, so a hung `pdal info` would stall the ingestion worker with the job stuck in VALIDATING forever. Fix: pass `timeout=120` and treat `subprocess.TimeoutExpired` as a validation failure.
 
 ## Changelog
 
 - 2026-07-08: Initial skill. Added `check_copc_vlr_present`, `check_copc_hierarchy_readable`, `check_point_count_preserved`, `check_crs_preserved`, `check_bounds_match`. Documented the `writers.copc.forward=all` CRS-drop failure mode and the `.laz` → `application/octet-stream` magic-byte ambiguity.
+- 2026-07-09: Hardened `check_crs_preserved` against WKT-only / compound CRSes that report `EPSG:None` on both sides (fall back to `CRS.equals`; a dropped output CRS now fails). Added a `timeout=120` to `check_copc_hierarchy_readable`'s `pdal info` call and mapped `TimeoutExpired` to a validation failure. Added regression tests for both.

@@ -46,13 +46,13 @@ export async function* streamChat({
       }
       buffer += decoder.decode(value, { stream: true });
 
-      let boundary = buffer.indexOf("\n\n");
-      while (boundary !== -1) {
-        const rawEvent = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
+      let boundary = EVENT_BOUNDARY.exec(buffer);
+      while (boundary !== null) {
+        const rawEvent = buffer.slice(0, boundary.index);
+        buffer = buffer.slice(boundary.index + boundary[0].length);
         const parsed = parseSseEvent(rawEvent);
         if (parsed) yield parsed;
-        boundary = buffer.indexOf("\n\n");
+        boundary = EVENT_BOUNDARY.exec(buffer);
       }
     }
   } finally {
@@ -60,10 +60,15 @@ export async function* streamChat({
   }
 }
 
+// Per the SSE spec, events end at a blank line and lines may be terminated by
+// CRLF, LF, or CR. sse-starlette (the server) emits CRLF.
+const EVENT_BOUNDARY = /\r\n\r\n|\n\n|\r\r/;
+const LINE_BREAK = /\r\n|\n|\r/;
+
 function parseSseEvent(raw: string): StreamEvent | null {
   let eventName = "message";
   const dataLines: string[] = [];
-  for (const line of raw.split("\n")) {
+  for (const line of raw.split(LINE_BREAK)) {
     if (line.startsWith("event:")) {
       eventName = line.slice("event:".length).trim();
     } else if (line.startsWith("data:")) {
@@ -93,7 +98,11 @@ function parseSseEvent(raw: string): StreamEvent | null {
     };
   }
   if (eventName === "done") {
-    return { type: "done" };
+    return {
+      type: "done",
+      stopReason:
+        typeof data.stop_reason === "string" ? data.stop_reason : undefined,
+    };
   }
   if (eventName === "error") {
     return { type: "error", message: String(data.message ?? "error") };

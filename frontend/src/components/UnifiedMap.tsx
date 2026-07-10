@@ -195,7 +195,10 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   }, [camera, transitionDuration]);
 
   // Apply 3D scene props (terrain/globe/buildings) via native MapLibre APIs.
-  // setStyle (basemap switch) wipes these, so re-apply on every styledata.
+  // setStyle (basemap switch) wipes these, so re-apply on every style reload.
+  // bindStyleReapply listens on style.load + styledata + sourcedata so the
+  // diffed setStyle path (styledata fires before the style is loaded) still
+  // re-applies once sources arrive; apply3D is idempotent so this is cheap.
   useEffect(() => {
     const map = localMapRef.current?.getMap();
     if (!map) return;
@@ -205,16 +208,8 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
       buildings,
       allowTerrain: allowTerrain ?? true,
     };
-    const run = () => apply3D(map as never, opts);
-    if (map.isStyleLoaded()) run();
-    else map.once("style.load", run);
-    const unbind = bindStyleReapply(map as never, () => opts);
-    return () => {
-      // Cancel a still-pending style.load listener so a stale `run` closure
-      // (with outdated opts) can't fire after the deps have changed.
-      map.off("style.load", run);
-      unbind();
-    };
+    if (map.isStyleLoaded()) apply3D(map as never, opts);
+    return bindStyleReapply(map as never, () => opts);
   }, [terrain, globe, buildings, allowTerrain]);
 
   const handleMove = useCallback(
@@ -260,8 +255,9 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
         onMove={handleMove}
         onMoveEnd={handleMoveEnd}
         interactive={interactive}
-        // @ts-expect-error preserveDrawingBuffer forwarded to maplibre-gl
-        preserveDrawingBuffer={enableSnapshot ?? false}
+        canvasContextAttributes={{
+          preserveDrawingBuffer: enableSnapshot ?? false,
+        }}
         style={{ width: "100%", height: "100%" }}
       >
         <DeckOverlay

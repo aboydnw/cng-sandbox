@@ -79,13 +79,19 @@ function migrateChapter(
     });
   }
 
+  // An explicit `layer_config: null` marks a deliberate no-layers chapter
+  // (e.g. seeded 3D scene-setting chapters) — never backfill the story
+  // dataset into it. Only chapters where layer_config is absent entirely
+  // are genuine legacy shapes that need the backfill.
+  const rawLayerConfig = raw.layer_config as
+    Partial<LayerConfig> | null | undefined;
   const layer_config: LayerConfig = {
     ...DEFAULT_LAYER_CONFIG,
-    ...(raw.layer_config as Partial<LayerConfig> | undefined),
+    ...rawLayerConfig,
     dataset_id:
-      (raw.layer_config as Partial<LayerConfig> | undefined)?.dataset_id ??
-      storyDatasetId ??
-      "",
+      rawLayerConfig === null
+        ? ""
+        : (rawLayerConfig?.dataset_id ?? storyDatasetId ?? ""),
   };
 
   const map_state: MapState = {

@@ -46,6 +46,7 @@ async def stream_anthropic(
     }
 
     tool_blocks: dict[int, dict] = {}
+    state: dict = {}
 
     try:
         async with (
@@ -75,7 +76,9 @@ async def stream_anthropic(
                 except json.JSONDecodeError:
                     continue
 
-                async for out in _handle_event(event, tool_blocks, on_output_tokens):
+                async for out in _handle_event(
+                    event, tool_blocks, state, on_output_tokens
+                ):
                     yield out
     except httpx.HTTPError:
         yield {
@@ -87,6 +90,7 @@ async def stream_anthropic(
 async def _handle_event(
     event: dict,
     tool_blocks: dict[int, dict],
+    state: dict,
     on_output_tokens: Callable[[int], None],
 ) -> AsyncIterator[dict]:
     etype = event.get("type")
@@ -132,10 +136,16 @@ async def _handle_event(
         output_tokens = usage.get("output_tokens")
         if output_tokens:
             on_output_tokens(output_tokens)
+        stop_reason = event.get("delta", {}).get("stop_reason")
+        if stop_reason:
+            state["stop_reason"] = stop_reason
         return
 
     if etype == "message_stop":
-        yield {"event": "done", "data": json.dumps({"stop_reason": "end_turn"})}
+        yield {
+            "event": "done",
+            "data": json.dumps({"stop_reason": state.get("stop_reason") or "end_turn"}),
+        }
         return
 
     if etype == "error":

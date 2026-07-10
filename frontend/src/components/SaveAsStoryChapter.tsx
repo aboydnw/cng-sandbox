@@ -17,18 +17,26 @@ import {
 } from "../lib/story/api";
 import type { Story } from "../lib/story/types";
 import type { Dataset, Connection } from "../types";
+import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { cameraFromBounds } from "../lib/layers";
 import { toaster } from "../lib/toaster";
+
+interface CopcStyle {
+  colorMode: CopcColorMode;
+  pointSize: number;
+}
 
 interface SaveAsStoryChapterProps {
   dataset?: Dataset | null;
   connection?: Connection | null;
+  copcStyle?: CopcStyle;
 }
 
 function buildMapChapter(
   order: number,
   dataset: Dataset | null | undefined,
-  connection: Connection | null | undefined
+  connection: Connection | null | undefined,
+  copcStyle?: CopcStyle
 ) {
   const bounds = dataset?.bounds ?? connection?.bounds ?? null;
   const cam = bounds ? cameraFromBounds(bounds) : null;
@@ -41,6 +49,13 @@ function buildMapChapter(
         basemap: "streets",
       }
     : undefined;
+  const isPointCloud =
+    dataset?.dataset_type === "pointcloud" ||
+    connection?.connection_type === "copc";
+  const copcFields =
+    isPointCloud && copcStyle
+      ? { color_mode: copcStyle.colorMode, point_size: copcStyle.pointSize }
+      : {};
   const layerConfig = connection
     ? {
         ...DEFAULT_LAYER_CONFIG,
@@ -50,6 +65,7 @@ function buildMapChapter(
         ...(connection.preferred_colormap_reversed != null
           ? { colormap_reversed: connection.preferred_colormap_reversed }
           : {}),
+        ...copcFields,
       }
     : dataset
       ? {
@@ -59,6 +75,7 @@ function buildMapChapter(
           ...(dataset.preferred_colormap_reversed != null
             ? { colormap_reversed: dataset.preferred_colormap_reversed }
             : {}),
+          ...copcFields,
         }
       : DEFAULT_LAYER_CONFIG;
   return createMapChapter({
@@ -72,6 +89,7 @@ function buildMapChapter(
 export function SaveAsStoryChapter({
   dataset,
   connection,
+  copcStyle,
 }: SaveAsStoryChapterProps) {
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
@@ -95,7 +113,7 @@ export function SaveAsStoryChapter({
         title: "Chapter 1",
         narrative: "",
       });
-      const mapChapter = buildMapChapter(1, dataset, connection);
+      const mapChapter = buildMapChapter(1, dataset, connection, copcStyle);
       const seedId = dataset?.id ?? connection?.id ?? "";
       const story = createStory(seedId, {
         chapters: [proseChapter, mapChapter],
@@ -112,7 +130,7 @@ export function SaveAsStoryChapter({
       inFlightRef.current = false;
       setBusy(false);
     }
-  }, [dataset, connection, navigate, workspacePath]);
+  }, [dataset, connection, copcStyle, navigate, workspacePath]);
 
   const handleAppend = useCallback(
     async (storyId: string) => {
@@ -124,7 +142,12 @@ export function SaveAsStoryChapter({
         if (!story) return;
         const nextOrder =
           story.chapters.reduce((max, ch) => Math.max(max, ch.order), -1) + 1;
-        const nextChapter = buildMapChapter(nextOrder, dataset, connection);
+        const nextChapter = buildMapChapter(
+          nextOrder,
+          dataset,
+          connection,
+          copcStyle
+        );
         const updated: Story = {
           ...story,
           chapters: [...story.chapters, nextChapter],
@@ -142,7 +165,7 @@ export function SaveAsStoryChapter({
         setBusy(false);
       }
     },
-    [dataset, connection, navigate, workspacePath]
+    [dataset, connection, copcStyle, navigate, workspacePath]
   );
 
   return (

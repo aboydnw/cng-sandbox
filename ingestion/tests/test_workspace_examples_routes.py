@@ -53,4 +53,19 @@ def test_delete_removes(client, app):
     resp = client.delete("/api/workspaces/testABCD/examples")
     assert resp.status_code == 200, resp.text
     assert resp.json()["state"] == "removed"
+    assert resp.json()["deleted"] > 0
     assert client.get("/api/workspaces/testABCD/examples").json()["state"] == "removed"
+
+    session = app.state.db_session_factory()
+    try:
+        remaining = (
+            session.query(StoryRow)
+            .filter(
+                StoryRow.workspace_id == "testABCD",
+                StoryRow.is_example_copy.is_(True),
+            )
+            .count()
+        )
+        assert remaining == 0
+    finally:
+        session.close()

@@ -64,6 +64,7 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         chapters=[_coerce_chapter(ch) for ch in chapters],
         published=row.published,
         is_example=bool(row.is_example),
+        is_example_copy=bool(row.is_example_copy),
         created_at=row.created_at.isoformat(),
         updated_at=row.updated_at.isoformat(),
         expires_at=expires_at.isoformat() if expires_at else None,

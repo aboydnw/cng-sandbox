@@ -163,7 +163,8 @@ def seed_workspace_examples(session: Session, workspace_id: str) -> dict:
         session.add(clone)
         story_id_map[master.id] = clone.id
 
-    session.commit()
+    # set_state commits the staged clones together with the state row so a crash
+    # can't leave the copies and workspace_example_state out of sync.
     wes.set_state(session, workspace_id, "seeded")
     return {"story_id_map": story_id_map}
 
@@ -171,6 +172,6 @@ def seed_workspace_examples(session: Session, workspace_id: str) -> dict:
 def remove_workspace_examples(session: Session, workspace_id: str) -> int:
     """Delete every ``is_example_copy`` row for the workspace. Returns count."""
     deleted = _delete_copies(session, workspace_id)
-    session.commit()
+    # set_state commits the staged deletes together with the state row.
     wes.set_state(session, workspace_id, "removed")
     return deleted

@@ -21,12 +21,18 @@ export function generateWorkspaceId(): string {
   return id;
 }
 
+// Ids freshly minted by this app that still need their example data seeded.
+// Populated during render (side-effect-free) and drained by an effect in
+// WorkspaceProvider, so the POST fires exactly once and only for workspaces we
+// created — never for shared or returning workspaces opened via a direct URL.
+const pendingSeedIds = new Set<string>();
+
 function getOrCreateHomeWorkspaceId(): string {
   const existing = localStorage.getItem(STORAGE_KEY);
   if (existing) return existing;
   const newId = generateWorkspaceId();
   localStorage.setItem(STORAGE_KEY, newId);
-  void seedExampleData(newId).catch(() => {});
+  pendingSeedIds.add(newId);
   return newId;
 }
 
@@ -51,6 +57,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (!localStorage.getItem(STORAGE_KEY)) {
       localStorage.setItem(STORAGE_KEY, activeId);
     }
+  }, [activeId]);
+
+  useEffect(() => {
+    if (!pendingSeedIds.has(activeId)) return;
+    pendingSeedIds.delete(activeId);
+    void seedExampleData(activeId).catch(() => {});
   }, [activeId]);
 
   const value = useMemo(

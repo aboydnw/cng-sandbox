@@ -26,6 +26,7 @@ export default function LandingPage() {
   const [enteredId, setEnteredId] = useState("");
   const [examples, setExamples] = useState<Story[]>([]);
   const [cloningId, setCloningId] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const cloneInFlightRef = useRef(false);
 
   useEffect(() => {
@@ -43,6 +44,9 @@ export default function LandingPage() {
   }, []);
 
   const startStory = async () => {
+    if (cloneInFlightRef.current) return;
+    cloneInFlightRef.current = true;
+    setStarting(true);
     const id = generateWorkspaceId();
     localStorage.setItem(STORAGE_KEY, id);
     setWorkspaceId(id);
@@ -64,6 +68,9 @@ export default function LandingPage() {
     try {
       const { story_id_map } = await seedExampleData(id);
       const cloneId = story_id_map[story.id];
+      if (!cloneId) {
+        throw new Error("Seeded workspace is missing the example story clone");
+      }
       navigate(`/w/${id}/story/${cloneId}/edit`);
     } catch {
       cloneInFlightRef.current = false;
@@ -128,6 +135,8 @@ export default function LandingPage() {
               color="white"
               _hover={{ bg: "brand.orangeHover" }}
               onClick={startStory}
+              loading={starting}
+              disabled={starting}
             >
               Start a story <ArrowRight size={16} />
             </Button>

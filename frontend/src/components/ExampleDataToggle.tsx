@@ -25,20 +25,24 @@ interface ExampleDataToggleProps {
   onChanged: () => void;
 }
 
+type ToggleStatus = "loading" | "seeded" | "removed" | "error";
+
 export function ExampleDataToggle({ onChanged }: ExampleDataToggleProps) {
   const { workspaceId } = useWorkspace();
-  const [seeded, setSeeded] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<ToggleStatus>("loading");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setStatus("loading");
     getExampleState(workspaceId)
       .then((s) => {
-        if (!cancelled) setSeeded(s.state === "seeded");
+        if (!cancelled) setStatus(s.state === "seeded" ? "seeded" : "removed");
       })
       .catch(() => {
-        if (!cancelled) setSeeded(false);
+        if (!cancelled) setStatus("error");
       });
     return () => {
       cancelled = true;
@@ -47,10 +51,13 @@ export function ExampleDataToggle({ onChanged }: ExampleDataToggleProps) {
 
   const doAdd = useCallback(async () => {
     setBusy(true);
+    setActionError(null);
     try {
       await seedExampleData(workspaceId);
-      setSeeded(true);
+      setStatus("seeded");
       onChanged();
+    } catch {
+      setActionError("Couldn't add example data. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -58,21 +65,31 @@ export function ExampleDataToggle({ onChanged }: ExampleDataToggleProps) {
 
   const doRemove = useCallback(async () => {
     setBusy(true);
+    setActionError(null);
     try {
       await removeExampleData(workspaceId);
-      setSeeded(false);
+      setStatus("removed");
       setConfirming(false);
       onChanged();
+    } catch {
+      setActionError("Couldn't remove example data. Please try again.");
     } finally {
       setBusy(false);
     }
   }, [workspaceId, onChanged]);
 
-  if (seeded === null) return null;
+  // Never fall through to an enabled "Add" (a destructive clean-slate reseed)
+  // when the state is unknown — that could delete edited example copies.
+  if (status === "loading" || status === "error") return null;
 
   return (
-    <>
-      {seeded ? (
+    <Flex align="center" gap={2}>
+      {actionError && (
+        <Text fontSize="xs" color="red.600" role="alert">
+          {actionError}
+        </Text>
+      )}
+      {status === "seeded" ? (
         <Button
           size="sm"
           variant="outline"
@@ -140,6 +157,6 @@ export function ExampleDataToggle({ onChanged }: ExampleDataToggleProps) {
           </DialogPositioner>
         </Portal>
       </DialogRoot>
-    </>
+    </Flex>
   );
 }

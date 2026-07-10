@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
@@ -97,7 +97,9 @@ describe("DataPage example copy rows", () => {
 
     const exampleRow = screen.getByText("Example Zarr").closest("tr");
     expect(exampleRow).not.toBeNull();
-    expect(exampleRow!.textContent).toMatch(/example/i);
+    expect(
+      within(exampleRow as HTMLElement).getByText("Example", { exact: true })
+    ).toBeInTheDocument();
   });
 
   it("shows the delete button on user-owned connections", async () => {

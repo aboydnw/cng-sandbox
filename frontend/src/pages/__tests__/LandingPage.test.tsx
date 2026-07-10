@@ -139,6 +139,41 @@ describe("LandingPage", () => {
     });
   });
 
+  it("falls back to the workspace root when the clone id is missing", async () => {
+    const { listExampleStoriesFromServer } =
+      await import("../../lib/story/api");
+    const { seedExampleData } = await import("../../lib/examples/api");
+    (
+      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([
+      {
+        id: "example-1",
+        title: "Example Flood Story",
+        description: null,
+        chapters: [{ id: "c1" }],
+        is_example: true,
+        published: true,
+        dataset_id: null,
+        dataset_ids: [],
+        updated_at: "2026-05-12T00:00:00Z",
+      },
+    ]);
+    (seedExampleData as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      state: "seeded",
+      story_id_map: {},
+    });
+    renderLanding();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /example flood story/i })
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+        "data-rest",
+        "/"
+      );
+    });
+  });
+
   it("renders example story cards fetched from the public endpoint", async () => {
     const { listExampleStoriesFromServer } =
       await import("../../lib/story/api");

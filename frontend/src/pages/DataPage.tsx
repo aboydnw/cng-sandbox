@@ -79,6 +79,7 @@ export default function DataPage() {
   }, []);
 
   const reload = useCallback(() => {
+    setError(null);
     workspaceFetch(`${config.apiBase}/api/datasets`)
       .then((r) =>
         r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))

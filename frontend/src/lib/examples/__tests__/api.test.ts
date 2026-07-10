@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getExampleState, removeExampleData, seedExampleData } from "../api";
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("examples api", () => {
   it("seedExampleData posts and returns the story map", async () => {

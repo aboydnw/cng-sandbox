@@ -44,6 +44,14 @@ const userConnection: Connection = {
   is_example_copy: false,
 };
 
+vi.mock("../../lib/examples/api", () => ({
+  getExampleState: vi.fn(() => Promise.resolve({ state: "removed" })),
+  seedExampleData: vi.fn(() =>
+    Promise.resolve({ state: "seeded", story_id_map: {} })
+  ),
+  removeExampleData: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock("../../lib/api", () => ({
   workspaceFetch: vi.fn(() =>
     Promise.resolve({

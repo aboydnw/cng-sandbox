@@ -13,6 +13,7 @@ import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
+import { ExampleDataToggle } from "../components/ExampleDataToggle";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
@@ -77,6 +78,19 @@ export default function DataPage() {
     };
   }, []);
 
+  const reload = useCallback(() => {
+    workspaceFetch(`${config.apiBase}/api/datasets`)
+      .then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))
+      )
+      .then(setDatasets)
+      .catch((err) => setError((err as Error).message));
+    connectionsApi
+      .list()
+      .then(setConnections)
+      .catch((err) => setError((err as Error).message));
+  }, []);
+
   const handleDelete = useCallback(async (item: LibraryItem) => {
     if (item.raw.kind === "dataset") {
       const ds = item.raw.dataset as DatasetWithStoryCount;
@@ -121,11 +135,14 @@ export default function DataPage() {
           <Heading size="lg" color="gray.800">
             Data
           </Heading>
-          <Link to={workspacePath("/")}>
-            <Button size="sm" colorScheme="orange">
-              Add new
-            </Button>
-          </Link>
+          <Flex gap={2} align="center">
+            <ExampleDataToggle onChanged={reload} />
+            <Link to={workspacePath("/")}>
+              <Button size="sm" colorScheme="orange">
+                Add new
+              </Button>
+            </Link>
+          </Flex>
         </Flex>
 
         <Heading size="md" color="gray.700" mb={3}>

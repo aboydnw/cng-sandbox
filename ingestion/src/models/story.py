@@ -75,6 +75,17 @@ class LayerConfigPayload(BaseModel):
     point_size: float | None = None
 
 
+class OverlayConfigPayload(BaseModel):
+    dataset_id: str | None = None
+    connection_id: str | None = None
+    opacity: float = 1.0
+    stroke_color: str | None = None
+    stroke_width: float | None = None
+    fill_color: str | None = None
+    fill_opacity: float | None = None
+    visible: bool = True
+
+
 class _BaseChapter(BaseModel):
     id: str
     order: int
@@ -86,6 +97,7 @@ class ScrollytellingChapter(_BaseChapter):
     type: Literal["scrollytelling"] = "scrollytelling"
     map_state: MapStatePayload
     layer_config: LayerConfigPayload
+    overlays: list[OverlayConfigPayload] = []
     transition: Literal["fly-to", "instant"] = "fly-to"
     overlay_position: Literal["left", "right"] = "left"
 
@@ -94,6 +106,7 @@ class MapChapter(_BaseChapter):
     type: Literal["map"]
     map_state: MapStatePayload
     layer_config: LayerConfigPayload
+    overlays: list[OverlayConfigPayload] = []
 
 
 class ProseChapter(_BaseChapter):

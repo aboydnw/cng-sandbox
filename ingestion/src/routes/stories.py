@@ -47,6 +47,10 @@ def _row_to_response(row: StoryRow) -> StoryResponse:
         ds_id = lc.get("dataset_id")
         if ds_id and ds_id not in chapter_dataset_ids:
             chapter_dataset_ids.append(ds_id)
+        for overlay in ch.get("overlays") or []:
+            o_ds = overlay.get("dataset_id")
+            if o_ds and o_ds not in chapter_dataset_ids:
+                chapter_dataset_ids.append(o_ds)
     dataset_ids = (
         chapter_dataset_ids
         if chapter_dataset_ids

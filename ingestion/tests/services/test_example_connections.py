@@ -490,3 +490,19 @@ def test_ftw_predictions_seed_has_inlined_4d_config():
     assert timesteps[-1]["index"] == 1
     assert ftw.geozarr_attrs is not None
     assert ftw.geozarr_attrs["proj:code"] == "EPSG:4326"
+
+
+def test_admin_boundary_seeds_present():
+    from src.services.example_connections import EXAMPLE_CONNECTIONS
+
+    admin = [
+        s
+        for s in EXAMPLE_CONNECTIONS
+        if s.connection_type == "pmtiles"
+        and s.tile_type == "vector"
+        and "admin boundaries" in s.name.lower()
+    ]
+    assert len(admin) >= 1
+    for seed in admin:
+        assert seed.url.endswith(".pmtiles")
+        assert seed.name

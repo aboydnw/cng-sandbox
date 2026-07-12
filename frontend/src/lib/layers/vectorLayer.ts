@@ -31,6 +31,8 @@ interface VectorLayerOptions {
   getFillColor?:
     | ((feature: any) => [number, number, number, number])
     | [number, number, number, number];
+  getLineColor?: [number, number, number, number];
+  lineWidthMinPixels?: number;
 }
 
 export function buildVectorLayer({
@@ -43,6 +45,8 @@ export function buildVectorLayer({
   onHover,
   onClick,
   getFillColor,
+  getLineColor,
+  lineWidthMinPixels,
 }: VectorLayerOptions) {
   const baseConfig = {
     id,
@@ -60,9 +64,9 @@ export function buildVectorLayer({
     autoHighlight: true,
     highlightColor: [255, 255, 255, 60] as [number, number, number, number],
     getFillColor: getFillColor ?? FILL_COLOR,
-    getLineColor: LINE_COLOR,
+    getLineColor: getLineColor ?? LINE_COLOR,
     getLineWidth: 1.5,
-    lineWidthMinPixels: 1,
+    lineWidthMinPixels: lineWidthMinPixels ?? 1,
     getPointRadius: 4,
     pointRadiusMinPixels: 3,
     pointType: "circle" as const,

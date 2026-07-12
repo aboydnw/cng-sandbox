@@ -26,7 +26,7 @@ import {
 import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
 import { connectionToMapItem, datasetToMapItem } from "../hooks/useMapData";
 import type { CopcColorMode } from "../lib/layers/copcLayer";
-import type { Story, ScrollytellingChapter } from "../lib/story";
+import type { Story, ScrollytellingChapter, OverlayConfig } from "../lib/story";
 import { flyoverFallbackMapChapter } from "../lib/story/types";
 import type { Connection, Dataset } from "../types";
 import type { ZarrNode } from "../hooks/useZarrNode";
@@ -84,6 +84,100 @@ function resolveActiveLayers(
       collectionId: ds.pg_table ?? ds.id,
     },
   ];
+}
+
+function primaryLayerName(
+  chapter: ScrollytellingChapter | undefined,
+  datasetMap: Map<string, Dataset | null>,
+  connectionMap: Map<string, Connection> | undefined
+): string | null {
+  const lc = chapter?.layer_config;
+  if (!lc) return null;
+  if (lc.connection_id) {
+    return connectionMap?.get(lc.connection_id)?.name ?? null;
+  }
+  const ds = lc.dataset_id ? datasetMap.get(lc.dataset_id) : null;
+  return ds ? (ds.title ?? ds.filename) : null;
+}
+
+function overlayLegendName(
+  overlay: OverlayConfig,
+  datasetMap: Map<string, Dataset | null>,
+  connectionMap: Map<string, Connection> | undefined
+): string | null {
+  if (overlay.connection_id) {
+    return connectionMap?.get(overlay.connection_id)?.name ?? null;
+  }
+  if (overlay.dataset_id) {
+    const ds = datasetMap.get(overlay.dataset_id);
+    return ds ? (ds.title ?? ds.filename) : null;
+  }
+  return null;
+}
+
+function OverlayLegend({
+  chapter,
+  datasetMap,
+  connectionMap,
+}: {
+  chapter: ScrollytellingChapter | undefined;
+  datasetMap: Map<string, Dataset | null>;
+  connectionMap: Map<string, Connection> | undefined;
+}) {
+  const primary = primaryLayerName(chapter, datasetMap, connectionMap);
+  const overlayRows = (chapter?.overlays ?? [])
+    .filter((o) => o.visible !== false)
+    .map((o) => ({
+      name: overlayLegendName(o, datasetMap, connectionMap),
+      stroke: o.stroke_color ?? "#8B4513",
+      fill:
+        o.fill_color && (o.fill_opacity ?? 0) > 0
+          ? o.fill_color
+          : "transparent",
+    }))
+    .filter((r): r is { name: string; stroke: string; fill: string } =>
+      Boolean(r.name)
+    );
+
+  if (!primary && overlayRows.length === 0) return null;
+
+  return (
+    <Box
+      position="absolute"
+      bottom={3}
+      left={3}
+      bg="white"
+      borderRadius="8px"
+      border="1px solid"
+      borderColor="gray.200"
+      px={3}
+      py={2}
+      zIndex={10}
+      maxW="250px"
+    >
+      {primary && (
+        <Text fontSize="11px" fontWeight={600} color="gray.700" mb={1}>
+          {primary}
+        </Text>
+      )}
+      {overlayRows.map((row, i) => (
+        <Flex key={i} align="center" gap={2} mt={i === 0 && !primary ? 0 : 1}>
+          <Box
+            w="12px"
+            h="12px"
+            borderRadius="2px"
+            border="2px solid"
+            borderColor={row.stroke}
+            bg={row.fill}
+            flexShrink={0}
+          />
+          <Text fontSize="10px" color="gray.600" truncate>
+            {row.name}
+          </Text>
+        </Flex>
+      ))}
+    </Box>
+  );
 }
 
 function ScrollytellingBlock({
@@ -410,6 +504,11 @@ function ScrollytellingBlock({
             </Text>
           </Flex>
         )}
+        <OverlayLegend
+          chapter={activeChapter}
+          datasetMap={datasetMap}
+          connectionMap={connectionMap}
+        />
       </Box>
 
       {/* Steps in normal document flow — pulled up over the sticky map */}

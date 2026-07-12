@@ -495,6 +495,15 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             await run_pointcloud_pipeline(job, input_path, db_session_factory)
             return
 
+        # Trajectories (GPX) also have their own pipeline (parse -> GeoParquet +
+        # trips.json -> store to R2, no pgSTAC/tipg registration), streamed
+        # directly to the browser like point clouds.
+        if format_pair == FormatPair.GPX_TO_GEOPARQUET:
+            from src.services.trajectory_pipeline import run_trajectory_pipeline
+
+            await run_trajectory_pipeline(job, input_path, db_session_factory)
+            return
+
         original_file_size = os.path.getsize(input_path)
 
         # Variable selection for HDF5/NetCDF

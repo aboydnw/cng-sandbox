@@ -8,10 +8,20 @@ layer. They are seeded as `is_example=True` connections
 and clone into each workspace through the existing example path — no new
 endpoint or flag.
 
-> **⚠️ Placeholder URLs.** The seed entries currently point at placeholder R2
-> URLs (`https://pub-REPLACE-ME.r2.dev/context/*.pmtiles`). Build the PMTiles as
-> below, upload them to R2, and replace the URLs before this ships to prod —
-> otherwise every workspace seeds broken overlay connections.
+## Current context layers
+
+Two layers are live, built from geoBoundaries CGAZ and hosted in the
+`sandbox-data` R2 bucket under `context/`:
+
+| Layer | Public URL |
+|-------|------------|
+| Countries (ADM0) | `https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin0.pmtiles` |
+| States/provinces (ADM1) | `https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin1.pmtiles` |
+
+**Attribution** (CC BY 4.0): "Administrative boundaries courtesy of geoBoundaries
+(www.geoboundaries.org), CC BY 4.0." Source: geoBoundaries CGAZ (Comprehensive
+Global Administrative Zones), `geoBoundariesCGAZ_ADM0/ADM1.geojson` from
+`github.com/wmgeolab/geoBoundaries`.
 
 ## Source data
 
@@ -45,17 +55,21 @@ low zoom.
 
 ## Upload to R2
 
-Upload to the public R2 bucket under a stable `context/` prefix:
+Upload to the public `sandbox-data` R2 bucket under a stable `context/` prefix.
+With the AWS CLI:
 
 ```bash
-aws s3 cp admin0.pmtiles s3://<bucket>/context/admin0.pmtiles \
-  --endpoint-url "$R2_ENDPOINT"
-aws s3 cp admin1.pmtiles s3://<bucket>/context/admin1.pmtiles \
-  --endpoint-url "$R2_ENDPOINT"
+aws s3 cp admin0.pmtiles s3://sandbox-data/context/admin0.pmtiles \
+  --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+aws s3 cp admin1.pmtiles s3://sandbox-data/context/admin1.pmtiles \
+  --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
 ```
 
-The resulting public URL is `${R2_PUBLIC_URL}/context/admin0.pmtiles`. Copy the
-final public URLs into the `ExampleConnectionSeed` entries.
+No AWS CLI on the box? Upload with boto3 using the `.env` R2 credentials
+(`R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_ENDPOINT`) against the
+`sandbox-data` bucket. The resulting public URL is
+`${R2_PUBLIC_URL}/context/<name>.pmtiles`. Copy the final public URLs into the
+`ExampleConnectionSeed` entries.
 
 ## Adding a new context layer
 

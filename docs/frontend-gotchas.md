@@ -120,6 +120,11 @@ Implementation details and non-obvious behaviors in the frontend. Read this when
 - **Point-cloud items open pitched**: `MapPage` sets a `pitch: 45` camera for point-cloud items (vs. flat for rasters) so the 3D structure is visible on load.
 - **COPC has no client-side render-mode toggle and is excluded from interactive export**: point clouds are not client-rendered COGs, so `PATCH /render-mode → client` is rejected for `copc` connections, and they are excluded from interactive HTML export (same 400 as zarr). See `docs/api-reference.md`.
 
+## Trajectories (GPX movement tracks)
+
+- **Trajectories stay on the deck.gl path but animate over time**: unlike COPC, a `trajectory` dataset renders through a deck.gl `TripsLayer` (via the `MapboxOverlay`), not a native MapLibre control. `useTripsLayer` (`src/hooks/useTripsLayer.ts`) fetches the `trips.json` sidecar (from the dataset's `trips_url`, a `/storage/…` path) once and memoizes a `TripsLayer` rebuilt on each `currentTime` change; `buildTripsLayer` (`src/lib/layers/tripsLayer.ts`) colors each segment on a fixed slow-cool → fast-warm speed gradient with a fading trail.
+- **Animation is a wall-clock loop, not tied to real timestamps**: `useTripsAnimation` (`src/hooks/useTripsAnimation.ts`) advances `currentTime` (epoch-ms) via `requestAnimationFrame`, traversing the full time range in `ANIM_SPAN_SECONDS` (20s) of wall-clock at 1x, and loops at the end. It exposes `togglePlay`/`setSpeed`/`scrub`; scrubbing pauses playback. `TrajectoryControls` (`src/components/TrajectoryControls.tsx`) is the continuous-time transport bar (play/pause, speed, scrubber).
+
 ## Analytics
 
 - **Plausible analytics is loaded from two places**: the `<script async>` tag in `frontend/index.html` pulls the tracker from `https://plausible.io` and `initPlausible()` in `src/lib/plausible.ts` (called from `main.tsx`) installs a command-queue stub on `window.plausible` and invokes `init()`. The stub lets us call `window.plausible(...)` before the remote script finishes loading; events are flushed once it arrives. Keep the CSP `script-src` entry for `https://plausible.io` in `Caddyfile` in sync with the script tag — removing one without the other will silently break analytics in prod.

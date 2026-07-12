@@ -5,3 +5,4 @@ export { buildRasterPMTilesLayer } from "./rasterPMTilesLayer";
 export { buildVectorLayer } from "./vectorLayer";
 export { buildGeoJsonLayer, arrowTableToGeoJSON } from "./geojsonLayer";
 export { isPMTilesDataset } from "./isPMTiles";
+export { buildTripsLayer, speedToColor } from "./tripsLayer";

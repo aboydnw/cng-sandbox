@@ -145,6 +145,29 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
             }
         )
         return credits
+    elif format_pair == FormatPair.GPX_TO_GEOPARQUET:
+        credits.append(
+            {
+                "tool": "MovingPandas",
+                "url": "https://movingpandas.org",
+                "role": "Converted by",
+            }
+        )
+        credits.append(
+            {
+                "tool": "deck.gl",
+                "url": "https://deck.gl",
+                "role": "Animated by",
+            }
+        )
+        credits.append(
+            {
+                "tool": "MapLibre",
+                "url": "https://maplibre.org",
+                "role": "Map rendered by",
+            }
+        )
+        return credits
 
     if format_pair.dataset_type == DatasetType.RASTER:
         credits.append(
@@ -493,6 +516,15 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
             from src.services.pointcloud_pipeline import run_pointcloud_pipeline
 
             await run_pointcloud_pipeline(job, input_path, db_session_factory)
+            return
+
+        # Trajectories (GPX) also have their own pipeline (parse -> GeoParquet +
+        # trips.json -> store to R2, no pgSTAC/tipg registration), streamed
+        # directly to the browser like point clouds.
+        if format_pair == FormatPair.GPX_TO_GEOPARQUET:
+            from src.services.trajectory_pipeline import run_trajectory_pipeline
+
+            await run_trajectory_pipeline(job, input_path, db_session_factory)
             return
 
         original_file_size = os.path.getsize(input_path)

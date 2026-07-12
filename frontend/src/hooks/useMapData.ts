@@ -37,6 +37,7 @@ export function datasetToMapItem(ds: Dataset): MapItem {
     tileUrl: ds.tile_url,
     bounds: ds.bounds,
     copcUrl: ds.copc_url,
+    tripsUrl: ds.trips_url ?? null,
     pointCount: ds.point_count,
     minZoom: ds.min_zoom,
     maxZoom: ds.max_zoom,
@@ -176,6 +177,7 @@ export function connectionToMapItem(conn: Connection): MapItem {
     tileUrl: buildConnectionTileUrl(conn),
     bounds: conn.bounds,
     copcUrl: conn.connection_type === "copc" ? conn.url : null,
+    tripsUrl: null,
     pointCount:
       conn.connection_type === "copc"
         ? ((conn.config as CopcConfigShape | null)?.point_count ?? null)

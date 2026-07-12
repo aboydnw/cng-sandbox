@@ -9,7 +9,7 @@ export interface DataSelectorItem {
   id: string;
   name: string;
   source: MapItemSource;
-  dataType: "raster" | "vector" | "pointcloud";
+  dataType: "raster" | "vector" | "pointcloud" | "trajectory";
   isZeroCopy?: boolean;
   isMosaic?: boolean;
   expiresAt?: string | null;
@@ -17,7 +17,29 @@ export interface DataSelectorItem {
 
 function dotColor(item: DataSelectorItem): string {
   if (item.source === "connection") return "#c084fc";
-  return item.dataType === "raster" ? "#4ade80" : "#60a5fa";
+  switch (item.dataType) {
+    case "raster":
+      return "#4ade80";
+    case "pointcloud":
+      return "#f472b6";
+    case "trajectory":
+      return "#fb923c";
+    default:
+      return "#60a5fa";
+  }
+}
+
+function typeLabel(dataType: DataSelectorItem["dataType"]): string {
+  switch (dataType) {
+    case "raster":
+      return "Raster";
+    case "pointcloud":
+      return "Point cloud";
+    case "trajectory":
+      return "Trajectory";
+    default:
+      return "Vector";
+  }
 }
 
 interface DataSelectorProps {
@@ -185,7 +207,7 @@ export function DataSelector({
                   {item.name}
                 </Text>
                 <Text fontSize="2xs" color="whiteAlpha.500">
-                  {item.dataType === "raster" ? "Raster" : "Vector"}
+                  {typeLabel(item.dataType)}
                 </Text>
               </Flex>
             ))}

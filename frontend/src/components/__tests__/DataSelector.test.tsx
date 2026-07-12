@@ -85,6 +85,26 @@ describe("DataSelector", () => {
     expect(onUpload).toHaveBeenCalled();
   });
 
+  it("labels trajectory and point-cloud datasets distinctly", () => {
+    const items: DataSelectorItem[] = [
+      { id: "t1", name: "hike.gpx", source: "dataset", dataType: "trajectory" },
+      { id: "p1", name: "scan.laz", source: "dataset", dataType: "pointcloud" },
+    ];
+    renderWithChakra(
+      <DataSelector
+        items={items}
+        activeId="t1"
+        activeSource="dataset"
+        onSelect={vi.fn()}
+        onUploadClick={vi.fn()}
+        onAddConnectionClick={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole("button"));
+    expect(screen.getByText("Trajectory")).toBeTruthy();
+    expect(screen.getByText("Point cloud")).toBeTruthy();
+  });
+
   it("shows Loading... when activeId is not in items", () => {
     renderWithChakra(
       <DataSelector

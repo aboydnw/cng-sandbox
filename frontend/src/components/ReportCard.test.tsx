@@ -35,6 +35,10 @@ function makeDataset(overrides: Partial<Dataset> = {}): Dataset {
     cog_url: null,
     copc_url: null,
     point_count: null,
+    trips_url: null,
+    track_count: null,
+    time_start: null,
+    time_end: null,
     validation_results: [],
     credits: [
       {

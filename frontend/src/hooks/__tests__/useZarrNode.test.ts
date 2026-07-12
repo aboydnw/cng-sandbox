@@ -60,6 +60,7 @@ function makeZarrItem(url: string): MapItem {
     tileUrl: "",
     bounds: null,
     copcUrl: null,
+    tripsUrl: null,
     pointCount: null,
     minZoom: null,
     maxZoom: null,

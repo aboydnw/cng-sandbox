@@ -1,4 +1,4 @@
-export type DatasetType = "raster" | "vector" | "pointcloud";
+export type DatasetType = "raster" | "vector" | "pointcloud" | "trajectory";
 
 export type JobStatus =
   | "pending"
@@ -51,6 +51,10 @@ export interface Dataset {
   cog_url: string | null;
   copc_url: string | null;
   point_count: number | null;
+  trips_url: string | null;
+  track_count: number | null;
+  time_start: string | null;
+  time_end: string | null;
   validation_results: ValidationCheck[];
   credits: Credit[];
   created_at: string;
@@ -196,10 +200,11 @@ export interface MapItem {
   id: string;
   name: string;
   source: MapItemSource;
-  dataType: "raster" | "vector" | "pointcloud";
+  dataType: "raster" | "vector" | "pointcloud" | "trajectory";
   tileUrl: string;
   bounds: [number, number, number, number] | null;
   copcUrl: string | null;
+  tripsUrl: string | null;
   pointCount: number | null;
   minZoom: number | null;
   maxZoom: number | null;

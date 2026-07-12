@@ -41,6 +41,12 @@ _MIME_WHITELIST: dict[FormatPair, set[str]] = {
         "application/vnd.las",
         "application/vnd.laszip",
     },
+    FormatPair.GPX_TO_GEOPARQUET: {
+        "application/gpx+xml",
+        "application/xml",
+        "text/xml",
+        "application/octet-stream",
+    },
 }
 
 
@@ -52,7 +58,7 @@ def detect_format(filename: str) -> FormatPair:
     except ValueError as exc:
         raise UnsupportedFormatError(
             f"Unsupported file format: '{ext}'. "
-            f"Accepted: .tif, .tiff, .shp, .zip, .geojson, .json, .nc, .h5, .hdf5, .las, .laz"
+            f"Accepted: .tif, .tiff, .shp, .zip, .geojson, .json, .nc, .nc4, .h5, .hdf5, .pmtiles, .las, .laz, .gpx"
         ) from exc
 
 

@@ -24,6 +24,7 @@ class DatasetType(StrEnum):
     RASTER = "raster"
     VECTOR = "vector"
     POINTCLOUD = "pointcloud"
+    TRAJECTORY = "trajectory"
 
 
 class FormatPair(StrEnum):
@@ -34,6 +35,7 @@ class FormatPair(StrEnum):
     HDF5_TO_COG = "hdf5-to-cog"
     PMTILES = "pmtiles"
     LAS_TO_COPC = "las-to-copc"
+    GPX_TO_GEOPARQUET = "gpx-to-geoparquet"
 
     @staticmethod
     def from_extension(ext: str) -> "FormatPair":
@@ -52,6 +54,7 @@ class FormatPair(StrEnum):
             ".pmtiles": FormatPair.PMTILES,
             ".las": FormatPair.LAS_TO_COPC,
             ".laz": FormatPair.LAS_TO_COPC,
+            ".gpx": FormatPair.GPX_TO_GEOPARQUET,
         }
         if ext not in mapping:
             raise ValueError(f"Unsupported format: {ext}")
@@ -67,6 +70,8 @@ class FormatPair(StrEnum):
             return DatasetType.RASTER
         if self == FormatPair.LAS_TO_COPC:
             return DatasetType.POINTCLOUD
+        if self == FormatPair.GPX_TO_GEOPARQUET:
+            return DatasetType.TRAJECTORY
         return DatasetType.VECTOR
 
 
@@ -140,6 +145,10 @@ class Dataset(BaseModel):
     cog_url: str | None = None
     copc_url: str | None = None
     point_count: int | None = None
+    trips_url: str | None = None
+    track_count: int | None = None
+    time_start: str | None = None
+    time_end: str | None = None
     validation_results: list[ValidationCheck] = []
     credits: list[dict] = []
     is_temporal: bool = False

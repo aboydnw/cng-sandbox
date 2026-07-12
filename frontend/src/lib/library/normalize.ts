@@ -7,7 +7,7 @@ export interface LibraryItem {
   id: string;
   kind: LibrarySource;
   name: string;
-  type: "raster" | "vector" | "pointcloud";
+  type: "raster" | "vector" | "pointcloud" | "trajectory";
   source: { label: string; href?: string };
   addedAt: string;
   expiresAt: string | null;

@@ -37,7 +37,10 @@ import { ZoomPromptBanner } from "../components/ZoomPromptBanner";
 import { useColorScale, MapLegend } from "../lib/maptool";
 import { buildRasterLegend } from "../lib/story/rasterLegend";
 import { TemporalControls } from "../components/TemporalControls";
+import { TrajectoryControls } from "../components/TrajectoryControls";
 import { useTemporalAnimation } from "../hooks/useTemporalAnimation";
+import { useTripsAnimation } from "../hooks/useTripsAnimation";
+import { useTripsLayer } from "../hooks/useTripsLayer";
 import { useZarrNode } from "../hooks/useZarrNode";
 import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
@@ -498,10 +501,31 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     [zoomPromptActive, item?.bounds]
   );
 
-  const mapLayers = useMemo(
-    () => (extentOutlineLayer ? [...layers, extentOutlineLayer] : layers),
-    [layers, extentOutlineLayer]
+  // --- Trajectory (movement tracks) playback ---
+  // Mounted here (like COPC) so per-frame currentTime changes only rebuild the
+  // TripsLayer, not every other layer via useLayerBuilder.
+  const isTrajectory = item?.dataType === "trajectory";
+  const tMin = useMemo(
+    () => (item?.dataset?.time_start ? Date.parse(item.dataset.time_start) : 0),
+    [item?.dataset?.time_start]
   );
+  const tMax = useMemo(
+    () => (item?.dataset?.time_end ? Date.parse(item.dataset.time_end) : 0),
+    [item?.dataset?.time_end]
+  );
+  const trips = useTripsAnimation(tMin, tMax, isTrajectory && tMax > tMin);
+  const { layer: tripsLayer } = useTripsLayer(
+    isTrajectory ? (item?.tripsUrl ?? null) : null,
+    trips.currentTime
+  );
+
+  const mapLayers = useMemo(() => {
+    const base = extentOutlineLayer
+      ? [...layers, extentOutlineLayer]
+      : [...layers];
+    if (tripsLayer) base.push(tripsLayer);
+    return base;
+  }, [layers, extentOutlineLayer, tripsLayer]);
 
   // --- Color scale for legend ---
   const domain: [number, number] =
@@ -874,6 +898,21 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                       exportHook.exportMp4(animation.setActiveIndex)
                     }
                     isExporting={exportHook.isExporting}
+                  />
+                </Box>
+              )}
+
+              {isTrajectory && tMax > tMin && (
+                <Box data-snapshot-overlay>
+                  <TrajectoryControls
+                    currentTime={trips.currentTime}
+                    tMin={tMin}
+                    tMax={tMax}
+                    isPlaying={trips.isPlaying}
+                    speed={trips.speed}
+                    onTogglePlay={trips.togglePlay}
+                    onSetSpeed={trips.setSpeed}
+                    onScrub={trips.scrub}
                   />
                 </Box>
               )}

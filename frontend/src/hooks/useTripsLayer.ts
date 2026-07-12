@@ -27,7 +27,8 @@ export function useTripsLayer(tripsUrl: string | null, currentTime: number) {
         if (!cancelled) setTracks(data);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Load failed");
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Load failed");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

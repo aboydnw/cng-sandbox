@@ -8,7 +8,11 @@ interface TripsState {
   speed: number;
 }
 
-export function useTripsAnimation(tMin: number, tMax: number, isReady: boolean) {
+export function useTripsAnimation(
+  tMin: number,
+  tMax: number,
+  isReady: boolean
+) {
   const [state, setState] = useState<TripsState>({
     currentTime: tMin,
     isPlaying: false,
@@ -30,7 +34,8 @@ export function useTripsAnimation(tMin: number, tMax: number, isReady: boolean) 
     []
   );
   const scrub = useCallback(
-    (t: number) => setState((s) => ({ ...s, currentTime: t, isPlaying: false })),
+    (t: number) =>
+      setState((s) => ({ ...s, currentTime: t, isPlaying: false })),
     []
   );
 

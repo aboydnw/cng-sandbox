@@ -36,3 +36,21 @@ def test_parse_rejects_gpx_without_timestamps(tmp_path):
     )
     with pytest.raises(tp.TrajectoryError):
         tp.parse_gpx_to_trajectories(str(no_time))
+
+
+def test_build_trips_json_shape():
+    tc = tp.parse_gpx_to_trajectories(FIXTURE)
+    trips = tp.build_trips_json(tc)
+    assert len(trips) == 2
+    first = trips[0]
+    assert set(first.keys()) == {"trajectory_id", "path", "timestamps", "speeds"}
+    assert len(first["path"]) == len(first["timestamps"]) == len(first["speeds"])
+    assert first["path"][0] == pytest.approx(first["path"][0])  # [lng, lat] pairs
+    assert isinstance(first["timestamps"][0], (int, float))
+
+
+def test_over_cap_raises(monkeypatch):
+    monkeypatch.setattr(tp, "TRAJECTORY_POINT_CAP", 1)
+    tc = tp.parse_gpx_to_trajectories(FIXTURE)
+    with pytest.raises(tp.TrajectoryError):
+        tp.enforce_point_cap(tc)

@@ -55,6 +55,18 @@ class StorageService:
         self._upload(local_path, key)
         return key
 
+    def upload_trajectory_parquet(self, local_path: str, dataset_id: str) -> str:
+        """Upload the canonical trajectory GeoParquet. Returns the storage key."""
+        key = f"datasets/{dataset_id}/converted/trajectory.parquet"
+        self._upload(local_path, key)
+        return key
+
+    def upload_trips_json(self, local_path: str, dataset_id: str) -> str:
+        """Upload the browser-ready trips.json sidecar. Returns the storage key."""
+        key = f"datasets/{dataset_id}/converted/trips.json"
+        self._upload(local_path, key)
+        return key
+
     def upload_file(self, file_path: str, key: str) -> None:
         """Upload a local file to an explicit key."""
         self._upload(file_path, key)

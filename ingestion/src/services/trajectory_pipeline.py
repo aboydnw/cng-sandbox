@@ -79,5 +79,40 @@ def write_trajectory_parquet(tc: mpd.TrajectoryCollection, out_path: str) -> dic
     }
 
 
+TRAJECTORY_POINT_CAP = 2_000_000
+
+
+def enforce_point_cap(tc: mpd.TrajectoryCollection) -> None:
+    total = sum(t.size() for t in tc.trajectories)
+    if total > TRAJECTORY_POINT_CAP:
+        raise TrajectoryError(
+            f"This trajectory has {total:,} points, over the "
+            f"{TRAJECTORY_POINT_CAP:,} limit. Split or downsample it and retry."
+        )
+
+
+def build_trips_json(tc: mpd.TrajectoryCollection) -> list[dict]:
+    """Group into TripsLayer-ready tracks: path + epoch-ms timestamps + speeds."""
+    trips = []
+    for traj in tc.trajectories:
+        df = traj.df.copy().reset_index().rename(columns={"time": "timestamp"})
+        df = df.sort_values("timestamp")
+        speed_col = (
+            "speed" if "speed" in df.columns else df.filter(like="speed").columns[0]
+        )
+        path = [[float(g.x), float(g.y)] for g in df["geometry"]]
+        timestamps = [int(t.timestamp() * 1000) for t in df["timestamp"]]
+        speeds = [float(s) for s in df[speed_col].fillna(0.0)]
+        trips.append(
+            {
+                "trajectory_id": str(traj.id),
+                "path": path,
+                "timestamps": timestamps,
+                "speeds": speeds,
+            }
+        )
+    return trips
+
+
 async def run_trajectory_pipeline(job, input_path, db_session_factory) -> None:
     raise NotImplementedError("trajectory pipeline implemented in later tasks")

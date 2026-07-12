@@ -81,9 +81,7 @@ def test_dataset_ids_includes_overlay_dataset(client):
                 "opacity": 0.8,
                 "basemap": "streets",
             },
-            "overlays": [
-                {"dataset_id": "overlay-ds", "opacity": 1, "visible": True}
-            ],
+            "overlays": [{"dataset_id": "overlay-ds", "opacity": 1, "visible": True}],
         }
     ]
     resp = client.post("/api/stories", json={"title": "S", "chapters": chapters})

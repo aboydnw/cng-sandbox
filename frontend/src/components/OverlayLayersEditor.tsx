@@ -47,6 +47,17 @@ export function OverlayLayersEditor({
   const remove = (i: number) =>
     onChange(overlays.filter((_, idx) => idx !== i));
 
+  const patchStrokeWidth = (i: number, raw: string) => {
+    const value = Number(raw);
+    if (Number.isFinite(value) && value >= 0.5)
+      patch(i, { stroke_width: value });
+  };
+  const patchFillOpacity = (i: number, raw: string) => {
+    const value = Number(raw);
+    if (Number.isFinite(value))
+      patch(i, { fill_opacity: Math.min(1, Math.max(0, value)) });
+  };
+
   return (
     <Box px={4} pb={4}>
       <Text fontSize="sm" fontWeight={600} color="brand.brown" mb={2}>
@@ -102,9 +113,7 @@ export function OverlayLayersEditor({
                 min={0.5}
                 step={0.5}
                 value={o.stroke_width ?? 1.5}
-                onChange={(e) =>
-                  patch(i, { stroke_width: Number(e.target.value) })
-                }
+                onChange={(e) => patchStrokeWidth(i, e.target.value)}
                 style={numberInputStyle}
               />
               <input
@@ -114,9 +123,7 @@ export function OverlayLayersEditor({
                 max={1}
                 step={0.1}
                 value={o.fill_opacity ?? 0}
-                onChange={(e) =>
-                  patch(i, { fill_opacity: Number(e.target.value) })
-                }
+                onChange={(e) => patchFillOpacity(i, e.target.value)}
                 style={numberInputStyle}
               />
               <IconButton
@@ -124,7 +131,7 @@ export function OverlayLayersEditor({
                 size="xs"
                 variant="ghost"
                 color="brand.brown"
-                _hover={{ bg: "brand.bgSubtle", color: "red.600" }}
+                _hover={{ bg: "brand.bgSubtle", color: "brand.orange" }}
                 onClick={() => remove(i)}
               >
                 <X size={14} weight="bold" />

@@ -39,7 +39,17 @@ function PickerRow({ label, onClick }: { label: string; onClick: () => void }) {
       borderRadius="md"
       cursor="pointer"
       _hover={{ bg: "brand.bgSubtle", borderColor: "brand.orange" }}
+      _focusVisible={{
+        outline: "2px solid",
+        outlineColor: "brand.border",
+      }}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <Text fontSize="sm" color="brand.brown" truncate>
         {label}

@@ -24,6 +24,15 @@ vi.mock("scrollama", () => ({
 
 import { StoryRenderer } from "../StoryRenderer";
 
+const primaryConn = {
+  id: "conn-primary",
+  name: "Sea surface temperature",
+  connection_type: "cog",
+  tile_type: "raster",
+  band_count: 1,
+  url: "https://x/sst.tif",
+} as unknown as Connection;
+
 const overlayConn = {
   id: "conn-admin",
   name: "Admin boundaries",
@@ -58,7 +67,7 @@ const story = {
       },
       layer_config: {
         dataset_id: "",
-        connection_id: "conn-admin",
+        connection_id: "conn-primary",
         colormap: "viridis",
         opacity: 0.8,
         basemap: "streets",
@@ -75,10 +84,18 @@ describe("StoryRenderer overlay legend", () => {
         <StoryRenderer
           story={story}
           datasetMap={new Map<string, Dataset | null>()}
-          connectionMap={new Map([["conn-admin", overlayConn]])}
+          connectionMap={
+            new Map([
+              ["conn-primary", primaryConn],
+              ["conn-admin", overlayConn],
+            ])
+          }
         />
       </ChakraProvider>
     );
-    expect(screen.getAllByText(/admin boundaries/i).length).toBeGreaterThan(0);
+    // Primary resolves to a distinct name, so this only passes if the overlay
+    // row is actually rendered.
+    expect(screen.getByText(/sea surface temperature/i)).toBeInTheDocument();
+    expect(screen.getByText(/admin boundaries/i)).toBeInTheDocument();
   });
 });

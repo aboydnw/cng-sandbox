@@ -498,7 +498,9 @@ def test_admin_boundary_seeds_present():
     admin = [
         s
         for s in EXAMPLE_CONNECTIONS
-        if s.connection_type == "pmtiles" and s.tile_type == "vector"
+        if s.connection_type == "pmtiles"
+        and s.tile_type == "vector"
+        and "admin boundaries" in s.name.lower()
     ]
     assert len(admin) >= 1
     for seed in admin:

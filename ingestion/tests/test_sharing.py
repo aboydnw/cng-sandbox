@@ -177,6 +177,28 @@ def test_connection_referenced_by_overlay_in_published_story_readable(db_session
     assert sharing.can_read_connection(db_session, row, "") is True
 
 
+def test_dataset_referenced_by_hidden_overlay_not_readable(db_session):
+    row = _make_dataset(db_session)
+    _make_story(
+        db_session,
+        published=True,
+        chapter_layer_config={"dataset_id": "other-ds"},
+        chapter_overlays=[{"dataset_id": row.id, "visible": False}],
+    )
+    assert sharing.can_read_dataset(db_session, row, "") is False
+
+
+def test_connection_referenced_by_hidden_overlay_not_readable(db_session):
+    row = _make_connection(db_session)
+    _make_story(
+        db_session,
+        published=True,
+        chapter_layer_config={"dataset_id": "other-ds"},
+        chapter_overlays=[{"connection_id": row.id, "visible": False}],
+    )
+    assert sharing.can_read_connection(db_session, row, "") is False
+
+
 def _make_story_with_chart(session, *, published, chart_source):
     chapter = {
         "id": "ch1",

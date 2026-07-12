@@ -430,6 +430,7 @@ def test_map_state_3d_fields_round_trip_in_db(db_session):
     assert ms["globe"] is True
     assert ms["buildings"] is True
 
+
 def test_map_chapter_defaults_overlays_to_empty_list():
     chapter = MapChapter.model_validate(
         {
@@ -454,6 +455,7 @@ def test_map_chapter_defaults_overlays_to_empty_list():
         }
     )
     assert chapter.overlays == []
+
 
 def test_scrollytelling_chapter_parses_overlays():
     chapter = ScrollytellingChapter.model_validate(

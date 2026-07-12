@@ -35,10 +35,9 @@ def is_dataset_referenced_by_published_story(session: Session, dataset_id: str) 
             if isinstance(lc, dict) and lc.get("dataset_id") == dataset_id:
                 return True
             for overlay in ch.get("overlays") or []:
-                if (
-                    isinstance(overlay, dict)
-                    and overlay.get("dataset_id") == dataset_id
-                ):
+                if not isinstance(overlay, dict) or overlay.get("visible") is False:
+                    continue
+                if overlay.get("dataset_id") == dataset_id:
                     return True
             chart = ch.get("chart")
             if isinstance(chart, dict):
@@ -67,10 +66,9 @@ def is_connection_referenced_by_published_story(
             if isinstance(lc, dict) and lc.get("connection_id") == connection_id:
                 return True
             for overlay in ch.get("overlays") or []:
-                if (
-                    isinstance(overlay, dict)
-                    and overlay.get("connection_id") == connection_id
-                ):
+                if not isinstance(overlay, dict) or overlay.get("visible") is False:
+                    continue
+                if overlay.get("connection_id") == connection_id:
                     return True
     return False
 

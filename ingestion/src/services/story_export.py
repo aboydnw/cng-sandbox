@@ -52,6 +52,8 @@ def build_config(story: StoryRow, session: Session) -> CngRcConfig:
         for overlay in ch.get("overlays") or []:
             if not isinstance(overlay, dict) or overlay.get("visible") is False:
                 continue
+            if not _overlay_is_vector(overlay, session):
+                continue
             overlay_layer_id = str(uuid4())
             overlay_layer = _resolve_layer(overlay, session)
             if overlay_layer is not None:
@@ -88,6 +90,23 @@ def build_config(story: StoryRow, session: Session) -> CngRcConfig:
         layers=layers,
         assets=assets,
     )
+
+
+def _overlay_is_vector(overlay: dict, session: Session) -> bool:
+    """Overlays are vector-only; mirror the frontend's vector-source check."""
+    connection_id = overlay.get("connection_id")
+    if connection_id:
+        conn = session.get(ConnectionRow, connection_id)
+        if conn is None:
+            return False
+        return (
+            conn.connection_type == "pmtiles" and conn.tile_type == "vector"
+        ) or conn.connection_type == "xyz_vector"
+    dataset_id = overlay.get("dataset_id")
+    if dataset_id:
+        ds = session.get(DatasetRow, dataset_id)
+        return ds is not None and ds.dataset_type == "vector"
+    return False
 
 
 def _resolve_map_view(map_state: dict | None) -> CngRcMapView | None:

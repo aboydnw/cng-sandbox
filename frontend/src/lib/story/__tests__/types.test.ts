@@ -8,6 +8,8 @@ import {
   flyoverEntryMapState,
   flyoverFallbackMapChapter,
   DEFAULT_MAP_STATE,
+  createOverlayConfig,
+  DEFAULT_OVERLAY_CONFIG,
 } from "../types";
 
 describe("chapter factories", () => {
@@ -123,5 +125,21 @@ describe("flyover chapter", () => {
     expect(map.id).toBe(ch.id);
     expect(map.map_state.zoom).toBe(11);
     expect(map.layer_config.dataset_id).toBe("");
+  });
+});
+
+describe("createOverlayConfig", () => {
+  it("defaults to visible with full opacity and no source", () => {
+    const o = createOverlayConfig();
+    expect(o.visible).toBe(true);
+    expect(o.opacity).toBe(DEFAULT_OVERLAY_CONFIG.opacity);
+    expect(o.dataset_id).toBeUndefined();
+    expect(o.connection_id).toBeUndefined();
+  });
+
+  it("applies overrides", () => {
+    const o = createOverlayConfig({ connection_id: "c1", stroke_color: "#fff" });
+    expect(o.connection_id).toBe("c1");
+    expect(o.stroke_color).toBe("#fff");
   });
 });

@@ -45,6 +45,17 @@ export interface LayerConfig {
   point_size?: number | null;
 }
 
+export interface OverlayConfig {
+  dataset_id?: string;
+  connection_id?: string;
+  opacity: number;
+  stroke_color?: string;
+  stroke_width?: number;
+  fill_color?: string;
+  fill_opacity?: number;
+  visible?: boolean;
+}
+
 export type ChapterType =
   "scrollytelling" | "prose" | "map" | "image" | "video" | "chart" | "flyover";
 
@@ -59,6 +70,7 @@ export interface ScrollytellingChapter extends BaseChapter {
   type: "scrollytelling";
   map_state: MapState;
   layer_config: LayerConfig;
+  overlays?: OverlayConfig[];
   transition: "fly-to" | "instant";
   overlay_position: "left" | "right";
 }
@@ -67,6 +79,7 @@ export interface MapChapter extends BaseChapter {
   type: "map";
   map_state: MapState;
   layer_config: LayerConfig;
+  overlays?: OverlayConfig[];
 }
 
 export interface ProseChapter extends BaseChapter {
@@ -187,6 +200,19 @@ export const DEFAULT_LAYER_CONFIG: LayerConfig = {
   basemap: "streets",
 };
 
+export const DEFAULT_OVERLAY_CONFIG: OverlayConfig = {
+  opacity: 1,
+  stroke_width: 1.5,
+  fill_opacity: 0,
+  visible: true,
+};
+
+export function createOverlayConfig(
+  overrides: Partial<OverlayConfig> = {}
+): OverlayConfig {
+  return { ...DEFAULT_OVERLAY_CONFIG, ...overrides };
+}
+
 export const DEFAULT_MAP_STATE: MapState = {
   center: [0, 0],
   zoom: 2,
@@ -210,6 +236,7 @@ export function createScrollytellingChapter(
     type: "scrollytelling",
     map_state: overrides.map_state ?? { ...DEFAULT_MAP_STATE },
     layer_config: overrides.layer_config ?? { ...DEFAULT_LAYER_CONFIG },
+    overlays: overrides.overlays ?? [],
     transition: overrides.transition ?? "fly-to",
     overlay_position: overrides.overlay_position ?? "left",
   };
@@ -223,6 +250,7 @@ export function createMapChapter(
     type: "map",
     map_state: overrides.map_state ?? { ...DEFAULT_MAP_STATE },
     layer_config: overrides.layer_config ?? { ...DEFAULT_LAYER_CONFIG },
+    overlays: overrides.overlays ?? [],
   };
 }
 

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="cng-sandbox-test" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>track-one</name>
+    <trkseg>
+      <trkpt lat="45.5230" lon="-122.6810">
+        <ele>15.0</ele>
+        <time>2024-01-01T00:00:00Z</time>
+      </trkpt>
+      <trkpt lat="45.5235" lon="-122.6805">
+        <ele>16.0</ele>
+        <time>2024-01-01T00:00:05Z</time>
+      </trkpt>
+      <trkpt lat="45.5240" lon="-122.6800">
+        <ele>17.0</ele>
+        <time>2024-01-01T00:00:10Z</time>
+      </trkpt>
+      <trkpt lat="45.5245" lon="-122.6795">
+        <ele>18.0</ele>
+        <time>2024-01-01T00:00:15Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+  <trk>
+    <name>track-two</name>
+    <trkseg>
+      <trkpt lat="45.5300" lon="-122.6700">
+        <ele>20.0</ele>
+        <time>2024-01-01T00:01:00Z</time>
+      </trkpt>
+      <trkpt lat="45.5305" lon="-122.6695">
+        <ele>21.0</ele>
+        <time>2024-01-01T00:01:06Z</time>
+      </trkpt>
+      <trkpt lat="45.5310" lon="-122.6690">
+        <ele>22.0</ele>
+        <time>2024-01-01T00:01:12Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -66,6 +66,10 @@ const MOCK_DATASET: Dataset = {
   expires_at: null,
   preferred_colormap: null,
   preferred_colormap_reversed: null,
+  trips_url: null,
+  track_count: null,
+  time_start: null,
+  time_end: null,
 };
 
 const MOCK_CONNECTION: Connection = {
@@ -100,6 +104,21 @@ const MOCK_CONNECTION: Connection = {
 beforeEach(() => {
   mockWorkspaceFetch.mockReset();
   mockConnectionsGet.mockReset();
+});
+
+describe("datasetToMapItem trajectory", () => {
+  it("maps a trajectory dataset to a trajectory MapItem with tripsUrl", () => {
+    const item = datasetToMapItem({
+      ...MOCK_DATASET,
+      dataset_type: "trajectory",
+      trips_url: "/storage/datasets/d1/converted/trips.json",
+      track_count: 2,
+      time_start: "2024-01-01T00:00:00Z",
+      time_end: "2024-01-02T00:00:00Z",
+    });
+    expect(item.dataType).toBe("trajectory");
+    expect(item.tripsUrl).toBe("/storage/datasets/d1/converted/trips.json");
+  });
 });
 
 describe("useMapData", () => {

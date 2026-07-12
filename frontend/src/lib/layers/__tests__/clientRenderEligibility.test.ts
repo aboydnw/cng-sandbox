@@ -11,6 +11,7 @@ function rasterDatasetItem(overrides: Partial<MapItem> = {}): MapItem {
     tileUrl: "/raster/tile/x/y/z",
     bounds: [-10, -10, 10, 10],
     copcUrl: null,
+    tripsUrl: null,
     pointCount: null,
     minZoom: null,
     maxZoom: null,

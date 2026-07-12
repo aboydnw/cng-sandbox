@@ -1,4 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("../../../components/MapShell", () => ({
+  BRAND_COLOR_RGBA: [200, 100, 50, 255],
+}));
+
 import { buildVectorLayer } from "../vectorLayer";
 
 describe("buildVectorLayer", () => {
@@ -67,5 +72,29 @@ describe("buildVectorLayer", () => {
       opacity: 1,
     });
     expect(Array.isArray(layer.props.getFillColor)).toBe(true);
+  });
+});
+
+describe("buildVectorLayer styling overrides", () => {
+  it("uses provided line color and width", () => {
+    const layer = buildVectorLayer({
+      tileUrl: "/vector/tiles/{z}/{x}/{y}",
+      isPMTiles: false,
+      opacity: 1,
+      getLineColor: [1, 2, 3, 200],
+      lineWidthMinPixels: 3,
+    });
+    expect(layer.props.getLineColor).toEqual([1, 2, 3, 200]);
+    expect(layer.props.lineWidthMinPixels).toBe(3);
+  });
+
+  it("falls back to brand line color and default width", () => {
+    const layer = buildVectorLayer({
+      tileUrl: "/vector/tiles/{z}/{x}/{y}",
+      isPMTiles: false,
+      opacity: 1,
+    });
+    expect(layer.props.getLineColor).toEqual([200, 100, 50, 255]);
+    expect(layer.props.lineWidthMinPixels).toBe(1);
   });
 });

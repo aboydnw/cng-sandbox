@@ -429,3 +429,65 @@ def test_map_state_3d_fields_round_trip_in_db(db_session):
     assert ms["terrain"] == {"enabled": True, "exaggeration": 1.5}
     assert ms["globe"] is True
     assert ms["buildings"] is True
+
+def test_map_chapter_defaults_overlays_to_empty_list():
+    chapter = MapChapter.model_validate(
+        {
+            "id": "m",
+            "order": 0,
+            "type": "map",
+            "title": "T",
+            "narrative": "",
+            "map_state": {
+                "center": [0, 0],
+                "zoom": 2,
+                "bearing": 0,
+                "pitch": 0,
+                "basemap": "streets",
+            },
+            "layer_config": {
+                "dataset_id": "ds-1",
+                "colormap": "viridis",
+                "opacity": 0.8,
+                "basemap": "streets",
+            },
+        }
+    )
+    assert chapter.overlays == []
+
+def test_scrollytelling_chapter_parses_overlays():
+    chapter = ScrollytellingChapter.model_validate(
+        {
+            "id": "s",
+            "order": 0,
+            "type": "scrollytelling",
+            "title": "T",
+            "narrative": "",
+            "map_state": {
+                "center": [0, 0],
+                "zoom": 2,
+                "bearing": 0,
+                "pitch": 0,
+                "basemap": "streets",
+            },
+            "layer_config": {
+                "dataset_id": "ds-1",
+                "colormap": "viridis",
+                "opacity": 0.8,
+                "basemap": "streets",
+            },
+            "overlays": [
+                {
+                    "connection_id": "conn-admin",
+                    "opacity": 1.0,
+                    "stroke_color": "#8B4513",
+                    "stroke_width": 1.5,
+                    "fill_opacity": 0.0,
+                    "visible": True,
+                }
+            ],
+        }
+    )
+    assert len(chapter.overlays) == 1
+    assert chapter.overlays[0].connection_id == "conn-admin"
+    assert chapter.overlays[0].stroke_color == "#8B4513"

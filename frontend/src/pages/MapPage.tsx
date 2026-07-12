@@ -514,7 +514,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     [item?.dataset?.time_end]
   );
   const trips = useTripsAnimation(tMin, tMax, isTrajectory && tMax > tMin);
-  const { layer: tripsLayer } = useTripsLayer(
+  const {
+    layer: tripsLayer,
+    loading: tripsLoading,
+    error: tripsError,
+  } = useTripsLayer(
     isTrajectory ? (item?.tripsUrl ?? null) : null,
     trips.currentTime
   );
@@ -902,20 +906,51 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                 </Box>
               )}
 
-              {isTrajectory && tMax > tMin && (
-                <Box data-snapshot-overlay>
-                  <TrajectoryControls
-                    currentTime={trips.currentTime}
-                    tMin={tMin}
-                    tMax={tMax}
-                    isPlaying={trips.isPlaying}
-                    speed={trips.speed}
-                    onTogglePlay={trips.togglePlay}
-                    onSetSpeed={trips.setSpeed}
-                    onScrub={trips.scrub}
-                  />
-                </Box>
-              )}
+              {isTrajectory &&
+                tMax > tMin &&
+                (tripsError || tripsLoading || !tripsLayer ? (
+                  <Flex
+                    position="absolute"
+                    bottom={4}
+                    left="50%"
+                    transform="translateX(-50%)"
+                    align="center"
+                    gap={2}
+                    px={4}
+                    py={2}
+                    bg="white"
+                    borderWidth="1px"
+                    borderColor="brand.border"
+                    borderRadius="lg"
+                    boxShadow="md"
+                  >
+                    {tripsError ? (
+                      <Text fontSize="sm" color="brand.brown">
+                        Couldn&rsquo;t load this trajectory: {tripsError}
+                      </Text>
+                    ) : (
+                      <>
+                        <Spinner size="sm" color="brand.orange" />
+                        <Text fontSize="sm" color="brand.brown">
+                          Loading trajectory&hellip;
+                        </Text>
+                      </>
+                    )}
+                  </Flex>
+                ) : (
+                  <Box data-snapshot-overlay>
+                    <TrajectoryControls
+                      currentTime={trips.currentTime}
+                      tMin={tMin}
+                      tMax={tMax}
+                      isPlaying={trips.isPlaying}
+                      speed={trips.speed}
+                      onTogglePlay={trips.togglePlay}
+                      onSetSpeed={trips.setSpeed}
+                      onScrub={trips.scrub}
+                    />
+                  </Box>
+                ))}
 
               {pixelInspector.hoverInfo?.kind === "numeric" &&
                 controls.renderMode === "client" && (

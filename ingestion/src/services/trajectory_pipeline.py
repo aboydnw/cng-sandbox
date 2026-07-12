@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import tempfile
+import xml.etree.ElementTree as ET
 
 import geopandas as gpd
 import movingpandas as mpd
@@ -35,14 +36,28 @@ def parse_gpx_to_trajectories(path: str) -> mpd.TrajectoryCollection:
         )
     gdf = gdf.dropna(subset=["time"]).copy()
     gdf["time"] = gpd.pd.to_datetime(gdf["time"], utc=True)
-    # GPX track_points carry a per-track id in `track_fid`.
-    traj_col = "track_fid" if "track_fid" in gdf.columns else None
-    if traj_col is None:
-        gdf["track_fid"] = 0
-        traj_col = "track_fid"
+    # GPX track_points carry a per-track id (`track_fid`) and a per-segment id
+    # (`track_seg_id`). Group on both so separate <trkseg> blocks stay distinct
+    # trajectories instead of being bridged into one animated path (which would
+    # invent phantom speeds across the gap between segments).
+    fid = (
+        gdf["track_fid"]
+        if "track_fid" in gdf.columns
+        else gpd.pd.Series(0, index=gdf.index)
+    )
+    seg = (
+        gdf["track_seg_id"]
+        if "track_seg_id" in gdf.columns
+        else gpd.pd.Series(0, index=gdf.index)
+    )
+    gdf["trajectory_key"] = (
+        fid.fillna(0).astype("int64").astype(str)
+        + "-"
+        + seg.fillna(0).astype("int64").astype(str)
+    )
 
     tc = mpd.TrajectoryCollection(
-        gdf.set_index("time"), traj_id_col=traj_col, crs="EPSG:4326"
+        gdf.set_index("time"), traj_id_col="trajectory_key", crs="EPSG:4326"
     )
     tc = mpd.TrajectoryCollection([t for t in tc.trajectories if t.size() >= 2])
     if len(tc.trajectories) == 0:
@@ -91,13 +106,38 @@ def write_trajectory_parquet(tc: mpd.TrajectoryCollection, out_path: str) -> dic
 TRAJECTORY_POINT_CAP = 2_000_000
 
 
+def _over_cap_error(total: int) -> "TrajectoryError":
+    return TrajectoryError(
+        f"This trajectory has {total:,} points, over the "
+        f"{TRAJECTORY_POINT_CAP:,} limit. Split or downsample it and retry."
+    )
+
+
+def count_gpx_track_points(path: str) -> int:
+    """Count <trkpt> elements by streaming the GPX, without materializing it.
+
+    Lets us reject an oversized upload before GDAL/MovingPandas load every
+    point into memory.
+    """
+    count = 0
+    for _event, elem in ET.iterparse(path, events=("end",)):
+        if elem.tag.rsplit("}", 1)[-1] == "trkpt":
+            count += 1
+        elem.clear()
+    return count
+
+
 def enforce_point_cap(tc: mpd.TrajectoryCollection) -> None:
     total = sum(t.size() for t in tc.trajectories)
     if total > TRAJECTORY_POINT_CAP:
-        raise TrajectoryError(
-            f"This trajectory has {total:,} points, over the "
-            f"{TRAJECTORY_POINT_CAP:,} limit. Split or downsample it and retry."
-        )
+        raise _over_cap_error(total)
+
+
+def _write_trips_json(tc: mpd.TrajectoryCollection, path: str) -> None:
+    """Build the browser payload and serialize it to disk (blocking work)."""
+    trips = build_trips_json(tc)
+    with open(path, "w") as fh:
+        json.dump(trips, fh)
 
 
 def build_trips_json(tc: mpd.TrajectoryCollection) -> list[dict]:
@@ -135,6 +175,12 @@ async def run_trajectory_pipeline(job, input_path, db_session_factory) -> None:
         job.stage_progress = None
         job.format_pair = FormatPair.GPX_TO_GEOPARQUET
 
+        # Reject oversized uploads by streaming the point count first, before
+        # GDAL/MovingPandas materialize every point into memory.
+        total_points = await asyncio.to_thread(count_gpx_track_points, input_path)
+        if total_points > TRAJECTORY_POINT_CAP:
+            raise _over_cap_error(total_points)
+
         tc = await asyncio.to_thread(parse_gpx_to_trajectories, input_path)
         enforce_point_cap(tc)
 
@@ -148,10 +194,8 @@ async def run_trajectory_pipeline(job, input_path, db_session_factory) -> None:
             parquet_path = os.path.join(tmpdir, "trajectory.parquet")
             meta = await asyncio.to_thread(write_trajectory_parquet, tc, parquet_path)
 
-            trips = build_trips_json(tc)
             trips_path = os.path.join(tmpdir, "trips.json")
-            with open(trips_path, "w") as fh:
-                json.dump(trips, fh)
+            await asyncio.to_thread(_write_trips_json, tc, trips_path)
 
             job.status = JobStatus.INGESTING
             job.stage_progress = StageProgress(detail="storing")
@@ -161,7 +205,9 @@ async def run_trajectory_pipeline(job, input_path, db_session_factory) -> None:
             trips_key = await asyncio.to_thread(
                 storage.upload_trips_json, trips_path, job.dataset_id
             )
-            converted_file_size = os.path.getsize(trips_path)
+            converted_file_size = os.path.getsize(parquet_path) + os.path.getsize(
+                trips_path
+            )
 
         trips_url = f"/storage/{trips_key}"
         job.status = JobStatus.READY

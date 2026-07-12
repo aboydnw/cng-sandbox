@@ -21,9 +21,11 @@ export function useTripsAnimation(
   const rafRef = useRef<number | null>(null);
   const lastRef = useRef<number | null>(null);
 
+  // Reset to the start and pause whenever the trajectory context changes, so a
+  // newly selected dataset doesn't auto-resume mid-flight from the previous one.
   useEffect(() => {
-    setState((s) => ({ ...s, currentTime: tMin }));
-  }, [tMin, tMax]);
+    setState((s) => ({ ...s, currentTime: tMin, isPlaying: false }));
+  }, [tMin, tMax, isReady]);
 
   const togglePlay = useCallback(
     () => setState((s) => ({ ...s, isPlaying: !s.isPlaying })),

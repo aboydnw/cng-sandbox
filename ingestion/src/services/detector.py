@@ -58,7 +58,7 @@ def detect_format(filename: str) -> FormatPair:
     except ValueError as exc:
         raise UnsupportedFormatError(
             f"Unsupported file format: '{ext}'. "
-            f"Accepted: .tif, .tiff, .shp, .zip, .geojson, .json, .nc, .h5, .hdf5, .las, .laz, .gpx"
+            f"Accepted: .tif, .tiff, .shp, .zip, .geojson, .json, .nc, .nc4, .h5, .hdf5, .pmtiles, .las, .laz, .gpx"
         ) from exc
 
 

@@ -1,4 +1,4 @@
-import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
+import { Box, chakra, Flex, IconButton, Text } from "@chakra-ui/react";
 import { Play, Pause } from "@phosphor-icons/react";
 
 interface TrajectoryControlsProps {
@@ -75,9 +75,10 @@ export function TrajectoryControls({
 
       <Flex gap={1}>
         {SPEEDS.map((s) => (
-          <Box
-            as="button"
+          <chakra.button
             key={s}
+            type="button"
+            aria-pressed={s === speed}
             px={2}
             fontSize="xs"
             borderRadius="sm"
@@ -86,7 +87,7 @@ export function TrajectoryControls({
             onClick={() => onSetSpeed(s)}
           >
             {s}×
-          </Box>
+          </chakra.button>
         ))}
       </Flex>
 

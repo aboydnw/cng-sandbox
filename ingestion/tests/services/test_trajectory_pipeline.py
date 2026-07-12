@@ -49,8 +49,30 @@ def test_build_trips_json_shape():
     first = trips[0]
     assert set(first.keys()) == {"trajectory_id", "path", "timestamps", "speeds"}
     assert len(first["path"]) == len(first["timestamps"]) == len(first["speeds"])
-    assert first["path"][0] == pytest.approx(first["path"][0])  # [lng, lat] pairs
+    # [lng, lat] pairs, matching the fixture's first track's first point.
+    assert len(first["path"][0]) == 2
+    assert first["path"][0] == pytest.approx([-122.6810, 45.5230])
     assert isinstance(first["timestamps"][0], (int, float))
+
+
+def test_multi_segment_track_stays_split(tmp_path):
+    multi_seg = tmp_path / "multiseg.gpx"
+    multi_seg.write_text(
+        '<?xml version="1.0"?><gpx version="1.1">'
+        "<trk><trkseg>"
+        '<trkpt lat="1.0" lon="2.0"><time>2024-01-01T00:00:00Z</time></trkpt>'
+        '<trkpt lat="1.1" lon="2.1"><time>2024-01-01T00:00:10Z</time></trkpt>'
+        "</trkseg><trkseg>"
+        '<trkpt lat="1.2" lon="2.2"><time>2024-01-01T00:10:00Z</time></trkpt>'
+        '<trkpt lat="1.3" lon="2.3"><time>2024-01-01T00:10:10Z</time></trkpt>'
+        "</trkseg></trk></gpx>"
+    )
+    tc = tp.parse_gpx_to_trajectories(str(multi_seg))
+    assert len(tc.trajectories) == 2
+
+
+def test_count_gpx_track_points_counts_all_pings():
+    assert tp.count_gpx_track_points(FIXTURE) == 7
 
 
 def test_over_cap_raises(monkeypatch):

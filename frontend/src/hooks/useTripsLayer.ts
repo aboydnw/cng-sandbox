@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { buildTripsLayer } from "../lib/layers/tripsLayer";
+import { buildTripsLayer, computeMaxSpeed } from "../lib/layers/tripsLayer";
 import type { TripTrack } from "../lib/layers/tripsLayer";
 
 type TripsLayerInstance = ReturnType<typeof buildTripsLayer>;
@@ -12,10 +12,14 @@ export function useTripsLayer(tripsUrl: string | null, currentTime: number) {
   useEffect(() => {
     if (!tripsUrl) {
       setTracks(null);
+      setLoading(false);
       setError(null);
       return;
     }
     let cancelled = false;
+    // Drop the previous dataset's tracks immediately so switching trajectories
+    // never renders stale paths while the new sidecar is in flight.
+    setTracks(null);
     setLoading(true);
     setError(null);
     fetch(tripsUrl)
@@ -38,9 +42,16 @@ export function useTripsLayer(tripsUrl: string | null, currentTime: number) {
     };
   }, [tripsUrl]);
 
+  // Derive the speed-color ceiling once per dataset, not on every animation
+  // frame — the layer is rebuilt each time currentTime changes.
+  const speedMax = useMemo(
+    () => (tracks ? computeMaxSpeed(tracks) : undefined),
+    [tracks]
+  );
+
   const layer = useMemo<TripsLayerInstance | null>(
-    () => (tracks ? buildTripsLayer({ tracks, currentTime }) : null),
-    [tracks, currentTime]
+    () => (tracks ? buildTripsLayer({ tracks, currentTime, speedMax }) : null),
+    [tracks, currentTime, speedMax]
   );
 
   return { layer, tracks, loading, error };

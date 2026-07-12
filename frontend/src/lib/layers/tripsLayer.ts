@@ -19,6 +19,18 @@ interface BuildTripsLayerOpts {
 const SLOW: [number, number, number] = [43, 131, 186];
 const FAST: [number, number, number] = [215, 25, 28];
 
+// Single-pass max: a trajectory can hold up to 2M points, and spreading that
+// many values into Math.max(...) risks exceeding the JS engine's argument limit.
+export function computeMaxSpeed(tracks: TripTrack[]): number {
+  let max = 1;
+  for (const track of tracks) {
+    for (const speed of track.speeds) {
+      if (Number.isFinite(speed) && speed > max) max = speed;
+    }
+  }
+  return max;
+}
+
 export function speedToColor(
   speed: number,
   speedMax: number
@@ -38,12 +50,7 @@ export function buildTripsLayer({
   trailLength = 600,
   speedMax,
 }: BuildTripsLayerOpts) {
-  const maxSpeed =
-    speedMax ??
-    Math.max(
-      1,
-      ...tracks.flatMap((t) => t.speeds).filter((s) => Number.isFinite(s))
-    );
+  const maxSpeed = speedMax ?? computeMaxSpeed(tracks);
   return new TripsLayer<TripTrack>({
     id,
     data: tracks,

@@ -160,6 +160,13 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
                 "role": "Animated by",
             }
         )
+        credits.append(
+            {
+                "tool": "MapLibre",
+                "url": "https://maplibre.org",
+                "role": "Map rendered by",
+            }
+        )
         return credits
 
     if format_pair.dataset_type == DatasetType.RASTER:

@@ -126,3 +126,50 @@ def test_system_blocks_are_byte_stable_across_calls():
     a = chat_context.build_system_blocks(story, session)
     b = chat_context.build_system_blocks(story, session)
     assert a == b
+
+
+def test_context_describes_visible_overlays():
+    session = _session()
+    overlay_conn = ConnectionRow(
+        id="ov1",
+        name="Admin boundaries",
+        connection_type="pmtiles",
+        url="https://x/admin.pmtiles",
+        tile_type="vector",
+        is_categorical=False,
+    )
+    session.add(overlay_conn)
+    story = StoryRow(
+        id="s-ov",
+        title="Overlaid",
+        description="",
+        chapters_json=json.dumps(
+            [
+                {
+                    "type": "map",
+                    "title": "M",
+                    "narrative": "",
+                    "layer_config": {"colormap": "viridis"},
+                    "map_state": {
+                        "center": [0, 0],
+                        "zoom": 3,
+                        "bearing": 0,
+                        "pitch": 0,
+                        "basemap": "light",
+                    },
+                    "overlays": [
+                        {"connection_id": "ov1", "opacity": 1, "visible": True},
+                        {"connection_id": "ov1", "visible": False},
+                    ],
+                },
+            ]
+        ),
+        published=True,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    session.add(story)
+    session.commit()
+    md = chat_context.build_story_context_markdown(story, session)
+    assert "Overlay: Admin boundaries" in md
+    assert md.count("Overlay: Admin boundaries") == 1

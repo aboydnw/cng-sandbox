@@ -114,6 +114,24 @@ EXAMPLE_CONNECTIONS: list[ExampleConnectionSeed] = [
         bounds=[-123.0750, 44.0497, -123.0625, 44.0628],
         config={"color_mode": "elevation", "point_size": 2.0},
     ),
+    # Context layers (admin boundaries) for overlay use. See
+    # docs/context-layers.md for the tippecanoe + R2 data-prep pipeline.
+    # NOTE: these are PLACEHOLDER URLs — build the PMTiles, upload to R2, and
+    # replace the host before shipping to prod, or workspaces seed broken rows.
+    ExampleConnectionSeed(
+        name="Admin boundaries — countries",
+        url="https://pub-REPLACE-ME.r2.dev/context/admin0.pmtiles",
+        connection_type="pmtiles",
+        tile_type="vector",
+        bounds=[-180.0, -90.0, 180.0, 90.0],
+    ),
+    ExampleConnectionSeed(
+        name="Admin boundaries — states/provinces",
+        url="https://pub-REPLACE-ME.r2.dev/context/admin1.pmtiles",
+        connection_type="pmtiles",
+        tile_type="vector",
+        bounds=[-180.0, -90.0, 180.0, 90.0],
+    ),
 ]
 
 

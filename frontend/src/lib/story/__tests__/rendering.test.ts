@@ -20,10 +20,12 @@ vi.mock("../../layers/zarrLayer", () => ({
 import { buildLayersForChapter, groupChaptersIntoBlocks } from "../rendering";
 import {
   createChapter,
+  createMapChapter,
   createScrollytellingChapter,
   createFlyoverChapter,
   DEFAULT_LAYER_CONFIG,
 } from "../types";
+import type { OverlayConfig } from "../types";
 import type { Dataset, Connection } from "../../../types";
 
 const BASE_DATASET: Dataset = {
@@ -604,5 +606,89 @@ describe("flyover blocks and layers", () => {
     });
     const result = buildLayersForChapter(ch, new Map([[ds.id, ds]]), new Map());
     expect(result.layers.length).toBeGreaterThan(0);
+  });
+});
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function createMapChapterWithOverlays(opts: {
+  layer_config: typeof DEFAULT_LAYER_CONFIG;
+  overlays: OverlayConfig[];
+}) {
+  return createMapChapter({
+    layer_config: opts.layer_config,
+    overlays: opts.overlays,
+  });
+}
+
+describe("buildLayersForChapter overlays", () => {
+  const rasterPrimary: Dataset = {
+    ...BASE_DATASET,
+    id: "ds-r",
+    dataset_type: "raster",
+  };
+  const vectorOverlay: Dataset = {
+    ...BASE_DATASET,
+    id: "ds-v",
+    dataset_type: "vector",
+    tile_url: "/vector/tiles/{z}/{x}/{y}",
+    band_count: null,
+  };
+
+  const datasetMap = new Map<string, Dataset | null>([
+    ["ds-r", rasterPrimary],
+    ["ds-v", vectorOverlay],
+  ]);
+
+  it("appends one layer per visible overlay after the primary", () => {
+    const chapter = createMapChapterWithOverlays({
+      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: "ds-r" },
+      overlays: [
+        {
+          dataset_id: "ds-v",
+          opacity: 1,
+          stroke_color: "#ff0000",
+          visible: true,
+        },
+      ],
+    });
+    const { layers } = buildLayersForChapter(chapter, datasetMap);
+    expect(layers.length).toBeGreaterThanOrEqual(2);
+    const overlayLayer = layers[layers.length - 1] as unknown as {
+      props: { getLineColor: [number, number, number, number] };
+    };
+    expect(overlayLayer.props.getLineColor).toEqual([
+      ...hexToRgb("#ff0000"),
+      255,
+    ]);
+  });
+
+  it("skips invisible overlays", () => {
+    const chapter = createMapChapterWithOverlays({
+      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: "ds-r" },
+      overlays: [{ dataset_id: "ds-v", opacity: 1, visible: false }],
+    });
+    const before = buildLayersForChapter(
+      { ...chapter, overlays: [] } as typeof chapter,
+      datasetMap
+    ).layers.length;
+    const { layers } = buildLayersForChapter(chapter, datasetMap);
+    expect(layers.length).toBe(before);
+  });
+
+  it("skips overlays whose reference does not resolve", () => {
+    const chapter = createMapChapterWithOverlays({
+      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: "ds-r" },
+      overlays: [{ dataset_id: "missing", opacity: 1, visible: true }],
+    });
+    const { layers } = buildLayersForChapter(chapter, datasetMap);
+    const before = buildLayersForChapter(
+      { ...chapter, overlays: [] } as typeof chapter,
+      datasetMap
+    ).layers.length;
+    expect(layers.length).toBe(before);
   });
 });

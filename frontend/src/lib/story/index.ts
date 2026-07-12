@@ -18,12 +18,15 @@ export type {
   MapState,
   StoryIndexEntry,
   LayerConfig,
+  OverlayConfig,
   FlyoverChapter,
   FlyoverKeyframe,
 } from "./types";
 export {
   DEFAULT_MAP_STATE,
   DEFAULT_LAYER_CONFIG,
+  DEFAULT_OVERLAY_CONFIG,
+  createOverlayConfig,
   createChapter,
   createScrollytellingChapter,
   createMapChapter,

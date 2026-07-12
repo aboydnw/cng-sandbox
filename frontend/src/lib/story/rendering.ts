@@ -12,6 +12,7 @@ import { DEFAULT_LAYER_CONFIG, isMapBoundChapter } from "./types";
 import type {
   Chapter,
   LayerConfig,
+  OverlayConfig,
   ScrollytellingChapter,
   MapChapter,
   ProseChapter,
@@ -40,6 +41,71 @@ function makePcaRgbFillColor(
     }
     return [128, 128, 128, 200];
   };
+}
+
+function hexToRgba(
+  hex: string | undefined,
+  alpha: number,
+  fallback: [number, number, number]
+): [number, number, number, number] {
+  if (!hex) return [...fallback, Math.round(alpha * 255)];
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255, Math.round(alpha * 255)];
+}
+
+function buildOverlayLayer(
+  overlay: OverlayConfig,
+  index: number,
+  datasetMap: Map<string, Dataset | null>,
+  connectionMap?: Map<string, Connection>
+): Layer | null {
+  if (overlay.visible === false) return null;
+
+  const lineColor = hexToRgba(overlay.stroke_color, 1, [139, 69, 19]);
+  const fillColor = hexToRgba(
+    overlay.fill_color,
+    overlay.fill_opacity ?? 0,
+    [139, 69, 19]
+  );
+  const common = {
+    id: `overlay-${index}`,
+    opacity: overlay.opacity,
+    getLineColor: lineColor,
+    getFillColor: fillColor,
+    lineWidthMinPixels: overlay.stroke_width ?? 1.5,
+  };
+
+  if (overlay.connection_id && connectionMap) {
+    const conn = connectionMap.get(overlay.connection_id);
+    if (!conn) return null;
+    if (!(
+      (conn.connection_type === "pmtiles" && conn.tile_type === "vector") ||
+      conn.connection_type === "xyz_vector"
+    )) {
+      return null;
+    }
+    return buildVectorLayer({
+      ...common,
+      tileUrl: buildConnectionTileUrl(conn),
+      isPMTiles: conn.connection_type === "pmtiles",
+      minZoom: conn.min_zoom ?? undefined,
+      maxZoom: conn.max_zoom ?? undefined,
+    });
+  }
+
+  if (overlay.dataset_id) {
+    const ds = datasetMap.get(overlay.dataset_id);
+    if (!ds || ds.dataset_type !== "vector") return null;
+    return buildVectorLayer({
+      ...common,
+      tileUrl: ds.tile_url,
+      isPMTiles: isPMTilesDataset(ds),
+      minZoom: ds.min_zoom ?? undefined,
+      maxZoom: ds.max_zoom ?? undefined,
+    });
+  }
+
+  return null;
 }
 
 export function buildDatasetServerTileUrl(
@@ -150,6 +216,28 @@ export interface ChapterLayerResult {
 }
 
 export function buildLayersForChapter(
+  chapter: Chapter,
+  datasetMap: Map<string, Dataset | null>,
+  connectionMap?: Map<string, Connection>,
+  zarrNodeMap?: Map<string, ZarrNode>
+): ChapterLayerResult {
+  const result = buildPrimaryLayersForChapter(
+    chapter,
+    datasetMap,
+    connectionMap,
+    zarrNodeMap
+  );
+  const overlays =
+    (chapter.type === "scrollytelling" || chapter.type === "map") &&
+    chapter.overlays
+      ? chapter.overlays
+          .map((o, i) => buildOverlayLayer(o, i, datasetMap, connectionMap))
+          .filter((l): l is Layer => l !== null)
+      : [];
+  return { ...result, layers: [...result.layers, ...overlays] };
+}
+
+function buildPrimaryLayersForChapter(
   chapter: Chapter,
   datasetMap: Map<string, Dataset | null>,
   connectionMap?: Map<string, Connection>,

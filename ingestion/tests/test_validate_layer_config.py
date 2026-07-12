@@ -71,3 +71,65 @@ def test_validate_layer_config_valid_dataset(client, db_session):
     assert resp.status_code == 200
     body = resp.json()
     assert body["valid"] is True
+
+
+def test_validate_layer_config_rejects_dangling_overlay(client, db_session):
+    from src.models.dataset import DatasetRow
+
+    ds = DatasetRow(
+        id="ds-primary",
+        filename="test.tif",
+        dataset_type="raster",
+        format_pair="geotiff-cog",
+        tile_url="/cog/tiles/{z}/{x}/{y}.png",
+        workspace_id="testABCD",
+    )
+    db_session.add(ds)
+    db_session.commit()
+
+    resp = client.post(
+        "/api/validate-layer-config",
+        json={
+            "dataset_id": "ds-primary",
+            "colormap": "viridis",
+            "overlays": [{"connection_id": "missing-conn"}],
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["valid"] is False
+    assert "error" in body
+
+
+def test_validate_layer_config_accepts_resolvable_overlay(client, db_session):
+    from src.models.dataset import DatasetRow
+
+    primary = DatasetRow(
+        id="ds-primary2",
+        filename="test.tif",
+        dataset_type="raster",
+        format_pair="geotiff-cog",
+        tile_url="/cog/tiles/{z}/{x}/{y}.png",
+        workspace_id="testABCD",
+    )
+    overlay_ds = DatasetRow(
+        id="ds-overlay",
+        filename="boundary.geojson",
+        dataset_type="vector",
+        format_pair="geojson-to-geoparquet",
+        tile_url="/vector/tiles/{z}/{x}/{y}",
+        workspace_id="testABCD",
+    )
+    db_session.add_all([primary, overlay_ds])
+    db_session.commit()
+
+    resp = client.post(
+        "/api/validate-layer-config",
+        json={
+            "dataset_id": "ds-primary2",
+            "colormap": "viridis",
+            "overlays": [{"dataset_id": "ds-overlay"}],
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["valid"] is True

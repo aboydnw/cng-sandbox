@@ -5,9 +5,15 @@ from pydantic import BaseModel
 from sqlalchemy import or_
 
 from src.dependencies import get_session
+from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 
 router = APIRouter(prefix="/api")
+
+
+class OverlayRef(BaseModel):
+    dataset_id: str | None = None
+    connection_id: str | None = None
 
 
 class ValidateLayerConfigBody(BaseModel):
@@ -16,6 +22,7 @@ class ValidateLayerConfigBody(BaseModel):
     rescale_min: float | None = None
     rescale_max: float | None = None
     color_mode: str | None = None
+    overlays: list[OverlayRef] = []
 
 
 @router.post("/validate-layer-config")
@@ -43,6 +50,43 @@ def validate_layer_config(body: ValidateLayerConfigBody, request: Request):
         )
         if ds is None:
             return {"valid": False, "error": f"Dataset '{body.dataset_id}' not found"}
+        for overlay in body.overlays:
+            error = _validate_overlay_ref(session, overlay, workspace_id)
+            if error:
+                return {"valid": False, "error": error}
         return {"valid": True}
     finally:
         session.close()
+
+
+def _validate_overlay_ref(session, overlay: OverlayRef, workspace_id: str) -> str | None:
+    """Return an error string if an overlay's referenced layer does not resolve."""
+    if overlay.dataset_id:
+        ds = (
+            session.query(DatasetRow)
+            .filter(
+                DatasetRow.id == overlay.dataset_id,
+                or_(
+                    DatasetRow.workspace_id == workspace_id,
+                    DatasetRow.is_example.is_(True),
+                ),
+            )
+            .first()
+        )
+        if ds is None:
+            return f"Overlay dataset '{overlay.dataset_id}' not found"
+    if overlay.connection_id:
+        conn = (
+            session.query(ConnectionRow)
+            .filter(
+                ConnectionRow.id == overlay.connection_id,
+                or_(
+                    ConnectionRow.workspace_id == workspace_id,
+                    ConnectionRow.is_example.is_(True),
+                ),
+            )
+            .first()
+        )
+        if conn is None:
+            return f"Overlay connection '{overlay.connection_id}' not found"
+    return None

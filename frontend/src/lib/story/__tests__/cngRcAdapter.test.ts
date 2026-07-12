@@ -145,6 +145,51 @@ describe("cngRcToStory", () => {
     expect(chapter.layer_config.dataset_id).toBe("");
   });
 
+  it("carries a chapter's extra layers into overlays", () => {
+    const config = makeConfig({
+      chapters: [
+        {
+          id: "ch-1",
+          type: "map",
+          title: "Chapter 1",
+          body: "",
+          map: { center: [0, 0], zoom: 3 },
+          layers: ["primary", "boundary", "watershed"],
+        },
+      ],
+      layers: {
+        primary: makeLayer({
+          type: "raster-cog",
+          source_url: "https://example.com/data.tif",
+        }),
+        boundary: makeLayer({
+          type: "pmtiles",
+          source_url: "https://example.com/admin.pmtiles",
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 0.5,
+            band: null,
+            timestep: null,
+          },
+        }),
+        watershed: makeLayer({
+          type: "vector-geoparquet",
+          source_url: "https://example.com/basins.parquet",
+        }),
+      },
+    });
+
+    const { story } = cngRcToStory(config);
+    const chapter = story.chapters[0];
+    if (chapter.type !== "map") throw new Error("expected map");
+    expect(chapter.layer_config.connection_id).toBe("portable-primary");
+    expect(chapter.overlays).toEqual([
+      { connection_id: "portable-boundary", opacity: 0.5, visible: true },
+      { connection_id: "portable-watershed", opacity: 1, visible: true },
+    ]);
+  });
+
   it("synthesizes a Connection for each layer with a usable URL", () => {
     const config = makeConfig({
       layers: {

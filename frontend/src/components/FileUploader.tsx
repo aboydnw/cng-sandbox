@@ -12,6 +12,9 @@ const ALLOWED_EXTENSIONS = [
   ".nc",
   ".h5",
   ".hdf5",
+  ".las",
+  ".laz",
+  ".gpx",
 ];
 const RASTER_EXTENSIONS = [".tif", ".tiff", ".nc", ".h5", ".hdf5"];
 

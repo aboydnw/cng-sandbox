@@ -27,6 +27,7 @@ Dense reference material lives under [docs/](docs/) and should be read only when
 - [docs/cicd.md](docs/cicd.md) — release-please, Dependabot, conventional-commit enforcement. Read before touching workflows.
 - [docs/example-data.md](docs/example-data.md) — `is_example` datasets/stories/connections, source.coop seeding. Read before touching `src/services/example_*.py`.
 - [docs/services.md](docs/services.md) — tipg/titiler-pgstac notes, GDAL+R2 env vars. Read before editing tiler env-vars in `docker-compose.yml` or debugging tile-rendering S3/GDAL config issues.
+- [docs/context-layers.md](docs/context-layers.md) — building/uploading admin-boundary overlay PMTiles (tippecanoe → R2) that seed as example "context layer" connections for story overlays. Read before touching the admin-boundary `EXAMPLE_CONNECTIONS` seeds or the overlay data-prep pipeline.
 
 ## Project Documentation
 
@@ -161,7 +162,7 @@ Full endpoint catalog (uploads, jobs, datasets, stories, connections, remote dis
 
 ### Example datasets, stories, and connections
 
-On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list currently ships three entries (IMERG Final Precipitation and Fields of The World zarrs, plus the Autzen Stadium COPC point cloud). These `is_example` rows are a **master set** owned by no workspace; they are no longer surfaced directly in `GET /api/datasets|stories|connections`. Instead each workspace gets its own editable clones (`is_example_copy=True`) via `src/services/example_workspace.py`, seeded/removed/reported through `POST/DELETE/GET /api/workspaces/{id}/examples`. Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
+On startup, background tasks seed curated source.coop products as `is_example=True` datasets/stories. A parallel task seeds `is_example=True` connections from the `EXAMPLE_CONNECTIONS` list in `src/services/example_connections.py`; this list currently ships five entries (IMERG Final Precipitation and Fields of The World zarrs, the Autzen Stadium COPC point cloud, and two admin-boundary PMTiles "context layers" — countries and states/provinces — used as story overlays; see [docs/context-layers.md](docs/context-layers.md)). These `is_example` rows are a **master set** owned by no workspace; they are no longer surfaced directly in `GET /api/datasets|stories|connections`. Instead each workspace gets its own editable clones (`is_example_copy=True`) via `src/services/example_workspace.py`, seeded/removed/reported through `POST/DELETE/GET /api/workspaces/{id}/examples`. Details and idempotency rules: [docs/example-data.md](docs/example-data.md).
 
 ### Conversion pipeline
 

@@ -145,6 +145,22 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
             }
         )
         return credits
+    elif format_pair == FormatPair.GPX_TO_GEOPARQUET:
+        credits.append(
+            {
+                "tool": "MovingPandas",
+                "url": "https://movingpandas.org",
+                "role": "Converted by",
+            }
+        )
+        credits.append(
+            {
+                "tool": "deck.gl",
+                "url": "https://deck.gl",
+                "role": "Animated by",
+            }
+        )
+        return credits
 
     if format_pair.dataset_type == DatasetType.RASTER:
         credits.append(

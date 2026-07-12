@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.11.0](https://github.com/aboydnw/cng-sandbox/compare/v2.10.0...v2.11.0) (2026-07-12)
+
+
+### Features
+
+* movement tracks (GPX trajectory animation) ([#567](https://github.com/aboydnw/cng-sandbox/issues/567)) ([243eef2](https://github.com/aboydnw/cng-sandbox/commit/243eef253010563406617101075aaba9ee5e7425))
+* overlay vector layers for story chapters ([#566](https://github.com/aboydnw/cng-sandbox/issues/566)) ([f7a1d32](https://github.com/aboydnw/cng-sandbox/commit/f7a1d329873fc767efd7322affc36e1f99ece360))
+
+
+### Bug Fixes
+
+* point admin-boundary overlay seeds at real R2 PMTiles ([#569](https://github.com/aboydnw/cng-sandbox/issues/569)) ([50cbb24](https://github.com/aboydnw/cng-sandbox/commit/50cbb2432bbe0c90f029e6b310c111d29ddba673))
+
 ## [2.10.0](https://github.com/aboydnw/cng-sandbox/compare/v2.9.0...v2.10.0) (2026-07-10)
 
 

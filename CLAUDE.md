@@ -1,6 +1,6 @@
 # CNG Sandbox
 
-Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, HDF5, or LAS/LAZ files and get back browseable raster/vector tile maps and streamed point clouds.
+Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, HDF5, LAS/LAZ, or GPX files and get back browseable raster/vector tile maps, streamed point clouds, and animated movement tracks.
 
 ## Architecture
 
@@ -123,7 +123,7 @@ The frontend's Vite dev server proxies `/api` → ingestion, `/cog` → COG tile
 
 ## Frontend
 
-Built with React 19, Chakra UI v3, MapLibre GL JS, and deck.gl. `UnifiedMap` composites the two: a `react-map-gl/maplibre` map is the root and owns the camera and basemap, and deck.gl draws raster/vector layers on top via a `MapboxOverlay` (`@deck.gl/mapbox`). A small set of vendored utilities from `@maptool/core` live in `src/lib/maptool/`. COPC point clouds are the exception to the deck.gl path: they render through a `maplibre-gl-lidar` `LidarControl` mounted directly on the MapLibre root (via the `useCopcLayer` hook), streaming the `.copc.laz` over HTTP range requests — not through deck.gl or a tiler. See [docs/frontend-gotchas.md](docs/frontend-gotchas.md).
+Built with React 19, Chakra UI v3, MapLibre GL JS, and deck.gl. `UnifiedMap` composites the two: a `react-map-gl/maplibre` map is the root and owns the camera and basemap, and deck.gl draws raster/vector layers on top via a `MapboxOverlay` (`@deck.gl/mapbox`). A small set of vendored utilities from `@maptool/core` live in `src/lib/maptool/`. COPC point clouds are the exception to the deck.gl path: they render through a `maplibre-gl-lidar` `LidarControl` mounted directly on the MapLibre root (via the `useCopcLayer` hook), streaming the `.copc.laz` over HTTP range requests — not through deck.gl or a tiler. GPX trajectories stay on the deck.gl path but animate over time: `src/lib/layers/tripsLayer.ts` builds a `TripsLayer` (speed-colored, fading trail) driven by the `useTripsLayer`/`useTripsAnimation` hooks and a continuous-time transport bar (`TrajectoryControls`), fed by the `trips.json` sidecar. See [docs/frontend-gotchas.md](docs/frontend-gotchas.md).
 
 A separate Vite library workspace at `frontend/archive-runtime/` builds the interactive-export runtime (a single `bundle.js` + `bundle.css`) that the ingestion service embeds into archival HTML exports. The ingestion Dockerfile builds this bundle in a dedicated stage and copies it to `/app/runtime_assets`; `ingestion/src/services/interactive_export/html_shell.py` emits a real shell loading the bundle when it's available.
 
@@ -167,12 +167,14 @@ On startup, background tasks seed curated source.coop products as `is_example=Tr
 
 1. **Upload/fetch** → save raw file
 2. **Scan** → detect file type, validate; for rasters also runs categorical detection (color table → RAT → heuristic)
-3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG, HDF5→COG, LAS/LAZ→COPC (PDAL)
-4. **Store** → COGs to Cloudflare R2, vectors to PostgreSQL, COPC point clouds to R2
+3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG, HDF5→COG, LAS/LAZ→COPC (PDAL), GPX→GeoParquet + `trips.json` sidecar (MovingPandas)
+4. **Store** → COGs to Cloudflare R2, vectors to PostgreSQL, COPC point clouds and trajectory GeoParquet/`trips.json` to R2
 5. **Register** → COGs registered in pgSTAC, vectors available via tipg
 6. **Ready** → tile URL returned to frontend
 
 LAS/LAZ point clouds take a separate branch (`src/services/pointcloud_pipeline.py`): they are converted to COPC with PDAL and stored to R2, but are **not** registered in pgSTAC or tipg — the browser streams the `.copc.laz` directly via HTTP range requests, so no tiler is in the loop. See [docs/services.md](docs/services.md) (PDAL) and [docs/api-reference.md](docs/api-reference.md) for details.
+
+GPX trajectories take their own parallel branch (`src/services/trajectory_pipeline.py`): MovingPandas parses the track points into cleaned trajectories, writes a canonical GeoParquet plus a browser-ready `trips.json` sidecar (per-track path, epoch-ms timestamps, and speeds), and stores both to R2. Like COPC, they are **not** registered in pgSTAC or tipg — the frontend fetches `trips.json` directly and animates it with a deck.gl `TripsLayer`. GPX must carry per-point timestamps; points are capped at 2M per dataset.
 
 ### Tiler service notes
 

@@ -49,6 +49,15 @@ def build_config(story: StoryRow, session: Session) -> CngRcConfig:
                 layers[layer_id] = layer
                 chapter_layer_ids.append(layer_id)
 
+        for overlay in ch.get("overlays") or []:
+            if not isinstance(overlay, dict) or overlay.get("visible") is False:
+                continue
+            overlay_layer_id = str(uuid4())
+            overlay_layer = _resolve_layer(overlay, session)
+            if overlay_layer is not None:
+                layers[overlay_layer_id] = overlay_layer
+                chapter_layer_ids.append(overlay_layer_id)
+
         out_chapters.append(
             CngRcChapter(
                 id=ch.get("id") or str(uuid4()),

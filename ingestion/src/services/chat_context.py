@@ -130,6 +130,21 @@ def build_story_context_markdown(story: StoryRow, session: Session) -> str:
                     if ds is not None:
                         parts.extend(_describe_dataset(ds))
 
+        overlays = raw.get("overlays") if isinstance(raw, dict) else None
+        for overlay in overlays or []:
+            if not isinstance(overlay, dict) or overlay.get("visible") is False:
+                continue
+            o_conn = overlay.get("connection_id")
+            o_ds = overlay.get("dataset_id")
+            if o_conn:
+                conn = session.get(ConnectionRow, o_conn)
+                if conn is not None:
+                    parts.append(f"Overlay: {conn.name}")
+            elif o_ds:
+                ds = session.get(DatasetRow, o_ds)
+                if ds is not None:
+                    parts.append(f"Overlay: {ds.filename}")
+
     return "\n".join(parts)
 
 

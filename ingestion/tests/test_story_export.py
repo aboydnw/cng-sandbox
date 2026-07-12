@@ -339,3 +339,47 @@ def test_build_config_passes_flyover_chapters_through(db_session):
     )
     config = story_export.build_config(row, db_session)
     assert config.chapters[0].type == "flyover"
+
+
+def test_export_bundles_overlay_connection_as_layer(db_session):
+    primary = ConnectionRow(
+        id="conn-primary",
+        name="Primary",
+        url="https://example.com/primary.tif",
+        connection_type="cog",
+        tile_url=None,
+        bounds_json=None,
+        tile_type="raster",
+        workspace_id="ws-test",
+    )
+    overlay = ConnectionRow(
+        id="conn-overlay",
+        name="Admin boundaries",
+        url="https://example.com/admin.pmtiles",
+        connection_type="pmtiles",
+        tile_url=None,
+        bounds_json=None,
+        tile_type="vector",
+        workspace_id="ws-test",
+    )
+    db_session.add_all([primary, overlay])
+    db_session.commit()
+
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "map",
+                "title": "Map",
+                "body": "",
+                "map_state": {"center": [0, 0], "zoom": 2},
+                "layer_config": {"connection_id": "conn-primary", "opacity": 1.0},
+                "overlays": [{"connection_id": "conn-overlay", "opacity": 1.0}],
+            }
+        ],
+    )
+    config = story_export.build_config(row, db_session)
+    source_urls = {layer.source_url for layer in config.layers.values()}
+    assert "https://example.com/admin.pmtiles" in source_urls
+    assert len(config.chapters[0].layers) == 2

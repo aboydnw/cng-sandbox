@@ -37,9 +37,16 @@ def _make_connection(session, **kwargs):
     return row
 
 
-def _make_story(session, *, published, dataset_id=None, chapter_layer_config=None):
+def _make_story(
+    session,
+    *,
+    published,
+    dataset_id=None,
+    chapter_layer_config=None,
+    chapter_overlays=None,
+):
     chapters = []
-    if chapter_layer_config is not None:
+    if chapter_layer_config is not None or chapter_overlays is not None:
         chapters.append(
             {
                 "id": "ch1",
@@ -50,7 +57,8 @@ def _make_story(session, *, published, dataset_id=None, chapter_layer_config=Non
                 "map_state": {},
                 "transition": "fly-to",
                 "overlay_position": "left",
-                "layer_config": chapter_layer_config,
+                "layer_config": chapter_layer_config or {},
+                "overlays": chapter_overlays or [],
             }
         )
     row = StoryRow(
@@ -145,6 +153,28 @@ def test_connection_referenced_by_unpublished_story_not_readable(db_session):
         db_session, published=False, chapter_layer_config={"connection_id": row.id}
     )
     assert sharing.can_read_connection(db_session, row, "") is False
+
+
+def test_dataset_referenced_by_overlay_in_published_story_readable(db_session):
+    row = _make_dataset(db_session)
+    _make_story(
+        db_session,
+        published=True,
+        chapter_layer_config={"dataset_id": "other-ds"},
+        chapter_overlays=[{"dataset_id": row.id}],
+    )
+    assert sharing.can_read_dataset(db_session, row, "") is True
+
+
+def test_connection_referenced_by_overlay_in_published_story_readable(db_session):
+    row = _make_connection(db_session)
+    _make_story(
+        db_session,
+        published=True,
+        chapter_layer_config={"dataset_id": "other-ds"},
+        chapter_overlays=[{"connection_id": row.id}],
+    )
+    assert sharing.can_read_connection(db_session, row, "") is True
 
 
 def _make_story_with_chart(session, *, published, chart_source):

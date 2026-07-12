@@ -34,6 +34,12 @@ def is_dataset_referenced_by_published_story(session: Session, dataset_id: str) 
             lc = ch.get("layer_config") or {}
             if isinstance(lc, dict) and lc.get("dataset_id") == dataset_id:
                 return True
+            for overlay in ch.get("overlays") or []:
+                if (
+                    isinstance(overlay, dict)
+                    and overlay.get("dataset_id") == dataset_id
+                ):
+                    return True
             chart = ch.get("chart")
             if isinstance(chart, dict):
                 source = chart.get("source")
@@ -60,6 +66,12 @@ def is_connection_referenced_by_published_story(
             lc = ch.get("layer_config") or {}
             if isinstance(lc, dict) and lc.get("connection_id") == connection_id:
                 return True
+            for overlay in ch.get("overlays") or []:
+                if (
+                    isinstance(overlay, dict)
+                    and overlay.get("connection_id") == connection_id
+                ):
+                    return True
     return False
 
 

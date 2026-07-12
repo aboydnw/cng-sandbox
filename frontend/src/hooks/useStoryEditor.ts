@@ -12,6 +12,7 @@ import {
   type Chapter,
   type ChapterType,
   type LayerConfig,
+  type OverlayConfig,
   type MapState,
   type ChapterRenderMetadata,
   DEFAULT_LAYER_CONFIG,
@@ -413,6 +414,18 @@ export function useStoryEditor() {
     }
   }
 
+  function updateChapterOverlays(overlays: OverlayConfig[]) {
+    updateStory((s) => ({
+      ...s,
+      chapters: s.chapters.map((ch) =>
+        ch.id === activeChapterId &&
+        (ch.type === "scrollytelling" || ch.type === "map")
+          ? { ...ch, overlays }
+          : ch
+      ),
+    }));
+  }
+
   function updateChapterType(type: ChapterType) {
     updateStory((s) => ({
       ...s,
@@ -654,6 +667,7 @@ export function useStoryEditor() {
     updateChapterTitle,
     updateChapterNarrative,
     updateChapterLayerConfig,
+    updateChapterOverlays,
     updateChapterType,
     updateChapterOverlayPosition,
     updateChapterMapState,

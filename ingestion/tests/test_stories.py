@@ -60,6 +60,39 @@ def test_create_story(client):
     assert "id" in data
 
 
+def test_dataset_ids_includes_overlay_dataset(client):
+    chapters = [
+        {
+            "id": "c1",
+            "order": 0,
+            "type": "map",
+            "title": "T",
+            "narrative": "",
+            "map_state": {
+                "center": [0, 0],
+                "zoom": 2,
+                "bearing": 0,
+                "pitch": 0,
+                "basemap": "streets",
+            },
+            "layer_config": {
+                "dataset_id": "primary-ds",
+                "colormap": "viridis",
+                "opacity": 0.8,
+                "basemap": "streets",
+            },
+            "overlays": [
+                {"dataset_id": "overlay-ds", "opacity": 1, "visible": True}
+            ],
+        }
+    ]
+    resp = client.post("/api/stories", json={"title": "S", "chapters": chapters})
+    assert resp.status_code == 201
+    body = resp.json()
+    assert "primary-ds" in body["dataset_ids"]
+    assert "overlay-ds" in body["dataset_ids"]
+
+
 def test_get_story(client):
     create_resp = client.post(
         "/api/stories",

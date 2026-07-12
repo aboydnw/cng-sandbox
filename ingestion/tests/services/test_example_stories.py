@@ -648,3 +648,24 @@ def test_seed_emits_globe_and_terrain_map_state():
     ]
     assert any(d["map_state"].get("globe") for d in dicts)
     assert any(d["map_state"].get("terrain") for d in dicts)
+
+
+def test_remap_rewrites_overlay_refs():
+    from src.services.example_workspace import _remap_chapter_refs
+
+    chapters = [
+        {
+            "layer_config": {"dataset_id": "old-primary"},
+            "overlays": [
+                {"dataset_id": "old-ds"},
+                {"connection_id": "old-conn"},
+            ],
+        }
+    ]
+    out = _remap_chapter_refs(
+        chapters,
+        dataset_map={"old-primary": "new-primary", "old-ds": "new-ds"},
+        connection_map={"old-conn": "new-conn"},
+    )
+    assert out[0]["overlays"][0]["dataset_id"] == "new-ds"
+    assert out[0]["overlays"][1]["connection_id"] == "new-conn"

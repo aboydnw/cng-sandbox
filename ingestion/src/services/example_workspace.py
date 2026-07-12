@@ -87,6 +87,15 @@ def _remap_chapter_refs(
             conn_id = layer.get("connection_id")
             if conn_id in connection_map:
                 layer["connection_id"] = connection_map[conn_id]
+        for overlay in ch.get("overlays") or []:
+            if not isinstance(overlay, dict):
+                continue
+            o_ds = overlay.get("dataset_id")
+            if o_ds in dataset_map:
+                overlay["dataset_id"] = dataset_map[o_ds]
+            o_conn = overlay.get("connection_id")
+            if o_conn in connection_map:
+                overlay["connection_id"] = connection_map[o_conn]
         chart = ch.get("chart")
         if isinstance(chart, dict):
             source = chart.get("source")

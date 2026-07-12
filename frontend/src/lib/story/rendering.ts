@@ -62,9 +62,11 @@ function buildOverlayLayer(
   if (overlay.visible === false) return null;
 
   const lineColor = hexToRgba(overlay.stroke_color, 1, [139, 69, 19]);
-  const fillColor = hexToRgba(overlay.fill_color, overlay.fill_opacity ?? 0, [
-    139, 69, 19,
-  ]);
+  const fillColor = hexToRgba(
+    overlay.fill_color,
+    overlay.fill_opacity ?? 0,
+    [139, 69, 19]
+  );
   const common = {
     id: `overlay-${index}`,
     opacity: overlay.opacity,
@@ -76,12 +78,10 @@ function buildOverlayLayer(
   if (overlay.connection_id && connectionMap) {
     const conn = connectionMap.get(overlay.connection_id);
     if (!conn) return null;
-    if (
-      !(
-        (conn.connection_type === "pmtiles" && conn.tile_type === "vector") ||
-        conn.connection_type === "xyz_vector"
-      )
-    ) {
+    if (!(
+      (conn.connection_type === "pmtiles" && conn.tile_type === "vector") ||
+      conn.connection_type === "xyz_vector"
+    )) {
       return null;
     }
     return buildVectorLayer({

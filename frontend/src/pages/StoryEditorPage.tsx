@@ -13,6 +13,8 @@ import { useStoryEditor } from "../hooks/useStoryEditor";
 import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
+import { OverlayLayersEditor } from "../components/OverlayLayersEditor";
+import { OverlayPicker } from "../components/OverlayPicker";
 import { FlyoverKeyframePanel } from "../components/flyover/FlyoverKeyframePanel";
 import { VideoChapterEditor } from "../components/editor/VideoChapterEditor";
 import { UploadModal } from "../components/UploadModal";
@@ -102,6 +104,7 @@ export default function StoryEditorPage() {
     updateChapterTitle,
     updateChapterNarrative,
     updateChapterLayerConfig,
+    updateChapterOverlays,
     updateChapterType,
     updateChapterOverlayPosition,
     updateChapterMapState,
@@ -119,6 +122,7 @@ export default function StoryEditorPage() {
 
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
 
   const activeDatasetTimesteps = useMemo(() => {
     if (!activeChapter || !isMapBoundChapter(activeChapter)) return undefined;
@@ -481,6 +485,37 @@ export default function StoryEditorPage() {
                 }
                 onMapStateChange={updateChapterMapState}
               />
+              {isMapBoundChapter(activeChapter) && (
+                <>
+                  <OverlayLayersEditor
+                    overlays={activeChapter.overlays ?? []}
+                    datasets={allDatasets}
+                    connections={allConnections}
+                    onChange={updateChapterOverlays}
+                    onAddClick={() => setOverlayPickerOpen(true)}
+                  />
+                  <OverlayPicker
+                    open={overlayPickerOpen}
+                    datasets={allDatasets.filter(
+                      (d) => d.dataset_type === "vector"
+                    )}
+                    connections={allConnections.filter(
+                      (c) =>
+                        (c.connection_type === "pmtiles" &&
+                          c.tile_type === "vector") ||
+                        c.connection_type === "xyz_vector"
+                    )}
+                    onClose={() => setOverlayPickerOpen(false)}
+                    onSelect={(overlay) => {
+                      updateChapterOverlays([
+                        ...(activeChapter.overlays ?? []),
+                        overlay,
+                      ]);
+                      setOverlayPickerOpen(false);
+                    }}
+                  />
+                </>
+              )}
               {activeChapter.type === "flyover" && (
                 <Box px={4} pb={6}>
                   <FlyoverKeyframePanel

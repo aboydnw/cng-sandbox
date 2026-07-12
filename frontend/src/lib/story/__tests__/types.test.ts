@@ -138,7 +138,10 @@ describe("createOverlayConfig", () => {
   });
 
   it("applies overrides", () => {
-    const o = createOverlayConfig({ connection_id: "c1", stroke_color: "#fff" });
+    const o = createOverlayConfig({
+      connection_id: "c1",
+      stroke_color: "#fff",
+    });
     expect(o.connection_id).toBe("c1");
     expect(o.stroke_color).toBe("#fff");
   });

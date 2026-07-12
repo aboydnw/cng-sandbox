@@ -647,7 +647,12 @@ describe("buildLayersForChapter overlays", () => {
     const chapter = createMapChapterWithOverlays({
       layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: "ds-r" },
       overlays: [
-        { dataset_id: "ds-v", opacity: 1, stroke_color: "#ff0000", visible: true },
+        {
+          dataset_id: "ds-v",
+          opacity: 1,
+          stroke_color: "#ff0000",
+          visible: true,
+        },
       ],
     });
     const { layers } = buildLayersForChapter(chapter, datasetMap);
@@ -655,7 +660,10 @@ describe("buildLayersForChapter overlays", () => {
     const overlayLayer = layers[layers.length - 1] as unknown as {
       props: { getLineColor: [number, number, number, number] };
     };
-    expect(overlayLayer.props.getLineColor).toEqual([...hexToRgb("#ff0000"), 255]);
+    expect(overlayLayer.props.getLineColor).toEqual([
+      ...hexToRgb("#ff0000"),
+      255,
+    ]);
   });
 
   it("skips invisible overlays", () => {

@@ -1,7 +1,51 @@
 """Variable discovery for HDF5 and NetCDF files."""
 
+import os
+
 import h5py
 import xarray as xr
+
+_LAT_NAMES = {"lat", "latitude", "y"}
+_LON_NAMES = {"lon", "lng", "long", "longitude", "x"}
+_WKT_NAMES = {"wkt", "geometry", "geom", "the_geom"}
+
+
+def _guess_column_role(name: str) -> str | None:
+    """Guess a column's geometry role from its name.
+
+    Returns "lat", "lon", "wkt", or None.
+    """
+    lname = name.strip().lower()
+    if lname in _LAT_NAMES:
+        return "lat"
+    if lname in _LON_NAMES:
+        return "lon"
+    if lname in _WKT_NAMES:
+        return "wkt"
+    return None
+
+
+def scan_tabular(path: str) -> list[dict]:
+    """Read a CSV/TSV header and sample to list columns with a geometry guess.
+
+    The delimiter is inferred from the extension (``\\t`` for ``.tsv``, ``,``
+    otherwise). Each returned entry carries the column name, an inferred dtype,
+    and a heuristic geometry ``role`` (lat/lon/wkt or None) used to pre-fill the
+    column picker.
+    """
+    import pandas as pd
+
+    sep = "\t" if os.path.splitext(path)[1].lower() == ".tsv" else ","
+    df = pd.read_csv(path, sep=sep, nrows=50)
+    return [
+        {
+            "name": str(name),
+            "dtype": str(df[name].dtype),
+            "role": _guess_column_role(str(name)),
+        }
+        for name in df.columns
+    ]
+
 
 _COORD_NAMES = {
     "xcoordinates",

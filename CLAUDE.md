@@ -1,6 +1,6 @@
 # CNG Sandbox
 
-Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, HDF5, LAS/LAZ, or GPX files and get back browseable raster/vector tile maps, streamed point clouds, and animated movement tracks.
+Self-hosted geospatial data conversion sandbox. Upload GeoTIFF, GeoJSON, Shapefile, CSV/TSV, NetCDF, HDF5, LAS/LAZ, or GPX files and get back browseable raster/vector tile maps, streamed point clouds, and animated movement tracks.
 
 ## Architecture
 
@@ -167,8 +167,8 @@ On startup, background tasks seed curated source.coop products as `is_example=Tr
 ### Conversion pipeline
 
 1. **Upload/fetch** → save raw file
-2. **Scan** → detect file type, validate; for rasters also runs categorical detection (color table → RAT → heuristic)
-3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, NetCDF→COG, HDF5→COG, LAS/LAZ→COPC (PDAL), GPX→GeoParquet + `trips.json` sidecar (MovingPandas)
+2. **Scan** → detect file type, validate; for rasters also runs categorical detection (color table → RAT → heuristic); CSV/TSV pauses for a geometry-column mapping (lat/lon or WKT), reusing the same scan→pause→resume machinery as NetCDF/HDF5 variable selection
+3. **Convert** → GeoTIFF→COG, GeoJSON/Shapefile→GeoParquet, CSV/TSV→GeoParquet (geometry-column mapping, null-geometry rows dropped), NetCDF→COG, HDF5→COG, LAS/LAZ→COPC (PDAL), GPX→GeoParquet + `trips.json` sidecar (MovingPandas)
 4. **Store** → COGs to Cloudflare R2, vectors to PostgreSQL, COPC point clouds and trajectory GeoParquet/`trips.json` to R2
 5. **Register** → COGs registered in pgSTAC, vectors available via tipg
 6. **Ready** → tile URL returned to frontend

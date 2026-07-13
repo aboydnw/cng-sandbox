@@ -26,6 +26,7 @@ packages = [
     "geotiff_to_cog",
     "shapefile_to_geoparquet",
     "geojson_to_geoparquet",
+    "csv_to_geoparquet",
     "netcdf_to_cog",
     "hdf5_to_cog",
     "las_to_copc",
@@ -36,6 +37,7 @@ packages = [
 geotiff_to_cog = "geotiff-to-cog"
 shapefile_to_geoparquet = "shapefile-to-geoparquet"
 geojson_to_geoparquet = "geojson-to-geoparquet"
+csv_to_geoparquet = "csv-to-geoparquet"
 netcdf_to_cog = "netcdf-to-cog"
 hdf5_to_cog = "hdf5-to-cog"
 las_to_copc = "las-to-copc"
@@ -45,6 +47,7 @@ cng_shared = "shared"
 geotiff_to_cog = ["scripts/*.py"]
 shapefile_to_geoparquet = ["scripts/*.py"]
 geojson_to_geoparquet = ["scripts/*.py"]
+csv_to_geoparquet = ["scripts/*.py"]
 netcdf_to_cog = ["scripts/*.py"]
 hdf5_to_cog = ["scripts/*.py"]
 las_to_copc = ["scripts/*.py"]

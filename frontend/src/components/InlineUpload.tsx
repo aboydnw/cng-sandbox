@@ -6,6 +6,7 @@ import { ArrowLeft } from "@phosphor-icons/react";
 import { FileUploader } from "./FileUploader";
 import { ProgressTracker } from "./ProgressTracker";
 import { VariablePicker } from "./VariablePicker";
+import { ColumnPicker } from "./ColumnPicker";
 import { useConversionJob } from "../hooks/useConversionJob";
 import { formatBytes } from "../utils/format";
 
@@ -22,6 +23,7 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
+    confirmColumns,
   } = useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({
     name: "",
@@ -111,14 +113,23 @@ export function InlineUpload({ onCancel }: InlineUploadProps) {
         />
       )}
 
-      {showVariablePicker && state.scanResult && (
-        <VariablePicker
-          variables={state.scanResult.variables}
-          onSelect={(variable, group) =>
-            confirmVariable(state.scanResult!.scan_id, variable, group)
-          }
-        />
-      )}
+      {showVariablePicker &&
+        state.scanResult &&
+        (state.scanResult.kind === "columns" ? (
+          <ColumnPicker
+            columns={state.scanResult.columns ?? []}
+            onConfirm={(mapping) =>
+              confirmColumns(state.scanResult!.scan_id, mapping)
+            }
+          />
+        ) : (
+          <VariablePicker
+            variables={state.scanResult.variables ?? []}
+            onSelect={(variable, group) =>
+              confirmVariable(state.scanResult!.scan_id, variable, group)
+            }
+          />
+        ))}
     </Box>
   );
 }

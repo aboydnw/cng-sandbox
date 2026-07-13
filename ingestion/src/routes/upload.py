@@ -263,15 +263,68 @@ class TemporalParams(PydanticBaseModel):
 
 
 class ScanConvertRequest(PydanticBaseModel):
-    variable: str
+    variable: str | None = None
     group: str = ""
     temporal: TemporalParams | None = None
+    lat_column: str | None = None
+    lon_column: str | None = None
+    wkt_column: str | None = None
+    crs: str | None = None
+
+
+async def _resume_column_selection(
+    entry: dict,
+    job: Job,
+    *,
+    lat_column: str | None,
+    lon_column: str | None,
+    wkt_column: str | None,
+    crs: str | None,
+) -> None:
+    """Validate and apply a CSV/TSV geometry-column mapping onto the job."""
+    col_names = {c["name"] for c in entry["columns"]}
+    has_any_latlon = bool(lat_column or lon_column)
+    has_latlon = bool(lat_column and lon_column)
+    has_wkt = bool(wkt_column)
+    if (has_wkt and has_any_latlon) or (not has_wkt and not has_latlon):
+        raise HTTPException(
+            status_code=400,
+            detail="Provide either both lat/lon columns or a single WKT column.",
+        )
+    if has_latlon and lat_column == lon_column:
+        raise HTTPException(
+            status_code=400,
+            detail="Latitude and longitude must use different columns.",
+        )
+    for col in (lat_column, lon_column, wkt_column):
+        if col and col not in col_names:
+            raise HTTPException(
+                status_code=400,
+                detail="Selected column not found in scan results.",
+            )
+    job.lat_column = lat_column if has_latlon else None
+    job.lon_column = lon_column if has_latlon else None
+    job.wkt_column = wkt_column if has_wkt else None
+    job.geometry_crs = crs or "EPSG:4326"
+    entry["state"] = "converting"
 
 
 async def _handle_scan_convert(
-    scan_id: str, variable: str, group: str, temporal: TemporalParams | None = None
+    scan_id: str,
+    variable: str | None = None,
+    group: str = "",
+    temporal: TemporalParams | None = None,
+    *,
+    lat_column: str | None = None,
+    lon_column: str | None = None,
+    wkt_column: str | None = None,
+    crs: str | None = None,
 ):
-    """Core logic for scan-convert, extracted for testability."""
+    """Core logic for scan-convert, extracted for testability.
+
+    Handles both variable selection (NetCDF/HDF5) and geometry-column mapping
+    (CSV/TSV), dispatching on which payload the paused scan expects.
+    """
     async with scan_store_lock:
         entry = scan_store.get(scan_id)
         if entry is None:
@@ -279,6 +332,25 @@ async def _handle_scan_convert(
                 status_code=404,
                 detail="Scan expired or not found. Please re-upload the file.",
             )
+        if entry.get("state") != "waiting":
+            raise HTTPException(
+                status_code=409,
+                detail="This scan selection has already been submitted.",
+            )
+        job = entry["job"]
+
+        if entry.get("columns") is not None:
+            await _resume_column_selection(
+                entry,
+                job,
+                lat_column=lat_column,
+                lon_column=lon_column,
+                wkt_column=wkt_column,
+                crs=crs,
+            )
+            job.scan_event.set()
+            return
+
         var_names = [v["name"] for v in entry["variables"]]
         if variable not in var_names:
             raise HTTPException(
@@ -295,7 +367,6 @@ async def _handle_scan_convert(
                     detail=f"Temporal range must be 2-{max_timesteps} timesteps.",
                 )
 
-        job = entry["job"]
         job.variable = variable
         job.group = group
         if temporal is not None:
@@ -306,8 +377,17 @@ async def _handle_scan_convert(
 
 @router.post("/scan/{scan_id}/convert")
 async def scan_convert(scan_id: str, body: ScanConvertRequest):
-    """Resume a paused pipeline with the selected variable."""
-    await _handle_scan_convert(scan_id, body.variable, body.group, body.temporal)
+    """Resume a paused pipeline with the selected variable or column mapping."""
+    await _handle_scan_convert(
+        scan_id,
+        body.variable,
+        body.group,
+        body.temporal,
+        lat_column=body.lat_column,
+        lon_column=body.lon_column,
+        wkt_column=body.wkt_column,
+        crs=body.crs,
+    )
     return {"status": "converting"}
 
 

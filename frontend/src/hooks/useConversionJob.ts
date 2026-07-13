@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type {
+  ColumnMapping,
   ConversionJobState,
   StageInfo,
   StageProgress,
@@ -241,8 +242,18 @@ export function useConversionJob() {
 
       sseRetryCountRef.current = 0;
 
-      if (data.variables.length === 1) {
-        const v = data.variables[0];
+      if (data.kind === "columns" || data.columns) {
+        setState((prev) => ({
+          ...prev,
+          scanResult: data,
+          isUploading: false,
+        }));
+        return;
+      }
+
+      const variables = data.variables ?? [];
+      if (variables.length === 1) {
+        const v = variables[0];
         if (v.time_dim && v.time_dim.size > 1) {
           setState((prev) => ({
             ...prev,
@@ -321,6 +332,45 @@ export function useConversionJob() {
           status: "failed",
           error: detail.detail || "Variable selection failed",
           stages: updateStages("failed", detail.detail),
+        }));
+      }
+    },
+    []
+  );
+
+  const confirmColumns = useCallback(
+    async (scanId: string, mapping: ColumnMapping) => {
+      setState((prev) => ({ ...prev, scanResult: null }));
+
+      try {
+        const resp = await fetchWithRetry(
+          `${config.apiBase}/api/scan/${scanId}/convert`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(mapping),
+          }
+        );
+
+        if (resp.ok) return;
+        const detail = await resp
+          .json()
+          .catch(() => ({ detail: "Column selection failed" }));
+        const msg = extractErrorMessage(detail, "Column selection failed");
+        setState((prev) => ({
+          ...prev,
+          status: "failed",
+          error: msg,
+          stages: updateStages("failed", msg),
+        }));
+      } catch {
+        const msg =
+          "Column selection failed. Please check your connection and try again.";
+        setState((prev) => ({
+          ...prev,
+          status: "failed",
+          error: msg,
+          stages: updateStages("failed", msg),
         }));
       }
     },
@@ -701,6 +751,7 @@ export function useConversionJob() {
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
+    confirmColumns,
     resetJob,
   };
 }

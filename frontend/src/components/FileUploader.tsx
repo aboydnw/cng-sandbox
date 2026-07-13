@@ -15,6 +15,8 @@ const ALLOWED_EXTENSIONS = [
   ".las",
   ".laz",
   ".gpx",
+  ".csv",
+  ".tsv",
 ];
 const RASTER_EXTENSIONS = [".tif", ".tiff", ".nc", ".h5", ".hdf5"];
 
@@ -170,7 +172,7 @@ export function FileUploader({
           Drop your file here
         </Text>
         <Text color="brand.textSecondary" fontSize="13px" mb={embedded ? 2 : 5}>
-          GeoTIFF · Shapefile (.zip) · GeoJSON · NetCDF · HDF5
+          GeoTIFF · Shapefile (.zip) · GeoJSON · NetCDF · HDF5 · CSV
         </Text>
         {!embedded && (
           <Button

@@ -4,9 +4,15 @@ import { BASEMAPS, BASEMAP_OPTIONS } from "./MapShell";
 
 describe("BASEMAPS", () => {
   it("keeps the existing CARTO vector basemaps as style-URL strings", () => {
-    expect(typeof BASEMAPS.streets).toBe("string");
-    expect(typeof BASEMAPS.satellite).toBe("string");
-    expect(typeof BASEMAPS.dark).toBe("string");
+    expect(BASEMAPS.streets).toBe(
+      "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+    );
+    expect(BASEMAPS.satellite).toBe(
+      "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
+    );
+    expect(BASEMAPS.dark).toBe(
+      "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+    );
   });
 
   it("exposes imagery as an Esri World Imagery raster style with attribution", () => {
@@ -24,7 +30,15 @@ describe("BASEMAPS", () => {
     expect(source.tiles?.[0]).toContain("World_Imagery");
     expect(source.attribution).toBeTruthy();
 
-    expect(style.layers.some((l) => l.type === "raster")).toBe(true);
+    expect(style.layers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "esri-imagery",
+          type: "raster",
+          source: "esri-imagery",
+        }),
+      ])
+    );
   });
 });
 

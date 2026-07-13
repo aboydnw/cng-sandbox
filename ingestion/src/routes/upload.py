@@ -283,12 +283,18 @@ async def _resume_column_selection(
 ) -> None:
     """Validate and apply a CSV/TSV geometry-column mapping onto the job."""
     col_names = {c["name"] for c in entry["columns"]}
+    has_any_latlon = bool(lat_column or lon_column)
     has_latlon = bool(lat_column and lon_column)
     has_wkt = bool(wkt_column)
-    if has_latlon == has_wkt:
+    if (has_wkt and has_any_latlon) or (not has_wkt and not has_latlon):
         raise HTTPException(
             status_code=400,
             detail="Provide either both lat/lon columns or a single WKT column.",
+        )
+    if has_latlon and lat_column == lon_column:
+        raise HTTPException(
+            status_code=400,
+            detail="Latitude and longitude must use different columns.",
         )
     for col in (lat_column, lon_column, wkt_column):
         if col and col not in col_names:
@@ -325,6 +331,11 @@ async def _handle_scan_convert(
             raise HTTPException(
                 status_code=404,
                 detail="Scan expired or not found. Please re-upload the file.",
+            )
+        if entry.get("state") != "waiting":
+            raise HTTPException(
+                status_code=409,
+                detail="This scan selection has already been submitted.",
             )
         job = entry["job"]
 

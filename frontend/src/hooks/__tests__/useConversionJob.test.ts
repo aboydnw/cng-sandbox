@@ -213,4 +213,25 @@ describe("useConversionJob failure paths", () => {
     expect(result.current.state.status).toBe("failed");
     expect(result.current.state.error).toMatch(/Variable selection failed/);
   });
+
+  it("fails the job when column confirmation loses the connection", async () => {
+    mockFetch.mockRejectedValue(new TypeError("Failed to fetch"));
+    const { result } = renderHook(() => useConversionJob());
+
+    let promise!: Promise<void>;
+    act(() => {
+      promise = result.current.confirmColumns("s1", {
+        lat_column: "lat",
+        lon_column: "lon",
+        crs: "EPSG:4326",
+      });
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+      await promise;
+    });
+
+    expect(result.current.state.status).toBe("failed");
+    expect(result.current.state.error).toMatch(/Column selection failed/);
+  });
 });

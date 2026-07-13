@@ -37,7 +37,9 @@ export function ColumnPicker({ columns, onConfirm }: ColumnPickerProps) {
   const [crs, setCrs] = useState("EPSG:4326");
 
   const valid =
-    mode === "latlon" ? Boolean(latColumn && lonColumn) : Boolean(wktColumn);
+    mode === "latlon"
+      ? Boolean(latColumn && lonColumn && latColumn !== lonColumn)
+      : Boolean(wktColumn);
 
   function handleConfirm() {
     if (!valid) return;
@@ -119,7 +121,11 @@ export function ColumnPicker({ columns, onConfirm }: ColumnPickerProps) {
             >
               <option value="">Select a column…</option>
               {columns.map((c) => (
-                <option key={c.name} value={c.name}>
+                <option
+                  key={c.name}
+                  value={c.name}
+                  disabled={c.name === lonColumn}
+                >
                   {c.name} ({c.dtype})
                 </option>
               ))}
@@ -137,7 +143,11 @@ export function ColumnPicker({ columns, onConfirm }: ColumnPickerProps) {
             >
               <option value="">Select a column…</option>
               {columns.map((c) => (
-                <option key={c.name} value={c.name}>
+                <option
+                  key={c.name}
+                  value={c.name}
+                  disabled={c.name === latColumn}
+                >
                   {c.name} ({c.dtype})
                 </option>
               ))}

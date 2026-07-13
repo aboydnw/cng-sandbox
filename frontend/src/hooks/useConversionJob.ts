@@ -342,20 +342,30 @@ export function useConversionJob() {
     async (scanId: string, mapping: ColumnMapping) => {
       setState((prev) => ({ ...prev, scanResult: null }));
 
-      const resp = await fetchWithRetry(
-        `${config.apiBase}/api/scan/${scanId}/convert`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(mapping),
-        }
-      );
+      try {
+        const resp = await fetchWithRetry(
+          `${config.apiBase}/api/scan/${scanId}/convert`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(mapping),
+          }
+        );
 
-      if (!resp.ok) {
+        if (resp.ok) return;
         const detail = await resp
           .json()
           .catch(() => ({ detail: "Column selection failed" }));
         const msg = extractErrorMessage(detail, "Column selection failed");
+        setState((prev) => ({
+          ...prev,
+          status: "failed",
+          error: msg,
+          stages: updateStages("failed", msg),
+        }));
+      } catch {
+        const msg =
+          "Column selection failed. Please check your connection and try again.";
         setState((prev) => ({
           ...prev,
           status: "failed",

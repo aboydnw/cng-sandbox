@@ -91,4 +91,19 @@ describe("ColumnPicker", () => {
       crs: "EPSG:4326",
     });
   });
+
+  it("does not allow the same column for latitude and longitude", () => {
+    renderWithChakra(
+      <ColumnPicker columns={latlonColumns} onConfirm={vi.fn()} />
+    );
+
+    const longitude = screen.getByLabelText(
+      "Longitude column"
+    ) as HTMLSelectElement;
+    expect(
+      Array.from(longitude.options).find(
+        (option) => option.value === "latitude"
+      )
+    ).toBeDisabled();
+  });
 });

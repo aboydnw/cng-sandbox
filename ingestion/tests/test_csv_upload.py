@@ -246,6 +246,88 @@ async def test_scan_convert_rejects_incomplete_mapping():
 
 
 @pytest.mark.asyncio
+async def test_scan_convert_rejects_same_lat_lon_column():
+    from fastapi import HTTPException
+
+    from src.models import Job
+    from src.routes.upload import _handle_scan_convert
+
+    job = Job(filename="points.csv")
+    job.scan_event = asyncio.Event()
+    scan_id = "csv-scan-same-column"
+
+    async with scan_store_lock:
+        scan_store[scan_id] = {
+            "path": "/tmp/points.csv",
+            "job": job,
+            "columns": [{"name": "coordinate", "dtype": "float64", "role": None}],
+            "state": "waiting",
+        }
+
+    with pytest.raises(HTTPException) as exc_info:
+        await _handle_scan_convert(
+            scan_id, lat_column="coordinate", lon_column="coordinate"
+        )
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_scan_convert_rejects_reused_scan():
+    from fastapi import HTTPException
+
+    from src.models import Job
+    from src.routes.upload import _handle_scan_convert
+
+    job = Job(filename="points.csv")
+    job.scan_event = asyncio.Event()
+    scan_id = "csv-scan-reused"
+
+    async with scan_store_lock:
+        scan_store[scan_id] = {
+            "path": "/tmp/points.csv",
+            "job": job,
+            "columns": [
+                {"name": "lat", "dtype": "float64", "role": "lat"},
+                {"name": "lon", "dtype": "float64", "role": "lon"},
+            ],
+            "state": "waiting",
+        }
+
+    await _handle_scan_convert(scan_id, lat_column="lat", lon_column="lon")
+    with pytest.raises(HTTPException) as exc_info:
+        await _handle_scan_convert(scan_id, lat_column="lat", lon_column="lon")
+    assert exc_info.value.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_column_scan_is_removed_after_pipeline_resumes():
+    from src.models import Job
+    from src.routes.upload import _handle_scan_convert
+    from src.services.pipeline import _pause_for_column_selection
+
+    job = Job(filename="points.csv")
+    columns = [
+        {"name": "lat", "dtype": "float64", "role": "lat"},
+        {"name": "lon", "dtype": "float64", "role": "lon"},
+    ]
+    pause_task = asyncio.create_task(
+        _pause_for_column_selection(job, "/tmp/points.csv", columns, None)
+    )
+
+    async def wait_for_scan():
+        while job.scan_result is None:
+            await asyncio.sleep(0)
+
+    await asyncio.wait_for(wait_for_scan(), timeout=1)
+    scan_id = job.scan_result["scan_id"]
+
+    await _handle_scan_convert(scan_id, lat_column="lat", lon_column="lon")
+
+    assert await pause_task is False
+    assert scan_id not in scan_store
+
+
+@pytest.mark.asyncio
 async def test_scan_convert_rejects_unknown_column():
     from fastapi import HTTPException
 

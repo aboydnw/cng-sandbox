@@ -465,9 +465,9 @@ async def _pause_for_variable_selection(
 
     temporal_params = None
     async with scan_store_lock:
-        if scan_id in scan_store:
-            scan_store[scan_id]["state"] = "converting"
-            temporal_params = scan_store[scan_id].get("temporal")
+        entry = scan_store.pop(scan_id, None)
+        if entry is not None:
+            temporal_params = entry.get("temporal")
 
     if temporal_params is None:
         return False
@@ -523,8 +523,7 @@ async def _pause_for_column_selection(
         return True
 
     async with scan_store_lock:
-        if scan_id in scan_store:
-            scan_store[scan_id]["state"] = "converting"
+        scan_store.pop(scan_id, None)
     return False
 
 

@@ -1,10 +1,29 @@
 import { Box, Flex } from "@chakra-ui/react";
+import type { StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-export const BASEMAPS: Record<string, string> = {
+const ESRI_WORLD_IMAGERY: StyleSpecification = {
+  version: 8,
+  sources: {
+    "esri-imagery": {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution:
+        "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+    },
+  },
+  layers: [{ id: "esri-imagery", type: "raster", source: "esri-imagery" }],
+};
+
+export const BASEMAPS: Record<string, string | StyleSpecification> = {
   streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
   satellite: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  imagery: ESRI_WORLD_IMAGERY,
 };
 
 // Mapterhorn hosted terrain-RGB (terrarium encoding). Single constant so
@@ -23,10 +42,11 @@ interface BasemapPickerProps {
   onChange: (value: string) => void;
 }
 
-const BASEMAP_OPTIONS = [
+export const BASEMAP_OPTIONS = [
   { key: "streets", label: "Light", bg: "#e8e8e8" },
   { key: "satellite", label: "Color", bg: "#a8c8e8" },
   { key: "dark", label: "Dark", bg: "#2d2d2d" },
+  { key: "imagery", label: "Satellite", bg: "#3d5a45" },
 ];
 
 export function BasemapPicker({ value, onChange }: BasemapPickerProps) {

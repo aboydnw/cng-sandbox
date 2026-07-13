@@ -24,14 +24,18 @@ function renderUploader() {
 describe("FileUploader accepted formats", () => {
   it("accepts a .gpx trajectory file", () => {
     const { onFileSelected, input } = renderUploader();
-    const file = new File(["<gpx/>"], "track.gpx", { type: "application/gpx+xml" });
+    const file = new File(["<gpx/>"], "track.gpx", {
+      type: "application/gpx+xml",
+    });
     fireEvent.change(input, { target: { files: [file] } });
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
   it("accepts a .laz point-cloud file", () => {
     const { onFileSelected, input } = renderUploader();
-    const file = new File(["x"], "scan.laz", { type: "application/octet-stream" });
+    const file = new File(["x"], "scan.laz", {
+      type: "application/octet-stream",
+    });
     fireEvent.change(input, { target: { files: [file] } });
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });

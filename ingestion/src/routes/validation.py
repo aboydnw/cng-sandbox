@@ -59,7 +59,9 @@ def validate_layer_config(body: ValidateLayerConfigBody, request: Request):
         session.close()
 
 
-def _validate_overlay_ref(session, overlay: OverlayRef, workspace_id: str) -> str | None:
+def _validate_overlay_ref(
+    session, overlay: OverlayRef, workspace_id: str
+) -> str | None:
     """Return an error string if an overlay's referenced layer does not resolve."""
     if overlay.dataset_id:
         ds = (

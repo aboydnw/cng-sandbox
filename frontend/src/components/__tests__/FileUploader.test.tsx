@@ -40,6 +40,24 @@ describe("FileUploader accepted formats", () => {
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
+  it("accepts a .csv file", () => {
+    const { onFileSelected, input } = renderUploader();
+    const file = new File(["lat,lon\n1,2\n"], "points.csv", {
+      type: "text/csv",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(onFileSelected).toHaveBeenCalledWith(file);
+  });
+
+  it("accepts a .tsv file", () => {
+    const { onFileSelected, input } = renderUploader();
+    const file = new File(["wkt\nPOINT (2 1)\n"], "shapes.tsv", {
+      type: "text/tab-separated-values",
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(onFileSelected).toHaveBeenCalledWith(file);
+  });
+
   it("rejects an unsupported extension", () => {
     const { onFileSelected, input } = renderUploader();
     const file = new File(["x"], "notes.txt", { type: "text/plain" });

@@ -52,7 +52,7 @@ async def _expire_stale_scans(now: datetime | None = None):
             if job is not None:
                 job.status = JobStatus.FAILED
                 job.error = (
-                    "Scan expired — no variable was selected within 30 minutes. "
+                    "Scan expired — no selection was made within 30 minutes. "
                     "Please re-upload the file."
                 )
                 if job.scan_event is not None:

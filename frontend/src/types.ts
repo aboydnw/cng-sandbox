@@ -171,9 +171,26 @@ export interface ScannedVariable {
   time_dim: TimeDimInfo | null;
 }
 
+export type ColumnRole = "lat" | "lon" | "wkt" | null;
+
+export interface ScannedColumn {
+  name: string;
+  dtype: string;
+  role: ColumnRole;
+}
+
+export interface ColumnMapping {
+  lat_column?: string;
+  lon_column?: string;
+  wkt_column?: string;
+  crs: string;
+}
+
 export interface ScanResult {
   scan_id: string;
-  variables: ScannedVariable[];
+  kind?: "variables" | "columns";
+  variables?: ScannedVariable[];
+  columns?: ScannedColumn[];
 }
 
 export interface DuplicateInfo {

@@ -36,6 +36,7 @@ class FormatPair(StrEnum):
     PMTILES = "pmtiles"
     LAS_TO_COPC = "las-to-copc"
     GPX_TO_GEOPARQUET = "gpx-to-geoparquet"
+    CSV_TO_GEOPARQUET = "csv-to-geoparquet"
 
     @staticmethod
     def from_extension(ext: str) -> "FormatPair":
@@ -55,6 +56,8 @@ class FormatPair(StrEnum):
             ".las": FormatPair.LAS_TO_COPC,
             ".laz": FormatPair.LAS_TO_COPC,
             ".gpx": FormatPair.GPX_TO_GEOPARQUET,
+            ".csv": FormatPair.CSV_TO_GEOPARQUET,
+            ".tsv": FormatPair.CSV_TO_GEOPARQUET,
         }
         if ext not in mapping:
             raise ValueError(f"Unsupported format: {ext}")
@@ -116,6 +119,10 @@ class Job(BaseModel):
     finished_at: datetime | None = Field(default=None, exclude=True)
     variable: str | None = None
     group: str | None = None
+    lat_column: str | None = None
+    lon_column: str | None = None
+    wkt_column: str | None = None
+    geometry_crs: str | None = None
     scan_event: asyncio.Event | None = Field(default=None, exclude=True)
     scan_result: dict | None = Field(default=None, exclude=True)
     workspace_id: str | None = None

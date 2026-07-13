@@ -41,6 +41,7 @@ VALIDATION_CHECK_COUNTS: dict[FormatPair, int] = {
     FormatPair.HDF5_TO_COG: 7,
     FormatPair.GEOJSON_TO_GEOPARQUET: 10,
     FormatPair.SHAPEFILE_TO_GEOPARQUET: 10,
+    FormatPair.CSV_TO_GEOPARQUET: 6,
 }
 
 
@@ -102,6 +103,7 @@ def get_credits(format_pair: FormatPair, use_pmtiles: bool = False) -> list[dict
     elif format_pair in (
         FormatPair.SHAPEFILE_TO_GEOPARQUET,
         FormatPair.GEOJSON_TO_GEOPARQUET,
+        FormatPair.CSV_TO_GEOPARQUET,
     ):
         credits.append(
             {
@@ -441,7 +443,7 @@ async def _pause_for_variable_selection(
     from src.state import scan_store, scan_store_lock
 
     scan_id = str(uuid.uuid4())
-    job.scan_result = {"scan_id": scan_id, "variables": variables}
+    job.scan_result = {"scan_id": scan_id, "kind": "variables", "variables": variables}
     job.scan_event = asyncio.Event()
 
     async with scan_store_lock:
@@ -482,6 +484,48 @@ async def _pause_for_variable_selection(
         db_session_factory=db_session_factory,
     )
     return True
+
+
+async def _pause_for_column_selection(
+    job: Job,
+    input_path: str,
+    columns: list[dict],
+    db_session_factory,
+) -> bool:
+    """Pause a CSV/TSV pipeline until the user maps geometry columns.
+
+    Mirrors ``_pause_for_variable_selection`` but carries tabular ``columns``
+    (name, dtype, guessed role) instead of raster variables. Returns True only
+    if the scan was abandoned and the job was failed by the expiry sweep, so
+    the caller can bail out; otherwise returns False and the caller continues
+    to conversion with the chosen mapping written onto the job.
+    """
+    from datetime import datetime as dt
+
+    from src.state import scan_store, scan_store_lock
+
+    scan_id = str(uuid.uuid4())
+    job.scan_result = {"scan_id": scan_id, "kind": "columns", "columns": columns}
+    job.scan_event = asyncio.Event()
+
+    async with scan_store_lock:
+        scan_store[scan_id] = {
+            "path": input_path,
+            "job": job,
+            "created_at": dt.now(UTC),
+            "columns": columns,
+            "state": "waiting",
+        }
+
+    await job.scan_event.wait()
+
+    if job.status == JobStatus.FAILED:
+        return True
+
+    async with scan_store_lock:
+        if scan_id in scan_store:
+            scan_store[scan_id]["state"] = "converting"
+    return False
 
 
 async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
@@ -526,6 +570,21 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
 
             await run_trajectory_pipeline(job, input_path, db_session_factory)
             return
+
+        # CSV/TSV pauses for geometry-column mapping (lat/lon or WKT), reusing
+        # the same scan -> pause -> resume machinery as NetCDF/HDF5.
+        if format_pair == FormatPair.CSV_TO_GEOPARQUET:
+            from src.services import scanner
+
+            columns = await asyncio.to_thread(scanner.scan_tabular, input_path)
+            if len(columns) == 0:
+                job.status = JobStatus.FAILED
+                job.error = "No columns found in this file."
+                return
+            if await _pause_for_column_selection(
+                job, input_path, columns, db_session_factory
+            ):
+                return
 
         original_file_size = os.path.getsize(input_path)
 
@@ -599,7 +658,7 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                         exc,
                     )
 
-            await asyncio.to_thread(
+            dropped_geometry_rows = await asyncio.to_thread(
                 _import_and_convert,
                 format_pair,
                 input_path,
@@ -607,6 +666,10 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 variable=job.variable,
                 group=job.group,
                 is_categorical=input_is_categorical,
+                lat_column=job.lat_column,
+                lon_column=job.lon_column,
+                wkt_column=job.wkt_column,
+                geometry_crs=job.geometry_crs,
             )
 
             # Stage 3: Validate
@@ -625,6 +688,18 @@ async def run_pipeline(job: Job, input_path: str, db_session_factory) -> None:
                 ValidationCheck(name=c.name, passed=c.passed, detail=c.detail)
                 for c in check_results
             ]
+
+            if dropped_geometry_rows:
+                job.validation_results.append(
+                    ValidationCheck(
+                        name="null_geometry_dropped",
+                        passed=True,
+                        detail=(
+                            f"Dropped {dropped_geometry_rows} row(s) with missing "
+                            "geometry."
+                        ),
+                    )
+                )
 
             failed = [c for c in check_results if not c.passed]
             if failed:
@@ -955,6 +1030,106 @@ def _convert_vector_to_geoparquet(input_path: str, output_path: str) -> None:
     gdf.to_parquet(output_path)
 
 
+def _convert_tabular_to_geoparquet(
+    input_path: str,
+    output_path: str,
+    *,
+    lat_column: str | None,
+    lon_column: str | None,
+    wkt_column: str | None,
+    geometry_crs: str | None,
+) -> int:
+    """Convert a CSV/TSV to GeoParquet using a chosen geometry-column mapping.
+
+    Builds point geometry from lat/lon columns or parses a WKT column, sets the
+    source CRS (default EPSG:4326), reprojects to EPSG:4326 for storage, and
+    lowercases column names for tipg/PostgreSQL compatibility. Rows with missing
+    geometry are dropped; the dropped count is returned. Raises ValueError with a
+    column-naming message on non-numeric coordinates, out-of-range coordinates,
+    or unparseable WKT.
+    """
+    import geopandas as gpd
+    import pandas as pd
+
+    sep = "\t" if os.path.splitext(input_path)[1].lower() == ".tsv" else ","
+    df = pd.read_csv(input_path, sep=sep)
+    source_crs = geometry_crs or "EPSG:4326"
+
+    dropped_pre = 0
+    if wkt_column:
+        if wkt_column not in df.columns:
+            raise ValueError(f"WKT column '{wkt_column}' not found in the file.")
+        raw = df[wkt_column]
+        is_blank = raw.isna() | (raw.astype(str).str.strip() == "")
+        try:
+            geometry = gpd.GeoSeries.from_wkt(raw.where(~is_blank), on_invalid="raise")
+        except Exception as exc:
+            raise ValueError(
+                f"Column '{wkt_column}' contains WKT that could not be parsed."
+            ) from exc
+        gdf = gpd.GeoDataFrame(
+            df.drop(columns=[wkt_column]), geometry=geometry, crs=source_crs
+        )
+    else:
+        for col in (lat_column, lon_column):
+            if col not in df.columns:
+                raise ValueError(f"Coordinate column '{col}' not found in the file.")
+        lat = pd.to_numeric(df[lat_column], errors="coerce")
+        lon = pd.to_numeric(df[lon_column], errors="coerce")
+        for name, series, source in (
+            (lat_column, lat, df[lat_column]),
+            (lon_column, lon, df[lon_column]),
+        ):
+            non_numeric = (
+                series.isna() & source.notna() & (source.astype(str).str.strip() != "")
+            )
+            if non_numeric.any():
+                raise ValueError(
+                    f"Column '{name}' contains non-numeric values and cannot be "
+                    "used as a coordinate."
+                )
+        # Range-check only for geographic (degree) source CRSs — projected
+        # coordinates (e.g. Web Mercator metres) legitimately exceed 90/180.
+        from pyproj import CRS
+
+        if CRS.from_user_input(source_crs).is_geographic:
+            if (lat.dropna().abs() > 90).any():
+                raise ValueError(
+                    f"Column '{lat_column}' has latitude values outside [-90, 90]."
+                )
+            if (lon.dropna().abs() > 180).any():
+                raise ValueError(
+                    f"Column '{lon_column}' has longitude values outside [-180, 180]."
+                )
+        # points_from_xy(NaN, NaN) yields a non-null POINT (nan nan), so drop
+        # rows with missing coordinates explicitly before building geometry.
+        valid = lat.notna() & lon.notna()
+        dropped_pre = int((~valid).sum())
+        df = df[valid].reset_index(drop=True)
+        geometry = gpd.points_from_xy(lon[valid], lat[valid])
+        gdf = gpd.GeoDataFrame(df, geometry=geometry, crs=source_crs)
+
+    before = len(gdf)
+    gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
+    dropped = dropped_pre + (before - len(gdf))
+
+    if gdf.crs and str(gdf.crs) != "EPSG:4326":
+        gdf = gdf.to_crs("EPSG:4326")
+
+    lowered = [c.lower() for c in gdf.columns]
+    duplicates = sorted({c for c in lowered if lowered.count(c) > 1})
+    if duplicates:
+        raise ValueError(
+            f"Column lowercasing would create duplicate names: {', '.join(duplicates)}"
+        )
+    geometry_name = gdf.geometry.name
+    gdf.columns = lowered
+    if geometry_name.lower() != geometry_name:
+        gdf = gdf.set_geometry(geometry_name.lower())
+    gdf.to_parquet(output_path)
+    return dropped
+
+
 def _import_and_convert(
     format_pair: FormatPair,
     input_path: str,
@@ -962,10 +1137,27 @@ def _import_and_convert(
     variable: str | None = None,
     group: str | None = None,
     is_categorical: bool = False,
-) -> None:
-    """Import the appropriate cng-toolkit converter and run it."""
+    lat_column: str | None = None,
+    lon_column: str | None = None,
+    wkt_column: str | None = None,
+    geometry_crs: str | None = None,
+) -> int | None:
+    """Import the appropriate cng-toolkit converter and run it.
+
+    Returns the number of rows dropped for missing geometry (CSV/TSV only),
+    or None for formats that have no such notion.
+    """
     if format_pair == FormatPair.GEOTIFF_TO_COG:
         _convert_geotiff_to_cog(input_path, output_path, is_categorical=is_categorical)
+    elif format_pair == FormatPair.CSV_TO_GEOPARQUET:
+        return _convert_tabular_to_geoparquet(
+            input_path,
+            output_path,
+            lat_column=lat_column,
+            lon_column=lon_column,
+            wkt_column=wkt_column,
+            geometry_crs=geometry_crs,
+        )
     elif format_pair in (
         FormatPair.SHAPEFILE_TO_GEOPARQUET,
         FormatPair.GEOJSON_TO_GEOPARQUET,
@@ -1006,6 +1198,8 @@ def _import_and_validate(
         from shapefile_to_geoparquet import run_checks
     elif format_pair == FormatPair.GEOJSON_TO_GEOPARQUET:
         from geojson_to_geoparquet import run_checks
+    elif format_pair == FormatPair.CSV_TO_GEOPARQUET:
+        from csv_to_geoparquet import run_checks
     elif format_pair == FormatPair.NETCDF_TO_COG:
         from netcdf_to_cog import run_checks
 

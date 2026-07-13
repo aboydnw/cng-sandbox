@@ -8,6 +8,7 @@ import { HomepageHero } from "../components/HomepageHero";
 import { PathCard } from "../components/PathCard";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { VariablePicker } from "../components/VariablePicker";
+import { ColumnPicker } from "../components/ColumnPicker";
 import { DuplicateWarning } from "../components/DuplicateWarning";
 import { BugReportModal } from "../components/BugReportModal";
 import { VisualizeDataCardContent } from "../components/VisualizeDataCardContent";
@@ -48,6 +49,7 @@ export default function UploadPage() {
     startUrlFetch,
     startTemporalUpload,
     confirmVariable,
+    confirmColumns,
     resetJob,
   } = useConversionJob();
   const fileRef = useRef<{ name: string; size: string }>({
@@ -286,19 +288,28 @@ export default function UploadPage() {
           embedded
         />
       )}
-      {mode === "variable-picker" && state.scanResult && (
-        <VariablePicker
-          variables={state.scanResult.variables}
-          onSelect={(variable, group, temporal) =>
-            confirmVariable(
-              state.scanResult!.scan_id,
-              variable,
-              group,
-              temporal
-            )
-          }
-        />
-      )}
+      {mode === "variable-picker" &&
+        state.scanResult &&
+        (state.scanResult.kind === "columns" ? (
+          <ColumnPicker
+            columns={state.scanResult.columns ?? []}
+            onConfirm={(mapping) =>
+              confirmColumns(state.scanResult!.scan_id, mapping)
+            }
+          />
+        ) : (
+          <VariablePicker
+            variables={state.scanResult.variables ?? []}
+            onSelect={(variable, group, temporal) =>
+              confirmVariable(
+                state.scanResult!.scan_id,
+                variable,
+                group,
+                temporal
+              )
+            }
+          />
+        ))}
       {mode === "duplicate" && state.duplicate && (
         <DuplicateWarning
           filename={state.duplicate.filename}

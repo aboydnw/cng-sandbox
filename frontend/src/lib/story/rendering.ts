@@ -79,7 +79,10 @@ function buildOverlayLayer(
     const conn = connectionMap.get(overlay.connection_id);
     if (!conn) return null;
     if (!(
-      (conn.connection_type === "pmtiles" && conn.tile_type === "vector") ||
+      // Overlays are vector by construction; a portable-exported pmtiles
+      // overlay carries a null tile_type, so accept pmtiles unless it is
+      // explicitly raster.
+      (conn.connection_type === "pmtiles" && conn.tile_type !== "raster") ||
       conn.connection_type === "xyz_vector"
     )) {
       return null;

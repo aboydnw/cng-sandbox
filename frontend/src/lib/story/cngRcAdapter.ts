@@ -13,7 +13,13 @@ import {
   createProseChapter,
   createScrollytellingChapter,
 } from "./types";
-import type { Chapter, LayerConfig, MapState, Story } from "./types";
+import type {
+  Chapter,
+  LayerConfig,
+  MapState,
+  OverlayConfig,
+  Story,
+} from "./types";
 
 export interface PortableStoryBundle {
   story: Story;
@@ -133,6 +139,24 @@ function buildLayerConfig(
   return config;
 }
 
+function buildOverlays(
+  layerKeys: string[],
+  layers: Record<string, CngRcLayer>,
+  synthesizedKeys: Set<string>
+): OverlayConfig[] {
+  const overlays: OverlayConfig[] = [];
+  for (const key of layerKeys) {
+    if (!synthesizedKeys.has(key)) continue;
+    const layer = layers[key];
+    overlays.push({
+      connection_id: `portable-${key}`,
+      opacity: layer?.render.opacity ?? 1,
+      visible: true,
+    });
+  }
+  return overlays;
+}
+
 function convertChapter(
   ch: CngRcChapter,
   index: number,
@@ -156,6 +180,7 @@ function convertChapter(
     firstLayer,
     hasConnection
   );
+  const overlays = buildOverlays(ch.layers.slice(1), layers, synthesizedKeys);
   const mapState = buildMapState(ch.map);
 
   // image/video/chart chapters fall back to prose: portable asset hosting is deferred.
@@ -165,12 +190,14 @@ function convertChapter(
         ...baseOverrides,
         map_state: mapState,
         layer_config: layerConfig,
+        overlays,
       });
     case "map":
       return createMapChapter({
         ...baseOverrides,
         map_state: mapState,
         layer_config: layerConfig,
+        overlays,
       });
     case "prose":
     case "image":

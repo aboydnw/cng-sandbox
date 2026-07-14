@@ -23,6 +23,10 @@ from sqlalchemy.orm import sessionmaker
 from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
+from src.services.example_trajectory_source import (
+    STORK_ATTRIBUTION,
+    STORK_SOURCE_URL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1196,6 +1200,112 @@ IMERG_STORY = StorySeed(
 )
 
 
+STORK_URL = STORK_SOURCE_URL
+STORK_STORY = StorySeed(
+    title="A stork's year",
+    description=(
+        "Follow one white stork's migration from a summer nest in southwest "
+        "Germany to wintering grounds in North Africa and back — a full year "
+        "in GPS fixes. Scroll to move through time; the trail glows where the "
+        "bird flew fastest."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="One bird, one year",
+            narrative=(
+                "Every autumn, white storks leave Europe for the south, and "
+                "every spring the survivors come back. We usually see this as "
+                "an abstraction — arrows on a map. Here it's a single bird.\n\n"
+                "This is **Ursula**, a white stork raised in southwest Germany "
+                "and fitted with a small solar GPS-GSM tag. For more than a "
+                "year the tag logged where she was, minute by minute, as part "
+                "of a long-running study of stork migration. What follows is "
+                "her track — one animal's whole year, scrolled through in "
+                "time.\n\n"
+                "The trail is colored by speed: cool blues where she drifted, "
+                "hot reds where she flew hard. Scroll on."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Leaving the nest",
+            narrative=(
+                "Late summer in the Rhine valley. Ursula spends her first "
+                "weeks close to home — short foraging flights over fields and "
+                "wetlands, the tag drawing a dense tangle of local movement.\n\n"
+                "Then, in the shortening days of August, the tangle "
+                "straightens into a line heading **southwest**. Migration has "
+                "begun."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(6.0, 46.5),
+            zoom=5.5,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="The long way south",
+            narrative=(
+                "Storks are soaring migrants. Rather than flap across open "
+                "water, they ride columns of warm rising air and glide between "
+                "them, which is why their tracks bend toward the narrowest "
+                "sea crossings.\n\n"
+                "Ursula's line runs down through France and Iberia toward the "
+                "**Strait of Gibraltar**, then pushes on into Morocco — the "
+                "trail brightening to red on the long, fast glides."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(-3.0, 39.5),
+            zoom=4.5,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Wintering grounds",
+            narrative=(
+                "South of the Atlas Mountains the line finally slows and "
+                "gathers. This is where Ursula spends the winter — ranging "
+                "over the plains and river valleys of **North Africa**, far "
+                "from the German nest where the track began.\n\n"
+                "Keep scrolling, and the story doesn't end here: the fixes "
+                "turn north again as the year comes back around."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(-7.5, 33.5),
+            zoom=5.5,
+        ),
+        ChapterSeed(
+            type="map",
+            title="The whole journey",
+            narrative=(
+                "Here's the full year at once. Use the transport bar to play "
+                "the migration end to end, scrub to any moment, or speed it "
+                "up — the glowing head of the trail is Ursula's position in "
+                "time.\n\n"
+                "One bird, one tag, one loop from Germany to Africa and most "
+                "of the way home."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(-0.5, 40.6),
+            zoom=4.0,
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Track your own",
+            narrative=(
+                "A single stork's year is a few tens of thousands of GPS "
+                "fixes. Multiplied across a tagged population, tracks like "
+                "this are how researchers study when birds leave, which routes "
+                "they choose, and how migration timing shapes who survives.\n\n"
+                "Have a GPX track of your own — a bird, a boat, a bike, a "
+                "hike? Upload it on the data page and the sandbox will animate "
+                "it exactly like this.\n\n"
+                f"_{STORK_ATTRIBUTION}_"
+            ),
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
@@ -1205,6 +1315,7 @@ ALL_STORIES: list[StorySeed] = [
     HIGH_PLACES_STORY,
     POINT_CLOUD_STORY,
     IMERG_STORY,
+    STORK_STORY,
 ]
 
 

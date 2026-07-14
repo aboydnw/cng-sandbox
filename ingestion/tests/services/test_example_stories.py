@@ -14,8 +14,12 @@ from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
 from src.services import example_stories as example_stories_module
+from src.services.example_datasets import seed_example_trajectories
 from src.services.example_stories import (
+    ADMIN0_URL,
+    ADMIN1_URL,
     ALL_STORIES,
+    AUTZEN_URL,
     BUILDINGS_URL,
     CARBON_URL,
     GEBCO_URL,
@@ -23,14 +27,13 @@ from src.services.example_stories import (
     HATAY_DEFNE_URL,
     HATAY_FLIGHT1_URL,
     HATAY_TURINCLU_URL,
-    LAHAINA_URL,
-    ADMIN0_URL,
-    ADMIN1_URL,
-    AUTZEN_URL,
     IMERG_STORY,
     IMERG_URL,
+    LAHAINA_URL,
     OCEAN_FLOOR_STORY,
     POINT_CLOUD_STORY,
+    STORK_STORY,
+    STORK_URL,
     ChapterSeed,
     OverlaySeed,
     StorySeed,
@@ -482,6 +485,7 @@ def _seed_all_example_datasets(factory):
         session.commit()
     finally:
         session.close()
+    seed_example_trajectories(factory)
 
 
 def test_seed_inserts_stories_when_datasets_present():
@@ -701,6 +705,7 @@ def _reseed_example_datasets_with_new_ids(factory, suffix: str):
         session.commit()
     finally:
         session.close()
+    seed_example_trajectories(factory)
 
 
 def test_seed_example_stories_heals_chapter_drift():
@@ -1110,6 +1115,29 @@ def test_cities_story_carries_admin_boundary_overlays():
     assert len(worldwide["overlays"]) == 1
     assert worldwide["overlays"][0]["connection_id"] == "admin0-id"
     assert worldwide["overlays"][0].get("fill_opacity") in (None, 0)
+
+
+def test_stork_story_seeds_with_trajectory_dataset(monkeypatch):
+    from src.services.example_datasets import example_dataset_id
+
+    _, factory = _make_db()
+    seed_example_trajectories(factory)
+    det_id = example_dataset_id(STORK_URL)
+
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [STORK_STORY])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == STORK_STORY.title).one()
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    bound = [c for c in chapters if (c.get("layer_config") or {}).get("dataset_id")]
+    assert bound
+    for c in bound:
+        assert c["layer_config"]["dataset_id"] == det_id
 
 
 def test_seed_emits_globe_and_terrain_map_state():

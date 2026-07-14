@@ -24,16 +24,16 @@ from sqlalchemy.orm import sessionmaker
 
 from src.models import FormatPair, Job
 from src.models.dataset import DatasetRow
-from src.services.example_trajectory_source import (
-    STORK_ATTRIBUTION,
-    STORK_SOURCE_URL,
-    STORK_TITLE,
-)
 from src.services.enumerators import RemoteItem
 from src.services.enumerators.maxar import enumerate_maxar_event
 from src.services.enumerators.path_listing import enumerate_path_listing
 from src.services.enumerators.single_cog import enumerate_single_cog
 from src.services.enumerators.stac_sidecars import enumerate_stac_sidecars
+from src.services.example_trajectory_source import (
+    STORK_ATTRIBUTION,
+    STORK_SOURCE_URL,
+    STORK_TITLE,
+)
 from src.services.pmtiles_register import (
     PMTilesRegistrationError,
     register_pmtiles_example,

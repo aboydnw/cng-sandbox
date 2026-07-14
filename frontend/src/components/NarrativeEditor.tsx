@@ -499,6 +499,28 @@ export function NarrativeEditor({
                 }
               />
             )}
+            {datasetType === "trajectory" && (
+              <Box>
+                <Text fontSize="11px" color="gray.500" mb={1}>
+                  Trail length (seconds)
+                </Text>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="600"
+                  aria-label="Trail length"
+                  defaultValue={layerConfig.trail_length ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onLayerConfigChange({
+                      ...layerConfig,
+                      trail_length: raw === "" ? null : Number(raw),
+                    });
+                  }}
+                  style={{ width: "100%" }}
+                />
+              </Box>
+            )}
             <Box>
               <Flex justify="space-between" mb={1}>
                 <Text fontSize="11px" color="gray.500">

@@ -20,6 +20,7 @@ from typing import Literal
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
+from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
 
@@ -35,6 +36,18 @@ LAHAINA_URL = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-
 HATAY_FLIGHT1_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63f21def525f0700077ed4e2/0/63f21def525f0700077ed4e3.tif"
 HATAY_DEFNE_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb7815ca43600005f4d91e/0/63eb7815ca43600005f4d91f.tif"
 HATAY_TURINCLU_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb8222ca43600005f4d925/0/63eb8222ca43600005f4d926.tif"
+
+
+@dataclass(frozen=True)
+class OverlaySeed:
+    connection_url: str
+    connection_type: str
+    opacity: float = 1.0
+    stroke_color: str | None = None
+    stroke_width: float | None = None
+    fill_color: str | None = None
+    fill_opacity: float | None = None
+    visible: bool = True
 
 
 @dataclass(frozen=True)
@@ -60,6 +73,12 @@ class ChapterSeed:
     buildings: bool = False
     keyframes: tuple[dict, ...] | None = None
     scroll_length: float = 1.0
+    connection_url: str | None = None
+    connection_type: str | None = None
+    color_mode: str | None = None
+    point_size: float | None = None
+    colormap_reversed: bool | None = None
+    overlays: tuple[OverlaySeed, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -914,6 +933,22 @@ def _load_example_dataset_map(
         session.close()
 
 
+def _load_example_connection_map(
+    db_session_factory: sessionmaker,
+) -> dict[tuple[str, str], str]:
+    """Return {(url, connection_type): connection_id} for is_example=True rows."""
+    session = db_session_factory()
+    try:
+        rows = (
+            session.query(ConnectionRow)
+            .filter(ConnectionRow.is_example.is_(True))
+            .all()
+        )
+        return {(r.url, r.connection_type): r.id for r in rows}
+    finally:
+        session.close()
+
+
 def _existing_example_story_rows_by_title(
     db_session_factory: sessionmaker,
 ) -> dict[str, str]:
@@ -930,6 +965,8 @@ def _build_chapter_dict(
     ch: ChapterSeed,
     order: int,
     dataset_id: str | None,
+    connection_id: str | None = None,
+    connection_map: dict[tuple[str, str], str] | None = None,
 ) -> dict:
     if ch.type == "flyover":
         return {
@@ -953,19 +990,51 @@ def _build_chapter_dict(
         }
 
     layer_config: dict | None = None
-    if ch.type != "prose" and dataset_id:
+    if ch.type != "prose" and (dataset_id or connection_id):
         layer_config = {
-            "dataset_id": dataset_id,
+            "dataset_id": dataset_id or "",
             "colormap": ch.colormap,
             "opacity": ch.opacity,
             "basemap": ch.basemap,
         }
+        if connection_id:
+            layer_config["connection_id"] = connection_id
         if ch.rescale_min is not None:
             layer_config["rescale_min"] = ch.rescale_min
         if ch.rescale_max is not None:
             layer_config["rescale_max"] = ch.rescale_max
         if ch.timestep is not None:
             layer_config["timestep"] = ch.timestep
+        if ch.color_mode is not None:
+            layer_config["color_mode"] = ch.color_mode
+        if ch.point_size is not None:
+            layer_config["point_size"] = ch.point_size
+        if ch.colormap_reversed is not None:
+            layer_config["colormap_reversed"] = ch.colormap_reversed
+
+    overlays: list[dict] = []
+    if ch.type != "prose" and ch.overlays:
+        cmap = connection_map or {}
+        for o in ch.overlays:
+            overlays.append(
+                {
+                    "connection_id": cmap[(o.connection_url, o.connection_type)],
+                    "opacity": o.opacity,
+                    "visible": o.visible,
+                    **({"stroke_color": o.stroke_color} if o.stroke_color else {}),
+                    **(
+                        {"stroke_width": o.stroke_width}
+                        if o.stroke_width is not None
+                        else {}
+                    ),
+                    **({"fill_color": o.fill_color} if o.fill_color else {}),
+                    **(
+                        {"fill_opacity": o.fill_opacity}
+                        if o.fill_opacity is not None
+                        else {}
+                    ),
+                }
+            )
 
     return {
         "id": str(uuid.uuid4()),
@@ -986,6 +1055,7 @@ def _build_chapter_dict(
         "transition": ch.transition,
         "overlay_position": ch.overlay_position,
         "layer_config": layer_config,
+        **({"overlays": overlays} if overlays else {}),
     }
 
 
@@ -1013,10 +1083,12 @@ def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
     """
     seed_by_title = {s.title: s for s in ALL_STORIES}
     dataset_map = _load_example_dataset_map(db_session_factory)
+    connection_map = _load_example_connection_map(db_session_factory)
 
     session = db_session_factory()
     try:
         existing_dataset_ids = {r.id for r in session.query(DatasetRow).all()}
+        existing_connection_ids = {r.id for r in session.query(ConnectionRow).all()}
         example_titles_by_id = {
             r.id: r.title
             for r in session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
@@ -1045,19 +1117,45 @@ def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
 
             chapter_changed = False
             for idx, ch in enumerate(chapters):
+                seed_ch = seed.chapters[idx]
                 layer_config = ch.get("layer_config") or {}
                 current_id = layer_config.get("dataset_id")
-                if not current_id or current_id in existing_dataset_ids:
-                    continue
-                source_url = seed.chapters[idx].dataset_source_url
-                if not source_url:
-                    continue
-                replacement = dataset_map.get(source_url)
-                if not replacement:
-                    continue
-                layer_config["dataset_id"] = replacement
-                ch["layer_config"] = layer_config
-                chapter_changed = True
+                if current_id and current_id not in existing_dataset_ids:
+                    source_url = seed_ch.dataset_source_url
+                    replacement = dataset_map.get(source_url) if source_url else None
+                    if replacement:
+                        layer_config["dataset_id"] = replacement
+                        ch["layer_config"] = layer_config
+                        chapter_changed = True
+
+                conn_id = layer_config.get("connection_id")
+                if (
+                    conn_id
+                    and conn_id not in existing_connection_ids
+                    and seed_ch.connection_url
+                    and seed_ch.connection_type
+                ):
+                    replacement = connection_map.get(
+                        (seed_ch.connection_url, seed_ch.connection_type)
+                    )
+                    if replacement:
+                        layer_config["connection_id"] = replacement
+                        ch["layer_config"] = layer_config
+                        chapter_changed = True
+
+                for o_idx, overlay in enumerate(ch.get("overlays") or []):
+                    o_conn = overlay.get("connection_id")
+                    if not o_conn or o_conn in existing_connection_ids:
+                        continue
+                    if o_idx >= len(seed_ch.overlays):
+                        continue
+                    o_seed = seed_ch.overlays[o_idx]
+                    replacement = connection_map.get(
+                        (o_seed.connection_url, o_seed.connection_type)
+                    )
+                    if replacement:
+                        overlay["connection_id"] = replacement
+                        chapter_changed = True
 
             if chapter_changed:
                 row.chapters_json = json.dumps(chapters)
@@ -1099,6 +1197,7 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
     ``IntegrityError`` is caught per-story so a racing insert is a no-op.
     """
     dataset_map = _load_example_dataset_map(db_session_factory)
+    connection_map = _load_example_connection_map(db_session_factory)
     existing_rows = _existing_example_story_rows_by_title(db_session_factory)
 
     for story in ALL_STORIES:
@@ -1114,6 +1213,25 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
             )
             continue
 
+        required_conns = {
+            (ch.connection_url, ch.connection_type)
+            for ch in story.chapters
+            if ch.connection_url and ch.connection_type
+        }
+        required_conns |= {
+            (o.connection_url, o.connection_type)
+            for ch in story.chapters
+            for o in ch.overlays
+        }
+        missing_conns = required_conns - connection_map.keys()
+        if missing_conns:
+            logger.warning(
+                "skipping example story %r — connections not yet registered: %s",
+                story.title,
+                sorted(missing_conns),
+            )
+            continue
+
         chapters_json = [
             _build_chapter_dict(
                 ch,
@@ -1123,6 +1241,12 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
                     if ch.dataset_source_url
                     else None
                 ),
+                connection_id=(
+                    connection_map.get((ch.connection_url, ch.connection_type))
+                    if ch.connection_url and ch.connection_type
+                    else None
+                ),
+                connection_map=connection_map,
             )
             for idx, ch in enumerate(story.chapters)
         ]

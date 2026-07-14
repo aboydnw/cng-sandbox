@@ -20,9 +20,11 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+import httpx
 import obstore
 
 from src.services.storage import StorageService
+from src.services.url_validation import raise_if_redirect, validate_url_safe
 
 _STORAGE_PREFIX = "/storage/"
 
@@ -78,3 +80,32 @@ def vector_source_path(
         yield str(tmp_path)
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def fetch_trips_json(
+    src_url: str,
+    out_path: Path,
+    storage: StorageService | None = None,
+) -> None:
+    """Write a trajectory `trips.json` sidecar to `out_path`.
+
+    For `/storage/<key>` virtual URLs, streams the object from R2. For absolute
+    URLs, fetches through the SSRF-guarded `validate_url_safe` + `raise_if_redirect`
+    pair. Raises on any failure — a missing trajectory fails the export loudly
+    rather than silently dropping the layer.
+    """
+    if _is_storage_url(src_url):
+        storage = storage or StorageService()
+        key = _storage_key(src_url)
+        try:
+            result = obstore.get(storage.store, key)
+        except Exception as exc:
+            raise ValueError(f"trips source unavailable: {src_url} ({exc})") from exc
+        out_path.write_bytes(bytes(result.bytes()))
+        return
+
+    validate_url_safe(src_url)
+    resp = httpx.get(src_url, timeout=30.0, follow_redirects=False)
+    raise_if_redirect(resp)
+    resp.raise_for_status()
+    out_path.write_bytes(resp.content)

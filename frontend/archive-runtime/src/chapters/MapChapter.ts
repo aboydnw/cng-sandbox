@@ -1,6 +1,7 @@
 import maplibregl, { Map as MaplibreMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapboxOverlay } from "@deck.gl/mapbox";
+import type { Layer } from "@deck.gl/core";
 import { TileLayer } from "@deck.gl/geo-layers";
 import { BitmapLayer } from "@deck.gl/layers";
 import { PMTiles, Protocol } from "pmtiles";
@@ -16,10 +17,19 @@ import type {
   MapLayer,
   RasterLayer,
   VectorLayer,
+  TripsLayerEntry,
 } from "../types";
 import { applyColormapToTile } from "../lib/rasterShader";
 import { renderLegend } from "../Legend";
 import { setNarrativeHtml } from "../lib/narrative";
+import {
+  buildArchiveTripsLayer,
+  computeMaxSpeed,
+  tracksTimeBounds,
+  type TripTrack,
+} from "../lib/trips";
+
+const TRIPS_ANIM_SPAN_SECONDS = 20;
 
 const BASEMAP_STYLES: Record<string, string> = {
   streets: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
@@ -171,6 +181,105 @@ async function buildVectorLayer(
   });
 }
 
+async function setupTripsLayer(
+  entry: TripsLayerEntry,
+  overlay: MapboxOverlay,
+  staticLayers: Layer[],
+  basePath: string,
+  chapterId: string,
+  section: HTMLElement
+): Promise<void> {
+  const url = `${basePath}/chapters/${chapterId}/${entry.src}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`trips fetch failed: ${resp.status}`);
+  const tracks = (await resp.json()) as TripTrack[];
+  if (!tracks.length) return;
+
+  const [tMin, tMax] = tracksTimeBounds(tracks);
+  const span = Math.max(1, tMax - tMin);
+  const speedMax = computeMaxSpeed(tracks);
+  const trailLength = entry.trail_length ?? 600;
+  const opacity = typeof entry.opacity === "number" ? entry.opacity : 1;
+
+  let currentTime = tMin;
+  let playing = true;
+  let raf = 0;
+  let last: number | null = null;
+
+  const rebuild = () => {
+    overlay.setProps({
+      layers: [
+        ...staticLayers,
+        buildArchiveTripsLayer({
+          id: `trips-${entry.id}`,
+          tracks,
+          currentTime,
+          trailLength,
+          opacity,
+          speedMax,
+        }),
+      ],
+    });
+  };
+
+  // Controls row under the map canvas.
+  const controls = document.createElement("div");
+  controls.className = "trips-controls";
+  const playBtn = document.createElement("button");
+  playBtn.className = "trips-play";
+  playBtn.type = "button";
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.className = "trips-scrub";
+  slider.min = String(tMin);
+  slider.max = String(tMax);
+  slider.step = String(span / 1000);
+  slider.value = String(currentTime);
+  controls.appendChild(playBtn);
+  controls.appendChild(slider);
+  section.appendChild(controls);
+
+  const syncPlayLabel = () => {
+    playBtn.textContent = playing ? "Pause" : "Play";
+    playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
+  };
+
+  const tick = (now: number) => {
+    const prev = last ?? now;
+    const dt = (now - prev) / 1000;
+    last = now;
+    currentTime += dt * (span / TRIPS_ANIM_SPAN_SECONDS);
+    if (currentTime >= tMax) currentTime = tMin + ((currentTime - tMin) % span);
+    slider.value = String(currentTime);
+    rebuild();
+    if (playing) raf = requestAnimationFrame(tick);
+  };
+
+  const start = () => {
+    if (raf) cancelAnimationFrame(raf);
+    last = null;
+    raf = requestAnimationFrame(tick);
+  };
+
+  playBtn.addEventListener("click", () => {
+    playing = !playing;
+    syncPlayLabel();
+    if (playing) start();
+    else if (raf) cancelAnimationFrame(raf);
+  });
+  slider.addEventListener("input", () => {
+    playing = false;
+    syncPlayLabel();
+    if (raf) cancelAnimationFrame(raf);
+    currentTime = Number(slider.value);
+    rebuild();
+  });
+
+  syncPlayLabel();
+  rebuild();
+  start();
+}
+
 export async function renderMapChapter(
   chapter: MapChapterEntry,
   host: HTMLElement,
@@ -202,15 +311,33 @@ export async function renderMapChapter(
     interactive: true,
   });
 
+  const staticEntries = chapter.layers.filter(
+    (l: MapLayer) => l.kind !== "trips"
+  );
+  const tripsEntry = chapter.layers.find(
+    (l: MapLayer): l is TripsLayerEntry => l.kind === "trips"
+  );
+
   const layerObjects = await Promise.all(
-    chapter.layers.map((l: MapLayer) => {
+    staticEntries.map((l) => {
       if (l.kind === "raster") return buildRasterLayer(l, basePath, chapter.id);
-      return buildVectorLayer(l, basePath, chapter.id);
+      return buildVectorLayer(l as VectorLayer, basePath, chapter.id);
     })
   );
 
   const overlay = new MapboxOverlay({ layers: layerObjects });
   map.addControl(overlay as unknown as maplibregl.IControl);
+
+  if (tripsEntry) {
+    await setupTripsLayer(
+      tripsEntry,
+      overlay,
+      layerObjects,
+      basePath,
+      chapter.id,
+      section
+    );
+  }
 
   const legendEl = renderLegend(chapter.legend);
   if (legendEl) section.appendChild(legendEl);

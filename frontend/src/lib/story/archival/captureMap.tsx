@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { UnifiedMap } from "../../../components/UnifiedMap";
-import { buildLayersForChapter } from "../rendering";
+import { buildLayersForChapter, type StoryTripsContext } from "../rendering";
 import { compositeMapCanvases } from "./compositeMapCanvases";
 import type { Chapter } from "../types";
 import type { Connection, Dataset } from "../../../types";
@@ -15,6 +15,7 @@ export interface CaptureChapterMapArgs {
   chapter: Chapter;
   datasetMap: Map<string, Dataset | null>;
   connectionMap: Map<string, Connection>;
+  tripsContext?: StoryTripsContext;
 }
 
 interface MapInstance {
@@ -34,6 +35,7 @@ export async function captureChapterMap({
   chapter,
   datasetMap,
   connectionMap,
+  tripsContext,
 }: CaptureChapterMapArgs): Promise<string> {
   const host = document.createElement("div");
   host.setAttribute("data-archival-capture", "");
@@ -62,7 +64,8 @@ export async function captureChapterMap({
       chapter,
       datasetMap,
       connectionMap,
-      new Map()
+      new Map(),
+      tripsContext
     );
 
     const camera = {

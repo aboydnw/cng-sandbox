@@ -35,7 +35,15 @@ export interface VectorLayer {
   opacity?: number;
 }
 
-export type MapLayer = RasterLayer | VectorLayer;
+export interface TripsLayerEntry {
+  id: string;
+  kind: "trips";
+  src: string;
+  opacity?: number;
+  trail_length?: number;
+}
+
+export type MapLayer = RasterLayer | VectorLayer | TripsLayerEntry;
 
 export interface LegendStop {
   value?: number | string;

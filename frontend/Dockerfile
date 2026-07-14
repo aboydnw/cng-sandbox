@@ -1,5 +1,5 @@
 # --- Builder: produces optimized static assets in /app/dist ---
-FROM node:20 AS builder
+FROM node:25 AS builder
 WORKDIR /app
 RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
@@ -10,7 +10,7 @@ ENV VITE_VIEWER_ORIGIN=$VITE_VIEWER_ORIGIN
 RUN yarn build
 
 # --- Dev: hot-reloading Vite dev server for local development ---
-FROM node:20 AS dev
+FROM node:25 AS dev
 WORKDIR /app
 RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./

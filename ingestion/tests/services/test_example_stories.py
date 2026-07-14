@@ -24,7 +24,11 @@ from src.services.example_stories import (
     HATAY_FLIGHT1_URL,
     HATAY_TURINCLU_URL,
     LAHAINA_URL,
+    ADMIN0_URL,
+    ADMIN1_URL,
+    AUTZEN_URL,
     OCEAN_FLOOR_STORY,
+    POINT_CLOUD_STORY,
     ChapterSeed,
     OverlaySeed,
     StorySeed,
@@ -461,6 +465,15 @@ def _seed_all_example_datasets(factory):
             source_url=HATAY_TURINCLU_URL,
             filename="Hatay Tur",
         )
+        _seed_example_connection(
+            session, conn_id="autzen-id", url=AUTZEN_URL, ctype="copc"
+        )
+        _seed_example_connection(
+            session, conn_id="admin0-id", url=ADMIN0_URL, ctype="pmtiles"
+        )
+        _seed_example_connection(
+            session, conn_id="admin1-id", url=ADMIN1_URL, ctype="pmtiles"
+        )
         session.commit()
     finally:
         session.close()
@@ -530,6 +543,9 @@ def test_seed_skips_story_when_dataset_missing():
         for s in ALL_STORIES
         if {ch.dataset_source_url for ch in s.chapters if ch.dataset_source_url}
         <= {GEBCO_URL}
+        and not any(
+            ch.connection_url or ch.overlays for ch in s.chapters
+        )
     }
     assert OCEAN_FLOOR_STORY.title in gebco_only
     assert titles == gebco_only
@@ -703,7 +719,7 @@ def test_seed_example_stories_heals_chapter_drift():
         for ch in chapters:
             lc = ch.get("layer_config") or {}
             ds_id = lc.get("dataset_id")
-            if ds_id is None:
+            if not ds_id:
                 continue
             assert ds_id in live_ids, (
                 f"chapter dataset_id {ds_id} in {row.title!r} is dead after re-seed"
@@ -991,6 +1007,40 @@ def test_relink_skips_user_authored_story_with_coincidental_title_match():
 
     for ch in chapters:
         assert ch["layer_config"]["dataset_id"] == "user-private-dead-id"
+
+
+def test_point_cloud_story_seeds_with_copc_connection(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="autzen-id", url=AUTZEN_URL, ctype="copc"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [POINT_CLOUD_STORY])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = (
+            session.query(StoryRow)
+            .filter(StoryRow.title == POINT_CLOUD_STORY.title)
+            .one()
+        )
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    copc_chapters = [c for c in chapters if (c.get("layer_config") or {}).get("connection_id")]
+    assert copc_chapters
+    for c in copc_chapters:
+        assert c["layer_config"]["connection_id"] == "autzen-id"
+    color_modes = {c["layer_config"].get("color_mode") for c in copc_chapters}
+    assert "elevation" in color_modes
+    assert "classification" in color_modes
 
 
 def test_seed_emits_globe_and_terrain_map_state():

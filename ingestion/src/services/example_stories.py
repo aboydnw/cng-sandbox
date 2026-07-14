@@ -36,6 +36,10 @@ LAHAINA_URL = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-
 HATAY_FLIGHT1_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63f21def525f0700077ed4e2/0/63f21def525f0700077ed4e3.tif"
 HATAY_DEFNE_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb7815ca43600005f4d91e/0/63eb7815ca43600005f4d91f.tif"
 HATAY_TURINCLU_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb8222ca43600005f4d925/0/63eb8222ca43600005f4d926.tif"
+AUTZEN_URL = "https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz"
+IMERG_URL = "https://data.source.coop/bkr/imerg/imerg_final.zarr"
+ADMIN0_URL = "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin0.pmtiles"
+ADMIN1_URL = "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin1.pmtiles"
 
 
 @dataclass(frozen=True)
@@ -905,6 +909,143 @@ HIGH_PLACES_STORY = StorySeed(
 )
 
 
+POINT_CLOUD_STORY = StorySeed(
+    title="Anatomy of a point cloud",
+    description=(
+        "Fly through millions of lidar points over Autzen Stadium — how "
+        "point clouds work, what the colors mean, and why they stream "
+        "straight to your browser."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="A cloud of points",
+            narrative=(
+                "A **point cloud** is exactly what it sounds like: a dataset "
+                "made of individual points in three-dimensional space, each "
+                "with an x, y, and z coordinate. Instead of a smooth surface, "
+                "you get a dense scatter of measurements — here, millions of "
+                "them — that together trace out the shape of the world.\n\n"
+                "These points come from **lidar**, a sensor that fires rapid "
+                "laser pulses and times how long each one takes to bounce "
+                "back. Mounted on an aircraft, it sweeps the ground below and "
+                "records where every pulse landed. This survey covers "
+                "**Autzen Stadium** in Eugene, Oregon.\n\n"
+                "Scroll on to see the cloud two ways — painted by height, then "
+                "sorted into what each point actually is — and to explore it "
+                "yourself at the end."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Painted by height",
+            narrative=(
+                "The first thing to do with a raw point cloud is give it "
+                "color. Here each point is tinted by its **elevation** — its "
+                "z value — running from low ground through to the tallest "
+                "returns.\n\n"
+                "Suddenly the structure jumps out: the bowl of the stadium, "
+                "the surrounding parking lots, the rise of the press box and "
+                "light towers. No surface model, no mesh — just points, "
+                "colored by height, and your eye does the rest."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="elevation",
+            point_size=2.0,
+            center=(-123.0687, 44.0582),
+            zoom=15.5,
+            pitch=55.0,
+            bearing=-30.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Ground, trees, rooftops",
+            narrative=(
+                "Height is only one story the points can tell. This survey is "
+                "**classified**: every point carries a label from the ASPRS "
+                "standard scheme — ground, low and high vegetation, buildings, "
+                "and more — assigned when the data was processed.\n\n"
+                "Recolored by **classification**, the same cloud reorganizes "
+                "itself. Ground separates cleanly from the trees ringing the "
+                "stadium and from the built structures. This is what makes "
+                "lidar so useful: you can pull out just the bare earth, just "
+                "the canopy, or just the buildings, because the points already "
+                "know what they are."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="classification",
+            point_size=2.0,
+            center=(-123.0687, 44.0582),
+            zoom=16.0,
+            pitch=60.0,
+            bearing=40.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Streaming, not downloading",
+            narrative=(
+                "A cloud this dense would be a heavy file to hand someone. "
+                "This one is stored as **COPC** — Cloud-Optimized Point Cloud "
+                "— which reorganizes the points into a spatial hierarchy that "
+                "can be read in pieces over the network.\n\n"
+                "So nothing is downloaded up front. As you zoom and pan, your "
+                "browser makes **HTTP range requests** for just the points it "
+                "needs at the detail you're viewing, up to a fixed point "
+                "budget. Coarse overview when you're far out; full density "
+                "when you push in close. The whole survey stays on the server; "
+                "only what you're looking at ever crosses the wire."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="elevation",
+            point_size=3.0,
+            center=(-123.0700, 44.0560),
+            zoom=14.5,
+            pitch=45.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="map",
+            title="Explore the stadium",
+            narrative=(
+                "Now it's yours. Pan, zoom, and tilt to move through the "
+                "cloud from any angle — watch the density fill in as you get "
+                "closer.\n\n"
+                "Want to try your own? Upload a **LAS or LAZ** file on the "
+                "data page and the sandbox converts it to COPC and streams it "
+                "back exactly like this one."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="elevation",
+            point_size=2.0,
+            center=(-123.0687, 44.0575),
+            zoom=15.0,
+            pitch=50.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Credits",
+            narrative=(
+                "The Autzen Stadium point cloud is a public sample dataset "
+                "provided by **Hobu Inc.**, the team behind PDAL and much of "
+                "the open-source point-cloud toolchain. It's a favorite test "
+                "dataset precisely because it's classified, compact, and "
+                "recognizable.\n\n"
+                "Everything you just scrolled through ran client-side, "
+                "streamed straight from cloud storage — no tile server, no "
+                "download."
+            ),
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
@@ -912,6 +1053,7 @@ ALL_STORIES: list[StorySeed] = [
     LAHAINA_STORY,
     ANTAKYA_STORY,
     HIGH_PLACES_STORY,
+    POINT_CLOUD_STORY,
 ]
 
 

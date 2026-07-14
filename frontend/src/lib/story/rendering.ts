@@ -225,6 +225,21 @@ export interface StoryTripsContext {
   timeByDatasetId: Map<string, number>;
 }
 
+/**
+ * Representative trajectory time for a chapter at position `localIndex` within
+ * a block of `blockLength` chapters — used for reduced-motion pinning and for
+ * scrollytelling snapshot capture so a still frame shows a sensible trail.
+ */
+export function beatTime(
+  tMin: number,
+  tMax: number,
+  localIndex: number,
+  blockLength: number
+): number {
+  if (blockLength <= 0) return tMin;
+  return tMin + ((localIndex + 1) / blockLength) * (tMax - tMin);
+}
+
 export function buildLayersForChapter(
   chapter: Chapter,
   datasetMap: Map<string, Dataset | null>,

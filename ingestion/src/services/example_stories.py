@@ -1046,6 +1046,135 @@ POINT_CLOUD_STORY = StorySeed(
 )
 
 
+# Timesteps are positions in the IMERG connection's decimated `timesteps`
+# array (see frontend rendering.ts), probed 2026-07-14 against the live store:
+#   pos 3256 -> 2017-08-23T04:00Z  (Harvey approaching the Gulf coast)
+#   pos 3257 -> 2017-08-25T03:30Z  (Harvey makes landfall near Rockport, TX)
+#   pos 3258 -> 2017-08-27T03:00Z  (stalled over Houston, catastrophic rainfall)
+IMERG_STORY = StorySeed(
+    title="Watching it rain from orbit",
+    description=(
+        "Half-hourly global rainfall, measured from space. Follow Hurricane "
+        "Harvey as it comes ashore and stalls over Houston in August 2017 — "
+        "then explore the whole planet's rain, one time step at a time."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="Rain, measured from space",
+            narrative=(
+                "You can't put a rain gauge everywhere — least of all over the "
+                "oceans, where most of the world's rain actually falls. So "
+                "NASA measures precipitation from **orbit** instead.\n\n"
+                "**IMERG** — the Integrated Multi-satellitE Retrievals for GPM "
+                "— blends readings from a constellation of satellites into a "
+                "single global grid, updated every **half hour** at roughly "
+                "10-kilometer resolution. This story streams that record "
+                "straight from a cloud-native **zarr** store: billions of "
+                "values, and your browser only ever pulls the time steps it's "
+                "showing.\n\n"
+                "We'll start with one storm the whole world remembers."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="A storm gathers in the Gulf",
+            narrative=(
+                "Late August 2017. A tropical system is organizing over the "
+                "warm water of the Gulf of Mexico, pulling moisture upward and "
+                "spinning it into bands of rain. On the map, precipitation "
+                "blooms in deepening blues as the storm tightens.\n\n"
+                "This is **Hurricane Harvey**, two days before landfall, "
+                "already dumping rain across the northwestern Gulf."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3256,
+            rescale_min=0,
+            rescale_max=30,
+            center=(-95.4, 29.6),
+            zoom=6.0,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Landfall",
+            narrative=(
+                "On the night of August 25th, Harvey comes ashore near "
+                "**Rockport, Texas** as a Category 4 hurricane. The heaviest "
+                "returns — the brightest cells on the map — crowd against the "
+                "coastline where the eyewall crosses land.\n\n"
+                "Landfall is only the beginning. What made Harvey historic "
+                "wasn't the wind. It was what happened next."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3257,
+            rescale_min=0,
+            rescale_max=30,
+            center=(-96.0, 28.5),
+            zoom=6.0,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Stalled over Houston",
+            narrative=(
+                "Steering winds collapsed, and Harvey simply **stopped** — "
+                "parked over southeast Texas for days, feeding on Gulf "
+                "moisture and wringing it out over the same ground again and "
+                "again. Some areas took more than 1.5 meters of rain.\n\n"
+                "Here the rainfall smears across the Houston metro, a broad "
+                "saturated field rather than a tidy spiral — the satellite's-"
+                "eye view of one of the wettest tropical cyclones ever "
+                "recorded in the United States."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3258,
+            rescale_min=0,
+            rescale_max=30,
+            center=(-95.4, 29.8),
+            zoom=6.0,
+        ),
+        ChapterSeed(
+            type="map",
+            title="The whole planet's rain",
+            narrative=(
+                "Zoom out and the same dataset covers the entire globe. Use "
+                "the time slider to step through the record — watch monsoon "
+                "bands march across the tropics, storm tracks curl through the "
+                "mid-latitudes, and the great dry zones stay stubbornly "
+                "empty.\n\n"
+                "Every frame is half an hour of the planet's weather, measured "
+                "from space."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3257,
+            rescale_min=0,
+            rescale_max=30,
+            center=(0.0, 15.0),
+            zoom=2.0,
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Credits",
+            narrative=(
+                "Precipitation data: **NASA GPM IMERG Final Run**, served as a "
+                "cloud-native zarr store via source.coop (bkr/imerg). The time "
+                "slider on the map chapter steps through the store's own "
+                "half-hourly axis, decimated for smooth browsing.\n\n"
+                "Bring your own NetCDF or zarr on the data page and the sandbox "
+                "will stream it the same way."
+            ),
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
@@ -1054,6 +1183,7 @@ ALL_STORIES: list[StorySeed] = [
     ANTAKYA_STORY,
     HIGH_PLACES_STORY,
     POINT_CLOUD_STORY,
+    IMERG_STORY,
 ]
 
 

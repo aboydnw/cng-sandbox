@@ -27,6 +27,8 @@ from src.services.example_stories import (
     ADMIN0_URL,
     ADMIN1_URL,
     AUTZEN_URL,
+    IMERG_STORY,
+    IMERG_URL,
     OCEAN_FLOOR_STORY,
     POINT_CLOUD_STORY,
     ChapterSeed,
@@ -467,6 +469,9 @@ def _seed_all_example_datasets(factory):
         )
         _seed_example_connection(
             session, conn_id="autzen-id", url=AUTZEN_URL, ctype="copc"
+        )
+        _seed_example_connection(
+            session, conn_id="imerg-id", url=IMERG_URL, ctype="zarr"
         )
         _seed_example_connection(
             session, conn_id="admin0-id", url=ADMIN0_URL, ctype="pmtiles"
@@ -1041,6 +1046,42 @@ def test_point_cloud_story_seeds_with_copc_connection(monkeypatch):
     color_modes = {c["layer_config"].get("color_mode") for c in copc_chapters}
     assert "elevation" in color_modes
     assert "classification" in color_modes
+
+
+def test_imerg_story_chapters_step_timesteps(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="imerg-id", url=IMERG_URL, ctype="zarr"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [IMERG_STORY])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == IMERG_STORY.title).one()
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    scrolly_steps = [
+        c["layer_config"]["timestep"]
+        for c in chapters
+        if c["type"] == "scrollytelling" and (c.get("layer_config") or {})
+    ]
+    assert len(scrolly_steps) == 3
+    assert all(isinstance(s, int) for s in scrolly_steps)
+    assert scrolly_steps == sorted(scrolly_steps)
+    assert len(set(scrolly_steps)) == 3
+    for c in chapters:
+        lc = c.get("layer_config") or {}
+        if lc.get("timestep") is not None:
+            assert lc["connection_id"] == "imerg-id"
 
 
 def test_seed_emits_globe_and_terrain_map_state():

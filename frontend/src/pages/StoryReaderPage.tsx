@@ -50,10 +50,14 @@ export default function StoryReaderPage({
         try {
           const portable = await loadPortableConfig(configParam);
           if (cancelled) return;
-          const { story: portableStory, connections } = cngRcToStory(portable);
+          const {
+            story: portableStory,
+            connections,
+            datasets,
+          } = cngRcToStory(portable);
           setStory(portableStory);
           setConnectionMap(connections);
-          setDatasetMap(new Map());
+          setDatasetMap(datasets);
           setLoading(false);
         } catch {
           if (cancelled) return;

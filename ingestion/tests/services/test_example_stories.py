@@ -1084,6 +1084,34 @@ def test_imerg_story_chapters_step_timesteps(monkeypatch):
             assert lc["connection_id"] == "imerg-id"
 
 
+def test_cities_story_carries_admin_boundary_overlays():
+    _, factory = _make_db()
+    _seed_all_example_datasets(factory)
+
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = (
+            session.query(StoryRow)
+            .filter(StoryRow.title == "Cities from space")
+            .one()
+        )
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    lagos = next(c for c in chapters if c["title"] == "Lagos")
+    assert len(lagos["overlays"]) == 1
+    assert lagos["overlays"][0]["connection_id"] == "admin1-id"
+    assert lagos["overlays"][0].get("fill_opacity") in (None, 0)
+
+    worldwide = next(c for c in chapters if c["title"] == "Explore worldwide")
+    assert len(worldwide["overlays"]) == 1
+    assert worldwide["overlays"][0]["connection_id"] == "admin0-id"
+    assert worldwide["overlays"][0].get("fill_opacity") in (None, 0)
+
+
 def test_seed_emits_globe_and_terrain_map_state():
     dicts = [
         _build_chapter_dict(ch, i, None)

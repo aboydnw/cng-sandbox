@@ -307,12 +307,23 @@ CITIES_STORY = StorySeed(
                 "Much of that mainland fabric was invisible to older "
                 "global datasets — it only appears here because machine-"
                 "learning-detected footprints from satellite imagery "
-                "were merged with OpenStreetMap."
+                "were merged with OpenStreetMap.\n\n"
+                "The brown lines trace **state boundaries** — you can see "
+                "the built-up area spilling well beyond Lagos State into "
+                "its neighbors."
             ),
             dataset_source_url=BUILDINGS_URL,
             center=(3.3792, 6.5244),
             zoom=11.0,
             opacity=0.85,
+            overlays=(
+                OverlaySeed(
+                    connection_url=ADMIN1_URL,
+                    connection_type="pmtiles",
+                    stroke_color="#8B4513",
+                    stroke_width=1.5,
+                ),
+            ),
         ),
         ChapterSeed(
             type="scrollytelling",
@@ -340,12 +351,22 @@ CITIES_STORY = StorySeed(
                 "Antarctica has coverage. Pan anywhere and zoom in to "
                 "compare city fabrics. A few suggestions: Cairo's Nile "
                 "delta, Jakarta's coastal sprawl, Mexico City's "
-                "altiplano, Seoul's river-split core."
+                "altiplano, Seoul's river-split core.\n\n"
+                "Country outlines are drawn in brown to help you get your "
+                "bearings as you roam."
             ),
             dataset_source_url=BUILDINGS_URL,
             center=(0.0, 20.0),
             zoom=2.0,
             opacity=0.85,
+            overlays=(
+                OverlaySeed(
+                    connection_url=ADMIN0_URL,
+                    connection_type="pmtiles",
+                    stroke_color="#8B4513",
+                    stroke_width=1.5,
+                ),
+            ),
         ),
         ChapterSeed(
             type="prose",

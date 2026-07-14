@@ -5,7 +5,9 @@ from pydantic import ValidationError
 
 from src.models.story import (
     ChartChapter,
+    ChartVizPayload,
     ImageChapter,
+    LayerConfigPayload,
     MapChapter,
     ProseChapter,
     ScrollytellingChapter,
@@ -14,6 +16,49 @@ from src.models.story import (
     StoryUpdate,
     VideoChapter,
 )
+
+
+def test_chart_viz_round_trips_x_range():
+    viz = ChartVizPayload.model_validate(
+        {
+            "kind": "line",
+            "x_field": "date",
+            "y_fields": ["value"],
+            "x_min": "2024-01-01",
+            "x_max": 42.5,
+        }
+    )
+    dumped = viz.model_dump()
+    assert dumped["x_min"] == "2024-01-01"
+    assert dumped["x_max"] == 42.5
+
+
+def test_chart_viz_x_range_defaults_to_none():
+    viz = ChartVizPayload.model_validate(
+        {"kind": "bar", "x_field": "x", "y_fields": ["y"]}
+    )
+    assert viz.x_min is None
+    assert viz.x_max is None
+
+
+def test_layer_config_round_trips_trail_length():
+    lc = LayerConfigPayload.model_validate(
+        {
+            "dataset_id": "d1",
+            "colormap": "viridis",
+            "opacity": 1.0,
+            "basemap": "dark",
+            "trail_length": 300.0,
+        }
+    )
+    assert lc.model_dump()["trail_length"] == 300.0
+
+
+def test_layer_config_trail_length_defaults_to_none():
+    lc = LayerConfigPayload.model_validate(
+        {"dataset_id": "d1", "colormap": "viridis", "opacity": 1.0, "basemap": "dark"}
+    )
+    assert lc.trail_length is None
 
 
 def test_story_row_has_is_example_defaulting_false(db_session):

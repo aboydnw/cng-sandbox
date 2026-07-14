@@ -73,6 +73,7 @@ class LayerConfigPayload(BaseModel):
     color_property: str | None = None
     color_mode: Literal["rgb", "elevation", "intensity", "classification"] | None = None
     point_size: float | None = None
+    trail_length: float | None = None
 
 
 class OverlayConfigPayload(BaseModel):
@@ -171,6 +172,8 @@ class ChartVizPayload(BaseModel):
     x_label: str | None = None
     y_label: str | None = None
     y_scale: Literal["linear", "log"] | None = None
+    x_min: float | str | None = None
+    x_max: float | str | None = None
 
 
 class ChartPayload(BaseModel):

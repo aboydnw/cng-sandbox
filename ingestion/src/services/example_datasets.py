@@ -17,9 +17,11 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+import obstore
 from sqlalchemy.orm import sessionmaker
 
 from src.models import FormatPair, Job
@@ -43,6 +45,7 @@ from src.services.remote_register import (
     register_remote_collection,
 )
 from src.services.source_coop_config import SourceCoopProduct, list_products
+from src.services.storage import StorageService
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +254,11 @@ STORK_TRAJECTORY = ExampleTrajectorySeed(
 )
 
 
-def seed_example_trajectories(db_session_factory: sessionmaker) -> None:
+def seed_example_trajectories(
+    db_session_factory: sessionmaker,
+    *,
+    artifact_exists: Callable[[str], bool] | None = None,
+) -> None:
     """Insert pre-built example trajectory datasets.
 
     Idempotent on the deterministic id derived from ``source_url``. The
@@ -259,11 +266,29 @@ def seed_example_trajectories(db_session_factory: sessionmaker) -> None:
     ``datasets/<id>/converted/`` (published once, out of band — see
     docs/example-data.md).
     """
+    if artifact_exists is None:
+        storage = StorageService()
+
+        def artifact_exists(key: str) -> bool:
+            try:
+                obstore.head(storage.store, key)
+            except Exception:
+                return False
+            return True
+
     session = db_session_factory()
     try:
         for seed in (STORK_TRAJECTORY,):
             det_id = example_dataset_id(seed.source_url)
             if session.get(DatasetRow, det_id) is not None:
+                continue
+            trips_key = f"datasets/{det_id}/converted/trips.json"
+            if not artifact_exists(trips_key):
+                logger.warning(
+                    "skipping example trajectory %s: artifact is not published at %s",
+                    seed.title,
+                    trips_key,
+                )
                 continue
             trips_url = f"/storage/datasets/{det_id}/converted/trips.json"
             meta = {

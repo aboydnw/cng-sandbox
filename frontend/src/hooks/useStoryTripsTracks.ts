@@ -59,11 +59,12 @@ export function useStoryTripsTracks(
       return;
     }
     let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
     Promise.all(
       [...targets.entries()].map(([id, url]) =>
-        fetch(url)
+        fetch(url, { signal: controller.signal })
           .then((r) => {
             if (!r.ok)
               throw new Error(`Failed to load trajectory (${r.status})`);
@@ -84,7 +85,7 @@ export function useStoryTripsTracks(
         setBounds(bounds);
       })
       .catch((e) => {
-        if (!cancelled)
+        if (!cancelled && !controller.signal.aborted)
           setError(e instanceof Error ? e.message : "Load failed");
       })
       .finally(() => {
@@ -92,8 +93,8 @@ export function useStoryTripsTracks(
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   return { tracksByDatasetId, boundsByDatasetId, loading, error };

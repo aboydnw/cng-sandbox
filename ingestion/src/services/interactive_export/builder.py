@@ -166,7 +166,9 @@ def _build_map_chapter(
                     "opacity": layer.render.opacity
                     if layer.render.opacity is not None
                     else 1.0,
-                    "trail_length": layer.render.trail_length or 600,
+                    "trail_length": layer.render.trail_length
+                    if layer.render.trail_length is not None
+                    else 600,
                 }
             )
         else:

@@ -15,7 +15,7 @@ def db_session_factory(db_engine):
 
 
 def test_seed_example_trajectory_inserts_master_row(db_session_factory, db_session):
-    seed_example_trajectories(db_session_factory)
+    seed_example_trajectories(db_session_factory, artifact_exists=lambda _key: True)
 
     det_id = example_dataset_id(STORK_SOURCE_URL)
     row = db_session.get(DatasetRow, det_id)
@@ -30,12 +30,21 @@ def test_seed_example_trajectory_inserts_master_row(db_session_factory, db_sessi
 
 
 def test_seed_example_trajectory_is_idempotent(db_session_factory, db_session):
-    seed_example_trajectories(db_session_factory)
-    seed_example_trajectories(db_session_factory)
+    def exists(_key):
+        return True
 
-    rows = (
-        db_session.query(DatasetRow)
-        .filter(DatasetRow.is_example.is_(True))
-        .all()
-    )
+    seed_example_trajectories(db_session_factory, artifact_exists=exists)
+    seed_example_trajectories(db_session_factory, artifact_exists=exists)
+
+    rows = db_session.query(DatasetRow).filter(DatasetRow.is_example.is_(True)).all()
     assert len([r for r in rows if r.dataset_type == "trajectory"]) == 1
+
+
+def test_seed_example_trajectory_skips_unpublished_artifact(
+    db_session_factory, db_session, caplog
+):
+    seed_example_trajectories(db_session_factory, artifact_exists=lambda _key: False)
+
+    det_id = example_dataset_id(STORK_SOURCE_URL)
+    assert db_session.get(DatasetRow, det_id) is None
+    assert "artifact is not published" in caplog.text

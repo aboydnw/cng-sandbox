@@ -104,8 +104,11 @@ def fetch_trips_json(
         out_path.write_bytes(bytes(result.bytes()))
         return
 
-    validate_url_safe(src_url)
-    resp = httpx.get(src_url, timeout=30.0, follow_redirects=False)
-    raise_if_redirect(resp)
-    resp.raise_for_status()
-    out_path.write_bytes(resp.content)
+    try:
+        validate_url_safe(src_url)
+        resp = httpx.get(src_url, timeout=30.0, follow_redirects=False)
+        raise_if_redirect(resp)
+        resp.raise_for_status()
+        out_path.write_bytes(resp.content)
+    except Exception as exc:
+        raise ValueError(f"trips source unavailable: {src_url} ({exc})") from exc

@@ -92,12 +92,37 @@ describe("NarrativeEditor 3D section", () => {
         onLayerConfigChange={onLayerConfigChange}
       />
     );
-    fireEvent.change(getByLabelText("Trail length"), {
+    fireEvent.blur(getByLabelText("Trail length"), {
       target: { value: "300" },
     });
     expect(onLayerConfigChange).toHaveBeenCalledWith(
       expect.objectContaining({ trail_length: 300 })
     );
+  });
+
+  it("normalizes invalid trajectory trail input without writing NaN", () => {
+    const onLayerConfigChange = vi.fn();
+    const { getByLabelText } = wrap(
+      <NarrativeEditor
+        {...baseProps}
+        datasetType="trajectory"
+        layerConfig={{ ...DEFAULT_LAYER_CONFIG, dataset_id: "traj-1" }}
+        mapState={{ ...DEFAULT_MAP_STATE }}
+        onMapStateChange={() => {}}
+        onLayerConfigChange={onLayerConfigChange}
+      />
+    );
+    fireEvent.blur(getByLabelText("Trail length"), {
+      target: { value: "not-a-number" },
+    });
+    expect(onLayerConfigChange).toHaveBeenCalledWith(
+      expect.objectContaining({ trail_length: null })
+    );
+    expect(
+      onLayerConfigChange.mock.calls.some(
+        ([config]) => Number.isNaN(config.trail_length)
+      )
+    ).toBe(false);
   });
 
   it("does not show a trail-length input for a raster dataset", () => {

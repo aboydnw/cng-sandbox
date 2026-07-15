@@ -510,11 +510,20 @@ export function NarrativeEditor({
                   placeholder="600"
                   aria-label="Trail length"
                   defaultValue={layerConfig.trail_length ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim();
+                    if (raw === "") {
+                      onLayerConfigChange({
+                        ...layerConfig,
+                        trail_length: null,
+                      });
+                      return;
+                    }
+                    const trailLength = Number(raw);
+                    if (!Number.isFinite(trailLength)) return;
                     onLayerConfigChange({
                       ...layerConfig,
-                      trail_length: raw === "" ? null : Number(raw),
+                      trail_length: trailLength,
                     });
                   }}
                   style={{ width: "100%" }}

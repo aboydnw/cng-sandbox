@@ -14,7 +14,7 @@ STORK_TITLE = "White stork migration"
 
 STORK_ATTRIBUTION = (
     "Data from Bontekoe ID, Flack A, Fiedler W (2023): 'The price of being "
-    "late: short- and long-term consequences of a delayed migration timing' "
-    "(LifeTrack White Stork SW Germany), via the Movebank Data Repository "
+    "late: short- and long-term consequences of a delayed migration timing "
+    "[control birds]', via the Movebank Data Repository "
     "(doi:10.5441/001/1.271), released under CC0 1.0."
 )

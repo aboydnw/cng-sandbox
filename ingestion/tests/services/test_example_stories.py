@@ -485,7 +485,7 @@ def _seed_all_example_datasets(factory):
         session.commit()
     finally:
         session.close()
-    seed_example_trajectories(factory)
+    seed_example_trajectories(factory, artifact_exists=lambda _key: True)
 
 
 def test_seed_inserts_stories_when_datasets_present():
@@ -552,9 +552,7 @@ def test_seed_skips_story_when_dataset_missing():
         for s in ALL_STORIES
         if {ch.dataset_source_url for ch in s.chapters if ch.dataset_source_url}
         <= {GEBCO_URL}
-        and not any(
-            ch.connection_url or ch.overlays for ch in s.chapters
-        )
+        and not any(ch.connection_url or ch.overlays for ch in s.chapters)
     }
     assert OCEAN_FLOOR_STORY.title in gebco_only
     assert titles == gebco_only
@@ -705,7 +703,7 @@ def _reseed_example_datasets_with_new_ids(factory, suffix: str):
         session.commit()
     finally:
         session.close()
-    seed_example_trajectories(factory)
+    seed_example_trajectories(factory, artifact_exists=lambda _key: True)
 
 
 def test_seed_example_stories_heals_chapter_drift():
@@ -1044,7 +1042,9 @@ def test_point_cloud_story_seeds_with_copc_connection(monkeypatch):
     finally:
         session.close()
 
-    copc_chapters = [c for c in chapters if (c.get("layer_config") or {}).get("connection_id")]
+    copc_chapters = [
+        c for c in chapters if (c.get("layer_config") or {}).get("connection_id")
+    ]
     assert copc_chapters
     for c in copc_chapters:
         assert c["layer_config"]["connection_id"] == "autzen-id"
@@ -1098,9 +1098,7 @@ def test_cities_story_carries_admin_boundary_overlays():
     session = factory()
     try:
         row = (
-            session.query(StoryRow)
-            .filter(StoryRow.title == "Cities from space")
-            .one()
+            session.query(StoryRow).filter(StoryRow.title == "Cities from space").one()
         )
         chapters = json.loads(row.chapters_json)
     finally:
@@ -1121,7 +1119,7 @@ def test_stork_story_seeds_with_trajectory_dataset(monkeypatch):
     from src.services.example_datasets import example_dataset_id
 
     _, factory = _make_db()
-    seed_example_trajectories(factory)
+    seed_example_trajectories(factory, artifact_exists=lambda _key: True)
     det_id = example_dataset_id(STORK_URL)
 
     monkeypatch.setattr(example_stories_module, "ALL_STORIES", [STORK_STORY])

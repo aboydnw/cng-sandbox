@@ -27,6 +27,8 @@ from src.services.storage import StorageService
 from src.services.url_validation import raise_if_redirect, validate_url_safe
 
 _STORAGE_PREFIX = "/storage/"
+MAX_TRIPS_BYTES = 50 * 1024 * 1024
+_DOWNLOAD_CHUNK_BYTES = 64 * 1024
 
 
 def _is_storage_url(url: str) -> bool:
@@ -106,9 +108,24 @@ def fetch_trips_json(
 
     try:
         validate_url_safe(src_url)
-        resp = httpx.get(src_url, timeout=30.0, follow_redirects=False)
-        raise_if_redirect(resp)
-        resp.raise_for_status()
-        out_path.write_bytes(resp.content)
+        with httpx.stream("GET", src_url, timeout=30.0, follow_redirects=False) as resp:
+            raise_if_redirect(resp)
+            resp.raise_for_status()
+            content_length = resp.headers.get("content-length")
+            if content_length and int(content_length) > MAX_TRIPS_BYTES:
+                raise ValueError(
+                    f"trajectory exceeds the {MAX_TRIPS_BYTES}-byte export limit"
+                )
+
+            bytes_received = 0
+            with out_path.open("wb") as output:
+                for chunk in resp.iter_bytes(chunk_size=_DOWNLOAD_CHUNK_BYTES):
+                    bytes_received += len(chunk)
+                    if bytes_received > MAX_TRIPS_BYTES:
+                        raise ValueError(
+                            f"trajectory exceeds the {MAX_TRIPS_BYTES}-byte export limit"
+                        )
+                    output.write(chunk)
     except Exception as exc:
+        out_path.unlink(missing_ok=True)
         raise ValueError(f"trips source unavailable: {src_url} ({exc})") from exc

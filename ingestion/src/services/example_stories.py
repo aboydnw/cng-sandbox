@@ -42,8 +42,12 @@ HATAY_DEFNE_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb7815ca43600005f4
 HATAY_TURINCLU_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb8222ca43600005f4d925/0/63eb8222ca43600005f4d926.tif"
 AUTZEN_URL = "https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz"
 IMERG_URL = "https://data.source.coop/bkr/imerg/imerg_final.zarr"
-ADMIN0_URL = "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin0.pmtiles"
-ADMIN1_URL = "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin1.pmtiles"
+ADMIN0_URL = (
+    "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin0.pmtiles"
+)
+ADMIN1_URL = (
+    "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin1.pmtiles"
+)
 
 
 @dataclass(frozen=True)

@@ -119,8 +119,8 @@ describe("NarrativeEditor 3D section", () => {
       expect.objectContaining({ trail_length: null })
     );
     expect(
-      onLayerConfigChange.mock.calls.some(
-        ([config]) => Number.isNaN(config.trail_length)
+      onLayerConfigChange.mock.calls.some(([config]) =>
+        Number.isNaN(config.trail_length)
       )
     ).toBe(false);
   });

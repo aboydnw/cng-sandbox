@@ -90,6 +90,72 @@ const TEMPORAL_DATASET: Dataset = {
   ],
 };
 
+const TRAJECTORY_DATASET: Dataset = {
+  ...BASE_DATASET,
+  id: "t1",
+  dataset_type: "trajectory",
+  trips_url: "/storage/t1/trips.json",
+};
+
+describe("buildLayersForChapter — trajectory rendering", () => {
+  const tracks = [
+    {
+      trajectory_id: "a",
+      path: [
+        [0, 0],
+        [1, 1],
+      ] as [number, number][],
+      timestamps: [0, 1000],
+      speeds: [1, 2],
+    },
+  ];
+
+  it("builds a trips layer for a trajectory dataset when tracks are provided", () => {
+    const chapter = createChapter({
+      layer_config: {
+        ...DEFAULT_LAYER_CONFIG,
+        dataset_id: "t1",
+        trail_length: 120,
+      },
+    });
+    const { layers, renderMetadata } = buildLayersForChapter(
+      chapter,
+      new Map([["t1", TRAJECTORY_DATASET]]),
+      undefined,
+      undefined,
+      {
+        tracksByDatasetId: new Map([["t1", tracks]]),
+        timeByDatasetId: new Map([["t1", 500]]),
+      }
+    );
+    expect(layers).toHaveLength(1);
+    expect(layers[0].id).toBe("trips-story-t1");
+    expect(
+      (layers[0] as unknown as { props: { currentTime: number } }).props
+        .currentTime
+    ).toBe(500);
+    expect(
+      (layers[0] as unknown as { props: { trailLength: number } }).props
+        .trailLength
+    ).toBe(120);
+    expect(renderMetadata?.reason).toBe("trajectory");
+  });
+
+  it("returns empty layers with trajectory metadata while tracks are loading", () => {
+    const chapter = createChapter({
+      layer_config: { ...DEFAULT_LAYER_CONFIG, dataset_id: "t1" },
+    });
+    const { layers, renderMetadata } = buildLayersForChapter(
+      chapter,
+      new Map([["t1", TRAJECTORY_DATASET]]),
+      undefined,
+      undefined
+    );
+    expect(layers).toHaveLength(0);
+    expect(renderMetadata?.reason).toBe("trajectory");
+  });
+});
+
 describe("buildLayersForChapter — temporal timestep wiring", () => {
   it("appends datetime param for timestep index 2", () => {
     const chapter = createChapter({

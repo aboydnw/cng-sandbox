@@ -5,6 +5,8 @@ import {
   isPMTilesDataset,
 } from "../layers";
 import { buildZarrLayer } from "../layers/zarrLayer";
+import { buildTripsLayer } from "../layers/tripsLayer";
+import type { TripTrack } from "../layers/tripsLayer";
 import { buildConnectionTileUrl } from "../connections";
 import { resolveRasterLayers } from "../layers/resolveRasterLayers";
 import { datasetToMapItem, connectionToMapItem } from "../../hooks/useMapData";
@@ -218,17 +220,39 @@ export interface ChapterLayerResult {
   renderMetadata?: ChapterRenderMetadata;
 }
 
+export interface StoryTripsContext {
+  tracksByDatasetId: Map<string, TripTrack[]>;
+  timeByDatasetId: Map<string, number>;
+}
+
+/**
+ * Representative trajectory time for a chapter at position `localIndex` within
+ * a block of `blockLength` chapters — used for reduced-motion pinning and for
+ * scrollytelling snapshot capture so a still frame shows a sensible trail.
+ */
+export function beatTime(
+  tMin: number,
+  tMax: number,
+  localIndex: number,
+  blockLength: number
+): number {
+  if (blockLength <= 0) return tMin;
+  return tMin + ((localIndex + 1) / blockLength) * (tMax - tMin);
+}
+
 export function buildLayersForChapter(
   chapter: Chapter,
   datasetMap: Map<string, Dataset | null>,
   connectionMap?: Map<string, Connection>,
-  zarrNodeMap?: Map<string, ZarrNode>
+  zarrNodeMap?: Map<string, ZarrNode>,
+  trips?: StoryTripsContext
 ): ChapterLayerResult {
   const result = buildPrimaryLayersForChapter(
     chapter,
     datasetMap,
     connectionMap,
-    zarrNodeMap
+    zarrNodeMap,
+    trips
   );
   const overlays =
     (chapter.type === "scrollytelling" || chapter.type === "map") &&
@@ -244,7 +268,8 @@ function buildPrimaryLayersForChapter(
   chapter: Chapter,
   datasetMap: Map<string, Dataset | null>,
   connectionMap?: Map<string, Connection>,
-  zarrNodeMap?: Map<string, ZarrNode>
+  zarrNodeMap?: Map<string, ZarrNode>,
+  trips?: StoryTripsContext
 ): ChapterLayerResult {
   if (!isMapBoundChapter(chapter) && chapter.type !== "flyover") {
     return { layers: [] };
@@ -434,6 +459,31 @@ function buildPrimaryLayersForChapter(
         reason: "point cloud",
         sizeBytes: null,
       },
+    };
+  }
+
+  if (ds.dataset_type === "trajectory") {
+    const meta = {
+      renderMode: "client" as const,
+      reason: "trajectory",
+      sizeBytes: null,
+    };
+    const tracks = trips?.tracksByDatasetId.get(ds.id);
+    if (!tracks || tracks.length === 0) {
+      return { layers: [], renderMetadata: meta };
+    }
+    const currentTime =
+      trips?.timeByDatasetId.get(ds.id) ?? tracks[0].timestamps[0] ?? 0;
+    return {
+      layers: [
+        buildTripsLayer({
+          id: `trips-story-${ds.id}`,
+          tracks,
+          currentTime,
+          trailLength: lc.trail_length ?? 600,
+        }),
+      ],
+      renderMetadata: meta,
     };
   }
 

@@ -20,11 +20,15 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+import httpx
 import obstore
 
 from src.services.storage import StorageService
+from src.services.url_validation import raise_if_redirect, validate_url_safe
 
 _STORAGE_PREFIX = "/storage/"
+MAX_TRIPS_BYTES = 50 * 1024 * 1024
+_DOWNLOAD_CHUNK_BYTES = 64 * 1024
 
 
 def _is_storage_url(url: str) -> bool:
@@ -78,3 +82,50 @@ def vector_source_path(
         yield str(tmp_path)
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def fetch_trips_json(
+    src_url: str,
+    out_path: Path,
+    storage: StorageService | None = None,
+) -> None:
+    """Write a trajectory `trips.json` sidecar to `out_path`.
+
+    For `/storage/<key>` virtual URLs, streams the object from R2. For absolute
+    URLs, fetches through the SSRF-guarded `validate_url_safe` + `raise_if_redirect`
+    pair. Raises on any failure — a missing trajectory fails the export loudly
+    rather than silently dropping the layer.
+    """
+    if _is_storage_url(src_url):
+        storage = storage or StorageService()
+        key = _storage_key(src_url)
+        try:
+            result = obstore.get(storage.store, key)
+        except Exception as exc:
+            raise ValueError(f"trips source unavailable: {src_url} ({exc})") from exc
+        out_path.write_bytes(bytes(result.bytes()))
+        return
+
+    try:
+        validate_url_safe(src_url)
+        with httpx.stream("GET", src_url, timeout=30.0, follow_redirects=False) as resp:
+            raise_if_redirect(resp)
+            resp.raise_for_status()
+            content_length = resp.headers.get("content-length")
+            if content_length and int(content_length) > MAX_TRIPS_BYTES:
+                raise ValueError(
+                    f"trajectory exceeds the {MAX_TRIPS_BYTES}-byte export limit"
+                )
+
+            bytes_received = 0
+            with out_path.open("wb") as output:
+                for chunk in resp.iter_bytes(chunk_size=_DOWNLOAD_CHUNK_BYTES):
+                    bytes_received += len(chunk)
+                    if bytes_received > MAX_TRIPS_BYTES:
+                        raise ValueError(
+                            f"trajectory exceeds the {MAX_TRIPS_BYTES}-byte export limit"
+                        )
+                    output.write(chunk)
+    except Exception as exc:
+        out_path.unlink(missing_ok=True)
+        raise ValueError(f"trips source unavailable: {src_url} ({exc})") from exc

@@ -43,6 +43,23 @@ section.chapter.chart .chart-container {
   width: 100%;
   height: 480px;
 }
+.trips-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.trips-controls .trips-play {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.trips-controls .trips-scrub {
+  flex: 1;
+}
 .legend {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;

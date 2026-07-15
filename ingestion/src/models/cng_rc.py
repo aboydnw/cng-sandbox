@@ -48,10 +48,13 @@ class CngRcRender(BaseModel):
     band: int | None
     timestep: int | str | None
     colormap_reversed: bool = False
+    trail_length: float | None = None
 
 
 class CngRcLayer(BaseModel):
-    type: Literal["raster-cog", "vector-geoparquet", "pmtiles", "xyz", "copc"]
+    type: Literal[
+        "raster-cog", "vector-geoparquet", "pmtiles", "xyz", "copc", "trajectory"
+    ]
     source_url: str | None
     cng_url: str | None
     label: str | None

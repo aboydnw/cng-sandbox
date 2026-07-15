@@ -145,6 +145,49 @@ describe("cngRcToStory", () => {
     expect(chapter.layer_config.dataset_id).toBe("");
   });
 
+  it("reconstructs a trajectory layer as a dataset with trips_url and trail_length", () => {
+    const config = makeConfig({
+      chapters: [
+        {
+          id: "ch-1",
+          type: "scrollytelling",
+          title: "Track",
+          body: "",
+          map: { center: [10, 20], zoom: 5 },
+          layers: ["trip"],
+        },
+      ],
+      layers: {
+        trip: makeLayer({
+          type: "trajectory",
+          cng_url: "/storage/t1/trips.json",
+          label: "Stork",
+          render: {
+            colormap: null,
+            rescale: null,
+            opacity: 1,
+            band: null,
+            timestep: null,
+            trail_length: 300,
+          },
+        }),
+      },
+    });
+
+    const { story, datasets } = cngRcToStory(config);
+    const ds = datasets.get("portable-trip");
+    expect(ds).toBeDefined();
+    expect(ds!.dataset_type).toBe("trajectory");
+    expect(ds!.trips_url).toBe("/storage/t1/trips.json");
+
+    const chapter = story.chapters[0];
+    if (chapter.type !== "scrollytelling")
+      throw new Error("expected scrollytelling");
+    expect(chapter.layer_config.dataset_id).toBe("portable-trip");
+    expect(chapter.layer_config.connection_id).toBeUndefined();
+    expect(chapter.layer_config.trail_length).toBe(300);
+  });
+
   it("carries a chapter's extra layers into overlays", () => {
     const config = makeConfig({
       chapters: [

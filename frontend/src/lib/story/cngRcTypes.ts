@@ -34,7 +34,13 @@ export interface CngRcChapter {
 }
 
 export interface CngRcLayer {
-  type: "raster-cog" | "vector-geoparquet" | "pmtiles" | "xyz";
+  type:
+    | "raster-cog"
+    | "vector-geoparquet"
+    | "pmtiles"
+    | "xyz"
+    | "copc"
+    | "trajectory";
   source_url: string | null;
   cng_url: string | null;
   label: string | null;
@@ -45,6 +51,8 @@ export interface CngRcLayer {
     opacity: number;
     band: number | null;
     timestep: string | null;
+    colormap_reversed?: boolean;
+    trail_length?: number | null;
   };
 }
 

@@ -27,14 +27,14 @@ async function main() {
   const root = document.getElementById("root")!;
   try {
     const config = await loadConfig();
-    const { story, connections } = cngRcToStory(config);
+    const { story, connections, datasets } = cngRcToStory(config);
 
     createRoot(root).render(
       <StrictMode>
         <ChakraProvider value={system}>
           <StoryReaderInner
             story={story}
-            datasetMap={new Map()}
+            datasetMap={datasets}
             connectionMap={connections}
             embed
             shared

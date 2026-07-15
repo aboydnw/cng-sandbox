@@ -155,6 +155,22 @@ def _build_map_chapter(
                     else 1.0,
                 }
             )
+        elif layer.type == "trajectory":
+            out = chapter_dir / f"{layer_id}.trips.json"
+            source_resolver.fetch_trips_json(src_url, out)
+            manifest_layers.append(
+                {
+                    "id": layer_id,
+                    "kind": "trips",
+                    "src": f"{layer_id}.trips.json",
+                    "opacity": layer.render.opacity
+                    if layer.render.opacity is not None
+                    else 1.0,
+                    "trail_length": layer.render.trail_length
+                    if layer.render.trail_length is not None
+                    else 600,
+                }
+            )
         else:
             raise ValueError(
                 f"layer type {layer.type!r} not yet supported in interactive export"

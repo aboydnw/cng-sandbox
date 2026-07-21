@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.12.0](https://github.com/aboydnw/cng-sandbox/compare/v2.11.0...v2.12.0) (2026-07-21)
+
+
+### Features
+
+* add Esri World Imagery satellite basemap ([#572](https://github.com/aboydnw/cng-sandbox/issues/572)) ([4936007](https://github.com/aboydnw/cng-sandbox/commit/4936007812426194ecff869e5e990e1383ff0181))
+* CSV/TSV upload with geometry-column selection ([#573](https://github.com/aboydnw/cng-sandbox/issues/573)) ([159b1ab](https://github.com/aboydnw/cng-sandbox/commit/159b1abb29dfb85622a46e1481ccf201314cdcad))
+* establish design polish foundations ([#585](https://github.com/aboydnw/cng-sandbox/issues/585)) ([f835127](https://github.com/aboydnw/cng-sandbox/commit/f83512759c5e4bf28f28e7ca0db0647cc03b6cb4))
+* movement tracks in stories + example coverage (COPC, temporal zarr, overlays, stork migration) ([#584](https://github.com/aboydnw/cng-sandbox/issues/584)) ([541cc3a](https://github.com/aboydnw/cng-sandbox/commit/541cc3aa8d47bd9eb4c73ad78e92df989ba8fed8))
+* polish application navigation shell ([#586](https://github.com/aboydnw/cng-sandbox/issues/586)) ([e4e15e1](https://github.com/aboydnw/cng-sandbox/commit/e4e15e1a2dfcfef0aa96cea20e3aa3cf85d47e8a))
+* polish landing, workspace, and ingestion flows ([#590](https://github.com/aboydnw/cng-sandbox/issues/590)) ([8d7d6a1](https://github.com/aboydnw/cng-sandbox/commit/8d7d6a18c5c5ab5e05ea15492ee961bc6f45eab8))
+
+
+### Bug Fixes
+
+* carry story overlays into portable export, accept GPX/LAS uploads, validate overlay refs ([#570](https://github.com/aboydnw/cng-sandbox/issues/570)) ([97c3d1c](https://github.com/aboydnw/cng-sandbox/commit/97c3d1c5b40100d546c1cb5f3b881ee4f0e95ba8))
+
 ## [2.11.0](https://github.com/aboydnw/cng-sandbox/compare/v2.10.0...v2.11.0) (2026-07-12)
 
 

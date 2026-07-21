@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import type { Table } from "apache-arrow";
 import { useDuckDB } from "../hooks/useDuckDB";
@@ -93,7 +93,7 @@ export function ExploreTab({ parquetUrl, onTableChange }: ExploreTabProps) {
           style={{ animation: "spin 1s linear infinite" }}
         />
         <Text fontSize="sm" color="gray.500">
-          Loading DuckDB...
+          Preparing explore tools…
         </Text>
       </Flex>
     );
@@ -101,19 +101,26 @@ export function ExploreTab({ parquetUrl, onTableChange }: ExploreTabProps) {
 
   if (duckdbError) {
     return (
-      <Box p={4}>
-        <Text fontSize="sm" color="red.500">
-          {duckdbError}
+      <Box p={4} role="alert">
+        <Text fontSize="sm" color="status.danger.fg" fontWeight="semibold">
+          Explore tools couldn’t start
         </Text>
-        <Text fontSize="xs" color="gray.500" mt={2}>
-          Your browser may not support WebAssembly.
+        <Text fontSize="xs" color="fg.muted" mt={1}>
+          {duckdbError}. Your browser may not support the required local data
+          tools.
         </Text>
+        <Button size="sm" variant="outline" mt={3} onClick={initialize}>
+          Try again
+        </Button>
       </Box>
     );
   }
 
   return (
-    <Box p={4} fontSize="sm">
+    <Box p={4} fontSize="sm" aria-label="Explore data">
+      <Text fontSize="sm" fontWeight="semibold" color="fg" mb={3}>
+        Explore data
+      </Text>
       {/* Feature count */}
       <Box mb={4}>
         <Text fontSize="2xl" fontWeight={700} lineHeight={1}>

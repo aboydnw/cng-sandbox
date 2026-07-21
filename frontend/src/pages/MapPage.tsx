@@ -8,8 +8,8 @@ import {
 } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
-import { Box, Flex, Text, Spinner } from "@chakra-ui/react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { Box, Button, Flex, Skeleton, Text } from "@chakra-ui/react";
+import { SlidersHorizontal, SpinnerGap, X } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { SharedHeader } from "../components/SharedHeader";
 import { ShareButton } from "../components/ShareButton";
@@ -46,7 +46,6 @@ import { useTemporalExport } from "../hooks/useTemporalExport";
 import { useTileTransferSize } from "../hooks/useTileTransferSize";
 import { detectCadence } from "../utils/temporal";
 import { MapSidePanel } from "../components/MapSidePanel";
-import { CopcControls } from "../components/CopcControls";
 import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { useMapData } from "../hooks/useMapData";
 import { useMapControls } from "../hooks/useMapControls";
@@ -66,6 +65,7 @@ import { connectionsApi, datasetsApi } from "../lib/api";
 import { toaster } from "../lib/toaster";
 import type { RenderMode } from "../hooks/useMapControls";
 import type { Table } from "apache-arrow";
+import { StatePanel } from "../components/ui/StatePanel";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
   const { id } = useParams<{ id: string }>();
@@ -73,6 +73,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   const workspace = useOptionalWorkspace();
   const workspacePath = workspace?.workspacePath ?? ((p: string) => p);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const rawTimestep = Number(searchParams.get("t") ?? 0);
   const initialTimestep = Number.isFinite(rawTimestep)
     ? Math.max(0, Math.trunc(rawTimestep))
@@ -598,15 +599,37 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
         <Flex
           as="main"
           id="main-content"
-          align="center"
-          justify="center"
           h="calc(100vh - 56px)"
+          overflow="hidden"
         >
-          <SpinnerGap
-            size={32}
-            color="#CF3F02"
-            style={{ animation: "spin 1s linear infinite" }}
-          />
+          <Flex flex={1} bg="bg.emphasized" align="center" justify="center">
+            <Flex align="center" gap={2} color="fg.muted" role="status">
+              <SpinnerGap
+                size={22}
+                color="var(--chakra-colors-brand-orange)"
+                style={{ animation: "spin 1s linear infinite" }}
+              />
+              <Text fontSize="sm">Preparing map…</Text>
+            </Flex>
+          </Flex>
+          <Box
+            display={{ base: "none", md: "block" }}
+            w="320px"
+            p={4}
+            borderLeftWidth="1px"
+            borderColor="border"
+            bg="bg.raised"
+          >
+            {["40%", "100%", "82%", "100%", "64%"].map((width, index) => (
+              <Skeleton
+                key={index}
+                h={index === 0 ? 5 : 9}
+                w={width}
+                mb={3}
+                borderRadius="control"
+              />
+            ))}
+          </Box>
         </Flex>
       </Box>
     );
@@ -623,9 +646,17 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
           align="center"
           justify="center"
           h="calc(100vh - 56px)"
-          gap={4}
+          px={4}
         >
-          <Text color="red.500">{error}</Text>
+          <Box w="100%" maxW="520px">
+            <StatePanel
+              tone="danger"
+              title="Couldn’t open this map"
+              description={error}
+              actionLabel="Try again"
+              onAction={refresh}
+            />
+          </Box>
         </Flex>
       </Box>
     );
@@ -679,7 +710,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   </Box>
                 ) : (
                   <Box textAlign="center">
-                    <Spinner color="brand.orange" />
+                    <SpinnerGap
+                      size={22}
+                      color="var(--chakra-colors-brand-orange)"
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
                     <Text mt={2}>Converting GeoParquet to PMTiles…</Text>
                     {conversion.featureCount != null && (
                       <Text fontSize="sm" color="gray.600">
@@ -713,7 +748,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   </Box>
                 ) : (
                   <Box textAlign="center">
-                    <Spinner color="brand.orange" />
+                    <SpinnerGap
+                      size={22}
+                      color="var(--chakra-colors-brand-orange)"
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
                     <Text mt={2}>Loading GeoParquet…</Text>
                   </Box>
                 )}
@@ -776,27 +815,22 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   onDismiss={() => setZoomPromptDismissed(true)}
                 />
               )}
-              {isPointCloud && (
-                <Box
+              {!shared && (
+                <Button
+                  display={{ base: "flex", md: "none" }}
                   position="absolute"
                   top={3}
                   right={3}
-                  bg="white"
-                  borderWidth="1px"
-                  borderColor="brand.border"
-                  borderRadius="6px"
-                  shadow="sm"
-                  p={3}
-                  w="200px"
+                  zIndex="mapControl"
+                  size="sm"
+                  variant="surface"
+                  shadow="md"
+                  aria-expanded={mobilePanelOpen}
+                  aria-controls="map-controls-panel"
+                  onClick={() => setMobilePanelOpen(true)}
                 >
-                  <CopcControls
-                    colorMode={copcColorMode}
-                    onColorModeChange={setCopcColorMode}
-                    pointSize={copcPointSize}
-                    onPointSizeChange={setCopcPointSize}
-                    pointCount={item?.pointCount ?? null}
-                  />
-                </Box>
+                  <SlidersHorizontal size={16} /> Map controls
+                </Button>
               )}
               {shared &&
                 !(isServerGeoParquet && needsConversion) &&
@@ -938,7 +972,11 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                       </Text>
                     ) : (
                       <>
-                        <Spinner size="sm" color="brand.orange" />
+                        <SpinnerGap
+                          size={18}
+                          color="var(--chakra-colors-brand-orange)"
+                          style={{ animation: "spin 1s linear infinite" }}
+                        />
                         <Text fontSize="sm" color="brand.brown">
                           Loading trajectory&hellip;
                         </Text>
@@ -983,15 +1021,53 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
           </Box>
 
           <Box
+            id="map-controls-panel"
             flex={3}
             maxW="340px"
             minW="260px"
-            display={{ base: "none", md: "block" }}
-            bg="brand.bgSubtle"
+            display={{ base: mobilePanelOpen ? "block" : "none", md: "block" }}
+            position={{ base: "fixed", md: "static" }}
+            inset={{ base: "auto 0 0", md: "auto" }}
+            maxH={{ base: "min(76dvh, 680px)", md: "none" }}
+            w={{ base: "100%", md: "auto" }}
+            zIndex={{ base: "overlay", md: "base" }}
+            bg="bg.raised"
             borderLeftWidth="1px"
-            borderColor="brand.border"
+            borderTopWidth={{ base: "1px", md: "0" }}
+            borderColor="border"
+            borderTopRadius={{ base: "panel", md: "0" }}
+            shadow={{ base: "lg", md: "none" }}
             overflow="auto"
+            aria-label="Map controls"
           >
+            <Flex
+              display={{ base: "flex", md: "none" }}
+              position="sticky"
+              top={0}
+              zIndex="sticky"
+              align="center"
+              justify="space-between"
+              px={4}
+              py={3}
+              bg="bg.raised"
+              borderBottomWidth="1px"
+              borderColor="border"
+            >
+              <Box>
+                <Text fontWeight="semibold">Map controls</Text>
+                <Text textStyle="metadata" color="fg.muted">
+                  Appearance, data, and sharing
+                </Text>
+              </Box>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label="Close map controls"
+                onClick={() => setMobilePanelOpen(false)}
+              >
+                <X size={18} />
+              </Button>
+            </Flex>
             <MapSidePanel
               item={item}
               opacity={controls.opacity}
@@ -1037,7 +1113,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
               }
               onDatasetUpdated={refresh}
               copcColorMode={isPointCloud ? copcColorMode : undefined}
+              onCopcColorModeChange={
+                isPointCloud ? setCopcColorMode : undefined
+              }
               copcPointSize={isPointCloud ? copcPointSize : undefined}
+              onCopcPointSizeChange={
+                isPointCloud ? setCopcPointSize : undefined
+              }
               shared={shared}
               savePreferredColormap={
                 !shared && item?.dataType === "raster" && !itemIsExample

@@ -53,25 +53,29 @@ export function VectorPopupOverlay({
       position="absolute"
       left={`${popup.x}px`}
       top={`${popup.y}px`}
-      bg="white"
-      borderRadius="6px"
+      transform="translate(-8px, -8px)"
+      bg="bg.raised"
+      borderRadius="panel"
       shadow="lg"
       border="1px solid"
-      borderColor="gray.200"
+      borderColor="map.controlBorder"
       p={3}
-      maxW="300px"
-      maxH="400px"
+      w="min(300px, calc(100vw - 24px))"
+      maxH="min(400px, calc(100vh - 24px))"
       overflow="auto"
       zIndex={10}
       onClick={(e) => e.stopPropagation()}
+      role="region"
+      aria-label="Selected feature details"
     >
       <Box
         as="button"
+        aria-label="Close feature details"
         position="absolute"
         top={1}
         right={1}
         fontSize="xs"
-        color="gray.400"
+        color="fg.muted"
         onClick={onDismiss}
         cursor="pointer"
         bg="none"
@@ -82,10 +86,10 @@ export function VectorPopupOverlay({
       </Box>
       {Object.entries(popup.properties).map(([k, v]) => (
         <Box key={k} mb={1}>
-          <Text as="span" fontSize="xs" fontWeight={600} color="gray.600">
+          <Text as="span" fontSize="xs" fontWeight={600} color="fg.muted">
             {k}:{" "}
           </Text>
-          <Text as="span" fontSize="xs" color="gray.800">
+          <Text as="span" fontSize="xs" color="fg">
             {String(v)}
           </Text>
         </Box>

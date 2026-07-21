@@ -50,15 +50,17 @@ export function TemporalControls({
       left="50%"
       transform="translateX(-50%)"
       zIndex={10}
+      w={{ base: "calc(100% - 24px)", md: "auto" }}
     >
       <Box
         bg="white"
-        borderRadius="10px"
-        boxShadow="0 2px 12px rgba(0,0,0,0.12)"
-        px={4}
+        borderRadius="panel"
+        borderWidth="1px"
+        borderColor="border.subtle"
+        boxShadow="md"
+        px={{ base: 3, md: 4 }}
         py={2.5}
-        w="480px"
-        maxW="calc(100vw - 32px)"
+        w={{ base: "100%", md: "480px" }}
       >
         {/* Pre-load progress */}
         {isLoading && (
@@ -85,7 +87,12 @@ export function TemporalControls({
         )}
 
         {/* Top row: three groups */}
-        <Flex align="center" justify="space-between" gap={2}>
+        <Flex
+          align="center"
+          justify="space-between"
+          gap={2}
+          wrap={{ base: "wrap", sm: "nowrap" }}
+        >
           {/* Left: Calendar date picker */}
           <CalendarPopover
             timesteps={timesteps}
@@ -110,6 +117,7 @@ export function TemporalControls({
             <Box
               as="button"
               onClick={onTogglePlay}
+              aria-label={isPlaying ? "Pause animation" : "Play animation"}
               {...({ disabled } as object)}
               bg={disabled ? "#ccc" : "brand.orange"}
               color="white"
@@ -151,6 +159,8 @@ export function TemporalControls({
                   key={s}
                   as="button"
                   onClick={() => onSpeedChange(s)}
+                  aria-label={`Play at ${s} times speed`}
+                  aria-pressed={s === speed}
                   {...({ disabled } as object)}
                   border="1px solid"
                   borderColor={s === speed ? "brand.orange" : "#e8e3dd"}
@@ -175,6 +185,7 @@ export function TemporalControls({
             <Box
               as="button"
               onClick={onExportGif}
+              aria-label="Export animation as GIF"
               {...({ disabled } as object)}
               border="1px solid #e8e3dd"
               bg="white"
@@ -192,6 +203,7 @@ export function TemporalControls({
             <Box
               as="button"
               onClick={onExportMp4}
+              aria-label="Export animation as MP4"
               {...({ disabled } as object)}
               border="1px solid #e8e3dd"
               bg="white"

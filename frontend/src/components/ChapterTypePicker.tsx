@@ -37,7 +37,7 @@ interface ChapterTypePickerProps {
 
 export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
   return (
-    <Flex gap={1} flexWrap="wrap">
+    <Flex gap={1} flexWrap="wrap" role="group" aria-label="Chapter type">
       {CHAPTER_TYPE_OPTIONS.map(({ type, icon }) => (
         <Flex
           key={type}
@@ -52,6 +52,8 @@ export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
           color={value === type ? "brand.orange" : "brand.brown"}
           fontWeight={value === type ? 600 : 500}
           onClick={() => onChange(type)}
+          aria-pressed={value === type}
+          aria-label={`${CHAPTER_TYPE_LABELS[type]}: ${CHAPTER_TYPE_DESCRIPTIONS[type]}`}
           _hover={{
             bg: value === type ? "brand.bgSubtle" : "brand.bgSubtle",
             color: value === type ? "brand.orange" : "brand.brown",

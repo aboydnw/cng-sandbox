@@ -12,10 +12,13 @@ import {
   VideoCamera,
   Plus,
   X,
+  CheckCircle,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import type { ChapterType } from "../lib/story";
 import type { Chapter } from "../lib/story";
 import { CHAPTER_TYPE_LABELS } from "../lib/story/labels";
+import { chapterReadiness } from "../lib/story/readiness";
 
 interface ChapterListProps {
   chapters: Chapter[];
@@ -40,10 +43,12 @@ export function ChapterList({
 }: ChapterListProps) {
   const sorted = [...chapters].sort((a, b) => a.order - b.order);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   function handleDragStart(e: React.DragEvent, index: number) {
     e.dataTransfer.setData("text/plain", String(index));
     e.dataTransfer.effectAllowed = "move";
+    setDraggingId(sorted[index].id);
   }
 
   function handleDrop(e: React.DragEvent, targetIndex: number) {
@@ -55,6 +60,7 @@ export function ChapterList({
     const [moved] = reordered.splice(sourceIndex, 1);
     reordered.splice(targetIndex, 0, moved);
     onReorder(reordered.map((ch, i) => ({ ...ch, order: i })));
+    setDraggingId(null);
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -182,6 +188,7 @@ export function ChapterList({
         {sorted.map((chapter, i) => {
           const isActive = chapter.id === activeChapterId;
           const isConfirming = confirmDeleteId === chapter.id;
+          const readiness = chapterReadiness(chapter);
 
           return (
             <Box
@@ -190,18 +197,33 @@ export function ChapterList({
               onDragStart={(e) => handleDragStart(e, i)}
               onDrop={(e) => handleDrop(e, i)}
               onDragOver={handleDragOver}
+              onDragEnd={() => setDraggingId(null)}
+              role="button"
+              tabIndex={0}
+              aria-current={isActive ? "step" : undefined}
+              aria-label={`Chapter ${i + 1}: ${chapter.title || "Untitled chapter"}. ${
+                readiness.complete ? "Ready" : readiness.issues.join(". ")
+              }`}
               bg={isActive ? "brand.bgSubtle" : "white"}
               color={isActive ? "brand.brown" : "gray.700"}
               borderRadius="6px"
               mb={1}
               cursor="pointer"
               onClick={() => onSelect(chapter.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(chapter.id);
+                }
+              }}
               border="1px solid"
               borderColor={isActive ? "brand.border" : "transparent"}
               _hover={{
                 bg: isActive ? "brand.bgSubtle" : "gray.50",
               }}
               position="relative"
+              opacity={draggingId === chapter.id ? 0.55 : 1}
+              boxShadow={draggingId === chapter.id ? "md" : "none"}
             >
               {isConfirming ? (
                 <Flex
@@ -278,14 +300,24 @@ export function ChapterList({
                         )[chapter.type]
                       }
                       {CHAPTER_TYPE_LABELS[chapter.type]}
-                      {chapter.narrative.trim() ? (
-                        <> · {chapter.narrative.trim().slice(0, 40)}</>
-                      ) : (
-                        <Text as="span" fontStyle="italic">
-                          {" "}
-                          · No narrative yet
-                        </Text>
-                      )}
+                      <Text
+                        as="span"
+                        display="inline-flex"
+                        alignItems="center"
+                        gap={1}
+                        color={
+                          readiness.complete
+                            ? "status.success.fg"
+                            : "status.warning.fg"
+                        }
+                      >
+                        {readiness.complete ? (
+                          <CheckCircle size={11} weight="fill" />
+                        ) : (
+                          <WarningCircle size={11} weight="fill" />
+                        )}
+                        {readiness.complete ? "Ready" : readiness.issues[0]}
+                      </Text>
                     </Flex>
                   </Box>
 
@@ -300,6 +332,7 @@ export function ChapterList({
                   >
                     <Box
                       as="button"
+                      aria-label={`Move ${chapter.title || "chapter"} up`}
                       opacity={i === 0 ? 0.2 : 0.5}
                       cursor={i === 0 ? "default" : "pointer"}
                       aria-disabled={i === 0}
@@ -311,6 +344,7 @@ export function ChapterList({
                     </Box>
                     <Box
                       as="button"
+                      aria-label={`Move ${chapter.title || "chapter"} down`}
                       opacity={i === sorted.length - 1 ? 0.2 : 0.5}
                       cursor={i === sorted.length - 1 ? "default" : "pointer"}
                       aria-disabled={i === sorted.length - 1}
@@ -333,6 +367,7 @@ export function ChapterList({
                     >
                       <Box
                         as="button"
+                        aria-label={`Delete ${chapter.title || "chapter"}`}
                         opacity={0.4}
                         _hover={{ opacity: 0.8 }}
                         lineHeight={1}

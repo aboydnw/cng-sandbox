@@ -1,4 +1,13 @@
-import { Box, Button, Flex, Text, Menu, Portal } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  Menu,
+  Portal,
+  Skeleton,
+  Text,
+} from "@chakra-ui/react";
+import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import {
   X as XIcon,
@@ -7,6 +16,9 @@ import {
   SpinnerGap,
   CaretDown,
   DownloadSimple,
+  Eye,
+  ListBullets,
+  SlidersHorizontal,
 } from "@phosphor-icons/react";
 import { useTooltipDismiss } from "../hooks/useTooltipDismiss";
 import { useStoryEditor } from "../hooks/useStoryEditor";
@@ -33,6 +45,7 @@ import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 import { ChapterPreview } from "../components/editor/ChapterPreview";
 import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
 import { ChartChapterEditor } from "../components/editor/ChartChapterEditor";
+import { StatePanel } from "../components/ui/StatePanel";
 
 function TooltipCard({
   text,
@@ -73,6 +86,8 @@ function TooltipCard({
     </Box>
   );
 }
+
+type EditorView = "chapters" | "preview" | "edit";
 
 export default function StoryEditorPage() {
   const {
@@ -123,6 +138,7 @@ export default function StoryEditorPage() {
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [overlayPickerOpen, setOverlayPickerOpen] = useState(false);
+  const [editorView, setEditorView] = useState<EditorView>("edit");
 
   const activeDatasetTimesteps = useMemo(() => {
     if (!activeChapter || !isMapBoundChapter(activeChapter)) return undefined;
@@ -139,25 +155,76 @@ export default function StoryEditorPage() {
 
   if (loading) {
     return (
-      <Flex h="100vh" align="center" justify="center">
-        <SpinnerGap
-          size={32}
-          style={{ animation: "spin 1s linear infinite" }}
-        />
-      </Flex>
+      <Box h="100vh" display="flex" flexDirection="column" bg="bg">
+        <Header showWorkspace={false} />
+        <Flex
+          as="main"
+          id="main-content"
+          flex={1}
+          overflow="hidden"
+          aria-busy="true"
+        >
+          <Box
+            display={{ base: "none", lg: "block" }}
+            w="200px"
+            p={3}
+            bg="bg.raised"
+          >
+            <Skeleton h="28px" mb={4} />
+            {[1, 2, 3].map((value) => (
+              <Skeleton key={value} h="54px" mb={2} borderRadius="control" />
+            ))}
+          </Box>
+          <Flex flex={1} align="center" justify="center" bg="bg.emphasized">
+            <Flex align="center" gap={2} role="status" color="fg.muted">
+              <SpinnerGap
+                size={22}
+                style={{ animation: "spin 1s linear infinite" }}
+              />
+              <Text fontSize="sm">Opening story editor…</Text>
+            </Flex>
+          </Flex>
+          <Box
+            display={{ base: "none", lg: "block" }}
+            w="340px"
+            p={4}
+            bg="bg.raised"
+          >
+            <Skeleton h="20px" w="45%" mb={4} />
+            <Skeleton h="36px" mb={3} />
+            <Skeleton h="120px" mb={3} />
+            <Skeleton h="36px" />
+          </Box>
+        </Flex>
+      </Box>
     );
   }
   if (error || !story) {
     return (
-      <Flex
-        h="100vh"
-        direction="column"
-        align="center"
-        justify="center"
-        gap={3}
-      >
-        <Text color="red.500">{error ?? "Story not found"}</Text>
-      </Flex>
+      <Box minH="100vh" bg="bg">
+        <Header showWorkspace={false} />
+        <Flex
+          as="main"
+          id="main-content"
+          minH="calc(100vh - 56px)"
+          align="center"
+          justify="center"
+          px={4}
+        >
+          <Box w="100%" maxW="520px">
+            <StatePanel
+              tone="danger"
+              title="Couldn’t open this story"
+              description={error ?? "The story could not be found."}
+              action={
+                <Button asChild size="sm" variant="outline">
+                  <Link to={workspacePath("/stories")}>Back to stories</Link>
+                </Button>
+              }
+            />
+          </Box>
+        </Flex>
+      </Box>
     );
   }
 
@@ -165,7 +232,7 @@ export default function StoryEditorPage() {
     <Box h="100vh" display="flex" flexDirection="column">
       <Header showWorkspace={false}>
         <SaveStatus state={saveState} />
-        <Flex gap={3} align="center">
+        <Flex gap={{ base: 1, md: 2 }} align="center">
           {story.published && (
             <Flex align="center" gap={1.5}>
               <Box w={2} h={2} borderRadius="full" bg="green.500" />
@@ -176,75 +243,67 @@ export default function StoryEditorPage() {
           )}
           <Button
             size="sm"
-            variant="outline"
-            borderColor="brand.border"
-            color="brand.brown"
-            _hover={{ bg: "brand.bgSubtle", borderColor: "brand.orange" }}
+            variant="ghost"
+            aria-label="Export story"
             onClick={() => setExportDialogOpen(true)}
           >
-            <DownloadSimple size={14} weight="bold" /> Export
+            <DownloadSimple size={16} weight="bold" />
+            <Text as="span" display={{ base: "none", md: "inline" }}>
+              Export
+            </Text>
           </Button>
-          <Flex align="center">
-            <Button
-              size="sm"
-              bg="brand.orange"
-              color="white"
-              _hover={{ bg: "brand.brown" }}
-              borderRightRadius={0}
-              onClick={() =>
-                window.open(workspacePath(`/story/${story.id}`), "_blank")
-              }
-            >
-              Preview
-            </Button>
-            <Menu.Root positioning={{ placement: "bottom-end" }}>
-              <Menu.Trigger asChild>
-                <Button
-                  size="sm"
-                  bg="brand.orange"
-                  color="white"
-                  _hover={{ bg: "brand.brown" }}
-                  borderLeftRadius={0}
-                  borderLeft="1px solid"
-                  borderLeftColor="whiteAlpha.400"
-                  px={2}
-                  aria-label="More publish options"
-                >
-                  <CaretDown size={12} />
-                </Button>
-              </Menu.Trigger>
-              <Portal>
-                <Menu.Positioner>
-                  <Menu.Content minW="180px">
-                    {story.published ? (
-                      <>
-                        <Menu.Item
-                          value="share-settings"
-                          onSelect={() => setPublishDialogOpen(true)}
-                        >
-                          Share settings…
-                        </Menu.Item>
-                        <Menu.Item
-                          value="unpublish"
-                          color="red.600"
-                          onSelect={handleUnpublish}
-                        >
-                          Unpublish
-                        </Menu.Item>
-                      </>
-                    ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              window.open(workspacePath(`/story/${story.id}`), "_blank")
+            }
+          >
+            Preview
+          </Button>
+          {story.published ? (
+            <Flex align="center">
+              <Button
+                size="sm"
+                borderRightRadius={0}
+                onClick={() => setPublishDialogOpen(true)}
+              >
+                Share settings
+              </Button>
+              <Menu.Root positioning={{ placement: "bottom-end" }}>
+                <Menu.Trigger asChild>
+                  <Button
+                    size="sm"
+                    variant="solid"
+                    borderLeftRadius={0}
+                    borderLeft="1px solid"
+                    borderLeftColor="whiteAlpha.400"
+                    px={2}
+                    aria-label="More publish options"
+                  >
+                    <CaretDown size={12} />
+                  </Button>
+                </Menu.Trigger>
+                <Portal>
+                  <Menu.Positioner>
+                    <Menu.Content minW="180px">
                       <Menu.Item
-                        value="publish"
-                        onSelect={() => setPublishDialogOpen(true)}
+                        value="unpublish"
+                        color="status.danger.fg"
+                        onSelect={handleUnpublish}
                       >
-                        Publish…
+                        Unpublish
                       </Menu.Item>
-                    )}
-                  </Menu.Content>
-                </Menu.Positioner>
-              </Portal>
-            </Menu.Root>
-          </Flex>
+                    </Menu.Content>
+                  </Menu.Positioner>
+                </Portal>
+              </Menu.Root>
+            </Flex>
+          ) : (
+            <Button size="sm" onClick={() => setPublishDialogOpen(true)}>
+              Publish
+            </Button>
+          )}
         </Flex>
       </Header>
 
@@ -289,16 +348,53 @@ export default function StoryEditorPage() {
         </Flex>
       )}
 
+      <Flex
+        display={{ base: "flex", lg: "none" }}
+        role="tablist"
+        aria-label="Story editor view"
+        px={2}
+        py={2}
+        gap={1}
+        bg="bg.raised"
+        borderBottomWidth="1px"
+        borderColor="border"
+      >
+        {(
+          [
+            ["chapters", "Chapters", <ListBullets key="chapters" size={15} />],
+            ["preview", "Preview", <Eye key="preview" size={15} />],
+            ["edit", "Edit", <SlidersHorizontal key="edit" size={15} />],
+          ] as const
+        ).map(([view, label, icon]) => (
+          <Button
+            key={view}
+            role="tab"
+            aria-selected={editorView === view}
+            variant={editorView === view ? "subtle" : "ghost"}
+            color={editorView === view ? "action.primary" : "fg.muted"}
+            size="sm"
+            flex={1}
+            onClick={() => setEditorView(view)}
+          >
+            {icon} {label}
+          </Button>
+        ))}
+      </Flex>
+
       {/* Three-panel layout: Chapters | Map | Editor */}
       <Flex as="main" id="main-content" flex={1} overflow="hidden">
         {/* Left: chapter list */}
         <Box
-          w="200px"
+          width={{ base: "100%", lg: "200px" }}
           flexShrink={0}
           borderRight="1px solid"
           borderColor="gray.200"
           bg="white"
           position="relative"
+          display={{
+            base: editorView === "chapters" ? "block" : "none",
+            lg: "block",
+          }}
         >
           {firstUnseen === "chapters" && (
             <TooltipCard
@@ -309,7 +405,10 @@ export default function StoryEditorPage() {
           <ChapterList
             chapters={story.chapters}
             activeChapterId={activeChapterId}
-            onSelect={selectChapter}
+            onSelect={(chapterId) => {
+              selectChapter(chapterId);
+              setEditorView("edit");
+            }}
             onAdd={addChapter}
             onDelete={deleteChapter}
             onReorder={reorderChapters}
@@ -324,7 +423,15 @@ export default function StoryEditorPage() {
         {activeChapter &&
         (isMapBoundChapter(activeChapter) ||
           activeChapter.type === "flyover") ? (
-          <Box ref={mapContainerRef} flex={1} position="relative">
+          <Box
+            ref={mapContainerRef}
+            flex={1}
+            position="relative"
+            display={{
+              base: editorView === "preview" ? "block" : "none",
+              lg: "block",
+            }}
+          >
             {firstUnseen === "map" && (
               <TooltipCard
                 text="Navigate the map to frame your view. It saves automatically as you go."
@@ -407,7 +514,15 @@ export default function StoryEditorPage() {
             </UnifiedMap>
           </Box>
         ) : (
-          <Box flex={1} overflowY="auto" bg="gray.50">
+          <Box
+            flex={1}
+            overflowY="auto"
+            bg="bg.subtle"
+            display={{
+              base: editorView === "preview" ? "block" : "none",
+              lg: "block",
+            }}
+          >
             {activeChapter && (
               <ChapterPreview
                 chapter={activeChapter}
@@ -419,13 +534,17 @@ export default function StoryEditorPage() {
 
         {/* Right: editor panel */}
         <Box
-          w="340px"
           flexShrink={0}
           borderLeft="1px solid"
           borderColor="gray.200"
           bg="white"
           overflowY="auto"
           position="relative"
+          width={{ base: "100%", lg: "340px" }}
+          display={{
+            base: editorView === "edit" ? "block" : "none",
+            lg: "block",
+          }}
         >
           {firstUnseen === "narrative" && (
             <TooltipCard

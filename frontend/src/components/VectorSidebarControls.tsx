@@ -28,7 +28,7 @@ export function VectorSidebarControls({
         letterSpacing="1px"
         mb={3}
       >
-        Visualization Controls
+        Appearance
       </Text>
 
       {/* View mode */}
@@ -64,6 +64,7 @@ export function VectorSidebarControls({
         </Flex>
         <input
           type="range"
+          aria-label="Layer opacity"
           min={0}
           max={1}
           step={0.05}

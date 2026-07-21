@@ -44,6 +44,10 @@ export function TrajectoryControls({
       borderColor="brand.border"
       borderRadius="lg"
       boxShadow="md"
+      w={{ base: "calc(100% - 24px)", lg: "auto" }}
+      maxW="calc(100% - 24px)"
+      flexWrap={{ base: "wrap", lg: "nowrap" }}
+      justify={{ base: "center", lg: "flex-start" }}
     >
       <IconButton
         aria-label={isPlaying ? "Pause" : "Play"}
@@ -67,9 +71,16 @@ export function TrajectoryControls({
         max={tMax}
         value={currentTime}
         onChange={(e) => onScrub(Number(e.target.value))}
+        style={{ flex: "1 1 180px", minWidth: "120px" }}
       />
 
-      <Text fontSize="xs" fontFamily="mono" color="brand.brown" minW="150px">
+      <Text
+        fontSize="xs"
+        fontFamily="mono"
+        color="brand.brown"
+        minW={{ base: "auto", lg: "150px" }}
+        fontVariantNumeric="tabular-nums"
+      >
         {formatTimestamp(currentTime)}
       </Text>
 
@@ -79,6 +90,7 @@ export function TrajectoryControls({
             key={s}
             type="button"
             aria-pressed={s === speed}
+            aria-label={`Set speed to ${s} times`}
             px={2}
             fontSize="xs"
             borderRadius="sm"
@@ -91,7 +103,12 @@ export function TrajectoryControls({
         ))}
       </Flex>
 
-      <Flex align="center" gap={1} aria-label="Speed legend">
+      <Flex
+        display={{ base: "none", md: "flex" }}
+        align="center"
+        gap={1}
+        aria-label="Speed legend"
+      >
         <Text fontSize="10px" color="brand.brown">
           slow
         </Text>

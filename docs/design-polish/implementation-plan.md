@@ -7,15 +7,15 @@ component infrastructure.
 
 ## Sequence at a glance
 
-| Order | Work package | Relative size | Risk | Depends on |
-|---:|---|---:|---:|---|
-| 1 | Design foundations | Medium | Low | — |
-| 2 | Navigation and application shell | Small–medium | Low | 1 |
-| 3 | Landing page and example presentation | Medium | Low | 1–2 |
-| 4 | Workspace home, Stories, and Data | Medium–large | Medium | 1–3 shared patterns |
-| 5 | Upload, connect, and conversion | Medium | Medium | 1–2 |
-| 6 | Map workspace | Large | High | 1–2, preferably 4–5 |
-| 7 | Story editor and final quality pass | Large | Medium | 1–6 |
+| Order | Work package                          | Relative size |   Risk | Depends on          |
+| ----: | ------------------------------------- | ------------: | -----: | ------------------- |
+|     1 | Design foundations                    |        Medium |    Low | —                   |
+|     2 | Navigation and application shell      |  Small–medium |    Low | 1                   |
+|     3 | Landing page and example presentation |        Medium |    Low | 1–2                 |
+|     4 | Workspace home, Stories, and Data     |  Medium–large | Medium | 1–3 shared patterns |
+|     5 | Upload, connect, and conversion       |        Medium | Medium | 1–2                 |
+|     6 | Map workspace                         |         Large |   High | 1–2, preferably 4–5 |
+|     7 | Story editor and final quality pass   |         Large | Medium | 1–6                 |
 
 Packages 3 and 5 may proceed in parallel after foundations and navigation are
 stable. Keep package 6 isolated because map controls touch many specialized
@@ -24,17 +24,19 @@ data paths.
 ## Progress
 
 - [x] Package 1 — Design foundations (implemented 2026-07-21 on
-  `codex/design-polish-guide`)
+      `codex/design-polish-guide`)
 - [x] Package 2 — Navigation and application shell (implemented 2026-07-21 on
-  `codex/design-polish-packages-2-5`)
+      `codex/design-polish-packages-2-5`)
 - [x] Package 3 — Landing page and example presentation (implemented
-  2026-07-21 on `codex/design-polish-packages-3-5`)
+      2026-07-21 on `codex/design-polish-packages-3-5`)
 - [x] Package 4 — Workspace home, Stories, and Data (implemented 2026-07-21 on
-  `codex/design-polish-packages-3-5`)
+      `codex/design-polish-packages-3-5`)
 - [x] Package 5 — Upload, connect, and conversion (implemented 2026-07-21 on
-  `codex/design-polish-packages-3-5`)
-- [ ] Package 6 — Map workspace
-- [ ] Package 7 — Story editor and final quality pass
+      `codex/design-polish-packages-3-5`)
+- [x] Package 6 — Map workspace (implemented 2026-07-21 on
+      `codex/design-polish-packages-6-7`)
+- [x] Package 7 — Story editor and final quality pass (implemented 2026-07-21
+      on `codex/design-polish-packages-6-7`)
 
 ## 1. Design foundations
 

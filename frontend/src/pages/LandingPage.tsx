@@ -89,7 +89,7 @@ export default function LandingPage() {
     <Box minH="100vh" bg="brand.bgSubtle" display="flex" flexDirection="column">
       <Header showWorkspace={false} />
 
-      <Box flex="1" px={4} py={10}>
+      <Box as="main" id="main-content" flex="1" px={4} py={10}>
         <Box maxW="720px" mx="auto" textAlign="center" mb={10}>
           <Text
             fontSize="11px"

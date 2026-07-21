@@ -7,10 +7,13 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
 import { WorkspaceProvider } from "../../hooks/useWorkspace";
 
-function renderWithProviders(ui: React.ReactElement) {
+function renderWithProviders(
+  ui: React.ReactElement,
+  initialEntry = "/w/test-workspace"
+) {
   return render(
     <ChakraProvider value={system}>
-      <MemoryRouter initialEntries={["/w/test-workspace"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route
             path="/w/:workspaceId/*"
@@ -37,6 +40,21 @@ describe("Header", () => {
       screen.getByRole("link", { name: /^stories$/i })
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /about/i })).toBeInTheDocument();
+  });
+
+  it("marks the current navigation item", () => {
+    renderWithProviders(<Header />, "/w/test-workspace/stories");
+    expect(screen.getByRole("link", { name: /^stories$/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+  });
+
+  it("provides a keyboard skip link", () => {
+    renderWithProviders(<Header />);
+    expect(
+      screen.getByRole("link", { name: /skip to main content/i })
+    ).toHaveAttribute("href", "#main-content");
   });
 });
 
@@ -125,6 +143,7 @@ describe("Header workspace menu", () => {
     expect(
       screen.getByRole("menuitem", { name: /change workspaces/i })
     ).toBeInTheDocument();
+    expect(screen.getByText("test-workspace")).toBeInTheDocument();
   });
 
   it("hides 'make primary' when this workspace is already the primary", async () => {

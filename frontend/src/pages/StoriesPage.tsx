@@ -63,7 +63,15 @@ export default function StoriesPage() {
   return (
     <Flex direction="column" minH="100vh" bg="bg">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4} w="100%">
+      <Box
+        as="main"
+        id="main-content"
+        maxW="960px"
+        mx="auto"
+        py={8}
+        px={4}
+        w="100%"
+      >
         <Flex justify="space-between" align="center" mb={6}>
           <Heading size="lg" color="fg">
             Your stories

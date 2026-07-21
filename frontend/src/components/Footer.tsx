@@ -20,58 +20,64 @@ export function Footer() {
     <Flex
       as="footer"
       mt="auto"
-      align="center"
-      justify="space-between"
-      px={6}
-      py={4}
-      bg="white"
+      bg="bg.raised"
       borderTop="1px solid"
-      borderColor="brand.border"
-      gap={6}
-      flexWrap="wrap"
+      borderColor="border"
     >
-      <Text fontSize="sm" color="brand.textSecondary">
-        Built by{" "}
-        <a
-          href={DS_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            color: "var(--chakra-colors-brand-orange)",
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Development Seed
-        </a>
-      </Text>
-      <Flex align="center" gap={5}>
-        <Link to={aboutHref} style={linkStyle}>
-          About
-        </Link>
-        <a
-          href={GITHUB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            ...linkStyle,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-          aria-label="GitHub repository"
-        >
-          <GithubLogo size={16} weight="duotone" />
-          GitHub
-        </a>
-        <a
-          href={CONTACT_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={linkStyle}
-        >
-          Contact Us
-        </a>
+      <Flex
+        align="center"
+        justify="space-between"
+        px={{ base: 4, md: 6 }}
+        py={4}
+        maxW="1200px"
+        mx="auto"
+        w="100%"
+        gap={6}
+        flexWrap="wrap"
+      >
+        <Text fontSize="sm" color="fg.muted">
+          Built by{" "}
+          <a
+            href={DS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "var(--chakra-colors-brand-orange)",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Development Seed
+          </a>
+        </Text>
+        <Flex align="center" gap={5}>
+          <Link to={aboutHref} style={linkStyle}>
+            About
+          </Link>
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              ...linkStyle,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            aria-label="GitHub repository"
+          >
+            <GithubLogo size={16} weight="duotone" />
+            GitHub
+          </a>
+          <a
+            href={CONTACT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={linkStyle}
+          >
+            Contact Us
+          </a>
+        </Flex>
       </Flex>
     </Flex>
   );

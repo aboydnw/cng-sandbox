@@ -290,7 +290,7 @@ export default function StoryEditorPage() {
       )}
 
       {/* Three-panel layout: Chapters | Map | Editor */}
-      <Flex flex={1} overflow="hidden">
+      <Flex as="main" id="main-content" flex={1} overflow="hidden">
         {/* Left: chapter list */}
         <Box
           w="200px"

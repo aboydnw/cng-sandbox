@@ -355,20 +355,11 @@ export default function UploadPage() {
             faded={false}
             onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
           >
-            <Box
-              as="ul"
-              mb={4}
-              pl={4}
-              fontSize="13px"
-              color="brand.textSecondary"
-              lineHeight={1.8}
-              listStyleType="disc"
-            >
-              <li>Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5</li>
-              <li>Connect a COG, PMTiles, or XYZ tile source</li>
-              <li>Data is private to your workspace</li>
-              <li>Files hosted for 30 days</li>
-            </Box>
+            <Text mb={4} fontSize="sm" color="fg.muted" lineHeight="1.6">
+              Upload a local file to convert it, or add a URL to connect cloud
+              data without downloading it first. Your workspace stays private;
+              uploaded files are hosted for 30 days.
+            </Text>
             {visualizeCardExpanded && (
               <>
                 <Box display={mode === "xyz-picker" ? "none" : "block"}>

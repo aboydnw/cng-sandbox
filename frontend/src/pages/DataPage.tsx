@@ -26,6 +26,7 @@ import {
 } from "../lib/library/normalize";
 import { StatePanel } from "../components/ui/StatePanel";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
+import { PageHeader } from "../components/PageHeader";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -124,19 +125,18 @@ export default function DataPage() {
     <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Box as="main" id="main-content" maxW="960px" mx="auto" py={8} px={4}>
-        <Flex justify="space-between" align="center" mb={6}>
-          <Heading size="lg" color="fg">
-            Data
-          </Heading>
-          <Flex gap={2} align="center">
-            <ExampleDataToggle onChanged={reload} />
-            <Link to={workspacePath("/")}>
-              <Button size="sm" colorScheme="orange">
-                Add new
-              </Button>
-            </Link>
-          </Flex>
-        </Flex>
+        <PageHeader
+          title="Data"
+          description="Open uploaded files and connected cloud sources, or add data for a new map."
+          actions={
+            <>
+              <ExampleDataToggle onChanged={reload} />
+              <Link to={workspacePath("/quick-map")}>
+                <Button size="sm">Add data</Button>
+              </Link>
+            </>
+          }
+        />
 
         <Heading size="md" color="fg" mb={3}>
           Your data
@@ -178,113 +178,115 @@ export default function DataPage() {
             }
 
             return (
-              <Table.Root size="sm" tableLayout="fixed">
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeader>Name</Table.ColumnHeader>
-                    <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                    <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
-                    <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
-                    <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
-                    <Table.ColumnHeader w="80px" />
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {userItems.map((item) => (
-                    <Table.Row key={`${item.kind}-${item.id}`}>
-                      <Table.Cell>
-                        <Flex align="center" gap={2}>
-                          <Link to={workspacePath(item.detailHref)}>
-                            <Text
-                              color="brand.orange"
-                              _hover={{ textDecoration: "underline" }}
-                              fontWeight={500}
-                              truncate
-                              title={item.name}
-                            >
-                              {item.name}
-                            </Text>
-                          </Link>
-                          {item.isExampleCopy && (
-                            <Badge
-                              size="sm"
-                              bg="brand.bgSubtle"
-                              color="brand.brown"
-                            >
-                              Example
-                            </Badge>
-                          )}
-                        </Flex>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={600}
-                          textTransform="uppercase"
-                          color={
-                            item.type === "raster" ? "purple.600" : "teal.600"
-                          }
-                        >
-                          {item.type}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {item.source.href ? (
-                          <a
-                            href={item.source.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={item.source.label}
-                            style={{
-                              color: "var(--chakra-colors-gray-500)",
-                              fontSize: 13,
-                            }}
+              <Box overflowX="auto" pb={2}>
+                <Table.Root size="sm" tableLayout="fixed">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeader>Name</Table.ColumnHeader>
+                      <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                      <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
+                      <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
+                      <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
+                      <Table.ColumnHeader w="80px" />
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {userItems.map((item) => (
+                      <Table.Row key={`${item.kind}-${item.id}`}>
+                        <Table.Cell>
+                          <Flex align="center" gap={2}>
+                            <Link to={workspacePath(item.detailHref)}>
+                              <Text
+                                color="brand.orange"
+                                _hover={{ textDecoration: "underline" }}
+                                fontWeight={500}
+                                truncate
+                                title={item.name}
+                              >
+                                {item.name}
+                              </Text>
+                            </Link>
+                            {item.isExampleCopy && (
+                              <Badge
+                                size="sm"
+                                bg="brand.bgSubtle"
+                                color="brand.brown"
+                              >
+                                Example
+                              </Badge>
+                            )}
+                          </Flex>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={600}
+                            textTransform="uppercase"
+                            color={
+                              item.type === "raster" ? "purple.600" : "teal.600"
+                            }
                           >
-                            <Text
-                              fontSize="sm"
-                              color="gray.500"
-                              truncate
+                            {item.type}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {item.source.href ? (
+                            <a
+                              href={item.source.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               title={item.source.label}
+                              style={{
+                                color: "var(--chakra-colors-gray-500)",
+                                fontSize: 13,
+                              }}
                             >
+                              <Text
+                                fontSize="sm"
+                                color="gray.500"
+                                truncate
+                                title={item.source.label}
+                              >
+                                {item.source.label}
+                              </Text>
+                            </a>
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
                               {item.source.label}
                             </Text>
-                          </a>
-                        ) : (
-                          <Text fontSize="sm" color="gray.500">
-                            {item.source.label}
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontSize="sm" color="gray.600">
+                            {item.addedAt ? timeAgo(item.addedAt) : "—"}
                           </Text>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text fontSize="sm" color="gray.600">
-                          {item.addedAt ? timeAgo(item.addedAt) : "—"}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {item.expiresAt ? (
-                          <ExpiryBadge expiresAt={item.expiresAt} />
-                        ) : (
-                          <Text fontSize="sm" color="gray.500">
-                            —
-                          </Text>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Button
-                          size="xs"
-                          bg="status.danger.fg"
-                          color="action.onPrimary"
-                          _hover={{ bg: "status.danger.hover" }}
-                          loading={deletingId === item.id}
-                          onClick={() => handleDelete(item)}
-                        >
-                          Delete
-                        </Button>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Root>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {item.expiresAt ? (
+                            <ExpiryBadge expiresAt={item.expiresAt} />
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
+                              —
+                            </Text>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="status.danger.fg"
+                            _hover={{ bg: "status.danger.subtle" }}
+                            loading={deletingId === item.id}
+                            onClick={() => handleDelete(item)}
+                          >
+                            Delete
+                          </Button>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+              </Box>
             );
           })()
         )}

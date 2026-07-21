@@ -22,12 +22,17 @@ function renderUploader() {
 }
 
 describe("FileUploader accepted formats", () => {
-  it("accepts a .gpx trajectory file", () => {
+  const confirmSelection = () =>
+    fireEvent.click(screen.getByRole("button", { name: /create map/i }));
+
+  it("accepts a .gpx trajectory file after confirmation", () => {
     const { onFileSelected, input } = renderUploader();
     const file = new File(["<gpx/>"], "track.gpx", {
       type: "application/gpx+xml",
     });
     fireEvent.change(input, { target: { files: [file] } });
+    expect(screen.getByTitle("track.gpx")).toBeInTheDocument();
+    confirmSelection();
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
@@ -37,6 +42,7 @@ describe("FileUploader accepted formats", () => {
       type: "application/octet-stream",
     });
     fireEvent.change(input, { target: { files: [file] } });
+    confirmSelection();
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
@@ -46,6 +52,7 @@ describe("FileUploader accepted formats", () => {
       type: "text/csv",
     });
     fireEvent.change(input, { target: { files: [file] } });
+    confirmSelection();
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
@@ -55,6 +62,7 @@ describe("FileUploader accepted formats", () => {
       type: "text/tab-separated-values",
     });
     fireEvent.change(input, { target: { files: [file] } });
+    confirmSelection();
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
@@ -64,5 +72,14 @@ describe("FileUploader accepted formats", () => {
     fireEvent.change(input, { target: { files: [file] } });
     expect(onFileSelected).not.toHaveBeenCalled();
     expect(screen.getByText(/unsupported format/i)).toBeInTheDocument();
+  });
+
+  it("lists every supported format group", () => {
+    renderUploader();
+    expect(screen.getByText(/GeoTIFF.*NetCDF.*HDF5/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/GeoJSON.*Shapefile ZIP.*CSV/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/LAS.*LAZ.*GPX/i)).toBeInTheDocument();
   });
 });

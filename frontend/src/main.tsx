@@ -27,3 +27,9 @@ createRoot(document.getElementById("root")!).render(
     </ChakraProvider>
   </StrictMode>
 );
+
+if (import.meta.env.DEV) {
+  import("./devFeedback")
+    .then((m) => m.mountDevFeedback())
+    .catch((err) => console.warn("[devFeedback] recorder unavailable", err));
+}

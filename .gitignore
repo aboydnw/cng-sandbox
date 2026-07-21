@@ -24,5 +24,8 @@ scripts/update-duckdns.sh
 package-lock.json
 .playwright-mcp/
 
+# riffrec product-feedback session zips
+.feedback/
+
 # Working screenshots dropped in repo root
 /*.png

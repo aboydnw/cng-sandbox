@@ -75,6 +75,7 @@
     "eslint-plugin-react": "^7.37.0",
     "jsdom": "^29.1.0",
     "prettier": "^3.9.4",
+    "riffrec": "^2.1.1",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.2",

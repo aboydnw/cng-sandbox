@@ -1,4 +1,5 @@
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
+import { Check } from "@phosphor-icons/react";
 import type { StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -51,20 +52,56 @@ export const BASEMAP_OPTIONS = [
 
 export function BasemapPicker({ value, onChange }: BasemapPickerProps) {
   return (
-    <Flex gap={1}>
+    <Flex gap={1} role="group" aria-label="Basemap">
       {BASEMAP_OPTIONS.map((opt) => (
-        <Box
+        <Flex
           key={opt.key}
           as="button"
-          w="36px"
-          h="36px"
-          borderRadius="4px"
-          bg={opt.bg}
-          border="2px solid"
-          borderColor={value === opt.key ? "brand.orange" : "transparent"}
+          direction="column"
+          align="center"
+          gap={1}
+          p={1}
+          minW="52px"
+          borderRadius="control"
+          border="1px solid"
+          borderColor={value === opt.key ? "action.primary" : "transparent"}
+          bg={value === opt.key ? "bg.emphasized" : "transparent"}
+          color={value === opt.key ? "action.primary" : "fg.muted"}
           onClick={() => onChange(opt.key)}
           title={opt.label}
-        />
+          aria-label={`${opt.label} basemap`}
+          aria-pressed={value === opt.key}
+          _hover={{ bg: "bg.subtle", color: "fg" }}
+        >
+          <Box
+            w="32px"
+            h="22px"
+            borderRadius="3px"
+            bg={opt.bg}
+            border="1px solid"
+            borderColor="border.emphasized"
+            position="relative"
+          >
+            {value === opt.key && (
+              <Flex
+                position="absolute"
+                inset={0}
+                align="center"
+                justify="center"
+                color={
+                  opt.key === "dark" || opt.key === "imagery"
+                    ? "white"
+                    : "brand.brown"
+                }
+              >
+                <Check size={14} weight="bold" />
+              </Flex>
+            )}
+          </Box>
+          <Text fontSize="10px" lineHeight="1">
+            {opt.label}
+          </Text>
+        </Flex>
       ))}
     </Flex>
   );

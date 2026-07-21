@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Box } from "@chakra-ui/react";
+import { useId, useState } from "react";
+import { Box, Button } from "@chakra-ui/react";
+import { CaretDown, CaretRight } from "@phosphor-icons/react";
 import { CategoricalLegend } from "./CategoricalLegend";
 import { ContinuousRamp } from "./ContinuousRamp";
 import { LegendItem } from "./LegendItem";
@@ -16,21 +17,6 @@ const POSITION_STYLES: Record<
   "bottom-right": { bottom: 8, right: 2 },
 };
 
-const collapseButtonStyle: React.CSSProperties = {
-  width: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "8px 12px",
-  fontSize: "10px",
-  fontWeight: 600,
-  textTransform: "uppercase",
-  color: "#6b7280",
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-};
-
 export function MapLegend({
   layers,
   orientation = "vertical",
@@ -43,6 +29,7 @@ export function MapLegend({
   className,
 }: MapLegendProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const contentId = useId();
 
   return (
     <Box
@@ -51,37 +38,36 @@ export function MapLegend({
       zIndex={10}
       minW="200px"
       maxW="400px"
-      rounded="md"
+      rounded="panel"
       borderWidth="1px"
-      borderColor="gray.200"
-      bg="rgba(255,255,255,0.9)"
-      boxShadow="lg"
+      borderColor="map.controlBorder"
+      bg="rgba(255,255,255,0.94)"
+      boxShadow="md"
       className={className}
       role="region"
       aria-label="Map legend"
       _dark={{ bg: "rgba(30,30,30,0.95)", borderColor: "gray.700" }}
     >
       {collapsible ? (
-        <button
-          type="button"
-          style={collapseButtonStyle}
+        <Button
+          variant="ghost"
+          width="100%"
+          justifyContent="space-between"
+          borderRadius="panel"
+          px={3}
+          fontSize="10px"
+          textTransform="uppercase"
           onClick={() => setCollapsed((v) => !v)}
           aria-expanded={!collapsed}
-          aria-controls="maptool-legend-content"
+          aria-controls={contentId}
         >
           <span>Legend</span>
-          <span>{collapsed ? "▸" : "▾"}</span>
-        </button>
+          {collapsed ? <CaretRight size={12} /> : <CaretDown size={12} />}
+        </Button>
       ) : null}
 
       {!collapsed ? (
-        <Box
-          id="maptool-legend-content"
-          p={3}
-          display="flex"
-          flexDirection="column"
-          gap={2}
-        >
+        <Box id={contentId} p={3} display="flex" flexDirection="column" gap={2}>
           {layers.map((layer) => (
             <LegendItem
               key={layer.id}

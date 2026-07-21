@@ -1,5 +1,5 @@
-import { IconButton, Spinner } from "@chakra-ui/react";
-import { Camera } from "@phosphor-icons/react";
+import { IconButton } from "@chakra-ui/react";
+import { Camera, SpinnerGap } from "@phosphor-icons/react";
 
 interface SnapButtonProps {
   onSnap: () => void;
@@ -15,14 +15,19 @@ export function SnapButton({ onSnap, isCapturing, error }: SnapButtonProps) {
       size="sm"
       bg={error ? "red.500" : "white"}
       color={error ? "white" : "brand.brown"}
-      borderRadius="4px"
-      shadow="sm"
+      borderRadius="control"
+      borderWidth="1px"
+      borderColor={error ? "status.danger.fg" : "border.subtle"}
+      shadow="md"
       _hover={{ bg: error ? "red.500" : "brand.bgSubtle" }}
       onClick={onSnap}
       disabled={isCapturing}
     >
       {isCapturing ? (
-        <Spinner size="sm" />
+        <SpinnerGap
+          size={18}
+          style={{ animation: "spin 1s linear infinite" }}
+        />
       ) : (
         <Camera size={18} weight="regular" />
       )}

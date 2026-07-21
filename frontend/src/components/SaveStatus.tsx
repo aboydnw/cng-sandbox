@@ -26,7 +26,7 @@ export function SaveStatus({ state }: { state: SaveState }) {
   const info = STATUS_MAP[state];
   if (!info) return null;
   return (
-    <Flex align="center" gap={1}>
+    <Flex align="center" gap={1} role="status" aria-live="polite">
       {info.icon}
       <Text fontSize="xs" color={info.color} fontWeight={500}>
         {info.label}

@@ -301,9 +301,13 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
           top={3}
           left={3}
           bg="white"
-          borderRadius="4px"
-          shadow="sm"
+          borderRadius="panel"
+          borderWidth="1px"
+          borderColor="border.subtle"
+          shadow="md"
           p={1}
+          maxW="calc(100% - 24px)"
+          overflowX="auto"
         >
           <BasemapPicker value={basemap} onChange={onBasemapChange} />
         </Box>

@@ -15,6 +15,7 @@ import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { ConnectionInfoCard } from "./ConnectionInfoCard";
 import { SaveAsStoryChapter } from "./SaveAsStoryChapter";
 import { EditableDatasetTitle } from "./EditableDatasetTitle";
+import { CopcControls } from "./CopcControls";
 import type { Table } from "apache-arrow";
 
 type PanelMode = "controls" | "upload" | "add-connection";
@@ -69,7 +70,9 @@ interface MapSidePanelProps {
   onDatasetUpdated: () => void;
   // Point cloud (COPC) style — persisted into a saved story chapter
   copcColorMode?: CopcColorMode;
+  onCopcColorModeChange?: (mode: CopcColorMode) => void;
   copcPointSize?: number;
+  onCopcPointSizeChange?: (size: number) => void;
   // Shared view
   shared?: boolean;
   savePreferredColormap?: {
@@ -115,7 +118,9 @@ export function MapSidePanel({
   canMarkContinuous,
   onDatasetUpdated,
   copcColorMode,
+  onCopcColorModeChange,
   copcPointSize,
+  onCopcPointSizeChange,
   shared = false,
   savePreferredColormap,
 }: MapSidePanelProps) {
@@ -265,6 +270,20 @@ export function MapSidePanel({
           )}
         </>
       )}
+
+      {item.dataType === "pointcloud" &&
+        copcColorMode != null &&
+        copcPointSize != null &&
+        onCopcColorModeChange &&
+        onCopcPointSizeChange && (
+          <CopcControls
+            colorMode={copcColorMode}
+            onColorModeChange={onCopcColorModeChange}
+            pointSize={copcPointSize}
+            onPointSizeChange={onCopcPointSizeChange}
+            pointCount={item.pointCount}
+          />
+        )}
 
       {/* Dataset conversion metadata */}
       {ds && (

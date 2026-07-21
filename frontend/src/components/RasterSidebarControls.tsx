@@ -135,7 +135,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         letterSpacing="1px"
         mb={3}
       >
-        Visualization Controls
+        Appearance
       </Text>
 
       {isCategorical && datasetId && !shared && (
@@ -347,16 +347,15 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
       )}
 
       {!isCategorical && onCategoricalOverride && (
-        <Text
-          fontSize="10px"
-          color="brand.textSecondary"
-          cursor="pointer"
-          _hover={{ color: "brand.orange" }}
+        <Button
+          variant="plain"
+          size="xs"
+          h="auto"
           onClick={() => onCategoricalOverride(true)}
           mb={3}
         >
-          Show as categorical →
-        </Text>
+          Show as categorical
+        </Button>
       )}
 
       <Box mb={3} pt={3} borderTop="1px solid" borderColor="brand.border">
@@ -370,6 +369,7 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
         </Flex>
         <input
           type="range"
+          aria-label="Layer opacity"
           min={0}
           max={1}
           step={0.05}
@@ -392,6 +392,9 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
             </Box>
             <Box
               as="button"
+              role="switch"
+              aria-label="Use client-side rendering"
+              aria-checked={renderMode === "client"}
               w="40px"
               h="22px"
               borderRadius="full"
@@ -403,6 +406,11 @@ export function RasterSidebarControls(props: RasterSidebarControlsProps) {
                   renderMode === "client" ? "server" : "client"
                 )
               }
+              _focusVisible={{
+                outline: "2px solid",
+                outlineColor: "focus.ring",
+                outlineOffset: "2px",
+              }}
             >
               <Box
                 position="absolute"

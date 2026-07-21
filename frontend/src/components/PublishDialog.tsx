@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -25,6 +25,7 @@ import { useArchivalDownload } from "../lib/story/useArchivalDownload";
 import { useInteractiveDownload } from "../lib/story/useInteractiveDownload";
 import { ExportProgress } from "./ExportProgress";
 import { ExportSection } from "./ExportSection";
+import { storyReadiness } from "../lib/story/readiness";
 
 interface PublishDialogProps {
   open: boolean;
@@ -63,12 +64,14 @@ export function PublishDialog({
         }
       : null;
 
-  const incompleteChapters = story.chapters.filter(
-    (ch) => !ch.narrative.trim()
-  );
-  const hasIncomplete = incompleteChapters.length > 0;
+  const readiness = storyReadiness(story);
+
+  useEffect(() => {
+    if (open) setPublished(story.published);
+  }, [open, story.published]);
 
   function handlePublish() {
+    if (!readiness.readyToPublish) return;
     onPublish();
     setPublished(true);
   }
@@ -193,26 +196,81 @@ export function PublishDialog({
                       </Flex>
                     </Box>
 
-                    {hasIncomplete && (
-                      <Flex
-                        align="flex-start"
-                        gap={2}
-                        bg="orange.50"
+                    {readiness.blocking.length > 0 && (
+                      <Box
+                        role="alert"
+                        bg="status.danger.subtle"
                         border="1px solid"
-                        borderColor="orange.200"
-                        borderRadius="md"
+                        borderColor="status.danger.border"
+                        borderRadius="panel"
                         p={3}
                       >
-                        <Box color="orange.500" flexShrink={0} mt={0.5}>
+                        <Flex
+                          align="center"
+                          gap={2}
+                          color="status.danger.fg"
+                          mb={2}
+                        >
+                          <Warning size={16} weight="fill" />
+                          <Text fontSize="sm" fontWeight="semibold">
+                            Finish before publishing
+                          </Text>
+                        </Flex>
+                        {readiness.blocking.map((issue) => (
+                          <Text
+                            key={issue.id}
+                            fontSize="sm"
+                            color="status.danger.fg"
+                          >
+                            {issue.message}
+                          </Text>
+                        ))}
+                      </Box>
+                    )}
+
+                    {readiness.advisory.length > 0 && (
+                      <Flex
+                        role="status"
+                        align="flex-start"
+                        gap={2}
+                        bg="status.warning.subtle"
+                        border="1px solid"
+                        borderColor="status.warning.border"
+                        borderRadius="panel"
+                        p={3}
+                      >
+                        <Box color="status.warning.fg" flexShrink={0} mt={0.5}>
                           <Warning size={16} />
                         </Box>
-                        <Text fontSize="sm" color="orange.700">
-                          {incompleteChapters.length} chapter
-                          {incompleteChapters.length !== 1
-                            ? "s have"
-                            : " has"}{" "}
-                          no narrative text. Readers will see empty chapters.
-                        </Text>
+                        <Box>
+                          <Text
+                            fontSize="sm"
+                            color="status.warning.fg"
+                            fontWeight="semibold"
+                          >
+                            Review before sharing
+                          </Text>
+                          {readiness.advisory.slice(0, 4).map((issue) => (
+                            <Text
+                              key={issue.id}
+                              fontSize="xs"
+                              color="status.warning.fg"
+                              mt={1}
+                            >
+                              {issue.message}
+                            </Text>
+                          ))}
+                          {readiness.advisory.length > 4 && (
+                            <Text
+                              fontSize="xs"
+                              color="status.warning.fg"
+                              mt={1}
+                            >
+                              And {readiness.advisory.length - 4} more item
+                              {readiness.advisory.length - 4 === 1 ? "" : "s"}.
+                            </Text>
+                          )}
+                        </Box>
                       </Flex>
                     )}
                   </Flex>
@@ -286,6 +344,7 @@ export function PublishDialog({
                       color="white"
                       _hover={{ bg: "brand.orangeHover" }}
                       onClick={handlePublish}
+                      disabled={!readiness.readyToPublish}
                     >
                       Publish
                     </Button>

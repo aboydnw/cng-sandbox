@@ -4542,7 +4542,7 @@ __metadata:
     vite-plugin-singlefile: "npm:^2.3.3"
     vitest: "npm:^4.1.9"
     zarrita: "npm:0.7.3"
-    zod: "npm:^3.24.1"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 
@@ -10028,13 +10028,6 @@ __metadata:
     "@zarrita/storage": "npm:^0.2.0"
     numcodecs: "npm:^0.3.2"
   checksum: 10c0/97ad16f900a190f14872582d03c75da26a77ae925aa57dcc5dcdb04216ecd25383c46e78947d503bb9e0857e69d9c4018c2489b3d8d8f312e69eec924d2393de
-  languageName: node
-  linkType: hard
-
-"zod@npm:^3.24.1":
-  version: 3.25.76
-  resolution: "zod@npm:3.25.76"
-  checksum: 10c0/5718ec35e3c40b600316c5b4c5e4976f7fee68151bc8f8d90ec18a469be9571f072e1bbaace10f1e85cf8892ea12d90821b200e980ab46916a6166a4260a983c
   languageName: node
   linkType: hard
 

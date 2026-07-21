@@ -27,9 +27,12 @@ data paths.
   `codex/design-polish-guide`)
 - [x] Package 2 — Navigation and application shell (implemented 2026-07-21 on
   `codex/design-polish-packages-2-5`)
-- [ ] Package 3 — Landing page and example presentation
-- [ ] Package 4 — Workspace home, Stories, and Data
-- [ ] Package 5 — Upload, connect, and conversion
+- [x] Package 3 — Landing page and example presentation (implemented
+  2026-07-21 on `codex/design-polish-packages-3-5`)
+- [x] Package 4 — Workspace home, Stories, and Data (implemented 2026-07-21 on
+  `codex/design-polish-packages-3-5`)
+- [x] Package 5 — Upload, connect, and conversion (implemented 2026-07-21 on
+  `codex/design-polish-packages-3-5`)
 - [ ] Package 6 — Map workspace
 - [ ] Package 7 — Story editor and final quality pass
 

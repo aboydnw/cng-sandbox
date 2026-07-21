@@ -134,19 +134,33 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
 
   if (state.phase === "discovering") {
     return (
-      <Flex align="center" gap={2} color="brand.textSecondary" py={2}>
+      <Flex
+        role="status"
+        aria-live="polite"
+        align="center"
+        gap={2}
+        color="brand.textSecondary"
+        py={2}
+      >
         <SpinnerGap size={16} className="animate-spin" />
-        <Text fontSize="13px">Scanning for files...</Text>
+        <Text fontSize="13px">Checking the URL and available files…</Text>
       </Flex>
     );
   }
 
   if (state.phase === "ingesting") {
     return (
-      <Flex align="center" gap={2} color="brand.textSecondary" py={2}>
+      <Flex
+        role="status"
+        aria-live="polite"
+        align="center"
+        gap={2}
+        color="brand.textSecondary"
+        py={2}
+      >
         <SpinnerGap size={16} className="animate-spin" />
         <Text fontSize="13px">
-          Ingesting {state.discoverResult?.count ?? ""} files...
+          Adding {state.discoverResult?.count ?? ""} files to your workspace…
         </Text>
       </Flex>
     );
@@ -176,7 +190,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
             </Text>
           </Flex>
           <Text color="brand.textSecondary" fontSize="12px">
-            Choose how to load them as a dataset
+            Choose whether these files form one map or a time sequence.
           </Text>
         </Box>
         <Flex gap={2}>
@@ -190,7 +204,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
             onClick={() => startIngestion("mosaic")}
           >
             <SquaresFour size={14} />
-            Mosaic
+            One combined map
           </Button>
           <Button
             size="sm"
@@ -202,7 +216,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
             onClick={() => startIngestion("temporal")}
           >
             <Stack size={14} />
-            Temporal Stack
+            Time sequence
           </Button>
         </Flex>
       </Box>
@@ -213,6 +227,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
     <Box>
       {state.phase === "error" && state.error && (
         <Flex
+          role="alert"
           align="center"
           gap={2}
           mb={3}
@@ -225,7 +240,17 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           fontSize="12px"
         >
           <Warning size={14} style={{ flexShrink: 0 }} />
-          <Text>{state.error}</Text>
+          <Text flex={1}>{state.error}</Text>
+          <Button
+            size="xs"
+            variant="outline"
+            borderColor="action.primary"
+            color="action.primary"
+            _hover={{ bg: "bg.subtle", color: "action.primaryHover" }}
+            onClick={handleScan}
+          >
+            Try again
+          </Button>
         </Flex>
       )}
       <Flex gap={2}>
@@ -249,7 +274,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
           px={3}
         >
           <MagnifyingGlass size={14} />
-          Scan
+          Check URL
         </Button>
       </Flex>
 

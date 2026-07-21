@@ -47,22 +47,26 @@ describe("Workspace routing", () => {
   it("renders WorkspaceHomePage at workspace root (/), not StoriesPage", async () => {
     renderApp("/w/test-workspace");
     expect(
-      await screen.findByRole("heading", { name: /workspace home/i })
+      await screen.findByRole("heading", { name: /continue your work/i })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: /your stories/i })
+      screen.queryByRole("heading", { name: /^stories$/i })
     ).not.toBeInTheDocument();
   });
 
   it("renders UploadPage at /quick-map", async () => {
     renderApp("/w/test-workspace/quick-map");
-    expect(await screen.findByText(/upload/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", {
+        name: /create a map from your data/i,
+      })
+    ).toBeInTheDocument();
   });
 
   it("renders StoriesPage at /w/:id/stories", async () => {
     renderApp("/w/test-workspace/stories");
     expect(
-      await screen.findByRole("heading", { name: /your stories/i })
+      await screen.findByRole("heading", { name: /^stories$/i })
     ).toBeInTheDocument();
   });
 });

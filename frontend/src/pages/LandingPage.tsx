@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Input,
+  Skeleton,
+  Text,
+} from "@chakra-ui/react";
 import { ArrowRight, ArrowSquareOut, GithubLogo } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
@@ -89,94 +97,128 @@ export default function LandingPage() {
     <Box minH="100vh" bg="brand.bgSubtle" display="flex" flexDirection="column">
       <Header showWorkspace={false} />
 
-      <Box as="main" id="main-content" flex="1" px={4} py={10}>
-        <Box maxW="720px" mx="auto" textAlign="center" mb={10}>
-          <Text
-            fontSize="11px"
-            letterSpacing="0.12em"
-            textTransform="uppercase"
-            color="brand.brown"
-            fontWeight={600}
-          >
-            Open-source demo · by Development Seed
-          </Text>
-          <Heading
-            size="2xl"
-            color="brand.brown"
-            mt={3}
-            mb={4}
-            lineHeight="1.15"
-          >
-            Tell stories with cloud-native geospatial data.
-          </Heading>
-          <Text color="gray.700" fontSize="md" lineHeight="tall" mb={3}>
-            A live sandbox showing what&apos;s possible with COGs, GeoParquet,
-            Zarr, and STAC. Spin up a workspace, build a story in minutes,
-            export it, share it.
-          </Text>
-          <Text color="gray.500" fontSize="sm" lineHeight="tall" mb={6}>
-            Not a hosted product. For production use, fork the repos or{" "}
-            <a
-              href={CONTACT_URL}
-              style={{
-                color: "var(--chakra-colors-brand-orange)",
-                fontWeight: 600,
-              }}
-            >
-              get in touch with Development Seed
-            </a>
-            .
-          </Text>
-
-          <Flex gap={3} justify="center" wrap="wrap">
-            <Button
-              size="lg"
-              bg="brand.orange"
-              color="white"
-              _hover={{ bg: "brand.orangeHover" }}
-              onClick={startStory}
-              loading={starting}
-              disabled={starting}
-            >
-              Start a story <ArrowRight size={16} />
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              borderColor="brand.border"
+      <Box
+        as="main"
+        id="main-content"
+        flex="1"
+        px={{ base: 4, md: 6 }}
+        py={{ base: 8, md: 14 }}
+      >
+        <Box
+          maxW="1240px"
+          mx="auto"
+          display="grid"
+          gridTemplateColumns={{
+            base: "1fr",
+            lg: "minmax(0, .85fr) minmax(480px, 1.15fr)",
+          }}
+          gap={{ base: 8, lg: 14 }}
+          alignItems="center"
+          mb={{ base: 14, md: 20 }}
+        >
+          <Box maxW="590px" textAlign="left">
+            <Text
+              fontSize="sm"
+              letterSpacing="0.12em"
+              textTransform="uppercase"
               color="brand.brown"
-              _hover={{ bg: "brand.bgSubtle" }}
+              fontWeight={600}
             >
-              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-                <GithubLogo size={16} weight="bold" /> View on GitHub
+              Open-source demo · by Development Seed
+            </Text>
+            <Heading
+              fontSize={{ base: "42px", md: "58px", xl: "66px" }}
+              color="fg"
+              mt={4}
+              mb={5}
+              lineHeight="1.02"
+              letterSpacing="-0.035em"
+              css={{ textWrap: "balance" }}
+            >
+              Tell stories with cloud-native geospatial data.
+            </Heading>
+            <Text
+              color="fg.muted"
+              fontSize="lg"
+              lineHeight="1.65"
+              mb={4}
+              maxW="58ch"
+            >
+              Turn rasters, vectors, point clouds, and movement tracks into maps
+              people can explore and stories they can share.
+            </Text>
+            <Text color="fg.subtle" fontSize="sm" lineHeight="tall" mb={7}>
+              Not a hosted product. For production use, fork the repos or{" "}
+              <a
+                href={CONTACT_URL}
+                style={{
+                  color: "var(--chakra-colors-brand-orange)",
+                  fontWeight: 600,
+                }}
+              >
+                get in touch with Development Seed
               </a>
-            </Button>
-          </Flex>
+              .
+            </Text>
+
+            <Flex gap={4} align="center" wrap="wrap">
+              <Button
+                size="lg"
+                bg="brand.orange"
+                color="white"
+                _hover={{ bg: "brand.orangeHover" }}
+                onClick={startStory}
+                loading={starting}
+                disabled={starting}
+              >
+                Start a story <ArrowRight size={16} />
+              </Button>
+              <Button asChild size="lg" variant="plain">
+                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+                  <GithubLogo size={16} weight="bold" /> View on GitHub
+                </a>
+              </Button>
+            </Flex>
+          </Box>
+          <Box minW={0}>
+            {examples.length === 0 ? (
+              <Skeleton
+                height={{ base: "310px", md: "430px" }}
+                borderRadius="panel"
+              />
+            ) : (
+              <ExampleStoryCard
+                title={examples[0].title}
+                chapterCount={examples[0].chapters.length}
+                dataType={inferDataType(examples[0])}
+                onClick={() => openExampleStory(examples[0])}
+                loading={cloningId === examples[0].id}
+                featured
+              />
+            )}
+          </Box>
         </Box>
 
-        <Box maxW="960px" mx="auto" mb={10}>
-          <Text
-            fontSize="11px"
-            textTransform="uppercase"
-            letterSpacing="0.1em"
-            color="brand.textSecondary"
-            fontWeight={600}
-            mb={3}
-          >
+        <Box maxW="1240px" mx="auto" mb={14}>
+          <Text fontSize="sm" color="fg.muted" fontWeight={600} mb={4}>
             Example stories
           </Text>
           {examples.length === 0 ? (
-            <Text fontSize="sm" color="gray.500">
-              Example stories are loading…
-            </Text>
+            <Box
+              display="grid"
+              gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+              gap={5}
+            >
+              <Skeleton height="220px" borderRadius="panel" />
+              <Skeleton height="220px" borderRadius="panel" />
+            </Box>
           ) : (
             <Box
               display="grid"
-              gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
-              gap={3}
+              gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+              gap={5}
             >
-              {examples.slice(0, 3).map((story) => (
+              {examples.slice(1, 3).map((story) => (
                 <ExampleStoryCard
                   key={story.id}
                   title={story.title}

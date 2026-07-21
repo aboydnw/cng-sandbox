@@ -252,7 +252,9 @@ readiness throughout the workflow.
 
 ## Working rules for every package
 
-1. Create a dedicated worktree and `codex/` branch.
+1. Create the dedicated branch worktree at `.worktrees/<branch>` with a
+   `codex/` branch. Reuse that same worktree for every PR-feedback fix on the
+   branch; do not create a second review-fix worktree.
 2. Capture applicable before states from the visual QA checklist.
 3. Implement through existing technology and preserve behavioral contracts.
 4. Add or update tests in proportion to interaction risk.

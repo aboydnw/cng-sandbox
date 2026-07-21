@@ -7,6 +7,7 @@
 
 :root {
   --ease-out-expo: cubic-bezier(0.32, 0.72, 0, 1);
+
   color: var(--chakra-colors-fg);
   background: var(--chakra-colors-bg);
 }
@@ -36,7 +37,7 @@ body {
   background: var(--chakra-colors-bg);
   color: var(--chakra-colors-fg);
   font-family: "Satoshi Variable", sans-serif;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
 }
 

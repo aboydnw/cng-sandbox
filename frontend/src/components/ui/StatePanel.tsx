@@ -70,10 +70,7 @@ export function StatePanel({
   const style = toneStyles[tone];
 
   return (
-    <Flex
-      role={tone === "danger" ? "alert" : "status"}
-      align="flex-start"
-      gap={compact ? 2.5 : 3}
+    <Box
       p={compact ? 3 : 5}
       bg={style.bg}
       border="1px solid"
@@ -81,36 +78,41 @@ export function StatePanel({
       borderRadius="panel"
       color={style.color}
     >
-      <Box flexShrink={0} mt="1px" aria-hidden="true">
-        {icon ?? style.icon}
-      </Box>
-      <Box flex="1" minW={0}>
-        <Text textStyle={compact ? "label" : "cardTitle"} color="inherit">
-          {title}
-        </Text>
-        {description && (
-          <Text
-            mt={1}
-            fontSize={compact ? "13px" : "14px"}
-            lineHeight="1.55"
-            color="inherit"
-          >
-            {description}
+      <Flex
+        role={tone === "danger" ? "alert" : "status"}
+        align="flex-start"
+        gap={compact ? 2.5 : 3}
+      >
+        <Box flexShrink={0} mt="1px" aria-hidden="true">
+          {icon ?? style.icon}
+        </Box>
+        <Box flex="1" minW={0}>
+          <Text textStyle={compact ? "label" : "cardTitle"} color="inherit">
+            {title}
           </Text>
-        )}
-        {action ? (
-          <Box mt={compact ? 2.5 : 3}>{action}</Box>
-        ) : actionLabel && onAction ? (
-          <Button
-            mt={compact ? 2.5 : 3}
-            size="sm"
-            variant="outline"
-            onClick={onAction}
-          >
+          {description && (
+            <Text
+              mt={1}
+              fontSize={compact ? "13px" : "14px"}
+              lineHeight="1.55"
+              color="inherit"
+            >
+              {description}
+            </Text>
+          )}
+        </Box>
+      </Flex>
+      {action ? (
+        <Box mt={compact ? 2.5 : 3} ml={compact ? 7.5 : 8}>
+          {action}
+        </Box>
+      ) : actionLabel && onAction ? (
+        <Box mt={compact ? 2.5 : 3} ml={compact ? 7.5 : 8}>
+          <Button size="sm" variant="outline" onClick={onAction}>
             {actionLabel}
           </Button>
-        ) : null}
-      </Box>
-    </Flex>
+        </Box>
+      ) : null}
+    </Box>
   );
 }

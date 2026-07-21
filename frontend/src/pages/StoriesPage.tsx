@@ -178,9 +178,9 @@ export default function StoriesPage() {
                   <Table.Cell>
                     <Button
                       size="xs"
-                      variant="ghost"
-                      color="status.danger.fg"
-                      _hover={{ bg: "status.danger.subtle" }}
+                      bg="status.danger.fg"
+                      color="action.onPrimary"
+                      _hover={{ bg: "status.danger.hover" }}
                       loading={deletingId === story.id}
                       onClick={() => handleDelete(story)}
                     >

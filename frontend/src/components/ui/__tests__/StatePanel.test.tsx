@@ -22,10 +22,12 @@ describe("StatePanel", () => {
       />
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Couldn’t load your stories"
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    const alert = screen.getByRole("alert");
+    const recoveryButton = screen.getByRole("button", { name: "Try again" });
+
+    expect(alert).toHaveTextContent("Couldn’t load your stories");
+    expect(alert).not.toContainElement(recoveryButton);
+    fireEvent.click(recoveryButton);
     expect(onAction).toHaveBeenCalledOnce();
   });
 

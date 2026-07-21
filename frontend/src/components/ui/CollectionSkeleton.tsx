@@ -2,7 +2,7 @@ import { Box, Flex, Skeleton } from "@chakra-ui/react";
 
 export function CollectionSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <Box aria-label="Loading content" aria-busy="true">
+    <Box role="status" aria-label="Loading content" aria-busy="true">
       {Array.from({ length: rows }, (_, index) => (
         <Flex
           key={index}

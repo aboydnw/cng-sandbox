@@ -58,6 +58,12 @@ const buttonRecipe = defineRecipe({
       "2xl": { h: "16", minW: "16", textStyle: "lg", px: "7", gap: "3" },
     },
     variant: {
+      destructive: {
+        bg: "status.danger.fg",
+        color: "action.onPrimary",
+        _hover: { bg: "status.danger.hover" },
+        _expanded: { bg: "status.danger.hover" },
+      },
       solid: {
         bg: "action.primary",
         color: "action.onPrimary",

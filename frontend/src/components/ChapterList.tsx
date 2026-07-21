@@ -217,7 +217,7 @@ export function ChapterList({
                     <Button
                       size="xs"
                       bg="status.danger.fg"
-                      color="white"
+                      color="action.onPrimary"
                       _hover={{ bg: "status.danger.hover" }}
                       minH="28px"
                       flex={1}

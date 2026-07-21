@@ -12,7 +12,7 @@ describe("CollectionSkeleton", () => {
       </ChakraProvider>
     );
 
-    const region = screen.getByLabelText("Loading content");
+    const region = screen.getByRole("status", { name: "Loading content" });
     expect(region).toHaveAttribute("aria-busy", "true");
     expect(region.children).toHaveLength(3);
   });

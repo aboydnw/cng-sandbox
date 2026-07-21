@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Badge,
@@ -39,63 +39,50 @@ export default function DataPage() {
   const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const loadRequestIdRef = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const reload = useCallback(() => {
+    const requestId = ++loadRequestIdRef.current;
+    const isCurrent = () => requestId === loadRequestIdRef.current;
+
+    setError(null);
+    setDatasetsLoading(true);
+    setConnectionsLoading(true);
+
     workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then(async (r) => {
+      .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((data) => {
-        if (!cancelled) setDatasets(data);
+        if (isCurrent()) setDatasets(data);
       })
       .catch((err) => {
-        if (!cancelled) setError((err as Error).message);
+        if (isCurrent()) setError((err as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setDatasetsLoading(false);
+        if (isCurrent()) setDatasetsLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
-  useEffect(() => {
-    let cancelled = false;
     connectionsApi
       .list()
       .then((data) => {
-        if (!cancelled) setConnections(data);
+        if (isCurrent()) setConnections(data);
       })
       .catch((err) => {
-        if (!cancelled) setError((err as Error).message);
+        if (isCurrent()) setError((err as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setConnectionsLoading(false);
+        if (isCurrent()) setConnectionsLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  const reload = useCallback(() => {
-    setError(null);
-    setDatasetsLoading(true);
-    setConnectionsLoading(true);
-    workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) =>
-        r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))
-      )
-      .then(setDatasets)
-      .catch((err) => setError((err as Error).message))
-      .finally(() => setDatasetsLoading(false));
-    connectionsApi
-      .list()
-      .then(setConnections)
-      .catch((err) => setError((err as Error).message))
-      .finally(() => setConnectionsLoading(false));
-  }, []);
+  useEffect(() => {
+    reload();
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
+  }, [reload]);
 
   const handleDelete = useCallback(async (item: LibraryItem) => {
     if (item.raw.kind === "dataset") {
@@ -285,9 +272,9 @@ export default function DataPage() {
                       <Table.Cell>
                         <Button
                           size="xs"
-                          variant="ghost"
-                          color="status.danger.fg"
-                          _hover={{ bg: "status.danger.subtle" }}
+                          bg="status.danger.fg"
+                          color="action.onPrimary"
+                          _hover={{ bg: "status.danger.hover" }}
                           loading={deletingId === item.id}
                           onClick={() => handleDelete(item)}
                         >

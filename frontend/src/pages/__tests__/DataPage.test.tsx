@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
@@ -145,5 +151,59 @@ describe("DataPage fetch failures", () => {
     expect(
       screen.queryByText(/nothing in your data library yet/i)
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("DataPage reload ordering", () => {
+  it("ignores results from a superseded initial load", async () => {
+    let resolveOldDatasets!: (value: {
+      ok: boolean;
+      json: () => Promise<never[]>;
+    }) => void;
+    let resolveOldConnections!: (value: Connection[]) => void;
+    const oldDatasets = new Promise<{
+      ok: boolean;
+      json: () => Promise<never[]>;
+    }>((resolve) => {
+      resolveOldDatasets = resolve;
+    });
+    const oldConnections = new Promise<Connection[]>((resolve) => {
+      resolveOldConnections = resolve;
+    });
+    const freshConnection: Connection = {
+      ...userConnection,
+      id: "fresh-1",
+      name: "Fresh connection",
+    };
+    const staleConnection: Connection = {
+      ...userConnection,
+      id: "stale-1",
+      name: "Stale connection",
+    };
+
+    (workspaceFetch as ReturnType<typeof vi.fn>)
+      .mockImplementationOnce(() => oldDatasets)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([]),
+      });
+    (connectionsApi.list as ReturnType<typeof vi.fn>)
+      .mockImplementationOnce(() => oldConnections)
+      .mockResolvedValueOnce([freshConnection]);
+
+    renderDataPage();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /add example data/i })
+    );
+
+    expect(await screen.findByText("Fresh connection")).toBeInTheDocument();
+
+    resolveOldDatasets({ ok: true, json: () => Promise.resolve([]) });
+    resolveOldConnections([staleConnection]);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Stale connection")).not.toBeInTheDocument();
+      expect(screen.getByText("Fresh connection")).toBeInTheDocument();
+    });
   });
 });

@@ -22,6 +22,6 @@ export function mountDevFeedback() {
   createRoot(container).render(
     <RiffrecProvider>
       <RiffrecRecorder />
-    </RiffrecProvider>,
+    </RiffrecProvider>
   );
 }

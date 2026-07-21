@@ -216,7 +216,9 @@ export function ChapterList({
                   <Flex gap={1.5}>
                     <Button
                       size="xs"
-                      colorScheme="red"
+                      bg="status.danger.fg"
+                      color="white"
+                      _hover={{ bg: "status.danger.hover" }}
                       minH="28px"
                       flex={1}
                       onClick={() => {

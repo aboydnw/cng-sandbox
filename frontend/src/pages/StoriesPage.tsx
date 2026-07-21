@@ -9,7 +9,6 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
@@ -17,6 +16,8 @@ import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import { timeAgo } from "../utils/format";
 import type { Story } from "../lib/story/types";
+import { StatePanel } from "../components/ui/StatePanel";
+import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
@@ -25,8 +26,10 @@ export default function StoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadStories = useCallback(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     listStoriesFromServer()
       .then((data) => {
         if (!cancelled) setStories(data);
@@ -42,6 +45,8 @@ export default function StoriesPage() {
     };
   }, []);
 
+  useEffect(() => loadStories(), [loadStories]);
+
   const handleDelete = useCallback(async (story: Story) => {
     if (!window.confirm(`Delete "${story.title}"?`)) return;
     setDeletingId(story.id);
@@ -56,11 +61,11 @@ export default function StoriesPage() {
   const userStories = stories.filter((s) => !s.is_example);
 
   return (
-    <Flex direction="column" minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Box maxW="960px" mx="auto" py={8} px={4} w="100%">
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading size="lg" color="gray.800">
+          <Heading size="lg" color="fg">
             Your stories
           </Heading>
           <Flex gap={2}>
@@ -83,31 +88,25 @@ export default function StoriesPage() {
         </Flex>
 
         {loading ? (
-          <Flex justify="center" py={12}>
-            <SpinnerGap
-              size={32}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
-          </Flex>
+          <CollectionSkeleton rows={4} />
         ) : error ? (
-          <Flex
-            align="center"
-            gap={2}
-            p={2.5}
-            bg="red.50"
-            border="1px solid"
-            borderColor="red.200"
-            borderRadius="6px"
-            color="red.600"
-            fontSize="13px"
-          >
-            <Warning size={16} style={{ flexShrink: 0 }} />
-            <Text>Couldn&rsquo;t load your stories. {error}</Text>
-          </Flex>
+          <StatePanel
+            tone="danger"
+            title="Couldn’t load your stories"
+            description={error}
+            actionLabel="Try again"
+            onAction={loadStories}
+          />
         ) : userStories.length === 0 ? (
-          <Text color="gray.500" fontSize="sm" mb={2}>
-            No stories yet — click &ldquo;New story&rdquo; to get started.
-          </Text>
+          <StatePanel
+            title="No stories yet"
+            description="Create a story to combine maps, narrative, charts, images, and video."
+            action={
+              <Button asChild size="sm">
+                <Link to={workspacePath("/story/new")}>Create a story</Link>
+              </Button>
+            }
+          />
         ) : (
           <Table.Root size="sm" tableLayout="fixed">
             <Table.Header>
@@ -180,7 +179,8 @@ export default function StoriesPage() {
                     <Button
                       size="xs"
                       variant="ghost"
-                      colorScheme="red"
+                      color="status.danger.fg"
+                      _hover={{ bg: "status.danger.subtle" }}
                       loading={deletingId === story.id}
                       onClick={() => handleDelete(story)}
                     >

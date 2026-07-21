@@ -9,7 +9,6 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
@@ -25,6 +24,8 @@ import {
   connectionToLibraryItem,
   type LibraryItem,
 } from "../lib/library/normalize";
+import { StatePanel } from "../components/ui/StatePanel";
+import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -80,16 +81,20 @@ export default function DataPage() {
 
   const reload = useCallback(() => {
     setError(null);
+    setDatasetsLoading(true);
+    setConnectionsLoading(true);
     workspaceFetch(`${config.apiBase}/api/datasets`)
       .then((r) =>
         r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))
       )
       .then(setDatasets)
-      .catch((err) => setError((err as Error).message));
+      .catch((err) => setError((err as Error).message))
+      .finally(() => setDatasetsLoading(false));
     connectionsApi
       .list()
       .then(setConnections)
-      .catch((err) => setError((err as Error).message));
+      .catch((err) => setError((err as Error).message))
+      .finally(() => setConnectionsLoading(false));
   }, []);
 
   const handleDelete = useCallback(async (item: LibraryItem) => {
@@ -129,11 +134,11 @@ export default function DataPage() {
   }, []);
 
   return (
-    <Flex direction="column" minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Box maxW="960px" mx="auto" py={8} px={4}>
         <Flex justify="space-between" align="center" mb={6}>
-          <Heading size="lg" color="gray.800">
+          <Heading size="lg" color="fg">
             Data
           </Heading>
           <Flex gap={2} align="center">
@@ -146,32 +151,20 @@ export default function DataPage() {
           </Flex>
         </Flex>
 
-        <Heading size="md" color="gray.700" mb={3}>
+        <Heading size="md" color="fg" mb={3}>
           Your data
         </Heading>
 
         {datasetsLoading || connectionsLoading ? (
-          <Flex justify="center" py={12}>
-            <SpinnerGap
-              size={32}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
-          </Flex>
+          <CollectionSkeleton rows={4} />
         ) : error ? (
-          <Flex
-            align="center"
-            gap={2}
-            p={2.5}
-            bg="red.50"
-            border="1px solid"
-            borderColor="red.200"
-            borderRadius="6px"
-            color="red.600"
-            fontSize="13px"
-          >
-            <Warning size={16} style={{ flexShrink: 0 }} />
-            <Text>Couldn&rsquo;t load your data library. {error}</Text>
-          </Flex>
+          <StatePanel
+            tone="danger"
+            title="Couldn’t load your data library"
+            description={error}
+            actionLabel="Try again"
+            onAction={reload}
+          />
         ) : (
           (() => {
             const userItems: LibraryItem[] = [
@@ -185,20 +178,15 @@ export default function DataPage() {
 
             if (userItems.length === 0) {
               return (
-                <Flex
-                  direction="column"
-                  align="center"
-                  py={12}
-                  gap={3}
-                  color="gray.500"
-                >
-                  <Text>Nothing in your data library yet.</Text>
-                  <Link to={workspacePath("/")}>
-                    <Text color="brand.orange" fontWeight={600}>
-                      Add your first dataset or connection
-                    </Text>
-                  </Link>
-                </Flex>
+                <StatePanel
+                  title="Your data library is empty"
+                  description="Upload a file or connect cloud data to create your first map."
+                  action={
+                    <Button asChild size="sm">
+                      <Link to={workspacePath("/")}>Add data</Link>
+                    </Button>
+                  }
+                />
               );
             }
 
@@ -298,7 +286,8 @@ export default function DataPage() {
                         <Button
                           size="xs"
                           variant="ghost"
-                          colorScheme="red"
+                          color="status.danger.fg"
+                          _hover={{ bg: "status.danger.subtle" }}
                           loading={deletingId === item.id}
                           onClick={() => handleDelete(item)}
                         >

@@ -1,8 +1,54 @@
 import { workspaceFetch } from "../../api";
 import { captureChapterMap } from "../archival/captureMap";
+import { beatTime, groupChaptersIntoBlocks } from "../rendering";
+import type { StoryTripsContext } from "../rendering";
+import type { TripTrack } from "../../layers/tripsLayer";
 import type { CngRcConfig } from "../cngRcTypes";
-import type { Story } from "../types";
+import type { Chapter, Story } from "../types";
 import type { Connection, Dataset } from "../../../types";
+
+interface ScrollyPlacement {
+  localIndex: number;
+  blockLength: number;
+}
+
+function scrollyPlacements(story: Story): Map<string, ScrollyPlacement> {
+  const placements = new Map<string, ScrollyPlacement>();
+  for (const block of groupChaptersIntoBlocks(story.chapters)) {
+    if (block.type !== "scrollytelling") continue;
+    block.chapters.forEach((ch, localIndex) => {
+      placements.set(ch.id, {
+        localIndex,
+        blockLength: block.chapters.length,
+      });
+    });
+  }
+  return placements;
+}
+
+function trajectoryDatasetId(
+  chapter: Chapter,
+  datasetMap: Map<string, Dataset | null>
+): string | null {
+  if (chapter.type !== "scrollytelling") return null;
+  const dsId = chapter.layer_config?.dataset_id;
+  if (!dsId) return null;
+  const ds = datasetMap.get(dsId);
+  return ds?.dataset_type === "trajectory" ? dsId : null;
+}
+
+function trackTimeBounds(tracks: TripTrack[]): [number, number] {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const t of tracks) {
+    for (const ts of t.timestamps) {
+      if (ts < min) min = ts;
+      if (ts > max) max = ts;
+    }
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 0];
+  return [min, max];
+}
 
 async function fetchJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await workspaceFetch(path, { signal });
@@ -66,14 +112,47 @@ export async function downloadInteractiveExport(
   const total = scrollyChapters.length + 1;
   if (onProgress) onProgress(0, total);
 
+  const placements = scrollyPlacements(story);
+  const tracksCache = new Map<string, TripTrack[]>();
+
   const fd = new FormData();
   let captured = 0;
   for (const ch of scrollyChapters) {
     throwIfAborted(signal);
+
+    let tripsContext: StoryTripsContext | undefined;
+    const trajDsId = trajectoryDatasetId(ch, datasetMap);
+    if (trajDsId) {
+      const ds = datasetMap.get(trajDsId);
+      if (ds?.trips_url) {
+        let tracks = tracksCache.get(trajDsId);
+        if (!tracks) {
+          tracks = await fetchJson<TripTrack[]>(ds.trips_url, signal);
+          tracksCache.set(trajDsId, tracks);
+        }
+        const [tMin, tMax] = trackTimeBounds(tracks);
+        const placement = placements.get(ch.id) ?? {
+          localIndex: 0,
+          blockLength: 1,
+        };
+        const time = beatTime(
+          tMin,
+          tMax,
+          placement.localIndex,
+          placement.blockLength
+        );
+        tripsContext = {
+          tracksByDatasetId: new Map([[trajDsId, tracks]]),
+          timeByDatasetId: new Map([[trajDsId, time]]),
+        };
+      }
+    }
+
     const dataUrl = await captureChapterMap({
       chapter: ch,
       datasetMap,
       connectionMap,
+      tripsContext,
     });
     const blob = dataUrlToBlob(dataUrl);
     fd.append(

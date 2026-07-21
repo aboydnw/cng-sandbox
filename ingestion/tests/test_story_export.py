@@ -244,6 +244,46 @@ def test_export_resolves_dataset_to_cng_url(db_session):
     assert layer.render.opacity == 0.8
 
 
+def test_export_resolves_trajectory_dataset_to_trips_layer(db_session):
+    ds = DatasetRow(
+        id="ds-traj",
+        filename="stork.gpx",
+        dataset_type="trajectory",
+        format_pair="gpx_to_geoparquet",
+        tile_url="/storage/datasets/ds-traj/converted/trips.json",
+        metadata_json=json.dumps(
+            {
+                "title": "Stork migration",
+                "trips_url": "/storage/datasets/ds-traj/converted/trips.json",
+            }
+        ),
+    )
+    db_session.add(ds)
+    db_session.commit()
+
+    row = _make_story(
+        db_session,
+        chapters=[
+            {
+                "id": "c1",
+                "type": "scrollytelling",
+                "title": "Track",
+                "body": "",
+                "layer_config": {
+                    "dataset_id": "ds-traj",
+                    "opacity": 1.0,
+                    "trail_length": 300,
+                },
+            }
+        ],
+    )
+    config = story_export.build_config(row, db_session)
+    layer = next(iter(config.layers.values()))
+    assert layer.type == "trajectory"
+    assert layer.cng_url == "/storage/datasets/ds-traj/converted/trips.json"
+    assert layer.render.trail_length == 300
+
+
 def test_export_accepts_integer_timestep(db_session):
     ds = DatasetRow(
         id="ds-temporal",

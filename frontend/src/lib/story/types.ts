@@ -43,6 +43,7 @@ export interface LayerConfig {
   color_property?: string | null;
   color_mode?: "rgb" | "elevation" | "intensity" | "classification" | null;
   point_size?: number | null;
+  trail_length?: number | null;
 }
 
 export interface OverlayConfig {

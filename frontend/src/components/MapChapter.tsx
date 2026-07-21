@@ -12,6 +12,9 @@ import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
 import { connectionToMapItem, datasetToMapItem } from "../hooks/useMapData";
 import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
+import { useStoryTripsTracks } from "../hooks/useStoryTripsTracks";
+import { useTripsAnimation } from "../hooks/useTripsAnimation";
+import { TrajectoryControls } from "./TrajectoryControls";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
 
@@ -52,6 +55,20 @@ export function MapChapter({
     connection ?? null
   );
 
+  const isTrajectory = dataset?.dataset_type === "trajectory";
+  const {
+    tracksByDatasetId,
+    boundsByDatasetId,
+    error: tripsError,
+  } = useStoryTripsTracks([dataset]);
+  const [tMin, tMax] =
+    (dataset && boundsByDatasetId.get(dataset.id)) ??
+    ([0, 0] as [number, number]);
+  const trips = useTripsAnimation(tMin, tMax, !!isTrajectory && tMax > tMin);
+  const tracksReady = !!(
+    dataset && (tracksByDatasetId.get(dataset.id)?.length ?? 0) > 0
+  );
+
   const { layers, renderMetadata } = useMemo(() => {
     if (connection) {
       const connMap = new Map([[connection.id, connection]]);
@@ -76,8 +93,25 @@ export function MapChapter({
       },
     };
     const datasetMap = new Map<string, Dataset | null>([[dataset.id, dataset]]);
-    return buildLayersForChapter(interactiveChapter, datasetMap, undefined);
-  }, [dataset, connection, chapter, activeTimestepIndex, zarrNode]);
+    return buildLayersForChapter(
+      interactiveChapter,
+      datasetMap,
+      undefined,
+      undefined,
+      {
+        tracksByDatasetId,
+        timeByDatasetId: new Map([[dataset.id, trips.currentTime]]),
+      }
+    );
+  }, [
+    dataset,
+    connection,
+    chapter,
+    activeTimestepIndex,
+    zarrNode,
+    tracksByDatasetId,
+    trips.currentTime,
+  ]);
 
   const copcItem = useMemo(() => {
     if (connection?.connection_type === "copc")
@@ -155,6 +189,23 @@ export function MapChapter({
             Couldn&apos;t open Zarr store: {zarrError}
           </Box>
         )}
+        {tripsError && (
+          <Box
+            position="absolute"
+            top={4}
+            left={4}
+            bg="red.subtle"
+            borderWidth="1px"
+            borderColor="red.border"
+            color="red.fg"
+            px={3}
+            py={2}
+            fontSize="sm"
+            zIndex={10}
+          >
+            Couldn&apos;t load this trajectory: {tripsError}
+          </Box>
+        )}
         {dataset || connection ? (
           <UnifiedMap
             camera={camera}
@@ -174,6 +225,19 @@ export function MapChapter({
               <Box position="absolute" top={3} right={3} zIndex={10}>
                 <RenderModeIndicator {...renderMetadata} />
               </Box>
+            )}
+            {/* Trajectory transport bar */}
+            {isTrajectory && tracksReady && (
+              <TrajectoryControls
+                currentTime={trips.currentTime}
+                tMin={tMin}
+                tMax={tMax}
+                isPlaying={trips.isPlaying}
+                speed={trips.speed}
+                onTogglePlay={trips.togglePlay}
+                onSetSpeed={trips.setSpeed}
+                onScrub={trips.scrub}
+              />
             )}
             {/* Temporal date picker */}
             {isTemporalInteractive && (

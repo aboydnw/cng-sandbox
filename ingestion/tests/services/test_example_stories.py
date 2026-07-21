@@ -10,10 +10,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.models.base import Base
+from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
+from src.services import example_stories as example_stories_module
+from src.services.example_datasets import seed_example_trajectories
 from src.services.example_stories import (
+    ADMIN0_URL,
+    ADMIN1_URL,
     ALL_STORIES,
+    AUTZEN_URL,
     BUILDINGS_URL,
     CARBON_URL,
     GEBCO_URL,
@@ -21,12 +27,367 @@ from src.services.example_stories import (
     HATAY_DEFNE_URL,
     HATAY_FLIGHT1_URL,
     HATAY_TURINCLU_URL,
+    IMERG_STORY,
+    IMERG_URL,
     LAHAINA_URL,
     OCEAN_FLOOR_STORY,
+    POINT_CLOUD_STORY,
+    STORK_STORY,
+    STORK_URL,
+    ChapterSeed,
+    OverlaySeed,
+    StorySeed,
     _build_chapter_dict,
     relink_dead_chapter_dataset_ids,
     seed_example_stories,
 )
+
+
+def _seed_example_connection(session, *, conn_id: str, url: str, ctype: str):
+    session.add(
+        ConnectionRow(
+            id=conn_id,
+            name=conn_id,
+            url=url,
+            connection_type=ctype,
+            is_example=True,
+            workspace_id=None,
+            created_at=datetime.now(UTC),
+        )
+    )
+
+
+def test_chapter_with_connection_url_emits_connection_id(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="conn-1", url="s3://autzen.copc.laz", ctype="copc"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                connection_url="s3://autzen.copc.laz",
+                connection_type="copc",
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        ch = json.loads(row.chapters_json)[1]
+    finally:
+        session.close()
+
+    assert ch["layer_config"]["connection_id"] == "conn-1"
+    assert ch["layer_config"]["dataset_id"] == ""
+
+
+def test_story_skipped_until_required_connection_seeded(monkeypatch):
+    _, factory = _make_db()
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                connection_url="s3://autzen.copc.laz",
+                connection_type="copc",
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+
+    seed_example_stories(factory)
+    session = factory()
+    try:
+        assert session.query(StoryRow).filter(StoryRow.title == "CX").count() == 0
+    finally:
+        session.close()
+
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="conn-1", url="s3://autzen.copc.laz", ctype="copc"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    seed_example_stories(factory)
+    session = factory()
+    try:
+        assert session.query(StoryRow).filter(StoryRow.title == "CX").count() == 1
+    finally:
+        session.close()
+
+
+def test_copc_styling_fields_pass_through(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="conn-1", url="s3://autzen.copc.laz", ctype="copc"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                connection_url="s3://autzen.copc.laz",
+                connection_type="copc",
+                color_mode="classification",
+                point_size=3.0,
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+
+    seed_example_stories(factory)
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        lc = json.loads(row.chapters_json)[1]["layer_config"]
+    finally:
+        session.close()
+
+    assert lc["color_mode"] == "classification"
+    assert lc["point_size"] == 3.0
+
+
+def test_overlay_seed_emits_resolved_overlay_config(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="admin1", url="s3://admin1.pmtiles", ctype="pmtiles"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                overlays=(
+                    OverlaySeed(
+                        connection_url="s3://admin1.pmtiles",
+                        connection_type="pmtiles",
+                        stroke_color="#5a3e2b",
+                    ),
+                ),
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+
+    seed_example_stories(factory)
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        overlays = json.loads(row.chapters_json)[1]["overlays"]
+    finally:
+        session.close()
+
+    assert overlays == [
+        {
+            "connection_id": "admin1",
+            "opacity": 1.0,
+            "visible": True,
+            "stroke_color": "#5a3e2b",
+        }
+    ]
+
+
+def test_story_skipped_until_overlay_connection_seeded(monkeypatch):
+    _, factory = _make_db()
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                overlays=(
+                    OverlaySeed(
+                        connection_url="s3://admin1.pmtiles",
+                        connection_type="pmtiles",
+                    ),
+                ),
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+
+    seed_example_stories(factory)
+    session = factory()
+    try:
+        assert session.query(StoryRow).filter(StoryRow.title == "CX").count() == 0
+    finally:
+        session.close()
+
+
+def test_relink_heals_dead_connection_ids(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="conn-1", url="s3://autzen.copc.laz", ctype="copc"
+        )
+        _seed_example_connection(
+            session, conn_id="admin1", url="s3://admin1.pmtiles", ctype="pmtiles"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                connection_url="s3://autzen.copc.laz",
+                connection_type="copc",
+                overlays=(
+                    OverlaySeed(
+                        connection_url="s3://admin1.pmtiles",
+                        connection_type="pmtiles",
+                    ),
+                ),
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        chapters = json.loads(row.chapters_json)
+        chapters[1]["layer_config"]["connection_id"] = "dead-id"
+        chapters[1]["overlays"][0]["connection_id"] = "dead-id"
+        row.chapters_json = json.dumps(chapters)
+        session.commit()
+    finally:
+        session.close()
+
+    assert relink_dead_chapter_dataset_ids(factory) == 1
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    assert chapters[1]["layer_config"]["connection_id"] == "conn-1"
+    assert chapters[1]["overlays"][0]["connection_id"] == "admin1"
+
+
+def test_relink_preserves_live_user_edited_connection_id(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="conn-1", url="s3://autzen.copc.laz", ctype="copc"
+        )
+        # A different, live connection the user swapped in.
+        session.add(
+            ConnectionRow(
+                id="user-conn",
+                name="user",
+                url="s3://user.copc.laz",
+                connection_type="copc",
+                is_example=False,
+                workspace_id="ws",
+                created_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    story = StorySeed(
+        title="CX",
+        description="d",
+        chapters=[
+            ChapterSeed(type="prose", title="p", narrative="n"),
+            ChapterSeed(
+                type="scrollytelling",
+                title="s",
+                narrative="n",
+                connection_url="s3://autzen.copc.laz",
+                connection_type="copc",
+            ),
+            ChapterSeed(type="map", title="m", narrative="n"),
+        ],
+    )
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [story])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        chapters = json.loads(row.chapters_json)
+        chapters[1]["layer_config"]["connection_id"] = "user-conn"
+        row.chapters_json = json.dumps(chapters)
+        session.commit()
+    finally:
+        session.close()
+
+    assert relink_dead_chapter_dataset_ids(factory) == 0
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == "CX").one()
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    assert chapters[1]["layer_config"]["connection_id"] == "user-conn"
 
 
 def _make_db():
@@ -109,9 +470,22 @@ def _seed_all_example_datasets(factory):
             source_url=HATAY_TURINCLU_URL,
             filename="Hatay Tur",
         )
+        _seed_example_connection(
+            session, conn_id="autzen-id", url=AUTZEN_URL, ctype="copc"
+        )
+        _seed_example_connection(
+            session, conn_id="imerg-id", url=IMERG_URL, ctype="zarr"
+        )
+        _seed_example_connection(
+            session, conn_id="admin0-id", url=ADMIN0_URL, ctype="pmtiles"
+        )
+        _seed_example_connection(
+            session, conn_id="admin1-id", url=ADMIN1_URL, ctype="pmtiles"
+        )
         session.commit()
     finally:
         session.close()
+    seed_example_trajectories(factory, artifact_exists=lambda _key: True)
 
 
 def test_seed_inserts_stories_when_datasets_present():
@@ -178,6 +552,7 @@ def test_seed_skips_story_when_dataset_missing():
         for s in ALL_STORIES
         if {ch.dataset_source_url for ch in s.chapters if ch.dataset_source_url}
         <= {GEBCO_URL}
+        and not any(ch.connection_url or ch.overlays for ch in s.chapters)
     }
     assert OCEAN_FLOOR_STORY.title in gebco_only
     assert titles == gebco_only
@@ -328,6 +703,7 @@ def _reseed_example_datasets_with_new_ids(factory, suffix: str):
         session.commit()
     finally:
         session.close()
+    seed_example_trajectories(factory, artifact_exists=lambda _key: True)
 
 
 def test_seed_example_stories_heals_chapter_drift():
@@ -351,7 +727,7 @@ def test_seed_example_stories_heals_chapter_drift():
         for ch in chapters:
             lc = ch.get("layer_config") or {}
             ds_id = lc.get("dataset_id")
-            if ds_id is None:
+            if not ds_id:
                 continue
             assert ds_id in live_ids, (
                 f"chapter dataset_id {ds_id} in {row.title!r} is dead after re-seed"
@@ -639,6 +1015,127 @@ def test_relink_skips_user_authored_story_with_coincidental_title_match():
 
     for ch in chapters:
         assert ch["layer_config"]["dataset_id"] == "user-private-dead-id"
+
+
+def test_point_cloud_story_seeds_with_copc_connection(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="autzen-id", url=AUTZEN_URL, ctype="copc"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [POINT_CLOUD_STORY])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = (
+            session.query(StoryRow)
+            .filter(StoryRow.title == POINT_CLOUD_STORY.title)
+            .one()
+        )
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    copc_chapters = [
+        c for c in chapters if (c.get("layer_config") or {}).get("connection_id")
+    ]
+    assert copc_chapters
+    for c in copc_chapters:
+        assert c["layer_config"]["connection_id"] == "autzen-id"
+    color_modes = {c["layer_config"].get("color_mode") for c in copc_chapters}
+    assert "elevation" in color_modes
+    assert "classification" in color_modes
+
+
+def test_imerg_story_chapters_step_timesteps(monkeypatch):
+    _, factory = _make_db()
+    session = factory()
+    try:
+        _seed_example_connection(
+            session, conn_id="imerg-id", url=IMERG_URL, ctype="zarr"
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [IMERG_STORY])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == IMERG_STORY.title).one()
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    scrolly_steps = [
+        c["layer_config"]["timestep"]
+        for c in chapters
+        if c["type"] == "scrollytelling" and (c.get("layer_config") or {})
+    ]
+    assert len(scrolly_steps) == 3
+    assert all(isinstance(s, int) for s in scrolly_steps)
+    assert scrolly_steps == sorted(scrolly_steps)
+    assert len(set(scrolly_steps)) == 3
+    for c in chapters:
+        lc = c.get("layer_config") or {}
+        if lc.get("timestep") is not None:
+            assert lc["connection_id"] == "imerg-id"
+
+
+def test_cities_story_carries_admin_boundary_overlays():
+    _, factory = _make_db()
+    _seed_all_example_datasets(factory)
+
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = (
+            session.query(StoryRow).filter(StoryRow.title == "Cities from space").one()
+        )
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    lagos = next(c for c in chapters if c["title"] == "Lagos")
+    assert len(lagos["overlays"]) == 1
+    assert lagos["overlays"][0]["connection_id"] == "admin1-id"
+    assert lagos["overlays"][0].get("fill_opacity") in (None, 0)
+
+    worldwide = next(c for c in chapters if c["title"] == "Explore worldwide")
+    assert len(worldwide["overlays"]) == 1
+    assert worldwide["overlays"][0]["connection_id"] == "admin0-id"
+    assert worldwide["overlays"][0].get("fill_opacity") in (None, 0)
+
+
+def test_stork_story_seeds_with_trajectory_dataset(monkeypatch):
+    from src.services.example_datasets import example_dataset_id
+
+    _, factory = _make_db()
+    seed_example_trajectories(factory, artifact_exists=lambda _key: True)
+    det_id = example_dataset_id(STORK_URL)
+
+    monkeypatch.setattr(example_stories_module, "ALL_STORIES", [STORK_STORY])
+    seed_example_stories(factory)
+
+    session = factory()
+    try:
+        row = session.query(StoryRow).filter(StoryRow.title == STORK_STORY.title).one()
+        chapters = json.loads(row.chapters_json)
+    finally:
+        session.close()
+
+    bound = [c for c in chapters if (c.get("layer_config") or {}).get("dataset_id")]
+    assert bound
+    for c in bound:
+        assert c["layer_config"]["dataset_id"] == det_id
 
 
 def test_seed_emits_globe_and_terrain_map_state():

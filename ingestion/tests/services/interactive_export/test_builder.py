@@ -138,6 +138,92 @@ def test_map_chapter_with_vector_layer_emits_arrow():
     assert any(n.startswith("chapters/ch1/") and n.endswith(".arrow") for n in names)
 
 
+def test_map_chapter_with_trajectory_layer_emits_trips_json(monkeypatch):
+    from src.services.interactive_export import source_resolver
+
+    tracks = [
+        {
+            "trajectory_id": "a",
+            "path": [[0, 0], [1, 1]],
+            "timestamps": [0, 1],
+            "speeds": [1, 2],
+        }
+    ]
+
+    def fake_fetch(src_url, out_path, storage=None):
+        out_path.write_text(json.dumps(tracks))
+
+    monkeypatch.setattr(source_resolver, "fetch_trips_json", fake_fetch)
+
+    layer = CngRcLayer(
+        type="trajectory",
+        source_url=None,
+        cng_url="/storage/datasets/ds1/converted/trips.json",
+        label="Track",
+        attribution=None,
+        render=CngRcRender(
+            colormap=None,
+            rescale=None,
+            opacity=0.9,
+            band=None,
+            timestep=None,
+            trail_length=300,
+        ),
+    )
+    config, chapters_raw = _config_with_one_map_chapter(layer)
+    zip_bytes = builder.build_interactive_export(
+        config=config,
+        chapters_raw=chapters_raw,
+        chart_data_by_chapter={},
+        scrolly_pngs={},
+    )
+    archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    assert "chapters/ch1/layer-1.trips.json" in archive.namelist()
+    manifest = json.loads(archive.read("manifest.json"))
+    trips = manifest["chapters"][0]["layers"][0]
+    assert trips["kind"] == "trips"
+    assert trips["trail_length"] == 300
+    assert trips["opacity"] == 0.9
+
+
+def test_map_chapter_preserves_zero_trajectory_trail_length(monkeypatch):
+    from src.services.interactive_export import source_resolver
+
+    monkeypatch.setattr(
+        source_resolver,
+        "fetch_trips_json",
+        lambda _src, out, storage=None: out.write_text("[]"),
+    )
+    layer = CngRcLayer(
+        type="trajectory",
+        source_url=None,
+        cng_url="/storage/datasets/ds1/converted/trips.json",
+        label="Track",
+        attribution=None,
+        render=CngRcRender(
+            colormap=None,
+            rescale=None,
+            opacity=1.0,
+            band=None,
+            timestep=None,
+            trail_length=0,
+        ),
+    )
+    config, chapters_raw = _config_with_one_map_chapter(layer)
+    archive = zipfile.ZipFile(
+        io.BytesIO(
+            builder.build_interactive_export(
+                config=config,
+                chapters_raw=chapters_raw,
+                chart_data_by_chapter={},
+                scrolly_pngs={},
+            )
+        )
+    )
+    manifest = json.loads(archive.read("manifest.json"))
+    assert manifest["chapters"][0]["layers"][0]["trail_length"] == 0
+
+
 def test_raster_pyramid_build_timeout_raises(monkeypatch):
     import time
 

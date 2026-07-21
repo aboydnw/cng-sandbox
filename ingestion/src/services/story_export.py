@@ -137,6 +137,7 @@ def _resolve_layer(lc: dict, session: Session) -> CngRcLayer | None:
         band=lc.get("band"),
         timestep=lc.get("timestep"),
         colormap_reversed=lc.get("colormap_reversed") or False,
+        trail_length=lc.get("trail_length"),
     )
 
     if connection_id:
@@ -157,6 +158,15 @@ def _resolve_layer(lc: dict, session: Session) -> CngRcLayer | None:
         if ds is None:
             return None
         ds_dict = ds.to_dict()
+        if ds_dict.get("dataset_type") == "trajectory":
+            return CngRcLayer(
+                type="trajectory",
+                source_url=ds_dict.get("source_url"),
+                cng_url=ds_dict.get("trips_url"),
+                label=ds_dict.get("title") or ds.filename,
+                attribution=None,
+                render=render,
+            )
         cng_url = ds_dict.get("cog_url") or ds_dict.get("parquet_url")
         layer_type = "vector-geoparquet" if ds_dict.get("parquet_url") else "raster-cog"
         return CngRcLayer(

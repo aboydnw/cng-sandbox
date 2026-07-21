@@ -20,8 +20,13 @@ from typing import Literal
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
+from src.models.connection import ConnectionRow
 from src.models.dataset import DatasetRow
 from src.models.story import StoryRow
+from src.services.example_trajectory_source import (
+    STORK_ATTRIBUTION,
+    STORK_SOURCE_URL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +40,26 @@ LAHAINA_URL = "https://maxar-opendata.s3.amazonaws.com/events/Maui-Hawaii-fires-
 HATAY_FLIGHT1_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63f21def525f0700077ed4e2/0/63f21def525f0700077ed4e3.tif"
 HATAY_DEFNE_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb7815ca43600005f4d91e/0/63eb7815ca43600005f4d91f.tif"
 HATAY_TURINCLU_URL = "https://oin-hotosm-temp.s3.amazonaws.com/63eb8222ca43600005f4d925/0/63eb8222ca43600005f4d926.tif"
+AUTZEN_URL = "https://s3.amazonaws.com/hobu-lidar/autzen-classified.copc.laz"
+IMERG_URL = "https://data.source.coop/bkr/imerg/imerg_final.zarr"
+ADMIN0_URL = (
+    "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin0.pmtiles"
+)
+ADMIN1_URL = (
+    "https://pub-a8e1027739334149a1dadd24c89b6969.r2.dev/context/admin1.pmtiles"
+)
+
+
+@dataclass(frozen=True)
+class OverlaySeed:
+    connection_url: str
+    connection_type: str
+    opacity: float = 1.0
+    stroke_color: str | None = None
+    stroke_width: float | None = None
+    fill_color: str | None = None
+    fill_opacity: float | None = None
+    visible: bool = True
 
 
 @dataclass(frozen=True)
@@ -60,6 +85,12 @@ class ChapterSeed:
     buildings: bool = False
     keyframes: tuple[dict, ...] | None = None
     scroll_length: float = 1.0
+    connection_url: str | None = None
+    connection_type: str | None = None
+    color_mode: str | None = None
+    point_size: float | None = None
+    colormap_reversed: bool | None = None
+    overlays: tuple[OverlaySeed, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -284,12 +315,23 @@ CITIES_STORY = StorySeed(
                 "Much of that mainland fabric was invisible to older "
                 "global datasets — it only appears here because machine-"
                 "learning-detected footprints from satellite imagery "
-                "were merged with OpenStreetMap."
+                "were merged with OpenStreetMap.\n\n"
+                "The brown lines trace **state boundaries** — you can see "
+                "the built-up area spilling well beyond Lagos State into "
+                "its neighbors."
             ),
             dataset_source_url=BUILDINGS_URL,
             center=(3.3792, 6.5244),
             zoom=11.0,
             opacity=0.85,
+            overlays=(
+                OverlaySeed(
+                    connection_url=ADMIN1_URL,
+                    connection_type="pmtiles",
+                    stroke_color="#8B4513",
+                    stroke_width=1.5,
+                ),
+            ),
         ),
         ChapterSeed(
             type="scrollytelling",
@@ -317,12 +359,22 @@ CITIES_STORY = StorySeed(
                 "Antarctica has coverage. Pan anywhere and zoom in to "
                 "compare city fabrics. A few suggestions: Cairo's Nile "
                 "delta, Jakarta's coastal sprawl, Mexico City's "
-                "altiplano, Seoul's river-split core."
+                "altiplano, Seoul's river-split core.\n\n"
+                "Country outlines are drawn in brown to help you get your "
+                "bearings as you roam."
             ),
             dataset_source_url=BUILDINGS_URL,
             center=(0.0, 20.0),
             zoom=2.0,
             opacity=0.85,
+            overlays=(
+                OverlaySeed(
+                    connection_url=ADMIN0_URL,
+                    connection_type="pmtiles",
+                    stroke_color="#8B4513",
+                    stroke_width=1.5,
+                ),
+            ),
         ),
         ChapterSeed(
             type="prose",
@@ -886,6 +938,378 @@ HIGH_PLACES_STORY = StorySeed(
 )
 
 
+POINT_CLOUD_STORY = StorySeed(
+    title="Anatomy of a point cloud",
+    description=(
+        "Fly through millions of lidar points over Autzen Stadium — how "
+        "point clouds work, what the colors mean, and why they stream "
+        "straight to your browser."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="A cloud of points",
+            narrative=(
+                "A **point cloud** is exactly what it sounds like: a dataset "
+                "made of individual points in three-dimensional space, each "
+                "with an x, y, and z coordinate. Instead of a smooth surface, "
+                "you get a dense scatter of measurements — here, millions of "
+                "them — that together trace out the shape of the world.\n\n"
+                "These points come from **lidar**, a sensor that fires rapid "
+                "laser pulses and times how long each one takes to bounce "
+                "back. Mounted on an aircraft, it sweeps the ground below and "
+                "records where every pulse landed. This survey covers "
+                "**Autzen Stadium** in Eugene, Oregon.\n\n"
+                "Scroll on to see the cloud two ways — painted by height, then "
+                "sorted into what each point actually is — and to explore it "
+                "yourself at the end."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Painted by height",
+            narrative=(
+                "The first thing to do with a raw point cloud is give it "
+                "color. Here each point is tinted by its **elevation** — its "
+                "z value — running from low ground through to the tallest "
+                "returns.\n\n"
+                "Suddenly the structure jumps out: the bowl of the stadium, "
+                "the surrounding parking lots, the rise of the press box and "
+                "light towers. No surface model, no mesh — just points, "
+                "colored by height, and your eye does the rest."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="elevation",
+            point_size=2.0,
+            center=(-123.0687, 44.0582),
+            zoom=15.5,
+            pitch=55.0,
+            bearing=-30.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Ground, trees, rooftops",
+            narrative=(
+                "Height is only one story the points can tell. This survey is "
+                "**classified**: every point carries a label from the ASPRS "
+                "standard scheme — ground, low and high vegetation, buildings, "
+                "and more — assigned when the data was processed.\n\n"
+                "Recolored by **classification**, the same cloud reorganizes "
+                "itself. Ground separates cleanly from the trees ringing the "
+                "stadium and from the built structures. This is what makes "
+                "lidar so useful: you can pull out just the bare earth, just "
+                "the canopy, or just the buildings, because the points already "
+                "know what they are."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="classification",
+            point_size=2.0,
+            center=(-123.0687, 44.0582),
+            zoom=16.0,
+            pitch=60.0,
+            bearing=40.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Streaming, not downloading",
+            narrative=(
+                "A cloud this dense would be a heavy file to hand someone. "
+                "This one is stored as **COPC** — Cloud-Optimized Point Cloud "
+                "— which reorganizes the points into a spatial hierarchy that "
+                "can be read in pieces over the network.\n\n"
+                "So nothing is downloaded up front. As you zoom and pan, your "
+                "browser makes **HTTP range requests** for just the points it "
+                "needs at the detail you're viewing, up to a fixed point "
+                "budget. Coarse overview when you're far out; full density "
+                "when you push in close. The whole survey stays on the server; "
+                "only what you're looking at ever crosses the wire."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="elevation",
+            point_size=3.0,
+            center=(-123.0700, 44.0560),
+            zoom=14.5,
+            pitch=45.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="map",
+            title="Explore the stadium",
+            narrative=(
+                "Now it's yours. Pan, zoom, and tilt to move through the "
+                "cloud from any angle — watch the density fill in as you get "
+                "closer.\n\n"
+                "Want to try your own? Upload a **LAS or LAZ** file on the "
+                "data page and the sandbox converts it to COPC and streams it "
+                "back exactly like this one."
+            ),
+            connection_url=AUTZEN_URL,
+            connection_type="copc",
+            color_mode="elevation",
+            point_size=2.0,
+            center=(-123.0687, 44.0575),
+            zoom=15.0,
+            pitch=50.0,
+            basemap="satellite",
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Credits",
+            narrative=(
+                "The Autzen Stadium point cloud is a public sample dataset "
+                "provided by **Hobu Inc.**, the team behind PDAL and much of "
+                "the open-source point-cloud toolchain. It's a favorite test "
+                "dataset precisely because it's classified, compact, and "
+                "recognizable.\n\n"
+                "Everything you just scrolled through ran client-side, "
+                "streamed straight from cloud storage — no tile server, no "
+                "download."
+            ),
+        ),
+    ],
+)
+
+
+# Timesteps are positions in the IMERG connection's decimated `timesteps`
+# array (see frontend rendering.ts), probed 2026-07-14 against the live store:
+#   pos 3256 -> 2017-08-23T04:00Z  (Harvey approaching the Gulf coast)
+#   pos 3257 -> 2017-08-25T03:30Z  (Harvey makes landfall near Rockport, TX)
+#   pos 3258 -> 2017-08-27T03:00Z  (stalled over Houston, catastrophic rainfall)
+IMERG_STORY = StorySeed(
+    title="Watching it rain from orbit",
+    description=(
+        "Half-hourly global rainfall, measured from space. Follow Hurricane "
+        "Harvey as it comes ashore and stalls over Houston in August 2017 — "
+        "then explore the whole planet's rain, one time step at a time."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="Rain, measured from space",
+            narrative=(
+                "You can't put a rain gauge everywhere — least of all over the "
+                "oceans, where most of the world's rain actually falls. So "
+                "NASA measures precipitation from **orbit** instead.\n\n"
+                "**IMERG** — the Integrated Multi-satellitE Retrievals for GPM "
+                "— blends readings from a constellation of satellites into a "
+                "single global grid, updated every **half hour** at roughly "
+                "10-kilometer resolution. This story streams that record "
+                "straight from a cloud-native **zarr** store: billions of "
+                "values, and your browser only ever pulls the time steps it's "
+                "showing.\n\n"
+                "We'll start with one storm the whole world remembers."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="A storm gathers in the Gulf",
+            narrative=(
+                "Late August 2017. A tropical system is organizing over the "
+                "warm water of the Gulf of Mexico, pulling moisture upward and "
+                "spinning it into bands of rain. On the map, precipitation "
+                "blooms in deepening blues as the storm tightens.\n\n"
+                "This is **Hurricane Harvey**, two days before landfall, "
+                "already dumping rain across the northwestern Gulf."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3256,
+            rescale_min=0,
+            rescale_max=30,
+            center=(-95.4, 29.6),
+            zoom=6.0,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Landfall",
+            narrative=(
+                "On the night of August 25th, Harvey comes ashore near "
+                "**Rockport, Texas** as a Category 4 hurricane. The heaviest "
+                "returns — the brightest cells on the map — crowd against the "
+                "coastline where the eyewall crosses land.\n\n"
+                "Landfall is only the beginning. What made Harvey historic "
+                "wasn't the wind. It was what happened next."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3257,
+            rescale_min=0,
+            rescale_max=30,
+            center=(-96.0, 28.5),
+            zoom=6.0,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Stalled over Houston",
+            narrative=(
+                "Steering winds collapsed, and Harvey simply **stopped** — "
+                "parked over southeast Texas for days, feeding on Gulf "
+                "moisture and wringing it out over the same ground again and "
+                "again. Some areas took more than 1.5 meters of rain.\n\n"
+                "Here the rainfall smears across the Houston metro, a broad "
+                "saturated field rather than a tidy spiral — the satellite's-"
+                "eye view of one of the wettest tropical cyclones ever "
+                "recorded in the United States."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3258,
+            rescale_min=0,
+            rescale_max=30,
+            center=(-95.4, 29.8),
+            zoom=6.0,
+        ),
+        ChapterSeed(
+            type="map",
+            title="The whole planet's rain",
+            narrative=(
+                "Zoom out and the same dataset covers the entire globe. Use "
+                "the time slider to step through the record — watch monsoon "
+                "bands march across the tropics, storm tracks curl through the "
+                "mid-latitudes, and the great dry zones stay stubbornly "
+                "empty.\n\n"
+                "Every frame is half an hour of the planet's weather, measured "
+                "from space."
+            ),
+            connection_url=IMERG_URL,
+            connection_type="zarr",
+            colormap="blues",
+            timestep=3257,
+            rescale_min=0,
+            rescale_max=30,
+            center=(0.0, 15.0),
+            zoom=2.0,
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Credits",
+            narrative=(
+                "Precipitation data: **NASA GPM IMERG Final Run**, served as a "
+                "cloud-native zarr store via source.coop (bkr/imerg). The time "
+                "slider on the map chapter steps through the store's own "
+                "half-hourly axis, decimated for smooth browsing.\n\n"
+                "Bring your own NetCDF or zarr on the data page and the sandbox "
+                "will stream it the same way."
+            ),
+        ),
+    ],
+)
+
+
+STORK_URL = STORK_SOURCE_URL
+STORK_STORY = StorySeed(
+    title="A stork's year",
+    description=(
+        "Follow one white stork's migration from a summer nest in southwest "
+        "Germany to wintering grounds in North Africa and back — a full year "
+        "in GPS fixes. Scroll to move through time; the trail glows where the "
+        "bird flew fastest."
+    ),
+    chapters=[
+        ChapterSeed(
+            type="prose",
+            title="One bird, one year",
+            narrative=(
+                "Every autumn, white storks leave Europe for the south, and "
+                "every spring the survivors come back. We usually see this as "
+                "an abstraction — arrows on a map. Here it's a single bird.\n\n"
+                "This is **Ursula**, a white stork raised in southwest Germany "
+                "and fitted with a small solar GPS-GSM tag. For more than a "
+                "year the tag logged where she was, minute by minute, as part "
+                "of a long-running study of stork migration. What follows is "
+                "her track — one animal's whole year, scrolled through in "
+                "time.\n\n"
+                "The trail is colored by speed: cool blues where she drifted, "
+                "hot reds where she flew hard. Scroll on."
+            ),
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Leaving the nest",
+            narrative=(
+                "Late summer in the Rhine valley. Ursula spends her first "
+                "weeks close to home — short foraging flights over fields and "
+                "wetlands, the tag drawing a dense tangle of local movement.\n\n"
+                "Then, in the shortening days of August, the tangle "
+                "straightens into a line heading **southwest**. Migration has "
+                "begun."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(6.0, 46.5),
+            zoom=5.5,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="The long way south",
+            narrative=(
+                "Storks are soaring migrants. Rather than flap across open "
+                "water, they ride columns of warm rising air and glide between "
+                "them, which is why their tracks bend toward the narrowest "
+                "sea crossings.\n\n"
+                "Ursula's line runs down through France and Iberia toward the "
+                "**Strait of Gibraltar**, then pushes on into Morocco — the "
+                "trail brightening to red on the long, fast glides."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(-3.0, 39.5),
+            zoom=4.5,
+        ),
+        ChapterSeed(
+            type="scrollytelling",
+            title="Wintering grounds",
+            narrative=(
+                "South of the Atlas Mountains the line finally slows and "
+                "gathers. This is where Ursula spends the winter — ranging "
+                "over the plains and river valleys of **North Africa**, far "
+                "from the German nest where the track began.\n\n"
+                "Keep scrolling, and the story doesn't end here: the fixes "
+                "turn north again as the year comes back around."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(-7.5, 33.5),
+            zoom=5.5,
+        ),
+        ChapterSeed(
+            type="map",
+            title="The whole journey",
+            narrative=(
+                "Here's the full year at once. Use the transport bar to play "
+                "the migration end to end, scrub to any moment, or speed it "
+                "up — the glowing head of the trail is Ursula's position in "
+                "time.\n\n"
+                "One bird, one tag, one loop from Germany to Africa and most "
+                "of the way home."
+            ),
+            dataset_source_url=STORK_URL,
+            center=(-0.5, 40.6),
+            zoom=4.0,
+        ),
+        ChapterSeed(
+            type="prose",
+            title="Track your own",
+            narrative=(
+                "A single stork's year is a few tens of thousands of GPS "
+                "fixes. Multiplied across a tagged population, tracks like "
+                "this are how researchers study when birds leave, which routes "
+                "they choose, and how migration timing shapes who survives.\n\n"
+                "Have a GPX track of your own — a bird, a boat, a bike, a "
+                "hike? Upload it on the data page and the sandbox will animate "
+                "it exactly like this.\n\n"
+                f"_{STORK_ATTRIBUTION}_"
+            ),
+        ),
+    ],
+)
+
+
 ALL_STORIES: list[StorySeed] = [
     OCEAN_FLOOR_STORY,
     CITIES_STORY,
@@ -893,6 +1317,9 @@ ALL_STORIES: list[StorySeed] = [
     LAHAINA_STORY,
     ANTAKYA_STORY,
     HIGH_PLACES_STORY,
+    POINT_CLOUD_STORY,
+    IMERG_STORY,
+    STORK_STORY,
 ]
 
 
@@ -914,6 +1341,22 @@ def _load_example_dataset_map(
         session.close()
 
 
+def _load_example_connection_map(
+    db_session_factory: sessionmaker,
+) -> dict[tuple[str, str], str]:
+    """Return {(url, connection_type): connection_id} for is_example=True rows."""
+    session = db_session_factory()
+    try:
+        rows = (
+            session.query(ConnectionRow)
+            .filter(ConnectionRow.is_example.is_(True))
+            .all()
+        )
+        return {(r.url, r.connection_type): r.id for r in rows}
+    finally:
+        session.close()
+
+
 def _existing_example_story_rows_by_title(
     db_session_factory: sessionmaker,
 ) -> dict[str, str]:
@@ -930,6 +1373,8 @@ def _build_chapter_dict(
     ch: ChapterSeed,
     order: int,
     dataset_id: str | None,
+    connection_id: str | None = None,
+    connection_map: dict[tuple[str, str], str] | None = None,
 ) -> dict:
     if ch.type == "flyover":
         return {
@@ -953,19 +1398,51 @@ def _build_chapter_dict(
         }
 
     layer_config: dict | None = None
-    if ch.type != "prose" and dataset_id:
+    if ch.type != "prose" and (dataset_id or connection_id):
         layer_config = {
-            "dataset_id": dataset_id,
+            "dataset_id": dataset_id or "",
             "colormap": ch.colormap,
             "opacity": ch.opacity,
             "basemap": ch.basemap,
         }
+        if connection_id:
+            layer_config["connection_id"] = connection_id
         if ch.rescale_min is not None:
             layer_config["rescale_min"] = ch.rescale_min
         if ch.rescale_max is not None:
             layer_config["rescale_max"] = ch.rescale_max
         if ch.timestep is not None:
             layer_config["timestep"] = ch.timestep
+        if ch.color_mode is not None:
+            layer_config["color_mode"] = ch.color_mode
+        if ch.point_size is not None:
+            layer_config["point_size"] = ch.point_size
+        if ch.colormap_reversed is not None:
+            layer_config["colormap_reversed"] = ch.colormap_reversed
+
+    overlays: list[dict] = []
+    if ch.type != "prose" and ch.overlays:
+        cmap = connection_map or {}
+        for o in ch.overlays:
+            overlays.append(
+                {
+                    "connection_id": cmap[(o.connection_url, o.connection_type)],
+                    "opacity": o.opacity,
+                    "visible": o.visible,
+                    **({"stroke_color": o.stroke_color} if o.stroke_color else {}),
+                    **(
+                        {"stroke_width": o.stroke_width}
+                        if o.stroke_width is not None
+                        else {}
+                    ),
+                    **({"fill_color": o.fill_color} if o.fill_color else {}),
+                    **(
+                        {"fill_opacity": o.fill_opacity}
+                        if o.fill_opacity is not None
+                        else {}
+                    ),
+                }
+            )
 
     return {
         "id": str(uuid.uuid4()),
@@ -986,6 +1463,7 @@ def _build_chapter_dict(
         "transition": ch.transition,
         "overlay_position": ch.overlay_position,
         "layer_config": layer_config,
+        **({"overlays": overlays} if overlays else {}),
     }
 
 
@@ -1013,10 +1491,12 @@ def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
     """
     seed_by_title = {s.title: s for s in ALL_STORIES}
     dataset_map = _load_example_dataset_map(db_session_factory)
+    connection_map = _load_example_connection_map(db_session_factory)
 
     session = db_session_factory()
     try:
         existing_dataset_ids = {r.id for r in session.query(DatasetRow).all()}
+        existing_connection_ids = {r.id for r in session.query(ConnectionRow).all()}
         example_titles_by_id = {
             r.id: r.title
             for r in session.query(StoryRow).filter(StoryRow.is_example.is_(True)).all()
@@ -1045,19 +1525,45 @@ def relink_dead_chapter_dataset_ids(db_session_factory: sessionmaker) -> int:
 
             chapter_changed = False
             for idx, ch in enumerate(chapters):
+                seed_ch = seed.chapters[idx]
                 layer_config = ch.get("layer_config") or {}
                 current_id = layer_config.get("dataset_id")
-                if not current_id or current_id in existing_dataset_ids:
-                    continue
-                source_url = seed.chapters[idx].dataset_source_url
-                if not source_url:
-                    continue
-                replacement = dataset_map.get(source_url)
-                if not replacement:
-                    continue
-                layer_config["dataset_id"] = replacement
-                ch["layer_config"] = layer_config
-                chapter_changed = True
+                if current_id and current_id not in existing_dataset_ids:
+                    source_url = seed_ch.dataset_source_url
+                    replacement = dataset_map.get(source_url) if source_url else None
+                    if replacement:
+                        layer_config["dataset_id"] = replacement
+                        ch["layer_config"] = layer_config
+                        chapter_changed = True
+
+                conn_id = layer_config.get("connection_id")
+                if (
+                    conn_id
+                    and conn_id not in existing_connection_ids
+                    and seed_ch.connection_url
+                    and seed_ch.connection_type
+                ):
+                    replacement = connection_map.get(
+                        (seed_ch.connection_url, seed_ch.connection_type)
+                    )
+                    if replacement:
+                        layer_config["connection_id"] = replacement
+                        ch["layer_config"] = layer_config
+                        chapter_changed = True
+
+                for o_idx, overlay in enumerate(ch.get("overlays") or []):
+                    o_conn = overlay.get("connection_id")
+                    if not o_conn or o_conn in existing_connection_ids:
+                        continue
+                    if o_idx >= len(seed_ch.overlays):
+                        continue
+                    o_seed = seed_ch.overlays[o_idx]
+                    replacement = connection_map.get(
+                        (o_seed.connection_url, o_seed.connection_type)
+                    )
+                    if replacement:
+                        overlay["connection_id"] = replacement
+                        chapter_changed = True
 
             if chapter_changed:
                 row.chapters_json = json.dumps(chapters)
@@ -1099,6 +1605,7 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
     ``IntegrityError`` is caught per-story so a racing insert is a no-op.
     """
     dataset_map = _load_example_dataset_map(db_session_factory)
+    connection_map = _load_example_connection_map(db_session_factory)
     existing_rows = _existing_example_story_rows_by_title(db_session_factory)
 
     for story in ALL_STORIES:
@@ -1114,6 +1621,25 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
             )
             continue
 
+        required_conns = {
+            (ch.connection_url, ch.connection_type)
+            for ch in story.chapters
+            if ch.connection_url and ch.connection_type
+        }
+        required_conns |= {
+            (o.connection_url, o.connection_type)
+            for ch in story.chapters
+            for o in ch.overlays
+        }
+        missing_conns = required_conns - connection_map.keys()
+        if missing_conns:
+            logger.warning(
+                "skipping example story %r — connections not yet registered: %s",
+                story.title,
+                sorted(missing_conns),
+            )
+            continue
+
         chapters_json = [
             _build_chapter_dict(
                 ch,
@@ -1123,6 +1649,12 @@ def seed_example_stories(db_session_factory: sessionmaker) -> None:
                     if ch.dataset_source_url
                     else None
                 ),
+                connection_id=(
+                    connection_map.get((ch.connection_url, ch.connection_type))
+                    if ch.connection_url and ch.connection_type
+                    else None
+                ),
+                connection_map=connection_map,
             )
             for idx, ch in enumerate(story.chapters)
         ]

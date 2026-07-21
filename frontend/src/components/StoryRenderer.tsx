@@ -22,8 +22,15 @@ import { type CameraState, cameraFromBounds } from "../lib/layers";
 import {
   groupChaptersIntoBlocks,
   buildLayersForChapter,
+  beatTime,
 } from "../lib/story/rendering";
 import { useStoryZarrNode } from "../hooks/useStoryZarrNode";
+import { useStoryTripsTracks } from "../hooks/useStoryTripsTracks";
+import {
+  rawProgress,
+  damp,
+  prefersReducedMotion,
+} from "../lib/story/flyover/progress";
 import { connectionToMapItem, datasetToMapItem } from "../hooks/useMapData";
 import type { CopcColorMode } from "../lib/layers/copcLayer";
 import type { Story, ScrollytellingChapter, OverlayConfig } from "../lib/story";
@@ -76,6 +83,9 @@ function resolveActiveLayers(
   };
   if (ds.dataset_type === "raster") {
     return [{ ...base, type: "raster-cog", cogUrl: ds.cog_url ?? undefined }];
+  }
+  if (ds.dataset_type === "trajectory") {
+    return [{ ...base, type: "vector-geoparquet" }];
   }
   return [
     {
@@ -212,6 +222,7 @@ function ScrollytellingBlock({
     number | undefined
   >(undefined);
   const stepsRef = useRef<HTMLDivElement>(null);
+  const blockRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
   const activeIndexRef = useRef(0);
   const highlightTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -321,15 +332,87 @@ function ScrollytellingBlock({
     return new Map();
   }, [activeConnId, zarrNode]);
 
+  // Trajectory (trips) support: fetch each trajectory dataset's sidecar once,
+  // then drive its time from scroll progress over the whole block.
+  const trajDatasets = useMemo(
+    () =>
+      chapters
+        .map((c) => datasetMap.get(c.layer_config.dataset_id))
+        .filter((d) => d?.dataset_type === "trajectory"),
+    [chapters, datasetMap]
+  );
+  const {
+    tracksByDatasetId,
+    boundsByDatasetId,
+    error: tripsError,
+  } = useStoryTripsTracks(trajDatasets);
+  const hasTrajectory = trajDatasets.length > 0;
+  const [tMin, tMax] = useMemo<[number, number]>(() => {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const [, b] of boundsByDatasetId) {
+      if (b[0] < min) min = b[0];
+      if (b[1] > max) max = b[1];
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 0];
+    return [min, max];
+  }, [boundsByDatasetId]);
+  const [tripsTime, setTripsTime] = useState(0);
+
+  // Continuous scroll-driven time (skipped entirely without a trajectory or
+  // under prefers-reduced-motion).
+  useEffect(() => {
+    if (!hasTrajectory || tMax <= tMin || prefersReducedMotion()) return;
+    const el = blockRef.current;
+    if (!el) return;
+    let raf = 0;
+    let current: number | null = null;
+    const tick = () => {
+      const r = el.getBoundingClientRect();
+      const target = rawProgress(r.top, r.height, window.innerHeight);
+      const next = current === null ? target : damp(current, target);
+      if (next !== current) {
+        current = next;
+        setTripsTime(tMin + next * (tMax - tMin));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [hasTrajectory, tMin, tMax]);
+
+  // Reduced-motion: pin trajectory time to the active chapter's beat.
+  useEffect(() => {
+    if (!hasTrajectory || tMax <= tMin || !prefersReducedMotion()) return;
+    setTripsTime(beatTime(tMin, tMax, activeIndex, chapters.length));
+  }, [hasTrajectory, tMin, tMax, activeIndex, chapters.length]);
+
+  const tripsContext = useMemo(() => {
+    if (!hasTrajectory) return undefined;
+    const timeByDatasetId = new Map<string, number>();
+    for (const ds of trajDatasets) {
+      if (ds) timeByDatasetId.set(ds.id, tripsTime);
+    }
+    return { tracksByDatasetId, timeByDatasetId };
+  }, [hasTrajectory, trajDatasets, tracksByDatasetId, tripsTime]);
+
   const { layers: chapterLayers, renderMetadata } = useMemo(
     () =>
       buildLayersForChapter(
         chapters[activeIndex],
         datasetMap,
         connectionMap,
-        zarrNodeMap
+        zarrNodeMap,
+        tripsContext
       ),
-    [datasetMap, connectionMap, activeIndex, chapters, zarrNodeMap]
+    [
+      datasetMap,
+      connectionMap,
+      activeIndex,
+      chapters,
+      zarrNodeMap,
+      tripsContext,
+    ]
   );
 
   const activeLayerId =
@@ -446,7 +529,7 @@ function ScrollytellingBlock({
   const copcPointSize = activeChapter?.layer_config?.point_size ?? 2;
 
   return (
-    <Box position="relative">
+    <Box position="relative" ref={blockRef}>
       {/* Sticky map — stays fixed in viewport while steps scroll past */}
       <Box position="sticky" top={0} h="100vh" zIndex={0}>
         {(datasetMap.size > 0 || (connectionMap && connectionMap.size > 0)) && (
@@ -488,6 +571,23 @@ function ScrollytellingBlock({
             zIndex={10}
           >
             Couldn&apos;t open Zarr store: {zarrError}
+          </Box>
+        )}
+        {tripsError && (
+          <Box
+            position="absolute"
+            top={4}
+            left={4}
+            bg="red.subtle"
+            borderWidth="1px"
+            borderColor="red.border"
+            color="red.fg"
+            px={3}
+            py={2}
+            fontSize="sm"
+            zIndex={10}
+          >
+            Couldn&apos;t load this trajectory: {tripsError}
           </Box>
         )}
         {activeDataset === null && !hasConnection && (

@@ -17,16 +17,25 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
+import obstore
 from sqlalchemy.orm import sessionmaker
 
-from src.models import Job
+from src.models import FormatPair, Job
 from src.models.dataset import DatasetRow
 from src.services.enumerators import RemoteItem
 from src.services.enumerators.maxar import enumerate_maxar_event
 from src.services.enumerators.path_listing import enumerate_path_listing
 from src.services.enumerators.single_cog import enumerate_single_cog
 from src.services.enumerators.stac_sidecars import enumerate_stac_sidecars
+from src.services.example_trajectory_source import (
+    STORK_ATTRIBUTION,
+    STORK_SOURCE_URL,
+    STORK_TITLE,
+)
 from src.services.pmtiles_register import (
     PMTilesRegistrationError,
     register_pmtiles_example,
@@ -36,6 +45,7 @@ from src.services.remote_register import (
     register_remote_collection,
 )
 from src.services.source_coop_config import SourceCoopProduct, list_products
+from src.services.storage import StorageService
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +228,99 @@ def backfill_example_colormaps(db_session_factory: sessionmaker) -> None:
         session.close()
 
 
+@dataclass(frozen=True)
+class ExampleTrajectorySeed:
+    source_url: str
+    title: str
+    filename: str
+    bounds: list[float]
+    track_count: int
+    point_count: int
+    time_start: str
+    time_end: str
+    attribution: str
+
+
+STORK_TRAJECTORY = ExampleTrajectorySeed(
+    source_url=STORK_SOURCE_URL,
+    title=STORK_TITLE,
+    filename="white-stork-migration.gpx",
+    bounds=[-9.230169, 32.21927, 8.151753, 49.049026],
+    track_count=1,
+    point_count=53475,
+    time_start="2020-08-10T09:15:47Z",
+    time_end="2021-10-11T19:55:08Z",
+    attribution=STORK_ATTRIBUTION,
+)
+
+
+def seed_example_trajectories(
+    db_session_factory: sessionmaker,
+    *,
+    artifact_exists: Callable[[str], bool] | None = None,
+) -> None:
+    """Insert pre-built example trajectory datasets.
+
+    Idempotent on the deterministic id derived from ``source_url``. The
+    ``trips.json`` + GeoParquet artifacts must already live in R2 at
+    ``datasets/<id>/converted/`` (published once, out of band — see
+    docs/example-data.md).
+    """
+    if artifact_exists is None:
+        storage = StorageService()
+
+        def artifact_exists(key: str) -> bool:
+            try:
+                obstore.head(storage.store, key)
+            except Exception:
+                return False
+            return True
+
+    session = db_session_factory()
+    try:
+        for seed in (STORK_TRAJECTORY,):
+            det_id = example_dataset_id(seed.source_url)
+            if session.get(DatasetRow, det_id) is not None:
+                continue
+            trips_key = f"datasets/{det_id}/converted/trips.json"
+            if not artifact_exists(trips_key):
+                logger.warning(
+                    "skipping example trajectory %s: artifact is not published at %s",
+                    seed.title,
+                    trips_key,
+                )
+                continue
+            trips_url = f"/storage/datasets/{det_id}/converted/trips.json"
+            meta = {
+                "title": seed.title,
+                "source_url": seed.source_url,
+                "trips_url": trips_url,
+                "track_count": seed.track_count,
+                "point_count": seed.point_count,
+                "time_start": seed.time_start,
+                "time_end": seed.time_end,
+                "credits": [{"tool": seed.attribution, "role": "Data from"}],
+            }
+            session.add(
+                DatasetRow(
+                    id=det_id,
+                    filename=seed.filename,
+                    dataset_type="trajectory",
+                    format_pair=FormatPair.GPX_TO_GEOPARQUET.value,
+                    tile_url=trips_url,
+                    bounds_json=json.dumps(seed.bounds),
+                    metadata_json=json.dumps(meta),
+                    created_at=datetime.now(UTC),
+                    workspace_id=None,
+                    is_example=True,
+                )
+            )
+            session.commit()
+            logger.info("seeded example trajectory dataset: %s", seed.title)
+    finally:
+        session.close()
+
+
 async def register_example_datasets(
     db_session_factory: sessionmaker,
     only_slugs: set[str] | None = None,
@@ -228,6 +331,7 @@ async def register_example_datasets(
     production callers pass None.
     """
     migrate_example_dataset_ids(db_session_factory)
+    seed_example_trajectories(db_session_factory)
     backfill_example_colormaps(db_session_factory)
     already = _existing_example_source_urls(db_session_factory)
     for product in ordered_products():

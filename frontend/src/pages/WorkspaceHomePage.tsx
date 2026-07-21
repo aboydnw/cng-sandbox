@@ -97,7 +97,16 @@ export default function WorkspaceHomePage() {
   return (
     <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4} w="100%" flex="1">
+      <Box
+        as="main"
+        id="main-content"
+        maxW="960px"
+        mx="auto"
+        py={8}
+        px={4}
+        w="100%"
+        flex="1"
+      >
         <Flex justify="space-between" align="center" mb={2}>
           <Heading size="lg" color="gray.800">
             Workspace home

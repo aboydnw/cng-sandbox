@@ -595,7 +595,13 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
     return (
       <Box minH="100vh" bg="white">
         {shared ? <SharedHeader /> : <Header />}
-        <Flex align="center" justify="center" h="calc(100vh - 56px)">
+        <Flex
+          as="main"
+          id="main-content"
+          align="center"
+          justify="center"
+          h="calc(100vh - 56px)"
+        >
           <SpinnerGap
             size={32}
             color="#CF3F02"
@@ -611,6 +617,8 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       <Box minH="100vh" bg="white">
         {shared ? <SharedHeader /> : <Header />}
         <Flex
+          as="main"
+          id="main-content"
           direction="column"
           align="center"
           justify="center"
@@ -650,7 +658,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
       )}
 
       <ErrorBoundary>
-        <Flex flex={1} overflow="hidden">
+        <Flex as="main" id="main-content" flex={1} overflow="hidden">
           <Box flex={7} position="relative" ref={mapContainerRef}>
             {isServerGeoParquet && needsConversion && (
               <Box

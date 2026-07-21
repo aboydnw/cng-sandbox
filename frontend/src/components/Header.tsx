@@ -216,31 +216,28 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
 
 function NavItem({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Box asChild>
-      <NavLink
-        to={to}
-        style={({ isActive }) => ({
-          display: "inline-flex",
-          alignItems: "center",
-          minHeight: 36,
-          padding: "0 10px",
-          borderRadius: 8,
-          color: isActive
-            ? "var(--chakra-colors-brand-brown)"
-            : "var(--chakra-colors-fg-muted)",
-          background: isActive
-            ? "var(--chakra-colors-bg-emphasized)"
-            : "transparent",
-          boxShadow: isActive
-            ? "inset 0 -2px 0 var(--chakra-colors-action-primary)"
-            : "none",
-          fontSize: 14,
-          fontWeight: isActive ? 600 : 500,
-          textDecoration: "none",
-        })}
-      >
-        {children}
-      </NavLink>
+    <Box
+      asChild
+      display="inline-flex"
+      alignItems="center"
+      minH={9}
+      px={2.5}
+      borderRadius="control"
+      color="fg.muted"
+      fontSize="sm"
+      fontWeight={500}
+      textDecoration="none"
+      _hover={{ bg: "bg.subtle", color: "fg" }}
+      css={{
+        '&[aria-current="page"]': {
+          color: "brand.brown",
+          background: "bg.emphasized",
+          boxShadow: "inset 0 -2px 0 token(colors.action.primary)",
+          fontWeight: 600,
+        },
+      }}
+    >
+      <NavLink to={to}>{children}</NavLink>
     </Box>
   );
 }

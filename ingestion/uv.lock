@@ -170,7 +170,7 @@ requires-dist = [
     { name = "geopandas", specifier = ">=1.1.4" },
     { name = "h5py", specifier = ">=3.10.0" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "laspy", extras = ["lazrs"], specifier = ">=2.5.0" },
+    { name = "laspy", extras = ["lazrs"], specifier = ">=2.7.0" },
     { name = "movingpandas", specifier = ">=0.20.0" },
     { name = "obstore", specifier = ">=0.11.0" },
     { name = "pandas", specifier = ">=3.0.3" },

@@ -7,6 +7,9 @@
 
 :root {
   --ease-out-expo: cubic-bezier(0.32, 0.72, 0, 1);
+
+  color: var(--chakra-colors-fg);
+  background: var(--chakra-colors-bg);
 }
 
 @keyframes spin {
@@ -26,8 +29,71 @@ body,
   height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--chakra-colors-bg);
+  color: var(--chakra-colors-fg);
+  font-family: "Satoshi Variable", sans-serif;
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
 * {
   box-sizing: border-box;
+}
+
+:where(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+:where(p, li) {
+  text-wrap: pretty;
+}
+
+:where(button, input, select, textarea) {
+  font: inherit;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: var(--chakra-z-index-toast);
+  padding: 8px 12px;
+  border-radius: var(--chakra-radii-control);
+  background: var(--chakra-colors-bg-raised);
+  color: var(--chakra-colors-fg);
+  box-shadow: var(--chakra-shadows-md);
+  transform: translateY(calc(-100% - 24px));
+  transition: transform 180ms var(--ease-out-expo);
+}
+
+.skip-link:focus-visible {
+  outline: 2px solid var(--chakra-colors-focus-ring);
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /*

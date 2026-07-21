@@ -64,7 +64,7 @@ export function FileUploader({
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [url, setUrl] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback((file: File) => {
@@ -74,7 +74,7 @@ export function FileUploader({
       return;
     }
     setError(null);
-    setSelectedFile(file);
+    setSelectedFiles([file]);
   }, []);
 
   const handleDrop = useCallback(
@@ -96,7 +96,7 @@ export function FileUploader({
         );
         if (rasterFiles.length > 1) {
           setError(null);
-          onFilesSelected(rasterFiles);
+          setSelectedFiles(rasterFiles);
           return;
         }
         if (allFiles.length > 0) handleFile(allFiles[0]);
@@ -106,7 +106,7 @@ export function FileUploader({
       const file = e.dataTransfer.files[0];
       if (file) handleFile(file);
     },
-    [handleFile, onFilesSelected]
+    [handleFile]
   );
 
   const handleUrlSubmit = useCallback(() => {
@@ -135,6 +135,7 @@ export function FileUploader({
       )}
 
       <Box
+        aria-label="File drop zone"
         border="2px dashed"
         borderColor={dragOver ? "brand.orange" : "#ccc"}
         borderRadius="12px"
@@ -176,6 +177,13 @@ export function FileUploader({
           type="button"
           size="sm"
           variant="outline"
+          borderColor="border.emphasized"
+          color="action.primary"
+          _hover={{
+            bg: "bg.subtle",
+            borderColor: "action.primary",
+            color: "action.primaryHover",
+          }}
           onClick={() => inputRef.current?.click()}
           disabled={disabled}
         >
@@ -200,7 +208,7 @@ export function FileUploader({
             );
             if (rasterFiles.length > 1) {
               setError(null);
-              onFilesSelected(rasterFiles);
+              setSelectedFiles(rasterFiles);
             } else {
               handleFile(files[0]);
             }
@@ -220,7 +228,7 @@ export function FileUploader({
         TSV · 3D: LAS, LAZ · Tracks: GPX
       </Text>
 
-      {selectedFile && (
+      {selectedFiles.length > 0 && (
         <Flex
           w="100%"
           maxW={embedded ? "100%" : "480px"}
@@ -238,28 +246,50 @@ export function FileUploader({
               fontSize="sm"
               fontWeight={600}
               truncate
-              title={selectedFile.name}
+              title={
+                selectedFiles.length === 1
+                  ? selectedFiles[0].name
+                  : `${selectedFiles.length} raster files`
+              }
             >
-              {selectedFile.name}
+              {selectedFiles.length === 1
+                ? selectedFiles[0].name
+                : `${selectedFiles.length} raster files`}
             </Text>
             <Text fontSize="xs" color="fg.muted">
-              {getExtension(selectedFile.name).replace(".", "").toUpperCase()} ·{" "}
-              {formatBytes(selectedFile.size)}
+              {selectedFiles.length === 1
+                ? `${getExtension(selectedFiles[0].name)
+                    .replace(".", "")
+                    .toUpperCase()} · ${formatBytes(selectedFiles[0].size)}`
+                : `${formatBytes(
+                    selectedFiles.reduce((total, file) => total + file.size, 0)
+                  )} total`}
             </Text>
           </Box>
           <Button
             size="xs"
             variant="ghost"
-            aria-label={`Remove ${selectedFile.name}`}
-            onClick={() => setSelectedFile(null)}
+            aria-label={
+              selectedFiles.length === 1
+                ? `Remove ${selectedFiles[0].name}`
+                : `Remove ${selectedFiles.length} files`
+            }
+            onClick={() => setSelectedFiles([])}
           >
             <X size={14} />
           </Button>
           <Button
             size="sm"
+            bg="action.primary"
+            color="action.onPrimary"
+            _hover={{ bg: "action.primaryHover" }}
             onClick={() => {
-              onFileSelected(selectedFile);
-              setSelectedFile(null);
+              if (selectedFiles.length === 1) {
+                onFileSelected(selectedFiles[0]);
+              } else {
+                onFilesSelected(selectedFiles);
+              }
+              setSelectedFiles([]);
             }}
           >
             Create map

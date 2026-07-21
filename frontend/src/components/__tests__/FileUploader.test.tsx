@@ -6,11 +6,12 @@ import { FileUploader } from "../FileUploader";
 
 function renderUploader() {
   const onFileSelected = vi.fn();
+  const onFilesSelected = vi.fn();
   const { container } = render(
     <ChakraProvider value={system}>
       <FileUploader
         onFileSelected={onFileSelected}
-        onFilesSelected={vi.fn()}
+        onFilesSelected={onFilesSelected}
         onUrlSubmitted={vi.fn()}
       />
     </ChakraProvider>
@@ -18,7 +19,7 @@ function renderUploader() {
   const input = container.querySelector(
     'input[type="file"]'
   ) as HTMLInputElement;
-  return { onFileSelected, input };
+  return { onFileSelected, onFilesSelected, input };
 }
 
 describe("FileUploader accepted formats", () => {
@@ -72,6 +73,47 @@ describe("FileUploader accepted formats", () => {
     fireEvent.change(input, { target: { files: [file] } });
     expect(onFileSelected).not.toHaveBeenCalled();
     expect(screen.getByText(/unsupported format/i)).toBeInTheDocument();
+  });
+
+  it("confirms multiple raster files selected from the file picker", () => {
+    const { onFileSelected, onFilesSelected, input } = renderUploader();
+    const files = [
+      new File(["a"], "first.tif", { type: "image/tiff" }),
+      new File(["b"], "second.tiff", { type: "image/tiff" }),
+    ];
+
+    fireEvent.change(input, { target: { files } });
+
+    expect(onFileSelected).not.toHaveBeenCalled();
+    expect(onFilesSelected).not.toHaveBeenCalled();
+    expect(screen.getByText("2 raster files")).toBeInTheDocument();
+    confirmSelection();
+    expect(onFilesSelected).toHaveBeenCalledWith(files);
+  });
+
+  it("confirms multiple raster files dropped together", async () => {
+    const { onFileSelected, onFilesSelected } = renderUploader();
+    const files = [
+      new File(["a"], "first.tif", { type: "image/tiff" }),
+      new File(["b"], "second.nc", { type: "application/x-netcdf" }),
+    ];
+    const items = files.map((file) => ({
+      webkitGetAsEntry: () => ({
+        isFile: true,
+        isDirectory: false,
+        file: (callback: (value: File) => void) => callback(file),
+      }),
+    }));
+
+    fireEvent.drop(screen.getByLabelText("File drop zone"), {
+      dataTransfer: { items, files },
+    });
+
+    expect(onFileSelected).not.toHaveBeenCalled();
+    expect(onFilesSelected).not.toHaveBeenCalled();
+    await screen.findByText("2 raster files");
+    confirmSelection();
+    expect(onFilesSelected).toHaveBeenCalledWith(files);
   });
 
   it("lists every supported format group", () => {

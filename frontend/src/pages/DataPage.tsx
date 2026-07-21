@@ -170,7 +170,7 @@ export default function DataPage() {
                   description="Upload a file or connect cloud data to create your first map."
                   action={
                     <Button asChild size="sm">
-                      <Link to={workspacePath("/")}>Add data</Link>
+                      <Link to={workspacePath("/quick-map")}>Add data</Link>
                     </Button>
                   }
                 />

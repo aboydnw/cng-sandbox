@@ -241,7 +241,14 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         >
           <Warning size={14} style={{ flexShrink: 0 }} />
           <Text flex={1}>{state.error}</Text>
-          <Button size="xs" variant="outline" onClick={handleScan}>
+          <Button
+            size="xs"
+            variant="outline"
+            borderColor="action.primary"
+            color="action.primary"
+            _hover={{ bg: "bg.subtle", color: "action.primaryHover" }}
+            onClick={handleScan}
+          >
             Try again
           </Button>
         </Flex>

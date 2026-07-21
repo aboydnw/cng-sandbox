@@ -211,7 +211,10 @@ export function ChapterList({
               cursor="pointer"
               onClick={() => onSelect(chapter.id)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
+                if (
+                  (event.key === "Enter" || event.key === " ") &&
+                  event.target === event.currentTarget
+                ) {
                   event.preventDefault();
                   onSelect(chapter.id);
                 }

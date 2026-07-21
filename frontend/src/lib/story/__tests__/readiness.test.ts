@@ -64,5 +64,24 @@ describe("story readiness", () => {
         },
       }).issues
     ).toContain("Choose data for the map");
+
+    expect(
+      chapterReadiness({
+        id: "flyover-1",
+        order: 1,
+        type: "flyover",
+        title: "Flyover",
+        narrative: "Approach the landscape",
+        keyframes: [{ center: [0, 0], zoom: 2, bearing: 0, pitch: 45 }],
+        scroll_length: 1.5,
+        map_state: {
+          center: [0, 0],
+          zoom: 2,
+          bearing: 0,
+          pitch: 45,
+          basemap: "streets",
+        },
+      }).issues
+    ).toContain("Add at least two flyover keyframes");
   });
 });

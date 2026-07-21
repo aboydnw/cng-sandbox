@@ -107,6 +107,7 @@ export function TrajectoryControls({
         display={{ base: "none", md: "flex" }}
         align="center"
         gap={1}
+        role="img"
         aria-label="Speed legend"
       >
         <Text fontSize="10px" color="brand.brown">

@@ -198,6 +198,7 @@ export function PublishDialog({
 
                     {readiness.blocking.length > 0 && (
                       <Box
+                        role="alert"
                         bg="status.danger.subtle"
                         border="1px solid"
                         borderColor="status.danger.border"
@@ -229,6 +230,7 @@ export function PublishDialog({
 
                     {readiness.advisory.length > 0 && (
                       <Flex
+                        role="status"
                         align="flex-start"
                         gap={2}
                         bg="status.warning.subtle"

@@ -54,4 +54,11 @@ describe("ChapterList polished states", () => {
       screen.getByRole("button", { name: /move finding up/i })
     ).toBeInTheDocument();
   });
+
+  it("does not select a chapter when a nested control handles the key", () => {
+    const props = renderList();
+    const moveUp = screen.getByRole("button", { name: /move finding up/i });
+    fireEvent.keyDown(moveUp, { key: "Enter" });
+    expect(props.onSelect).not.toHaveBeenCalled();
+  });
 });

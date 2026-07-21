@@ -368,7 +368,10 @@ export default function StoryEditorPage() {
         ).map(([view, label, icon]) => (
           <Button
             key={view}
+            id={"story-editor-tab-" + view}
             role="tab"
+            aria-controls={"story-editor-panel-" + view}
+            tabIndex={editorView === view ? 0 : -1}
             aria-selected={editorView === view}
             variant={editorView === view ? "subtle" : "ghost"}
             color={editorView === view ? "action.primary" : "fg.muted"}
@@ -385,6 +388,9 @@ export default function StoryEditorPage() {
       <Flex as="main" id="main-content" flex={1} overflow="hidden">
         {/* Left: chapter list */}
         <Box
+          id="story-editor-panel-chapters"
+          role="tabpanel"
+          aria-labelledby="story-editor-tab-chapters"
           width={{ base: "100%", lg: "200px" }}
           flexShrink={0}
           borderRight="1px solid"
@@ -424,6 +430,9 @@ export default function StoryEditorPage() {
         (isMapBoundChapter(activeChapter) ||
           activeChapter.type === "flyover") ? (
           <Box
+            id="story-editor-panel-preview"
+            role="tabpanel"
+            aria-labelledby="story-editor-tab-preview"
             ref={mapContainerRef}
             flex={1}
             position="relative"
@@ -515,6 +524,9 @@ export default function StoryEditorPage() {
           </Box>
         ) : (
           <Box
+            id="story-editor-panel-preview"
+            role="tabpanel"
+            aria-labelledby="story-editor-tab-preview"
             flex={1}
             overflowY="auto"
             bg="bg.subtle"
@@ -534,6 +546,9 @@ export default function StoryEditorPage() {
 
         {/* Right: editor panel */}
         <Box
+          id="story-editor-panel-edit"
+          role="tabpanel"
+          aria-labelledby="story-editor-tab-edit"
           flexShrink={0}
           borderLeft="1px solid"
           borderColor="gray.200"

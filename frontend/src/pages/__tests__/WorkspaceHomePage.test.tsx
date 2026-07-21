@@ -205,7 +205,7 @@ describe("WorkspaceHomePage", () => {
     });
     renderHome();
     expect(
-      await screen.findByText(/this workspace is empty/i)
+      await screen.findByText(/start with a map or a story/i)
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /example a/i })
@@ -245,7 +245,7 @@ describe("WorkspaceHomePage", () => {
     });
   });
 
-  it("shows the workspace ID prominently", async () => {
+  it("keeps the raw workspace ID out of the main page content", async () => {
     mockListStories.mockResolvedValue([
       {
         id: "s-seed",
@@ -268,7 +268,7 @@ describe("WorkspaceHomePage", () => {
         ]),
     });
     renderHome();
-    const matches = await screen.findAllByText(/test-workspace/);
-    expect(matches.length).toBeGreaterThan(0);
+    expect(await screen.findByText("Seed story")).toBeInTheDocument();
+    expect(screen.queryByText(/workspace ID:/i)).not.toBeInTheDocument();
   });
 });

@@ -89,7 +89,7 @@ describe("RemoteConnectFlow GeoParquet dispatch", () => {
     fireEvent.change(input, {
       target: { value: "https://example.com/small.parquet" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /scan/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check url/i }));
 
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeNull();
@@ -115,7 +115,7 @@ describe("RemoteConnectFlow GeoParquet dispatch", () => {
     fireEvent.change(input, {
       target: { value: "https://example.com/big.parquet" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /scan/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check url/i }));
 
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /confirm/i })).not.toBeNull();

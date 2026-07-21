@@ -11,7 +11,11 @@ function renderWithProviders(ui: React.ReactElement) {
 describe("FileUploader", () => {
   it("renders drop zone and URL input", () => {
     renderWithProviders(
-      <FileUploader onFileSelected={vi.fn()} onFilesSelected={vi.fn()} onUrlSubmitted={vi.fn()} />,
+      <FileUploader
+        onFileSelected={vi.fn()}
+        onFilesSelected={vi.fn()}
+        onUrlSubmitted={vi.fn()}
+      />
     );
     expect(screen.getByText(/drop your file here/i)).toBeTruthy();
     expect(screen.getByPlaceholderText(/paste/i)).toBeTruthy();
@@ -20,11 +24,19 @@ describe("FileUploader", () => {
   it("rejects unsupported file extensions", () => {
     const onFile = vi.fn();
     renderWithProviders(
-      <FileUploader onFileSelected={onFile} onFilesSelected={vi.fn()} onUrlSubmitted={vi.fn()} />,
+      <FileUploader
+        onFileSelected={onFile}
+        onFilesSelected={vi.fn()}
+        onUrlSubmitted={vi.fn()}
+      />
     );
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(["data"], "doc.xlsx", { type: "application/vnd.ms-excel" });
+    const input = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    const file = new File(["data"], "doc.xlsx", {
+      type: "application/vnd.ms-excel",
+    });
     fireEvent.change(input, { target: { files: [file] } });
 
     expect(onFile).not.toHaveBeenCalled();
@@ -34,13 +46,21 @@ describe("FileUploader", () => {
   it("accepts valid file extensions", () => {
     const onFile = vi.fn();
     renderWithProviders(
-      <FileUploader onFileSelected={onFile} onFilesSelected={vi.fn()} onUrlSubmitted={vi.fn()} />,
+      <FileUploader
+        onFileSelected={onFile}
+        onFilesSelected={vi.fn()}
+        onUrlSubmitted={vi.fn()}
+      />
     );
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
     const file = new File(["data"], "raster.tif", { type: "image/tiff" });
     fireEvent.change(input, { target: { files: [file] } });
 
+    expect(onFile).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /create map/i }));
     expect(onFile).toHaveBeenCalledWith(file);
   });
 });

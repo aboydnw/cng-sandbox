@@ -90,7 +90,7 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
         justify="center"
         w={size}
         h={size}
-        bg="red.500"
+        bg="status.danger.fg"
         borderRadius="full"
         flexShrink={0}
       >
@@ -104,7 +104,7 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
       w={size}
       h={size}
       border="2px solid"
-      borderColor="#ddd"
+      borderColor="border.emphasized"
       borderRadius="full"
       flexShrink={0}
     />
@@ -145,11 +145,16 @@ export function ProgressTracker({
       py={embedded ? 4 : 14}
       px={embedded ? 0 : 8}
     >
+      <Text srOnly role="status" aria-live="polite">
+        {activeStageName
+          ? `Processing: ${activeStageName}`
+          : "Processing status"}
+      </Text>
       <Text color="brand.brown" fontSize="18px" fontWeight={700} mb={1}>
         Processing {filename}
       </Text>
       <Text color="brand.textSecondary" fontSize="13px" mb={10}>
-        {fileSize}
+        {fileSize} · You can leave this page and return from Data later.
       </Text>
 
       <Box w="100%" maxW="400px">

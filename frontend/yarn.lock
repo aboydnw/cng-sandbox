@@ -4534,6 +4534,7 @@ __metadata:
     react-markdown: "npm:^10.1.0"
     react-router-dom: "npm:^7.18.1"
     recharts: "npm:^3.9.1"
+    riffrec: "npm:^2.1.1"
     scrollama: "npm:^3.2.0"
     typescript: "npm:^6.0.2"
     typescript-eslint: "npm:^8.62.1"
@@ -8416,6 +8417,18 @@ __metadata:
   bin:
     resolve: bin/resolve
   checksum: 10c0/dca533e38820b0d8d636f269824cef3b7435802ab7401211c6f10af03be0e2f7e216047234e1623046c0a6791577079767e0c04f0d36e42c7f567b1bff7b0742
+  languageName: node
+  linkType: hard
+
+"riffrec@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "riffrec@npm:2.1.1"
+  dependencies:
+    fflate: "npm:^0.8.2"
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+  checksum: 10c0/03f73bc85484c64e7adaef7df6eaba701a1ad75f8326eb8aae53d1ee377b8753b024b85e7c69db8d483d19dfec345cd3f021ceba42167bdd96f5618e66ea55db
   languageName: node
   linkType: hard
 

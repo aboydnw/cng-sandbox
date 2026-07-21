@@ -36,7 +36,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
 
@@ -53,7 +53,7 @@ jobs:
       - name: Install frontend deps
         run: cd frontend && corepack enable && yarn install --immutable
 
-      - uses: anthropics/claude-code-action@56fa348258fbcb1aeb8d3954d5799b5991098481 # v1
+      - uses: anthropics/claude-code-action@12531344451323133b0493233c759991ac61da12 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |

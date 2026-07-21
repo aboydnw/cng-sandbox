@@ -100,7 +100,7 @@ export default function AboutPage() {
   return (
     <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4}>
+      <Box as="main" id="main-content" maxW="960px" mx="auto" py={8} px={4}>
         <Box mb={10}>
           <Heading size="lg" color="brand.brown" mb={4}>
             About CNG Sandbox

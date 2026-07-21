@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
-import { ArrowRight, SpinnerGap } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExampleStoryCard } from "../components/ExampleStoryCard";
@@ -15,6 +15,8 @@ import type { Story } from "../lib/story/types";
 import type { Dataset } from "../types";
 import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
+import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
+import { PageHeader } from "../components/PageHeader";
 
 function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
   items: T[]
@@ -27,7 +29,7 @@ function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
 }
 
 export default function WorkspaceHomePage() {
-  const { workspaceId, workspacePath } = useWorkspace();
+  const { workspacePath } = useWorkspace();
   const [stories, setStories] = useState<Story[] | null>(null);
   const [datasets, setDatasets] = useState<Dataset[] | null>(null);
 
@@ -97,33 +99,40 @@ export default function WorkspaceHomePage() {
   return (
     <Flex direction="column" minH="100vh" bg="gray.50">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4} w="100%" flex="1">
-        <Flex justify="space-between" align="center" mb={2}>
-          <Heading size="lg" color="gray.800">
-            Workspace home
-          </Heading>
-        </Flex>
-        <Text fontSize="sm" color="gray.500" mb={6}>
-          Workspace ID:{" "}
-          <Text as="span" fontFamily="mono" color="gray.700">
-            {workspaceId}
-          </Text>
-        </Text>
+      <Box
+        as="main"
+        id="main-content"
+        maxW="960px"
+        mx="auto"
+        py={8}
+        px={4}
+        w="100%"
+        flex="1"
+      >
+        <PageHeader
+          title="Continue your work"
+          description="Return to a recent map or story, or start something new."
+          actions={
+            <>
+              <Button asChild size="sm" variant="outline">
+                <Link to={workspacePath("/quick-map")}>Add data</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link to={workspacePath("/story/new")}>New story</Link>
+              </Button>
+            </>
+          }
+        />
 
         {loading ? (
-          <Flex justify="center" py={12}>
-            <SpinnerGap
-              size={32}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
-          </Flex>
+          <CollectionSkeleton rows={4} />
         ) : isEmpty ? (
           <Box>
             <Heading size="md" color="gray.700" mb={2}>
-              This workspace is empty
+              Start with a map or a story
             </Heading>
             <Text fontSize="sm" color="gray.500" mb={6}>
-              Clone an example story to get started — you can edit it freely.
+              Add your own data, or open an example story and make it yours.
             </Text>
             {exampleStories.length === 0 ? (
               <Text fontSize="sm" color="gray.500">

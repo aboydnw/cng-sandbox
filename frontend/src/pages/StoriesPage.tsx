@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Badge,
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Table,
-  Text,
-} from "@chakra-ui/react";
-import { SpinnerGap, Warning } from "@phosphor-icons/react";
+import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
@@ -17,6 +8,9 @@ import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import { timeAgo } from "../utils/format";
 import type { Story } from "../lib/story/types";
+import { StatePanel } from "../components/ui/StatePanel";
+import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
+import { PageHeader } from "../components/PageHeader";
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
@@ -25,8 +19,10 @@ export default function StoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadStories = useCallback(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     listStoriesFromServer()
       .then((data) => {
         if (!cancelled) setStories(data);
@@ -42,6 +38,8 @@ export default function StoriesPage() {
     };
   }, []);
 
+  useEffect(() => loadStories(), [loadStories]);
+
   const handleDelete = useCallback(async (story: Story) => {
     if (!window.confirm(`Delete "${story.title}"?`)) return;
     setDeletingId(story.id);
@@ -56,141 +54,145 @@ export default function StoriesPage() {
   const userStories = stories.filter((s) => !s.is_example);
 
   return (
-    <Flex direction="column" minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4} w="100%">
-        <Flex justify="space-between" align="center" mb={6}>
-          <Heading size="lg" color="gray.800">
-            Your stories
-          </Heading>
-          <Flex gap={2}>
-            <Link to={workspacePath("/quick-map")}>
-              <Button
-                size="sm"
-                variant="outline"
-                borderColor="brand.border"
-                color="brand.brown"
-              >
-                Quick map
-              </Button>
-            </Link>
-            <Link to={workspacePath("/story/new")}>
-              <Button size="sm" colorScheme="orange">
-                New story
-              </Button>
-            </Link>
-          </Flex>
-        </Flex>
+      <Box
+        as="main"
+        id="main-content"
+        maxW="960px"
+        mx="auto"
+        py={8}
+        px={4}
+        w="100%"
+      >
+        <PageHeader
+          title="Stories"
+          description="Build and publish narratives that combine maps, data, images, charts, and video."
+          actions={
+            <>
+              <Link to={workspacePath("/quick-map")}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  borderColor="brand.border"
+                  color="brand.brown"
+                >
+                  Quick map
+                </Button>
+              </Link>
+              <Link to={workspacePath("/story/new")}>
+                <Button size="sm">New story</Button>
+              </Link>
+            </>
+          }
+        />
 
         {loading ? (
-          <Flex justify="center" py={12}>
-            <SpinnerGap
-              size={32}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
-          </Flex>
+          <CollectionSkeleton rows={4} />
         ) : error ? (
-          <Flex
-            align="center"
-            gap={2}
-            p={2.5}
-            bg="red.50"
-            border="1px solid"
-            borderColor="red.200"
-            borderRadius="6px"
-            color="red.600"
-            fontSize="13px"
-          >
-            <Warning size={16} style={{ flexShrink: 0 }} />
-            <Text>Couldn&rsquo;t load your stories. {error}</Text>
-          </Flex>
+          <StatePanel
+            tone="danger"
+            title="Couldn’t load your stories"
+            description={error}
+            actionLabel="Try again"
+            onAction={loadStories}
+          />
         ) : userStories.length === 0 ? (
-          <Text color="gray.500" fontSize="sm" mb={2}>
-            No stories yet — click &ldquo;New story&rdquo; to get started.
-          </Text>
+          <StatePanel
+            title="No stories yet"
+            description="Create a story to combine maps, narrative, charts, images, and video."
+            action={
+              <Button asChild size="sm">
+                <Link to={workspacePath("/story/new")}>Create a story</Link>
+              </Button>
+            }
+          />
         ) : (
-          <Table.Root size="sm" tableLayout="fixed">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>Name</Table.ColumnHeader>
-                <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
-                <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
-                <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
-                <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
-                <Table.ColumnHeader w="80px" />
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {userStories.map((story) => (
-                <Table.Row key={story.id}>
-                  <Table.Cell>
-                    <Flex align="center" gap={2}>
-                      <Link to={workspacePath(`/story/${story.id}/edit`)}>
-                        <Text
-                          color="brand.orange"
-                          _hover={{ textDecoration: "underline" }}
-                          fontWeight={500}
-                          truncate
-                          title={story.title}
-                        >
-                          {story.title}
-                        </Text>
-                      </Link>
-                      {story.is_example_copy && (
-                        <Badge
-                          size="sm"
-                          bg="brand.bgSubtle"
-                          color="brand.brown"
-                        >
-                          Example
-                        </Badge>
-                      )}
-                    </Flex>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text
-                      fontSize="xs"
-                      fontWeight={600}
-                      textTransform="uppercase"
-                      color={story.published ? "green.600" : "gray.500"}
-                    >
-                      {story.published ? "Published" : "Draft"}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontSize="sm" color="gray.600">
-                      {story.chapters.length}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontSize="sm" color="gray.600">
-                      {story.updated_at ? timeAgo(story.updated_at) : "—"}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {story.expires_at ? (
-                      <ExpiryBadge expiresAt={story.expires_at} />
-                    ) : (
-                      <Text fontSize="sm" color="gray.500">
-                        —
-                      </Text>
-                    )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      colorScheme="red"
-                      loading={deletingId === story.id}
-                      onClick={() => handleDelete(story)}
-                    >
-                      Delete
-                    </Button>
-                  </Table.Cell>
+          <Box overflowX="auto" pb={2}>
+            <Table.Root size="sm" tableLayout="fixed">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Name</Table.ColumnHeader>
+                  <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
+                  <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
+                  <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
+                  <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
+                  <Table.ColumnHeader w="80px" />
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
+              </Table.Header>
+              <Table.Body>
+                {userStories.map((story) => (
+                  <Table.Row key={story.id}>
+                    <Table.Cell>
+                      <Flex align="center" gap={2}>
+                        <Link to={workspacePath(`/story/${story.id}/edit`)}>
+                          <Text
+                            color="brand.orange"
+                            _hover={{ textDecoration: "underline" }}
+                            fontWeight={500}
+                            truncate
+                            title={story.title}
+                          >
+                            {story.title}
+                          </Text>
+                        </Link>
+                        {story.is_example_copy && (
+                          <Badge
+                            size="sm"
+                            bg="brand.bgSubtle"
+                            color="brand.brown"
+                          >
+                            Example
+                          </Badge>
+                        )}
+                      </Flex>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text
+                        fontSize="xs"
+                        fontWeight={600}
+                        textTransform="uppercase"
+                        color={story.published ? "green.600" : "gray.500"}
+                      >
+                        {story.published ? "Published" : "Draft"}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text fontSize="sm" color="gray.600">
+                        {story.chapters.length}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text fontSize="sm" color="gray.600">
+                        {story.updated_at ? timeAgo(story.updated_at) : "—"}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      {story.expires_at ? (
+                        <ExpiryBadge expiresAt={story.expires_at} />
+                      ) : (
+                        <Text fontSize="sm" color="gray.500">
+                          —
+                        </Text>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        color="status.danger.fg"
+                        _hover={{ bg: "status.danger.subtle" }}
+                        loading={deletingId === story.id}
+                        onClick={() => handleDelete(story)}
+                      >
+                        Delete
+                      </Button>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Root>
+          </Box>
         )}
       </Box>
       <Footer />

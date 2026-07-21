@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
-import { CloudArrowUp } from "@phosphor-icons/react";
+import { CloudArrowUp, File, X } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
+import { formatBytes } from "../utils/format";
 
 const ALLOWED_EXTENSIONS = [
   ".tif",
@@ -63,20 +64,18 @@ export function FileUploader({
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [url, setUrl] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(
-    (file: File) => {
-      const ext = getExtension(file.name);
-      if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        setError(`Unsupported format: ${ext}`);
-        return;
-      }
-      setError(null);
-      onFileSelected(file);
-    },
-    [onFileSelected]
-  );
+  const handleFile = useCallback((file: File) => {
+    const ext = getExtension(file.name);
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      setError(`Unsupported format: ${ext}`);
+      return;
+    }
+    setError(null);
+    setSelectedFiles([file]);
+  }, []);
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
@@ -97,7 +96,7 @@ export function FileUploader({
         );
         if (rasterFiles.length > 1) {
           setError(null);
-          onFilesSelected(rasterFiles);
+          setSelectedFiles(rasterFiles);
           return;
         }
         if (allFiles.length > 0) handleFile(allFiles[0]);
@@ -107,7 +106,7 @@ export function FileUploader({
       const file = e.dataTransfer.files[0];
       if (file) handleFile(file);
     },
-    [handleFile, onFilesSelected]
+    [handleFile]
   );
 
   const handleUrlSubmit = useCallback(() => {
@@ -136,6 +135,7 @@ export function FileUploader({
       )}
 
       <Box
+        aria-label="File drop zone"
         border="2px dashed"
         borderColor={dragOver ? "brand.orange" : "#ccc"}
         borderRadius="12px"
@@ -145,14 +145,13 @@ export function FileUploader({
         w="100%"
         maxW={embedded ? "100%" : "480px"}
         bg={dragOver ? "orange.50" : "brand.bgSubtle"}
-        cursor="pointer"
+        cursor={disabled ? "not-allowed" : "default"}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        onClick={() => !disabled && inputRef.current?.click()}
         opacity={disabled ? 0.5 : 1}
         pointerEvents={disabled ? "none" : "auto"}
         transition={transition(200)}
@@ -171,21 +170,25 @@ export function FileUploader({
         >
           Drop your file here
         </Text>
-        <Text color="brand.textSecondary" fontSize="13px" mb={embedded ? 2 : 5}>
-          GeoTIFF · Shapefile (.zip) · GeoJSON · NetCDF · HDF5 · CSV
+        <Text color="brand.textSecondary" fontSize="13px" mb={3}>
+          Drop one file here, or choose it from your device
         </Text>
-        {!embedded && (
-          <Button
-            bg="brand.orange"
-            color="white"
-            size="sm"
-            fontWeight={600}
-            borderRadius="4px"
-            _hover={{ bg: "brand.orangeHover" }}
-          >
-            Browse files
-          </Button>
-        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          borderColor="border.emphasized"
+          color="action.primary"
+          _hover={{
+            bg: "bg.subtle",
+            borderColor: "action.primary",
+            color: "action.primaryHover",
+          }}
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled}
+        >
+          Browse files
+        </Button>
         {!embedded && (
           <Text color="brand.textSecondary" fontSize="12px" mt={4}>
             Up to 15 GB
@@ -205,7 +208,7 @@ export function FileUploader({
             );
             if (rasterFiles.length > 1) {
               setError(null);
-              onFilesSelected(rasterFiles);
+              setSelectedFiles(rasterFiles);
             } else {
               handleFile(files[0]);
             }
@@ -214,8 +217,88 @@ export function FileUploader({
         />
       </Box>
 
+      <Text
+        color="fg.muted"
+        fontSize="xs"
+        mt={3}
+        textAlign="center"
+        lineHeight="1.6"
+      >
+        Rasters: GeoTIFF, NetCDF, HDF5 · Vectors: GeoJSON, Shapefile ZIP, CSV,
+        TSV · 3D: LAS, LAZ · Tracks: GPX
+      </Text>
+
+      {selectedFiles.length > 0 && (
+        <Flex
+          w="100%"
+          maxW={embedded ? "100%" : "480px"}
+          mt={4}
+          p={3}
+          gap={3}
+          align="center"
+          bg="bg.subtle"
+          borderRadius="control"
+          aria-live="polite"
+        >
+          <File size={22} aria-hidden="true" />
+          <Box minW={0} flex={1} textAlign="left">
+            <Text
+              fontSize="sm"
+              fontWeight={600}
+              truncate
+              title={
+                selectedFiles.length === 1
+                  ? selectedFiles[0].name
+                  : `${selectedFiles.length} raster files`
+              }
+            >
+              {selectedFiles.length === 1
+                ? selectedFiles[0].name
+                : `${selectedFiles.length} raster files`}
+            </Text>
+            <Text fontSize="xs" color="fg.muted">
+              {selectedFiles.length === 1
+                ? `${getExtension(selectedFiles[0].name)
+                    .replace(".", "")
+                    .toUpperCase()} · ${formatBytes(selectedFiles[0].size)}`
+                : `${formatBytes(
+                    selectedFiles.reduce((total, file) => total + file.size, 0)
+                  )} total`}
+            </Text>
+          </Box>
+          <Button
+            size="xs"
+            variant="ghost"
+            aria-label={
+              selectedFiles.length === 1
+                ? `Remove ${selectedFiles[0].name}`
+                : `Remove ${selectedFiles.length} files`
+            }
+            onClick={() => setSelectedFiles([])}
+          >
+            <X size={14} />
+          </Button>
+          <Button
+            size="sm"
+            bg="action.primary"
+            color="action.onPrimary"
+            _hover={{ bg: "action.primaryHover" }}
+            onClick={() => {
+              if (selectedFiles.length === 1) {
+                onFileSelected(selectedFiles[0]);
+              } else {
+                onFilesSelected(selectedFiles);
+              }
+              setSelectedFiles([]);
+            }}
+          >
+            Create map
+          </Button>
+        </Flex>
+      )}
+
       {error && (
-        <Text color="red.500" fontSize="13px" mt={3}>
+        <Text role="alert" color="status.danger.fg" fontSize="13px" mt={3}>
           {error}
         </Text>
       )}

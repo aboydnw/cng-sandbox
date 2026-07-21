@@ -10,7 +10,15 @@ export default function ExpiredPage() {
   return (
     <Flex direction="column" minH="100vh" bg="white">
       <Header />
-      <Flex direction="column" align="center" justify="center" flex="1" px={8}>
+      <Flex
+        as="main"
+        id="main-content"
+        direction="column"
+        align="center"
+        justify="center"
+        flex="1"
+        px={8}
+      >
         <Flex
           align="center"
           justify="center"

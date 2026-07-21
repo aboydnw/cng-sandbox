@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Badge,
@@ -9,7 +9,6 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { SpinnerGap, Warning } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
@@ -25,6 +24,9 @@ import {
   connectionToLibraryItem,
   type LibraryItem,
 } from "../lib/library/normalize";
+import { StatePanel } from "../components/ui/StatePanel";
+import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
+import { PageHeader } from "../components/PageHeader";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -38,59 +40,50 @@ export default function DataPage() {
   const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const loadRequestIdRef = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const reload = useCallback(() => {
+    const requestId = ++loadRequestIdRef.current;
+    const isCurrent = () => requestId === loadRequestIdRef.current;
+
+    setError(null);
+    setDatasetsLoading(true);
+    setConnectionsLoading(true);
+
     workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then(async (r) => {
+      .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((data) => {
-        if (!cancelled) setDatasets(data);
+        if (isCurrent()) setDatasets(data);
       })
       .catch((err) => {
-        if (!cancelled) setError((err as Error).message);
+        if (isCurrent()) setError((err as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setDatasetsLoading(false);
+        if (isCurrent()) setDatasetsLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
-  useEffect(() => {
-    let cancelled = false;
     connectionsApi
       .list()
       .then((data) => {
-        if (!cancelled) setConnections(data);
+        if (isCurrent()) setConnections(data);
       })
       .catch((err) => {
-        if (!cancelled) setError((err as Error).message);
+        if (isCurrent()) setError((err as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setConnectionsLoading(false);
+        if (isCurrent()) setConnectionsLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  const reload = useCallback(() => {
-    setError(null);
-    workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) =>
-        r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))
-      )
-      .then(setDatasets)
-      .catch((err) => setError((err as Error).message));
-    connectionsApi
-      .list()
-      .then(setConnections)
-      .catch((err) => setError((err as Error).message));
-  }, []);
+  useEffect(() => {
+    reload();
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
+  }, [reload]);
 
   const handleDelete = useCallback(async (item: LibraryItem) => {
     if (item.raw.kind === "dataset") {
@@ -129,49 +122,36 @@ export default function DataPage() {
   }, []);
 
   return (
-    <Flex direction="column" minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
-      <Box maxW="960px" mx="auto" py={8} px={4}>
-        <Flex justify="space-between" align="center" mb={6}>
-          <Heading size="lg" color="gray.800">
-            Data
-          </Heading>
-          <Flex gap={2} align="center">
-            <ExampleDataToggle onChanged={reload} />
-            <Link to={workspacePath("/")}>
-              <Button size="sm" colorScheme="orange">
-                Add new
-              </Button>
-            </Link>
-          </Flex>
-        </Flex>
+      <Box as="main" id="main-content" maxW="960px" mx="auto" py={8} px={4}>
+        <PageHeader
+          title="Data"
+          description="Open uploaded files and connected cloud sources, or add data for a new map."
+          actions={
+            <>
+              <ExampleDataToggle onChanged={reload} />
+              <Link to={workspacePath("/quick-map")}>
+                <Button size="sm">Add data</Button>
+              </Link>
+            </>
+          }
+        />
 
-        <Heading size="md" color="gray.700" mb={3}>
+        <Heading size="md" color="fg" mb={3}>
           Your data
         </Heading>
 
         {datasetsLoading || connectionsLoading ? (
-          <Flex justify="center" py={12}>
-            <SpinnerGap
-              size={32}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
-          </Flex>
+          <CollectionSkeleton rows={4} />
         ) : error ? (
-          <Flex
-            align="center"
-            gap={2}
-            p={2.5}
-            bg="red.50"
-            border="1px solid"
-            borderColor="red.200"
-            borderRadius="6px"
-            color="red.600"
-            fontSize="13px"
-          >
-            <Warning size={16} style={{ flexShrink: 0 }} />
-            <Text>Couldn&rsquo;t load your data library. {error}</Text>
-          </Flex>
+          <StatePanel
+            tone="danger"
+            title="Couldn’t load your data library"
+            description={error}
+            actionLabel="Try again"
+            onAction={reload}
+          />
         ) : (
           (() => {
             const userItems: LibraryItem[] = [
@@ -185,130 +165,128 @@ export default function DataPage() {
 
             if (userItems.length === 0) {
               return (
-                <Flex
-                  direction="column"
-                  align="center"
-                  py={12}
-                  gap={3}
-                  color="gray.500"
-                >
-                  <Text>Nothing in your data library yet.</Text>
-                  <Link to={workspacePath("/")}>
-                    <Text color="brand.orange" fontWeight={600}>
-                      Add your first dataset or connection
-                    </Text>
-                  </Link>
-                </Flex>
+                <StatePanel
+                  title="Your data library is empty"
+                  description="Upload a file or connect cloud data to create your first map."
+                  action={
+                    <Button asChild size="sm">
+                      <Link to={workspacePath("/quick-map")}>Add data</Link>
+                    </Button>
+                  }
+                />
               );
             }
 
             return (
-              <Table.Root size="sm" tableLayout="fixed">
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeader>Name</Table.ColumnHeader>
-                    <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                    <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
-                    <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
-                    <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
-                    <Table.ColumnHeader w="80px" />
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {userItems.map((item) => (
-                    <Table.Row key={`${item.kind}-${item.id}`}>
-                      <Table.Cell>
-                        <Flex align="center" gap={2}>
-                          <Link to={workspacePath(item.detailHref)}>
-                            <Text
-                              color="brand.orange"
-                              _hover={{ textDecoration: "underline" }}
-                              fontWeight={500}
-                              truncate
-                              title={item.name}
-                            >
-                              {item.name}
-                            </Text>
-                          </Link>
-                          {item.isExampleCopy && (
-                            <Badge
-                              size="sm"
-                              bg="brand.bgSubtle"
-                              color="brand.brown"
-                            >
-                              Example
-                            </Badge>
-                          )}
-                        </Flex>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={600}
-                          textTransform="uppercase"
-                          color={
-                            item.type === "raster" ? "purple.600" : "teal.600"
-                          }
-                        >
-                          {item.type}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {item.source.href ? (
-                          <a
-                            href={item.source.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={item.source.label}
-                            style={{
-                              color: "var(--chakra-colors-gray-500)",
-                              fontSize: 13,
-                            }}
+              <Box overflowX="auto" pb={2}>
+                <Table.Root size="sm" tableLayout="fixed">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeader>Name</Table.ColumnHeader>
+                      <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
+                      <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
+                      <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
+                      <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
+                      <Table.ColumnHeader w="80px" />
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {userItems.map((item) => (
+                      <Table.Row key={`${item.kind}-${item.id}`}>
+                        <Table.Cell>
+                          <Flex align="center" gap={2}>
+                            <Link to={workspacePath(item.detailHref)}>
+                              <Text
+                                color="brand.orange"
+                                _hover={{ textDecoration: "underline" }}
+                                fontWeight={500}
+                                truncate
+                                title={item.name}
+                              >
+                                {item.name}
+                              </Text>
+                            </Link>
+                            {item.isExampleCopy && (
+                              <Badge
+                                size="sm"
+                                bg="brand.bgSubtle"
+                                color="brand.brown"
+                              >
+                                Example
+                              </Badge>
+                            )}
+                          </Flex>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={600}
+                            textTransform="uppercase"
+                            color={
+                              item.type === "raster" ? "purple.600" : "teal.600"
+                            }
                           >
-                            <Text
-                              fontSize="sm"
-                              color="gray.500"
-                              truncate
+                            {item.type}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {item.source.href ? (
+                            <a
+                              href={item.source.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               title={item.source.label}
+                              style={{
+                                color: "var(--chakra-colors-gray-500)",
+                                fontSize: 13,
+                              }}
                             >
+                              <Text
+                                fontSize="sm"
+                                color="gray.500"
+                                truncate
+                                title={item.source.label}
+                              >
+                                {item.source.label}
+                              </Text>
+                            </a>
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
                               {item.source.label}
                             </Text>
-                          </a>
-                        ) : (
-                          <Text fontSize="sm" color="gray.500">
-                            {item.source.label}
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Text fontSize="sm" color="gray.600">
+                            {item.addedAt ? timeAgo(item.addedAt) : "—"}
                           </Text>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Text fontSize="sm" color="gray.600">
-                          {item.addedAt ? timeAgo(item.addedAt) : "—"}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {item.expiresAt ? (
-                          <ExpiryBadge expiresAt={item.expiresAt} />
-                        ) : (
-                          <Text fontSize="sm" color="gray.500">
-                            —
-                          </Text>
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          colorScheme="red"
-                          loading={deletingId === item.id}
-                          onClick={() => handleDelete(item)}
-                        >
-                          Delete
-                        </Button>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Root>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {item.expiresAt ? (
+                            <ExpiryBadge expiresAt={item.expiresAt} />
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
+                              —
+                            </Text>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="status.danger.fg"
+                            _hover={{ bg: "status.danger.subtle" }}
+                            loading={deletingId === item.id}
+                            onClick={() => handleDelete(item)}
+                          >
+                            Delete
+                          </Button>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+              </Box>
             );
           })()
         )}

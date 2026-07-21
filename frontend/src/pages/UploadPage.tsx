@@ -332,69 +332,62 @@ export default function UploadPage() {
   return (
     <Flex direction="column" minH="100vh" bg="white">
       <Header />
-      <HomepageHero />
+      <Box as="main" id="main-content">
+        <HomepageHero />
 
-      <Flex
-        gap={5}
-        px={8}
-        pb={4}
-        pt={3}
-        maxW="560px"
-        mx="auto"
-        w="100%"
-        direction="column"
-      >
-        <PathCard
-          icon={<FolderOpen size={36} />}
-          title="Visualize data"
-          description="Upload a file or connect to a cloud source"
-          ctaLabel="Explore data"
-          onClick={handleVisualizeCardClick}
-          expanded={visualizeCardExpanded}
-          faded={false}
-          onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
+        <Flex
+          gap={5}
+          px={8}
+          pb={4}
+          pt={3}
+          maxW="560px"
+          mx="auto"
+          w="100%"
+          direction="column"
         >
-          <Box
-            as="ul"
-            mb={4}
-            pl={4}
-            fontSize="13px"
-            color="brand.textSecondary"
-            lineHeight={1.8}
-            listStyleType="disc"
+          <PathCard
+            icon={<FolderOpen size={36} />}
+            title="Visualize data"
+            description="Upload a file or connect to a cloud source"
+            ctaLabel="Explore data"
+            onClick={handleVisualizeCardClick}
+            expanded={visualizeCardExpanded}
+            faded={false}
+            onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
           >
-            <li>Upload GeoTIFF, GeoJSON, Shapefile, NetCDF, or HDF5</li>
-            <li>Connect a COG, PMTiles, or XYZ tile source</li>
-            <li>Data is private to your workspace</li>
-            <li>Files hosted for 30 days</li>
-          </Box>
-          {visualizeCardExpanded && (
-            <>
-              <Box display={mode === "xyz-picker" ? "none" : "block"}>
-                <VisualizeDataCardContent
-                  onFileSelected={handleFile}
-                  onFilesSelected={handleTemporalUpload}
-                  onExampleClicked={(id) =>
-                    navigate(workspacePath(`/map/${id}`))
-                  }
-                  onUrlSubmitted={handleUrlSubmitted}
-                  inlineContent={inlineContent}
-                />
-              </Box>
-              {mode === "xyz-picker" && xyzPickerUrl && (
-                <InlineConnectionForm
-                  prefilledUrl={xyzPickerUrl}
-                  onCancel={() => {
-                    setXyzPickerUrl(null);
-                    setMode("upload-idle");
-                  }}
-                  onCreated={handleConnectionCreated}
-                />
-              )}
-            </>
-          )}
-        </PathCard>
-      </Flex>
+            <Text mb={4} fontSize="sm" color="fg.muted" lineHeight="1.6">
+              Upload a local file to convert it, or add a URL to connect cloud
+              data without downloading it first. Your workspace stays private;
+              uploaded files are hosted for 30 days.
+            </Text>
+            {visualizeCardExpanded && (
+              <>
+                <Box display={mode === "xyz-picker" ? "none" : "block"}>
+                  <VisualizeDataCardContent
+                    onFileSelected={handleFile}
+                    onFilesSelected={handleTemporalUpload}
+                    onExampleClicked={(id) =>
+                      navigate(workspacePath(`/map/${id}`))
+                    }
+                    onUrlSubmitted={handleUrlSubmitted}
+                    inlineContent={inlineContent}
+                  />
+                </Box>
+                {mode === "xyz-picker" && xyzPickerUrl && (
+                  <InlineConnectionForm
+                    prefilledUrl={xyzPickerUrl}
+                    onCancel={() => {
+                      setXyzPickerUrl(null);
+                      setMode("upload-idle");
+                    }}
+                    onCreated={handleConnectionCreated}
+                  />
+                )}
+              </>
+            )}
+          </PathCard>
+        </Flex>
+      </Box>
 
       <BugReportModal
         open={reportOpen}

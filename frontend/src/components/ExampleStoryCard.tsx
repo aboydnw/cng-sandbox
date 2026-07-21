@@ -7,22 +7,25 @@ export interface ExampleStoryCardProps {
   onClick: () => void;
   loading?: boolean;
   compact?: boolean;
+  featured?: boolean;
 }
 
-function gradientForTitle(title: string): string {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) {
-    hash = (hash * 31 + title.charCodeAt(i)) >>> 0;
+function previewForTitle(title: string): string | null {
+  const normalized = title.toLowerCase();
+  if (normalized.includes("carbon") || normalized.includes("field")) {
+    return "/thumbnails/lg-land-carbon.jpg";
   }
-  const palettes: Array<[string, string]> = [
-    ["#3a6b8c", "#79a8c2"],
-    ["#7a4a18", "#d0a878"],
-    ["#2c5e3a", "#7fbf90"],
-    ["#5b3a8c", "#a079c2"],
-    ["#8c3a5e", "#c279a0"],
-  ];
-  const [from, to] = palettes[hash % palettes.length];
-  return `linear-gradient(135deg, ${from}, ${to})`;
+  if (normalized.includes("gebco") || normalized.includes("bathymetry")) {
+    return "/thumbnails/gebco.jpg";
+  }
+  if (
+    normalized.includes("ghrsst") ||
+    normalized.includes("sea surface") ||
+    normalized.includes("ocean")
+  ) {
+    return "/thumbnails/ghrsst.jpg";
+  }
+  return null;
 }
 
 export function ExampleStoryCard({
@@ -32,6 +35,7 @@ export function ExampleStoryCard({
   onClick,
   loading = false,
   compact = false,
+  featured = false,
 }: ExampleStoryCardProps) {
   const subtitle = `${dataType} · ${chapterCount} ${
     chapterCount === 1 ? "chapter" : "chapters"
@@ -40,18 +44,23 @@ export function ExampleStoryCard({
     if (loading) return;
     onClick();
   };
+  const preview = previewForTitle(title);
   return (
     <Box
       asChild
       bg="white"
       border="1px solid"
       borderColor="brand.border"
-      borderRadius="6px"
+      borderRadius="panel"
       overflow="hidden"
       cursor={loading ? "wait" : "pointer"}
       opacity={loading ? 0.7 : 1}
-      _hover={loading ? undefined : { borderColor: "brand.orange" }}
-      transition="border-color 0.15s, opacity 0.15s"
+      _hover={
+        loading
+          ? undefined
+          : { borderColor: "border.emphasized", transform: "translateY(-2px)" }
+      }
+      transition="border-color 180ms, opacity 180ms, transform 180ms"
     >
       <button
         type="button"
@@ -67,21 +76,40 @@ export function ExampleStoryCard({
       >
         <Flex direction="column">
           <Box
-            h={compact ? "46px" : "90px"}
-            style={{ background: gradientForTitle(title) }}
+            h={
+              compact
+                ? "72px"
+                : featured
+                  ? { base: "220px", md: "340px" }
+                  : "150px"
+            }
+            bg={preview ? "bg.emphasized" : "#DDD6CE"}
+            backgroundImage={
+              preview
+                ? `url(${preview})`
+                : "linear-gradient(rgba(68,63,63,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(68,63,63,.08) 1px, transparent 1px)"
+            }
+            backgroundSize={preview ? "cover" : "24px 24px"}
+            backgroundPosition="center"
+            role="img"
+            aria-label={
+              preview
+                ? `Map preview for ${title}`
+                : `Cartographic preview placeholder for ${title}`
+            }
           />
-          <Box px={3} py={2}>
+          <Box px={featured ? 5 : 4} py={featured ? 4 : 3}>
             <Text
               fontWeight={600}
-              fontSize={compact ? "12px" : "14px"}
-              color="brand.brown"
+              fontSize={compact ? "sm" : featured ? "lg" : "md"}
+              color="fg"
               truncate
               title={title}
             >
               {title}
             </Text>
             {!compact && (
-              <Text fontSize="11px" color="gray.500" mt={1}>
+              <Text fontSize="sm" color="fg.muted" mt={1}>
                 {loading ? "Cloning into your workspace…" : subtitle}
               </Text>
             )}

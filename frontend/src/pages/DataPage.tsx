@@ -17,7 +17,6 @@ import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
 import type { Dataset, Connection } from "../types";
-import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
 import {
   datasetToLibraryItem,

@@ -142,7 +142,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         color="brand.textSecondary"
         py={2}
       >
-        <BrandSpinner size={16} />
+        <BrandSpinner size={16} decorative />
         <Text fontSize="13px">Checking the URL and available files…</Text>
       </Flex>
     );
@@ -158,7 +158,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         color="brand.textSecondary"
         py={2}
       >
-        <BrandSpinner size={16} />
+        <BrandSpinner size={16} decorative />
         <Text fontSize="13px">
           Adding {state.discoverResult?.count ?? ""} files to your workspace…
         </Text>

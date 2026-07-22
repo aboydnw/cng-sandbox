@@ -4,6 +4,7 @@ interface ConfirmDialogProps {
   open: boolean;
   title: string;
   description: string;
+  error?: string | null;
   confirmLabel?: string;
   loading?: boolean;
   onConfirm: () => void;
@@ -14,6 +15,7 @@ export function ConfirmDialog({
   open,
   title,
   description,
+  error,
   confirmLabel = "Delete",
   loading = false,
   onConfirm,
@@ -39,6 +41,11 @@ export function ConfirmDialog({
               <Text color="fg.muted" lineHeight="1.6">
                 {description}
               </Text>
+              {error && (
+                <Text color="status.danger.fg" mt={3} role="alert">
+                  {error}
+                </Text>
+              )}
             </Dialog.Body>
             <Dialog.Footer gap={2}>
               <Dialog.ActionTrigger asChild>

@@ -47,6 +47,7 @@ export default function DiscoverDatasetPage() {
         <Box
           as="main"
           id="main-content"
+          tabIndex={-1}
           maxW="1100px"
           mx="auto"
           px={6}
@@ -95,6 +96,7 @@ export default function DiscoverDatasetPage() {
       <Box
         as="main"
         id="main-content"
+        tabIndex={-1}
         maxW="1100px"
         mx="auto"
         px={6}

@@ -185,25 +185,27 @@ export function FileUploader({
         <Text color="brand.textSecondary" fontSize="13px" mb={3}>
           Drop one file here, or choose it from your device
         </Text>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
+        <Box
+          as="span"
+          display="inline-flex"
+          alignItems="center"
+          justifyContent="center"
+          minH="32px"
+          px={3}
+          borderWidth="1px"
+          borderRadius="l2"
           borderColor="border.emphasized"
           color="action.primary"
+          fontSize="sm"
+          fontWeight={600}
           _hover={{
             bg: "bg.subtle",
             borderColor: "action.primary",
             color: "action.primaryHover",
           }}
-          onClick={(event) => {
-            event.stopPropagation();
-            inputRef.current?.click();
-          }}
-          disabled={disabled}
         >
           Browse files
-        </Button>
+        </Box>
         {!embedded && (
           <Text color="brand.textSecondary" fontSize="12px" mt={4}>
             Up to 15 GB

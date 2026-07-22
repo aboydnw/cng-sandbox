@@ -606,7 +606,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
         >
           <Flex flex={1} bg="bg.emphasized" align="center" justify="center">
             <Flex align="center" gap={2} color="fg.muted" role="status">
-              <BrandSpinner size={22} />
+              <BrandSpinner size={22} decorative />
               <Text fontSize="sm">Preparing map…</Text>
             </Flex>
           </Flex>

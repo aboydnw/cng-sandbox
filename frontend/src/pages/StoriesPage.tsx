@@ -20,6 +20,7 @@ export default function StoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Story | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const loadRequestIdRef = useRef(0);
 
   const loadStories = useCallback(() => {
@@ -47,11 +48,16 @@ export default function StoriesPage() {
   }, [loadStories]);
 
   const handleDelete = useCallback(async (story: Story) => {
+    setDeleteError(null);
     setDeletingId(story.id);
     try {
       await deleteStoryFromServer(story.id);
       setStories((prev) => prev.filter((s) => s.id !== story.id));
       setPendingDelete(null);
+    } catch {
+      setDeleteError(
+        "Couldn’t delete this story. Check your connection and try again."
+      );
     } finally {
       setDeletingId(null);
     }
@@ -189,7 +195,10 @@ export default function StoriesPage() {
                         color="status.danger.fg"
                         _hover={{ bg: "status.danger.subtle" }}
                         loading={deletingId === story.id}
-                        onClick={() => setPendingDelete(story)}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setPendingDelete(story);
+                        }}
                       >
                         Delete
                       </Button>
@@ -205,9 +214,13 @@ export default function StoriesPage() {
         open={pendingDelete != null}
         title={"Delete “" + (pendingDelete?.title ?? "story") + "”?"}
         description="This permanently removes the story and cannot be undone."
+        error={deleteError}
         loading={pendingDelete != null && deletingId === pendingDelete.id}
         onOpenChange={(open) => {
-          if (!open) setPendingDelete(null);
+          if (!open) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
         }}
         onConfirm={() => {
           if (pendingDelete) void handleDelete(pendingDelete);

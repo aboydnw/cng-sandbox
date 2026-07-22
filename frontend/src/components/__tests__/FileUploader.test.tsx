@@ -31,6 +31,9 @@ describe("FileUploader accepted formats", () => {
     const click = vi.spyOn(input, "click");
     fireEvent.click(screen.getByRole("button", { name: /file drop zone/i }));
     expect(click).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: "Browse files" })
+    ).not.toBeInTheDocument();
   });
 
   it("accepts a .gpx trajectory file after confirmation", () => {

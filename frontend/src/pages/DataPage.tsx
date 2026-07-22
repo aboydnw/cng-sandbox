@@ -41,6 +41,7 @@ export default function DataPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<LibraryItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const loadRequestIdRef = useRef(0);
 
   const reload = useCallback(() => {
@@ -87,6 +88,7 @@ export default function DataPage() {
   }, [reload]);
 
   const handleDelete = useCallback(async (item: LibraryItem) => {
+    setDeleteError(null);
     if (item.raw.kind === "dataset") {
       const ds = item.raw.dataset as DatasetWithStoryCount;
       setDeletingId(item.id);
@@ -95,10 +97,13 @@ export default function DataPage() {
           `${config.apiBase}/api/datasets/${ds.id}`,
           { method: "DELETE" }
         );
-        if (resp.ok) {
-          setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
-          setPendingDelete(null);
-        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
+        setPendingDelete(null);
+      } catch {
+        setDeleteError(
+          "Couldn’t delete this data. Check your connection and try again."
+        );
       } finally {
         setDeletingId(null);
       }
@@ -109,6 +114,10 @@ export default function DataPage() {
         await connectionsApi.delete(conn.id);
         setConnections((prev) => prev.filter((c) => c.id !== conn.id));
         setPendingDelete(null);
+      } catch {
+        setDeleteError(
+          "Couldn’t delete this connection. Check your connection and try again."
+        );
       } finally {
         setDeletingId(null);
       }
@@ -271,7 +280,10 @@ export default function DataPage() {
                             color="status.danger.fg"
                             _hover={{ bg: "status.danger.subtle" }}
                             loading={deletingId === item.id}
-                            onClick={() => setPendingDelete(item)}
+                            onClick={() => {
+                              setDeleteError(null);
+                              setPendingDelete(item);
+                            }}
                           >
                             Delete
                           </Button>
@@ -293,15 +305,20 @@ export default function DataPage() {
           (pendingDelete.raw.dataset as DatasetWithStoryCount).story_count
             ? "This permanently removes the data. It is used in " +
               (pendingDelete.raw.dataset as DatasetWithStoryCount).story_count +
-              ((pendingDelete.raw.dataset as DatasetWithStoryCount).story_count === 1
+              ((pendingDelete.raw.dataset as DatasetWithStoryCount)
+                .story_count === 1
                 ? " story"
                 : " stories") +
               ", where it will no longer display."
             : "This permanently removes the data source and cannot be undone."
         }
+        error={deleteError}
         loading={pendingDelete != null && deletingId === pendingDelete.id}
         onOpenChange={(open) => {
-          if (!open) setPendingDelete(null);
+          if (!open) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
         }}
         onConfirm={() => {
           if (pendingDelete) void handleDelete(pendingDelete);

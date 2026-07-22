@@ -135,9 +135,11 @@ export function FileUploader({
       )}
 
       <Box
+        role="button"
+        tabIndex={disabled ? -1 : 0}
         aria-label="File drop zone"
         border="2px dashed"
-        borderColor={dragOver ? "brand.orange" : "#ccc"}
+        borderColor={dragOver ? "brand.orange" : "border"}
         borderRadius="12px"
         py={embedded ? 3 : 14}
         px={embedded ? 5 : 14}
@@ -145,7 +147,17 @@ export function FileUploader({
         w="100%"
         maxW={embedded ? "100%" : "480px"}
         bg={dragOver ? "orange.50" : "brand.bgSubtle"}
-        cursor={disabled ? "not-allowed" : "default"}
+        cursor={disabled ? "not-allowed" : "pointer"}
+        onClick={(event) => {
+          event.stopPropagation();
+          inputRef.current?.click();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -173,22 +185,27 @@ export function FileUploader({
         <Text color="brand.textSecondary" fontSize="13px" mb={3}>
           Drop one file here, or choose it from your device
         </Text>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
+        <Box
+          as="span"
+          display="inline-flex"
+          alignItems="center"
+          justifyContent="center"
+          minH="32px"
+          px={3}
+          borderWidth="1px"
+          borderRadius="l2"
           borderColor="border.emphasized"
           color="action.primary"
+          fontSize="sm"
+          fontWeight={600}
           _hover={{
             bg: "bg.subtle",
             borderColor: "action.primary",
             color: "action.primaryHover",
           }}
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled}
         >
           Browse files
-        </Button>
+        </Box>
         {!embedded && (
           <Text color="brand.textSecondary" fontSize="12px" mt={4}>
             Up to 15 GB
@@ -199,6 +216,7 @@ export function FileUploader({
           type="file"
           accept={ALLOWED_EXTENSIONS.join(",")}
           multiple
+          onClick={(event) => event.stopPropagation()}
           style={{ display: "none" }}
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);

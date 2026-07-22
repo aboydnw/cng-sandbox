@@ -97,7 +97,7 @@ export default function WorkspaceHomePage() {
   );
 
   return (
-    <Flex direction="column" minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Box
         as="main"
@@ -110,7 +110,7 @@ export default function WorkspaceHomePage() {
         flex="1"
       >
         <PageHeader
-          title="Continue your work"
+          title="Your workspace"
           description="Return to a recent map or story, or start something new."
           actions={
             <>
@@ -128,8 +128,8 @@ export default function WorkspaceHomePage() {
           <CollectionSkeleton rows={4} />
         ) : isEmpty ? (
           <Box>
-            <Heading size="md" color="gray.700" mb={2}>
-              Start with a map or a story
+            <Heading textStyle="sectionTitle" color="fg" mb={2}>
+              Start your first map or story
             </Heading>
             <Text fontSize="sm" color="gray.500" mb={6}>
               Add your own data, or open an example story and make it yours.

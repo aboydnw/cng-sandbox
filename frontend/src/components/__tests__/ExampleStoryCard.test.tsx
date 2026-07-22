@@ -24,6 +24,22 @@ describe("ExampleStoryCard", () => {
     expect(screen.getByText("Arctic ice loss")).toBeInTheDocument();
   });
 
+  it("uses an honest cartographic fallback rather than a fake image", () => {
+    renderCard({
+      title: "Arctic ice loss",
+      chapterCount: 4,
+      dataType: "Raster",
+      onClick: () => {},
+    });
+    const preview = screen.getByRole("img", {
+      name: /cartographic preview for arctic ice loss/i,
+    });
+    expect(preview).toHaveAttribute(
+      "aria-label",
+      "Cartographic preview for Arctic ice loss"
+    );
+  });
+
   it("renders the data-type and chapter-count subtitle", () => {
     renderCard({
       title: "Arctic ice loss",

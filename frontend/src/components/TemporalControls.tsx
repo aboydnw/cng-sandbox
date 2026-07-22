@@ -80,7 +80,7 @@ export function TemporalControls({
                 transition="width 0.3s cubic-bezier(0.32, 0.72, 0, 1)"
               />
             </Box>
-            <Text fontSize="11px" color="#888" whiteSpace="nowrap">
+            <Text fontSize="11px" color="fg.muted" whiteSpace="nowrap">
               Loading {preloadProgress.current} of {preloadProgress.total}…
             </Text>
           </Flex>
@@ -119,7 +119,7 @@ export function TemporalControls({
               onClick={onTogglePlay}
               aria-label={isPlaying ? "Pause animation" : "Play animation"}
               {...({ disabled } as object)}
-              bg={disabled ? "#ccc" : "brand.orange"}
+              bg={disabled ? "bg.muted" : "brand.orange"}
               color="white"
               borderRadius="50%"
               w="28px"
@@ -163,13 +163,13 @@ export function TemporalControls({
                   aria-pressed={s === speed}
                   {...({ disabled } as object)}
                   border="1px solid"
-                  borderColor={s === speed ? "brand.orange" : "#e8e3dd"}
-                  bg={s === speed ? "#fef6f1" : "white"}
+                  borderColor={s === speed ? "brand.orange" : "border"}
+                  bg={s === speed ? "brand.bgSubtle" : "bg.raised"}
                   borderRadius="3px"
                   px="5px"
                   py="2px"
                   fontSize="9px"
-                  color={s === speed ? "brand.orange" : "#888"}
+                  color={s === speed ? "brand.orange" : "fg.muted"}
                   fontWeight={s === speed ? 600 : 400}
                   cursor={disabled ? "not-allowed" : "pointer"}
                 >
@@ -179,7 +179,7 @@ export function TemporalControls({
             </Flex>
 
             {/* Divider */}
-            <Box w="1px" h="20px" bg="#e8e3dd" flexShrink={0} />
+            <Box w="1px" h="20px" bg="border" flexShrink={0} />
 
             {/* Export buttons */}
             <Box
@@ -187,13 +187,14 @@ export function TemporalControls({
               onClick={onExportGif}
               aria-label="Export animation as GIF"
               {...({ disabled } as object)}
-              border="1px solid #e8e3dd"
+              border="1px solid"
+              borderColor="border"
               bg="white"
               borderRadius="4px"
               px={2}
               py={1}
               fontSize="10px"
-              color="#2d1b10"
+              color="brand.brown"
               fontWeight={500}
               cursor={disabled ? "not-allowed" : "pointer"}
               flexShrink={0}
@@ -205,13 +206,14 @@ export function TemporalControls({
               onClick={onExportMp4}
               aria-label="Export animation as MP4"
               {...({ disabled } as object)}
-              border="1px solid #e8e3dd"
+              border="1px solid"
+              borderColor="border"
               bg="white"
               borderRadius="4px"
               px={2}
               py={1}
               fontSize="10px"
-              color="#2d1b10"
+              color="brand.brown"
               fontWeight={500}
               cursor={disabled ? "not-allowed" : "pointer"}
               flexShrink={0}

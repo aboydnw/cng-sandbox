@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
@@ -11,6 +11,7 @@ import type { Story } from "../lib/story/types";
 import { StatePanel } from "../components/ui/StatePanel";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
@@ -18,34 +19,45 @@ export default function StoriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Story | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const loadRequestIdRef = useRef(0);
 
   const loadStories = useCallback(() => {
-    let cancelled = false;
+    const requestId = ++loadRequestIdRef.current;
+    const isCurrent = () => requestId === loadRequestIdRef.current;
     setLoading(true);
     setError(null);
     listStoriesFromServer()
       .then((data) => {
-        if (!cancelled) setStories(data);
+        if (isCurrent()) setStories(data);
       })
       .catch((err) => {
-        if (!cancelled) setError((err as Error).message);
+        if (isCurrent()) setError((err as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (isCurrent()) setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  useEffect(() => loadStories(), [loadStories]);
+  useEffect(() => {
+    loadStories();
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
+  }, [loadStories]);
 
   const handleDelete = useCallback(async (story: Story) => {
-    if (!window.confirm(`Delete "${story.title}"?`)) return;
+    setDeleteError(null);
     setDeletingId(story.id);
     try {
       await deleteStoryFromServer(story.id);
       setStories((prev) => prev.filter((s) => s.id !== story.id));
+      setPendingDelete(null);
+    } catch {
+      setDeleteError(
+        "Couldn’t delete this story. Check your connection and try again."
+      );
     } finally {
       setDeletingId(null);
     }
@@ -183,7 +195,10 @@ export default function StoriesPage() {
                         color="status.danger.fg"
                         _hover={{ bg: "status.danger.subtle" }}
                         loading={deletingId === story.id}
-                        onClick={() => handleDelete(story)}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setPendingDelete(story);
+                        }}
                       >
                         Delete
                       </Button>
@@ -195,6 +210,22 @@ export default function StoriesPage() {
           </Box>
         )}
       </Box>
+      <ConfirmDialog
+        open={pendingDelete != null}
+        title={"Delete “" + (pendingDelete?.title ?? "story") + "”?"}
+        description="This permanently removes the story and cannot be undone."
+        error={deleteError}
+        loading={pendingDelete != null && deletingId === pendingDelete.id}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={() => {
+          if (pendingDelete) void handleDelete(pendingDelete);
+        }}
+      />
       <Footer />
     </Flex>
   );

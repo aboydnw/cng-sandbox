@@ -154,6 +154,27 @@ describe("DataPage fetch failures", () => {
   });
 });
 
+describe("DataPage deletion failures", () => {
+  it("keeps the dialog open with retry guidance when deletion fails", async () => {
+    (connectionsApi.delete as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("HTTP 500")
+    );
+    renderDataPage();
+
+    const userRow = (await screen.findByText("User Zarr")).closest("tr");
+    fireEvent.click(
+      within(userRow as HTMLElement).getByRole("button", { name: /delete/i })
+    );
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /delete/i }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      /couldn’t delete this connection/i
+    );
+    expect(screen.getByText("User Zarr")).toBeInTheDocument();
+  });
+});
+
 describe("DataPage reload ordering", () => {
   it("ignores results from a superseded initial load", async () => {
     let resolveOldDatasets!: (value: {

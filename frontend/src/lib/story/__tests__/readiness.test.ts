@@ -84,4 +84,54 @@ describe("story readiness", () => {
       }).issues
     ).toContain("Add at least two flyover keyframes");
   });
+
+  it("reports an empty chart as incomplete", () => {
+    expect(
+      chapterReadiness({
+        id: "chart-1",
+        order: 0,
+        type: "chart",
+        title: "Chart",
+        narrative: "Context",
+        chart: {
+          source: { kind: "csv", asset_id: "", url: "", columns: [] },
+          viz: { kind: "line", x_field: "", y_fields: [] },
+        },
+      }).issues
+    ).toEqual(["Choose data for the chart", "Configure the chart axes"]);
+  });
+
+  it("accepts deliberate terrain-only and overlay-only map chapters", () => {
+    const baseMap = {
+      id: "scene-1",
+      order: 0,
+      type: "map" as const,
+      title: "Scene",
+      narrative: "Context",
+      layer_config: {
+        dataset_id: "",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "streets",
+      },
+      map_state: {
+        center: [0, 0] as [number, number],
+        zoom: 2,
+        bearing: 0,
+        pitch: 45,
+        basemap: "streets",
+        terrain: { enabled: true, exaggeration: 1.5 },
+      },
+    };
+    expect(chapterReadiness(baseMap).issues).not.toContain(
+      "Choose data for the map"
+    );
+    expect(
+      chapterReadiness({
+        ...baseMap,
+        map_state: { ...baseMap.map_state, terrain: undefined },
+        overlays: [{ connection_id: "boundaries", opacity: 1, visible: true }],
+      }).issues
+    ).not.toContain("Choose data for the map");
+  });
 });

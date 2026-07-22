@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { BrandSpinner } from "./ui/BrandSpinner";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
-import { Check, SpinnerGap, X } from "@phosphor-icons/react";
+import { Check, X } from "@phosphor-icons/react";
 import { formatBytes } from "../utils/format";
 import type { StageInfo, StageProgress } from "../types";
 
@@ -74,11 +75,7 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
   if (status === "active") {
     return (
       <Flex align="center" justify="center" w={size} h={size} flexShrink={0}>
-        <SpinnerGap
-          size={16}
-          color="var(--chakra-colors-brand-orange)"
-          style={{ animation: "spin 1s linear infinite" }}
-        />
+        <BrandSpinner size={16} />
       </Flex>
     );
   }

@@ -17,7 +17,6 @@ import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
 import type { Dataset, Connection } from "../types";
-import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
 import {
   datasetToLibraryItem,
@@ -27,6 +26,7 @@ import {
 import { StatePanel } from "../components/ui/StatePanel";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -40,6 +40,8 @@ export default function DataPage() {
   const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<LibraryItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const loadRequestIdRef = useRef(0);
 
   const reload = useCallback(() => {
@@ -86,35 +88,36 @@ export default function DataPage() {
   }, [reload]);
 
   const handleDelete = useCallback(async (item: LibraryItem) => {
+    setDeleteError(null);
     if (item.raw.kind === "dataset") {
       const ds = item.raw.dataset as DatasetWithStoryCount;
-      const storyWarning =
-        ds.story_count && ds.story_count > 0
-          ? `\n\nThis dataset is used in ${ds.story_count} story${
-              ds.story_count > 1 ? "s" : ""
-            }. Those chapters will no longer display.`
-          : "";
-      if (!window.confirm(`Delete "${displayName(ds)}"?${storyWarning}`))
-        return;
       setDeletingId(item.id);
       try {
         const resp = await workspaceFetch(
           `${config.apiBase}/api/datasets/${ds.id}`,
           { method: "DELETE" }
         );
-        if (resp.ok) {
-          setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
-        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
+        setPendingDelete(null);
+      } catch {
+        setDeleteError(
+          "Couldn’t delete this data. Check your connection and try again."
+        );
       } finally {
         setDeletingId(null);
       }
     } else {
       const conn = item.raw.connection;
-      if (!window.confirm(`Delete connection "${conn.name}"?`)) return;
       setDeletingId(item.id);
       try {
         await connectionsApi.delete(conn.id);
         setConnections((prev) => prev.filter((c) => c.id !== conn.id));
+        setPendingDelete(null);
+      } catch {
+        setDeleteError(
+          "Couldn’t delete this connection. Check your connection and try again."
+        );
       } finally {
         setDeletingId(null);
       }
@@ -277,7 +280,10 @@ export default function DataPage() {
                             color="status.danger.fg"
                             _hover={{ bg: "status.danger.subtle" }}
                             loading={deletingId === item.id}
-                            onClick={() => handleDelete(item)}
+                            onClick={() => {
+                              setDeleteError(null);
+                              setPendingDelete(item);
+                            }}
                           >
                             Delete
                           </Button>
@@ -291,6 +297,33 @@ export default function DataPage() {
           })()
         )}
       </Box>
+      <ConfirmDialog
+        open={pendingDelete != null}
+        title={"Delete “" + (pendingDelete?.name ?? "data") + "”?"}
+        description={
+          pendingDelete?.raw.kind === "dataset" &&
+          (pendingDelete.raw.dataset as DatasetWithStoryCount).story_count
+            ? "This permanently removes the data. It is used in " +
+              (pendingDelete.raw.dataset as DatasetWithStoryCount).story_count +
+              ((pendingDelete.raw.dataset as DatasetWithStoryCount)
+                .story_count === 1
+                ? " story"
+                : " stories") +
+              ", where it will no longer display."
+            : "This permanently removes the data source and cannot be undone."
+        }
+        error={deleteError}
+        loading={pendingDelete != null && deletingId === pendingDelete.id}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={() => {
+          if (pendingDelete) void handleDelete(pendingDelete);
+        }}
+      />
       <Footer />
     </Flex>
   );

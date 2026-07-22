@@ -1,4 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { ChakraProvider } from "@chakra-ui/react";
@@ -47,7 +53,7 @@ describe("Workspace routing", () => {
   it("renders WorkspaceHomePage at workspace root (/), not StoriesPage", async () => {
     renderApp("/w/test-workspace");
     expect(
-      await screen.findByRole("heading", { name: /continue your work/i })
+      await screen.findByRole("heading", { name: /your workspace/i })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /^stories$/i })
@@ -71,7 +77,10 @@ describe("Workspace routing", () => {
   });
 });
 
-import { listStoriesFromServer } from "../../lib/story/api";
+import {
+  listStoriesFromServer,
+  deleteStoryFromServer,
+} from "../../lib/story/api";
 import type { Story } from "../../lib/story/types";
 
 describe("StoriesPage layout", () => {
@@ -122,6 +131,38 @@ describe("StoriesPage fetch failure", () => {
       await screen.findByText(/couldn’t load your stories/i)
     ).toBeInTheDocument();
     expect(screen.queryByText(/no stories yet/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("StoriesPage deletion failures", () => {
+  it("keeps the dialog open with retry guidance when deletion fails", async () => {
+    const story = {
+      id: "story-1",
+      title: "Story to keep",
+      chapters: [],
+      is_example: false,
+      published: false,
+      updated_at: "2026-07-22T00:00:00Z",
+    } as unknown as Story;
+    (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      story,
+    ]);
+    (deleteStoryFromServer as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("HTTP 500")
+    );
+    renderStoriesPage();
+
+    const row = (await screen.findByText("Story to keep")).closest("tr");
+    fireEvent.click(
+      within(row as HTMLElement).getByRole("button", { name: /delete/i })
+    );
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /delete/i }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      /couldn’t delete this story/i
+    );
+    expect(screen.getByText("Story to keep")).toBeInTheDocument();
   });
 });
 

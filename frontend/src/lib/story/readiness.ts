@@ -21,12 +21,34 @@ export function chapterReadiness(chapter: Chapter): {
   if (!chapter.title.trim()) issues.push("Add a chapter title");
   if (!chapter.narrative.trim()) issues.push("Add reader-facing text");
 
-  if (
-    (chapter.type === "map" || chapter.type === "scrollytelling") &&
-    !chapter.layer_config.dataset_id &&
-    !chapter.layer_config.connection_id
-  ) {
-    issues.push("Choose data for the map");
+  if (chapter.type === "map" || chapter.type === "scrollytelling") {
+    const hasPrimaryData =
+      !!chapter.layer_config?.dataset_id ||
+      !!chapter.layer_config?.connection_id;
+    const hasVisibleOverlay = chapter.overlays?.some(
+      (overlay) =>
+        overlay.visible !== false &&
+        (!!overlay.dataset_id || !!overlay.connection_id)
+    );
+    const hasScene =
+      chapter.map_state.terrain?.enabled ||
+      chapter.map_state.globe ||
+      chapter.map_state.buildings;
+    if (!hasPrimaryData && !hasVisibleOverlay && !hasScene) {
+      issues.push("Choose data for the map");
+    }
+  }
+
+  if (chapter.type === "chart") {
+    const source = chapter.chart.source;
+    const hasSource =
+      source.kind === "csv"
+        ? !!source.asset_id && !!source.url
+        : !!source.dataset_id;
+    if (!hasSource) issues.push("Choose data for the chart");
+    if (!chapter.chart.viz.x_field || chapter.chart.viz.y_fields.length === 0) {
+      issues.push("Configure the chart axes");
+    }
   }
 
   if (chapter.type === "flyover" && chapter.keyframes.length < 2) {

@@ -63,6 +63,21 @@ describe("LandingPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows a retryable terminal state when examples fail to load", async () => {
+    const { listExampleStoriesFromServer } =
+      await import("../../lib/story/api");
+    (
+      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(new Error("HTTP 500"));
+    renderLanding();
+    expect(
+      await screen.findByText(/couldn’t load example stories/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /try again/i })
+    ).toBeInTheDocument();
+  });
+
   it("renders the 'not a hosted product' framing", () => {
     renderLanding();
     expect(screen.getByText(/not a hosted product/i)).toBeInTheDocument();

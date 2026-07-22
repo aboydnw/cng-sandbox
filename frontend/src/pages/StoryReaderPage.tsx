@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import { Flex, Text } from "@chakra-ui/react";
-import { ArrowLeft, SpinnerGap } from "@phosphor-icons/react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { StoryReaderInner } from "./StoryReaderInner";
+import { BrandSpinner } from "../components/ui/BrandSpinner";
 
 import {
   getStoryFromServer,
@@ -145,10 +146,7 @@ export default function StoryReaderPage({
   if (loading) {
     return (
       <Flex h="100vh" align="center" justify="center">
-        <SpinnerGap
-          size={32}
-          style={{ animation: "spin 1s linear infinite" }}
-        />
+        <BrandSpinner size={32} />
       </Flex>
     );
   }

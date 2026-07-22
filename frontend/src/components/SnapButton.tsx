@@ -1,5 +1,6 @@
 import { IconButton } from "@chakra-ui/react";
-import { Camera, SpinnerGap } from "@phosphor-icons/react";
+import { BrandSpinner } from "./ui/BrandSpinner";
+import { Camera } from "@phosphor-icons/react";
 
 interface SnapButtonProps {
   onSnap: () => void;
@@ -24,10 +25,7 @@ export function SnapButton({ onSnap, isCapturing, error }: SnapButtonProps) {
       disabled={isCapturing}
     >
       {isCapturing ? (
-        <SpinnerGap
-          size={18}
-          style={{ animation: "spin 1s linear infinite" }}
-        />
+        <BrandSpinner size={18} />
       ) : (
         <Camera size={18} weight="regular" />
       )}

@@ -98,7 +98,7 @@ const OPEN_SOURCE_STACK = [
 
 export default function AboutPage() {
   return (
-    <Flex direction="column" minH="100vh" bg="gray.50">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Box as="main" id="main-content" maxW="960px" mx="auto" py={8} px={4}>
         <Box mb={10}>

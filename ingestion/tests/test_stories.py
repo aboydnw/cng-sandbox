@@ -316,7 +316,26 @@ def test_list_examples_returns_examples_without_workspace_header(app, db_session
         StoryRow(
             id="public-example",
             title="Public Example",
-            chapters_json="[]",
+            chapters_json=json.dumps(
+                [
+                    {
+                        "id": "terrain-scene",
+                        "order": 0,
+                        "type": "map",
+                        "title": "Mountain scene",
+                        "narrative": "Terrain-only chapter",
+                        "map_state": {
+                            "center": [0, 0],
+                            "zoom": 2,
+                            "bearing": 0,
+                            "pitch": 45,
+                            "basemap": "streets",
+                            "terrain": {"enabled": True, "exaggeration": 1.5},
+                        },
+                        "layer_config": None,
+                    }
+                ]
+            ),
             published=True,
             created_at=now,
             updated_at=now,
@@ -344,6 +363,8 @@ def test_list_examples_returns_examples_without_workspace_header(app, db_session
     rows = resp.json()
     ids = {r["id"] for r in rows}
     assert "public-example" in ids
+    public_example = next(row for row in rows if row["id"] == "public-example")
+    assert public_example["chapters"][0]["layer_config"] is None
     assert "private-non-example" not in ids
     assert all(r["is_example"] is True for r in rows)
 

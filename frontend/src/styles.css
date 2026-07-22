@@ -57,10 +57,6 @@ body {
   font: inherit;
 }
 
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
-
 .skip-link {
   position: fixed;
   top: 12px;

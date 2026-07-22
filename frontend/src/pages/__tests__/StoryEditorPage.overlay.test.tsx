@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 
@@ -107,5 +107,20 @@ describe("StoryEditorPage overlays", () => {
     expect(
       screen.getByRole("button", { name: /add overlay/i })
     ).toBeInTheDocument();
+  });
+
+  it("moves between mobile editor tabs with arrow keys", async () => {
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <MemoryRouter initialEntries={["/w/test/story/s1/edit"]}>
+          <StoryEditorPage />
+        </MemoryRouter>
+      </ChakraProvider>
+    );
+    const editTab = await screen.findByRole("tab", { name: /edit/i });
+    fireEvent.keyDown(editTab, { key: "ArrowLeft" });
+    const previewTab = screen.getByRole("tab", { name: /preview/i });
+    expect(previewTab).toHaveAttribute("aria-selected", "true");
+    await waitFor(() => expect(previewTab).toHaveFocus());
   });
 });

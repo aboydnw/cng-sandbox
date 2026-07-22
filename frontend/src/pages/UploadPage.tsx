@@ -330,7 +330,7 @@ export default function UploadPage() {
   );
 
   return (
-    <Flex direction="column" minH="100vh" bg="white">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Box as="main" id="main-content">
         <HomepageHero />
@@ -347,9 +347,9 @@ export default function UploadPage() {
         >
           <PathCard
             icon={<FolderOpen size={36} />}
-            title="Visualize data"
+            title="Create a map"
             description="Upload a file or connect to a cloud source"
-            ctaLabel="Explore data"
+            ctaLabel="Add data"
             onClick={handleVisualizeCardClick}
             expanded={visualizeCardExpanded}
             faded={false}

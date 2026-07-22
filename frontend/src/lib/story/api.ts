@@ -1,4 +1,5 @@
 import type { Story } from "./types";
+import { migrateStory } from "./migration";
 import { config } from "../../config";
 import { workspaceFetch } from "../api";
 
@@ -19,20 +20,20 @@ export async function createStoryOnServer(
     }),
   });
   if (!resp.ok) throw new Error(`Failed to create story: ${resp.status}`);
-  return resp.json();
+  return migrateStory((await resp.json()) as Record<string, unknown>);
 }
 
 export async function getStoryFromServer(id: string): Promise<Story | null> {
   const resp = await workspaceFetch(`${BASE}/${id}`);
   if (resp.status === 404) return null;
   if (!resp.ok) throw new Error(`Failed to load story: ${resp.status}`);
-  return resp.json();
+  return migrateStory((await resp.json()) as Record<string, unknown>);
 }
 
 export async function listStoriesFromServer(): Promise<Story[]> {
   const resp = await workspaceFetch(BASE);
   if (!resp.ok) throw new Error(`Failed to list stories: ${resp.status}`);
-  return resp.json();
+  return ((await resp.json()) as Record<string, unknown>[]).map(migrateStory);
 }
 
 export async function listExampleStoriesFromServer(): Promise<Story[]> {
@@ -40,7 +41,7 @@ export async function listExampleStoriesFromServer(): Promise<Story[]> {
   if (!resp.ok) {
     throw new Error(`Failed to list example stories: ${resp.status}`);
   }
-  return (await resp.json()) as Story[];
+  return ((await resp.json()) as Record<string, unknown>[]).map(migrateStory);
 }
 
 export async function saveStoryToServer(story: Story): Promise<Story> {
@@ -55,7 +56,7 @@ export async function saveStoryToServer(story: Story): Promise<Story> {
     }),
   });
   if (!resp.ok) throw new Error(`Failed to save story: ${resp.status}`);
-  return resp.json();
+  return migrateStory((await resp.json()) as Record<string, unknown>);
 }
 
 export async function deleteStoryFromServer(id: string): Promise<void> {
@@ -66,5 +67,5 @@ export async function deleteStoryFromServer(id: string): Promise<void> {
 export async function forkStoryOnServer(id: string): Promise<Story> {
   const resp = await workspaceFetch(`${BASE}/${id}/fork`, { method: "POST" });
   if (!resp.ok) throw new Error(`Failed to fork story: ${resp.status}`);
-  return resp.json();
+  return migrateStory((await resp.json()) as Record<string, unknown>);
 }

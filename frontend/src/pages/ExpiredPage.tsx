@@ -8,7 +8,7 @@ export default function ExpiredPage() {
   const { workspacePath } = useWorkspace();
 
   return (
-    <Flex direction="column" minH="100vh" bg="white">
+    <Flex direction="column" minH="100vh" bg="bg">
       <Header />
       <Flex
         as="main"

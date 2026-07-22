@@ -26,6 +26,16 @@ describe("FileUploader accepted formats", () => {
   const confirmSelection = () =>
     fireEvent.click(screen.getByRole("button", { name: /create map/i }));
 
+  it("opens the file picker from the full drop zone", () => {
+    const { input } = renderUploader();
+    const click = vi.spyOn(input, "click");
+    fireEvent.click(screen.getByRole("button", { name: /file drop zone/i }));
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: "Browse files" })
+    ).not.toBeInTheDocument();
+  });
+
   it("accepts a .gpx trajectory file after confirmation", () => {
     const { onFileSelected, input } = renderUploader();
     const file = new File(["<gpx/>"], "track.gpx", {

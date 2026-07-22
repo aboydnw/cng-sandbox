@@ -44,7 +44,15 @@ export default function DiscoverDatasetPage() {
     return (
       <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
         <DiscoverHeader />
-        <Box maxW="1100px" mx="auto" px={6} py={16} textAlign="center">
+        <Box
+          as="main"
+          id="main-content"
+          maxW="1100px"
+          mx="auto"
+          px={6}
+          py={16}
+          textAlign="center"
+        >
           <Heading fontSize="28px" fontWeight={600} mb={2}>
             Product not found
           </Heading>
@@ -84,7 +92,15 @@ export default function DiscoverDatasetPage() {
     <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
       <DiscoverHeader />
 
-      <Box maxW="1100px" mx="auto" px={6} pt={8} pb={20}>
+      <Box
+        as="main"
+        id="main-content"
+        maxW="1100px"
+        mx="auto"
+        px={6}
+        pt={8}
+        pb={20}
+      >
         <Text fontSize="12px" fontFamily={MONO} color={TEXT_MUTED} mb={6}>
           <Link
             to={workspacePath("/discover")}

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { BrandSpinner } from "./ui/BrandSpinner";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
-import { ArrowLeft, Link as LinkIcon, SpinnerGap } from "@phosphor-icons/react";
+import { ArrowLeft, Link as LinkIcon } from "@phosphor-icons/react";
 import {
   detectConnectionType,
   extractNameFromUrl,
@@ -244,7 +245,7 @@ export function InlineConnectionForm({
       {/* Probe status */}
       {probing && (
         <Flex align="center" gap={2} mb={3} color="brand.textSecondary">
-          <SpinnerGap size={14} className="animate-spin" />
+          <BrandSpinner size={14} />
           <Text fontSize="xs">Detecting metadata...</Text>
         </Flex>
       )}

@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
+import { BrandSpinner } from "./ui/BrandSpinner";
 import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import {
   MagnifyingGlass,
   CloudArrowDown,
-  SpinnerGap,
   Stack,
   SquaresFour,
   Warning,
@@ -142,7 +142,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         color="brand.textSecondary"
         py={2}
       >
-        <SpinnerGap size={16} className="animate-spin" />
+        <BrandSpinner size={16} />
         <Text fontSize="13px">Checking the URL and available files…</Text>
       </Flex>
     );
@@ -158,7 +158,7 @@ export function RemoteConnectFlow({ onDatasetReady }: RemoteConnectFlowProps) {
         color="brand.textSecondary"
         py={2}
       >
-        <SpinnerGap size={16} className="animate-spin" />
+        <BrandSpinner size={16} />
         <Text fontSize="13px">
           Adding {state.discoverResult?.count ?? ""} files to your workspace…
         </Text>

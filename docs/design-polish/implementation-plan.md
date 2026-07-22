@@ -256,7 +256,9 @@ readiness throughout the workflow.
 - Publishing communicates exactly what readers will see.
 - The full visual QA checklist is completed for affected routes.
 
-## Working rules for every package
+## Historical delivery checklist
+
+The program is complete. The checklist below is retained as a record of how the seven packages were delivered and reviewed; it is no longer an active branching plan.
 
 1. Create the dedicated branch worktree at `.worktrees/<branch>` with a
    `codex/` branch. Reuse that same worktree for every PR-feedback fix on the

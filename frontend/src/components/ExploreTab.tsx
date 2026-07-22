@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from "react";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { BrandSpinner } from "./ui/BrandSpinner";
 import type { Table } from "apache-arrow";
 import { useDuckDB } from "../hooks/useDuckDB";
 import { useGeoParquetQuery } from "../hooks/useGeoParquetQuery";
@@ -87,11 +87,7 @@ export function ExploreTab({ parquetUrl, onTableChange }: ExploreTabProps) {
         direction="column"
         gap={3}
       >
-        <SpinnerGap
-          size={24}
-          color="#CF3F02"
-          style={{ animation: "spin 1s linear infinite" }}
-        />
+        <BrandSpinner size={24} />
         <Text fontSize="sm" color="gray.500">
           Preparing explore tools…
         </Text>

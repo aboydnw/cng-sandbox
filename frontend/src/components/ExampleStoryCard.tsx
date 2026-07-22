@@ -10,24 +10,6 @@ export interface ExampleStoryCardProps {
   featured?: boolean;
 }
 
-function previewForTitle(title: string): string | null {
-  const normalized = title.toLowerCase();
-  if (normalized.includes("carbon") || normalized.includes("field")) {
-    return "/thumbnails/lg-land-carbon.jpg";
-  }
-  if (normalized.includes("gebco") || normalized.includes("bathymetry")) {
-    return "/thumbnails/gebco.jpg";
-  }
-  if (
-    normalized.includes("ghrsst") ||
-    normalized.includes("sea surface") ||
-    normalized.includes("ocean")
-  ) {
-    return "/thumbnails/ghrsst.jpg";
-  }
-  return null;
-}
-
 export function ExampleStoryCard({
   title,
   chapterCount,
@@ -44,7 +26,6 @@ export function ExampleStoryCard({
     if (loading) return;
     onClick();
   };
-  const preview = previewForTitle(title);
   return (
     <Box
       asChild
@@ -83,20 +64,12 @@ export function ExampleStoryCard({
                   ? { base: "220px", md: "340px" }
                   : "150px"
             }
-            bg={preview ? "bg.emphasized" : "#DDD6CE"}
-            backgroundImage={
-              preview
-                ? `url(${preview})`
-                : "linear-gradient(rgba(68,63,63,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(68,63,63,.08) 1px, transparent 1px)"
-            }
-            backgroundSize={preview ? "cover" : "24px 24px"}
+            bg="bg.muted"
+            backgroundImage="linear-gradient(rgba(68,63,63,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(68,63,63,.08) 1px, transparent 1px)"
+            backgroundSize="24px 24px"
             backgroundPosition="center"
             role="img"
-            aria-label={
-              preview
-                ? `Map preview for ${title}`
-                : `Cartographic preview placeholder for ${title}`
-            }
+            aria-label={"Cartographic preview for " + title}
           />
           <Box px={featured ? 5 : 4} py={featured ? 4 : 3}>
             <Text

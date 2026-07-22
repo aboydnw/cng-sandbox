@@ -20,6 +20,9 @@ export function DiscoverHeader() {
       borderBottom="1px solid"
       borderColor={BORDER}
     >
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       <Flex align="center" gap={8}>
         <Link
           to={workspacePath("/discover")}

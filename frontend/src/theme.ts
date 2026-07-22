@@ -33,7 +33,6 @@ const buttonRecipe = defineRecipe({
     fontWeight: "semibold",
     borderRadius: "control",
     ...interactiveTransition,
-    _hover: { transform: "translateY(-1px)" },
     _active: { transform: "translateY(0) scale(0.985)" },
     _focusVisible: {
       outline: "2px solid",
@@ -58,16 +57,10 @@ const buttonRecipe = defineRecipe({
       "2xl": { h: "16", minW: "16", textStyle: "lg", px: "7", gap: "3" },
     },
     variant: {
-      destructive: {
-        bg: "status.danger.fg",
-        color: "action.onPrimary",
-        _hover: { bg: "status.danger.hover" },
-        _expanded: { bg: "status.danger.hover" },
-      },
       solid: {
         bg: "action.primary",
         color: "action.onPrimary",
-        _hover: { bg: "action.primaryHover" },
+        _hover: { bg: "action.primaryHover", transform: "translateY(-1px)" },
         _expanded: { bg: "action.primaryHover" },
       },
       subtle: {
@@ -181,7 +174,6 @@ const config = defineConfig({
         bold: { value: 700 },
       },
       radii: {
-        detail: { value: "4px" },
         control: { value: "8px" },
         panel: { value: "12px" },
       },
@@ -235,6 +227,7 @@ const config = defineConfig({
         },
         border: {
           value: "{colors.brand.border}",
+          subtle: { value: "{colors.brand.border}" },
           emphasized: { value: "#CBC4BD" },
         },
         action: {
@@ -270,7 +263,6 @@ const config = defineConfig({
           },
         },
         map: {
-          scrim: { value: "rgba(38, 34, 32, 0.62)" },
           controlBorder: { value: "rgba(68, 63, 63, 0.16)" },
         },
       },
@@ -317,14 +309,6 @@ const config = defineConfig({
       },
       metadata: {
         value: { fontSize: "12px", fontWeight: "medium", lineHeight: "1.4" },
-      },
-      dataNumber: {
-        value: {
-          fontSize: { base: "24px", md: "28px" },
-          fontWeight: "bold",
-          lineHeight: "1",
-          fontVariantNumeric: "tabular-nums",
-        },
       },
     },
     recipes: { button: buttonRecipe, input: inputRecipe },

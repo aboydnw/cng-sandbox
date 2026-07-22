@@ -135,9 +135,11 @@ export function FileUploader({
       )}
 
       <Box
+        role="button"
+        tabIndex={disabled ? -1 : 0}
         aria-label="File drop zone"
         border="2px dashed"
-        borderColor={dragOver ? "brand.orange" : "#ccc"}
+        borderColor={dragOver ? "brand.orange" : "border"}
         borderRadius="12px"
         py={embedded ? 3 : 14}
         px={embedded ? 5 : 14}
@@ -145,7 +147,17 @@ export function FileUploader({
         w="100%"
         maxW={embedded ? "100%" : "480px"}
         bg={dragOver ? "orange.50" : "brand.bgSubtle"}
-        cursor={disabled ? "not-allowed" : "default"}
+        cursor={disabled ? "not-allowed" : "pointer"}
+        onClick={(event) => {
+          event.stopPropagation();
+          inputRef.current?.click();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -184,7 +196,10 @@ export function FileUploader({
             borderColor: "action.primary",
             color: "action.primaryHover",
           }}
-          onClick={() => inputRef.current?.click()}
+          onClick={(event) => {
+            event.stopPropagation();
+            inputRef.current?.click();
+          }}
           disabled={disabled}
         >
           Browse files
@@ -199,6 +214,7 @@ export function FileUploader({
           type="file"
           accept={ALLOWED_EXTENSIONS.join(",")}
           multiple
+          onClick={(event) => event.stopPropagation()}
           style={{ display: "none" }}
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);

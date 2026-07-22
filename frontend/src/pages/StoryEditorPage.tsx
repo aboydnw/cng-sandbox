@@ -13,7 +13,6 @@ import {
   X as XIcon,
   ArrowCounterClockwise,
   Check,
-  SpinnerGap,
   CaretDown,
   DownloadSimple,
   Eye,
@@ -46,6 +45,7 @@ import { ChapterPreview } from "../components/editor/ChapterPreview";
 import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
 import { ChartChapterEditor } from "../components/editor/ChartChapterEditor";
 import { StatePanel } from "../components/ui/StatePanel";
+import { BrandSpinner } from "../components/ui/BrandSpinner";
 
 function TooltipCard({
   text,
@@ -88,6 +88,7 @@ function TooltipCard({
 }
 
 type EditorView = "chapters" | "preview" | "edit";
+const EDITOR_VIEWS: EditorView[] = ["chapters", "preview", "edit"];
 
 export default function StoryEditorPage() {
   const {
@@ -177,10 +178,7 @@ export default function StoryEditorPage() {
           </Box>
           <Flex flex={1} align="center" justify="center" bg="bg.emphasized">
             <Flex align="center" gap={2} role="status" color="fg.muted">
-              <SpinnerGap
-                size={22}
-                style={{ animation: "spin 1s linear infinite" }}
-              />
+              <BrandSpinner size={22} />
               <Text fontSize="sm">Opening story editor…</Text>
             </Flex>
           </Flex>
@@ -378,6 +376,28 @@ export default function StoryEditorPage() {
             size="sm"
             flex={1}
             onClick={() => setEditorView(view)}
+            onKeyDown={(event) => {
+              if (
+                !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              )
+                return;
+              event.preventDefault();
+              const current = EDITOR_VIEWS.indexOf(view);
+              const next =
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? EDITOR_VIEWS.length - 1
+                    : (current +
+                        (event.key === "ArrowRight" ? 1 : -1) +
+                        EDITOR_VIEWS.length) %
+                      EDITOR_VIEWS.length;
+              const nextView = EDITOR_VIEWS[next];
+              setEditorView(nextView);
+              requestAnimationFrame(() =>
+                document.getElementById("story-editor-tab-" + nextView)?.focus()
+              );
+            }}
           >
             {icon} {label}
           </Button>

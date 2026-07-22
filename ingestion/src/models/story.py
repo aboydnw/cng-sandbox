@@ -97,7 +97,7 @@ class _BaseChapter(BaseModel):
 class ScrollytellingChapter(_BaseChapter):
     type: Literal["scrollytelling"] = "scrollytelling"
     map_state: MapStatePayload
-    layer_config: LayerConfigPayload
+    layer_config: LayerConfigPayload | None = None
     overlays: list[OverlayConfigPayload] = []
     transition: Literal["fly-to", "instant"] = "fly-to"
     overlay_position: Literal["left", "right"] = "left"
@@ -106,7 +106,7 @@ class ScrollytellingChapter(_BaseChapter):
 class MapChapter(_BaseChapter):
     type: Literal["map"]
     map_state: MapStatePayload
-    layer_config: LayerConfigPayload
+    layer_config: LayerConfigPayload | None = None
     overlays: list[OverlayConfigPayload] = []
 
 

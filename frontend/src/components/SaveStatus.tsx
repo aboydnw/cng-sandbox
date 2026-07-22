@@ -1,5 +1,6 @@
 import { Flex, Text } from "@chakra-ui/react";
-import { Check, SpinnerGap, Warning } from "@phosphor-icons/react";
+import { BrandSpinner } from "./ui/BrandSpinner";
+import { Check, Warning } from "@phosphor-icons/react";
 import type { SaveState } from "../hooks/useSaveStatus";
 
 const STATUS_MAP: Record<
@@ -10,9 +11,7 @@ const STATUS_MAP: Record<
   saving: {
     label: "Saving...",
     color: "gray.500",
-    icon: (
-      <SpinnerGap size={12} style={{ animation: "spin 1s linear infinite" }} />
-    ),
+    icon: <BrandSpinner size={12} />,
   },
   saved: { label: "Saved", color: "green.600", icon: <Check size={12} /> },
   error: {

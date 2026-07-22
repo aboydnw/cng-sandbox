@@ -9,7 +9,7 @@ import {
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 import { Box, Button, Flex, Skeleton, Text } from "@chakra-ui/react";
-import { SlidersHorizontal, SpinnerGap, X } from "@phosphor-icons/react";
+import { SlidersHorizontal, X } from "@phosphor-icons/react";
 import { Header } from "../components/Header";
 import { SharedHeader } from "../components/SharedHeader";
 import { ShareButton } from "../components/ShareButton";
@@ -66,6 +66,8 @@ import { toaster } from "../lib/toaster";
 import type { RenderMode } from "../hooks/useMapControls";
 import type { Table } from "apache-arrow";
 import { StatePanel } from "../components/ui/StatePanel";
+import { shouldShowMobileMapControls } from "../lib/mapControlsVisibility";
+import { BrandSpinner } from "../components/ui/BrandSpinner";
 
 export default function MapPage({ shared = false }: { shared?: boolean }) {
   const { id } = useParams<{ id: string }>();
@@ -594,7 +596,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
   // --- Render ---
   if (isLoading) {
     return (
-      <Box minH="100vh" bg="white">
+      <Box minH="100vh" bg="bg">
         {shared ? <SharedHeader /> : <Header />}
         <Flex
           as="main"
@@ -604,11 +606,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
         >
           <Flex flex={1} bg="bg.emphasized" align="center" justify="center">
             <Flex align="center" gap={2} color="fg.muted" role="status">
-              <SpinnerGap
-                size={22}
-                color="var(--chakra-colors-brand-orange)"
-                style={{ animation: "spin 1s linear infinite" }}
-              />
+              <BrandSpinner size={22} />
               <Text fontSize="sm">Preparing map…</Text>
             </Flex>
           </Flex>
@@ -637,7 +635,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
 
   if (error) {
     return (
-      <Box minH="100vh" bg="white">
+      <Box minH="100vh" bg="bg">
         {shared ? <SharedHeader /> : <Header />}
         <Flex
           as="main"
@@ -710,11 +708,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   </Box>
                 ) : (
                   <Box textAlign="center">
-                    <SpinnerGap
-                      size={22}
-                      color="var(--chakra-colors-brand-orange)"
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />
+                    <BrandSpinner size={22} />
                     <Text mt={2}>Converting GeoParquet to PMTiles…</Text>
                     {conversion.featureCount != null && (
                       <Text fontSize="sm" color="gray.600">
@@ -748,11 +742,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   </Box>
                 ) : (
                   <Box textAlign="center">
-                    <SpinnerGap
-                      size={22}
-                      color="var(--chakra-colors-brand-orange)"
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />
+                    <BrandSpinner size={22} />
                     <Text mt={2}>Loading GeoParquet…</Text>
                   </Box>
                 )}
@@ -815,7 +805,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                   onDismiss={() => setZoomPromptDismissed(true)}
                 />
               )}
-              {!shared && (
+              {shouldShowMobileMapControls(shared, isPointCloud) && (
                 <Button
                   display={{ base: "flex", md: "none" }}
                   position="absolute"
@@ -972,11 +962,7 @@ export default function MapPage({ shared = false }: { shared?: boolean }) {
                       </Text>
                     ) : (
                       <>
-                        <SpinnerGap
-                          size={18}
-                          color="var(--chakra-colors-brand-orange)"
-                          style={{ animation: "spin 1s linear infinite" }}
-                        />
+                        <BrandSpinner size={18} />
                         <Text fontSize="sm" color="brand.brown">
                           Loading trajectory&hellip;
                         </Text>

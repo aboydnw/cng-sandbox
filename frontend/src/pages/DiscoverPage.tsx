@@ -61,7 +61,15 @@ export default function DiscoverPage() {
     <Flex direction="column" minH="100vh" bg={PAGE_BG} color={TEXT}>
       <DiscoverHeader />
 
-      <Box maxW="1100px" mx="auto" px={6} pt={10} pb={6}>
+      <Box
+        as="main"
+        id="main-content"
+        maxW="1100px"
+        mx="auto"
+        px={6}
+        pt={10}
+        pb={6}
+      >
         <Heading
           as="h1"
           fontSize={{ base: "28px", md: "36px" }}

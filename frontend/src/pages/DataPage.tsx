@@ -27,6 +27,7 @@ import {
 import { StatePanel } from "../components/ui/StatePanel";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -40,6 +41,7 @@ export default function DataPage() {
   const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<LibraryItem | null>(null);
   const loadRequestIdRef = useRef(0);
 
   const reload = useCallback(() => {
@@ -88,14 +90,6 @@ export default function DataPage() {
   const handleDelete = useCallback(async (item: LibraryItem) => {
     if (item.raw.kind === "dataset") {
       const ds = item.raw.dataset as DatasetWithStoryCount;
-      const storyWarning =
-        ds.story_count && ds.story_count > 0
-          ? `\n\nThis dataset is used in ${ds.story_count} story${
-              ds.story_count > 1 ? "s" : ""
-            }. Those chapters will no longer display.`
-          : "";
-      if (!window.confirm(`Delete "${displayName(ds)}"?${storyWarning}`))
-        return;
       setDeletingId(item.id);
       try {
         const resp = await workspaceFetch(
@@ -104,17 +98,18 @@ export default function DataPage() {
         );
         if (resp.ok) {
           setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
+          setPendingDelete(null);
         }
       } finally {
         setDeletingId(null);
       }
     } else {
       const conn = item.raw.connection;
-      if (!window.confirm(`Delete connection "${conn.name}"?`)) return;
       setDeletingId(item.id);
       try {
         await connectionsApi.delete(conn.id);
         setConnections((prev) => prev.filter((c) => c.id !== conn.id));
+        setPendingDelete(null);
       } finally {
         setDeletingId(null);
       }
@@ -277,7 +272,7 @@ export default function DataPage() {
                             color="status.danger.fg"
                             _hover={{ bg: "status.danger.subtle" }}
                             loading={deletingId === item.id}
-                            onClick={() => handleDelete(item)}
+                            onClick={() => setPendingDelete(item)}
                           >
                             Delete
                           </Button>
@@ -291,6 +286,28 @@ export default function DataPage() {
           })()
         )}
       </Box>
+      <ConfirmDialog
+        open={pendingDelete != null}
+        title={"Delete “" + (pendingDelete?.name ?? "data") + "”?"}
+        description={
+          pendingDelete?.raw.kind === "dataset" &&
+          (pendingDelete.raw.dataset as DatasetWithStoryCount).story_count
+            ? "This permanently removes the data. It is used in " +
+              (pendingDelete.raw.dataset as DatasetWithStoryCount).story_count +
+              ((pendingDelete.raw.dataset as DatasetWithStoryCount).story_count === 1
+                ? " story"
+                : " stories") +
+              ", where it will no longer display."
+            : "This permanently removes the data source and cannot be undone."
+        }
+        loading={pendingDelete != null && deletingId === pendingDelete.id}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+        onConfirm={() => {
+          if (pendingDelete) void handleDelete(pendingDelete);
+        }}
+      />
       <Footer />
     </Flex>
   );

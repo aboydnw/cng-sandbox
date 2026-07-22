@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -22,6 +22,7 @@ import { seedExampleData } from "../lib/examples/api";
 import { setWorkspaceId } from "../lib/api";
 import { inferDataType } from "../lib/story/dataType";
 import type { Story } from "../lib/story/types";
+import { StatePanel } from "../components/ui/StatePanel";
 
 const STORAGE_KEY = WORKSPACE_STORAGE_KEY;
 const GITHUB_URL = "https://github.com/aboydnw/cng-sandbox";
@@ -33,6 +34,9 @@ export default function LandingPage() {
   const switching = searchParams.get("switch") === "1";
   const [enteredId, setEnteredId] = useState("");
   const [examples, setExamples] = useState<Story[]>([]);
+  const [examplesStatus, setExamplesStatus] = useState<
+    "loading" | "loaded" | "error"
+  >("loading");
   const [cloningId, setCloningId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const cloneInFlightRef = useRef(false);
@@ -45,11 +49,19 @@ export default function LandingPage() {
     }
   }, [switching, navigate]);
 
-  useEffect(() => {
+  const loadExamples = useCallback(() => {
+    setExamplesStatus("loading");
     listExampleStoriesFromServer()
-      .then(setExamples)
-      .catch(() => {});
+      .then((stories) => {
+        setExamples(stories);
+        setExamplesStatus("loaded");
+      })
+      .catch(() => setExamplesStatus("error"));
   }, []);
+
+  useEffect(() => {
+    loadExamples();
+  }, [loadExamples]);
 
   const startStory = async () => {
     if (cloneInFlightRef.current) return;
@@ -127,20 +139,18 @@ export default function LandingPage() {
               Open-source demo · by Development Seed
             </Text>
             <Heading
-              fontSize={{ base: "42px", md: "58px", xl: "66px" }}
+              textStyle="display"
               color="fg"
               mt={4}
               mb={5}
-              lineHeight="1.02"
-              letterSpacing="-0.035em"
               css={{ textWrap: "balance" }}
             >
               Tell stories with cloud-native geospatial data.
             </Heading>
             <Text
               color="fg.muted"
+              textStyle="body"
               fontSize="lg"
-              lineHeight="1.65"
               mb={4}
               maxW="58ch"
             >
@@ -181,10 +191,23 @@ export default function LandingPage() {
             </Flex>
           </Box>
           <Box minW={0}>
-            {examples.length === 0 ? (
+            {examplesStatus === "loading" ? (
               <Skeleton
                 height={{ base: "310px", md: "430px" }}
                 borderRadius="panel"
+              />
+            ) : examplesStatus === "error" ? (
+              <StatePanel
+                tone="danger"
+                title="Couldn’t load example stories"
+                description="The examples are temporarily unavailable. You can still start a new story."
+                actionLabel="Try again"
+                onAction={loadExamples}
+              />
+            ) : examples.length === 0 ? (
+              <StatePanel
+                title="No example stories available"
+                description="Start a story with your own data while we prepare more examples."
               />
             ) : (
               <ExampleStoryCard
@@ -199,39 +222,41 @@ export default function LandingPage() {
           </Box>
         </Box>
 
-        <Box maxW="1240px" mx="auto" mb={14}>
-          <Text fontSize="sm" color="fg.muted" fontWeight={600} mb={4}>
-            Example stories
-          </Text>
-          {examples.length === 0 ? (
-            <Box
-              display="grid"
-              gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
-              gap={5}
-            >
-              <Skeleton height="220px" borderRadius="panel" />
-              <Skeleton height="220px" borderRadius="panel" />
-            </Box>
-          ) : (
-            <Box
-              display="grid"
-              gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
-              gap={5}
-            >
-              {examples.slice(1, 3).map((story) => (
-                <ExampleStoryCard
-                  key={story.id}
-                  title={story.title}
-                  chapterCount={story.chapters.length}
-                  dataType={inferDataType(story)}
-                  onClick={() => openExampleStory(story)}
-                  loading={cloningId === story.id}
-                  compact={false}
-                />
-              ))}
-            </Box>
-          )}
-        </Box>
+        {(examplesStatus === "loading" || examples.length > 1) && (
+          <Box maxW="1240px" mx="auto" mb={14}>
+            <Text fontSize="sm" color="fg.muted" fontWeight={600} mb={4}>
+              Example stories
+            </Text>
+            {examples.length === 0 ? (
+              <Box
+                display="grid"
+                gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                gap={5}
+              >
+                <Skeleton height="220px" borderRadius="panel" />
+                <Skeleton height="220px" borderRadius="panel" />
+              </Box>
+            ) : (
+              <Box
+                display="grid"
+                gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                gap={5}
+              >
+                {examples.slice(1, 3).map((story) => (
+                  <ExampleStoryCard
+                    key={story.id}
+                    title={story.title}
+                    chapterCount={story.chapters.length}
+                    dataType={inferDataType(story)}
+                    onClick={() => openExampleStory(story)}
+                    loading={cloningId === story.id}
+                    compact={false}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
 
         <Box
           maxW="960px"

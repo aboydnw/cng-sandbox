@@ -47,7 +47,7 @@ describe("Workspace routing", () => {
   it("renders WorkspaceHomePage at workspace root (/), not StoriesPage", async () => {
     renderApp("/w/test-workspace");
     expect(
-      await screen.findByRole("heading", { name: /continue your work/i })
+      await screen.findByRole("heading", { name: /your workspace/i })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /^stories$/i })

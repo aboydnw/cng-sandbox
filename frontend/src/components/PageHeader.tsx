@@ -17,11 +17,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
       mb={8}
     >
       <Box maxW="64ch">
-        <Heading
-          fontSize={{ base: "3xl", md: "4xl" }}
-          color="fg"
-          letterSpacing="-0.025em"
-        >
+        <Heading textStyle="pageTitle" color="fg">
           {title}
         </Heading>
         <Text color="fg.muted" mt={2} lineHeight="1.6">

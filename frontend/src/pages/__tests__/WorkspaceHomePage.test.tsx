@@ -205,7 +205,7 @@ describe("WorkspaceHomePage", () => {
     });
     renderHome();
     expect(
-      await screen.findByText(/start with a map or a story/i)
+      await screen.findByText(/start your first map or story/i)
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /example a/i })

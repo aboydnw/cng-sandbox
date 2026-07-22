@@ -1,10 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { BrandSpinner } from "./ui/BrandSpinner";
 import { Box, Button, Flex, Heading, Input, Text } from "@chakra-ui/react";
-import {
-  X as XIcon,
-  Link as LinkIcon,
-  SpinnerGap,
-} from "@phosphor-icons/react";
+import { X as XIcon, Link as LinkIcon } from "@phosphor-icons/react";
 import {
   detectConnectionType,
   extractNameFromUrl,
@@ -378,10 +375,7 @@ export function ConnectionModal({
 
           {probing && (
             <Flex align="center" gap={2}>
-              <SpinnerGap
-                size={14}
-                style={{ animation: "spin 1s linear infinite" }}
-              />
+              <BrandSpinner size={14} />
               <Text fontSize="13px" color="gray.500">
                 Reading metadata...
               </Text>
@@ -493,14 +487,7 @@ export function ConnectionModal({
               disabled={!canSave}
               onClick={handleSave}
             >
-              {saving ? (
-                <SpinnerGap
-                  size={16}
-                  style={{ animation: "spin 1s linear infinite" }}
-                />
-              ) : (
-                "Save"
-              )}
+              {saving ? <BrandSpinner size={16} /> : "Save"}
             </Button>
           </Flex>
         </Flex>

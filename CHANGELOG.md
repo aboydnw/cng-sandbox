@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.13.0](https://github.com/aboydnw/cng-sandbox/compare/v2.12.0...v2.13.0) (2026-07-22)
+
+
+### Features
+
+* polish map and story authoring workflows ([#592](https://github.com/aboydnw/cng-sandbox/issues/592)) ([f14da0f](https://github.com/aboydnw/cng-sandbox/commit/f14da0f5bbd1fc42e7fa83961970d4d60c3a6c28))
+
+
+### Bug Fixes
+
+* harden polished user workflows ([#594](https://github.com/aboydnw/cng-sandbox/issues/594)) ([4f5da6b](https://github.com/aboydnw/cng-sandbox/commit/4f5da6b0bb09d1334600fa47ef33eafa0ced0b0e))
+
 ## [2.12.0](https://github.com/aboydnw/cng-sandbox/compare/v2.11.0...v2.12.0) (2026-07-21)
 
 

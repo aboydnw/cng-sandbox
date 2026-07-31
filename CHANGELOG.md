@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.13.0](https://github.com/aboydnw/cng-sandbox/compare/v2.12.0...v2.13.0) (2026-07-31)
+
+
+### Features
+
+* polish map and story authoring workflows ([#592](https://github.com/aboydnw/cng-sandbox/issues/592)) ([f14da0f](https://github.com/aboydnw/cng-sandbox/commit/f14da0f5bbd1fc42e7fa83961970d4d60c3a6c28))
+* progressively hydrate story maps ([#601](https://github.com/aboydnw/cng-sandbox/issues/601)) ([6bd672b](https://github.com/aboydnw/cng-sandbox/commit/6bd672b07d98dfde2fa86a2441ba1fb7fa4076c7))
+* unify map and story creation paths ([#603](https://github.com/aboydnw/cng-sandbox/issues/603)) ([f304d39](https://github.com/aboydnw/cng-sandbox/commit/f304d395521c68f6adc9c12f7bc261574bd64fdd))
+
+
+### Bug Fixes
+
+* harden polished user workflows ([#594](https://github.com/aboydnw/cng-sandbox/issues/594)) ([4f5da6b](https://github.com/aboydnw/cng-sandbox/commit/4f5da6b0bb09d1334600fa47ef33eafa0ced0b0e))
+* make story layer transitions atomic ([#602](https://github.com/aboydnw/cng-sandbox/issues/602)) ([44d6292](https://github.com/aboydnw/cng-sandbox/commit/44d6292856edcf347f09faf1d9fded5733d6c443))
+
+
+### Performance Improvements
+
+* split heavy frontend routes and editor workflows ([#599](https://github.com/aboydnw/cng-sandbox/issues/599)) ([539fe77](https://github.com/aboydnw/cng-sandbox/commit/539fe770eb56714658dc9bd0127ed5e618ada2b3))
+
 ## [2.12.0](https://github.com/aboydnw/cng-sandbox/compare/v2.11.0...v2.12.0) (2026-07-21)
 
 

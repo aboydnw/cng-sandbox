@@ -1,9 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   parseEmbedTheme,
   embedThemeToParams,
   buildGoogleFontsUrl,
+  applyEmbedTheme,
 } from "../embedTheme";
+import { system } from "../../../theme";
+
+function tokenVar(name: string): string {
+  const cssVar = system.tokens.getByName(name)?.extensions.cssVar?.var;
+  if (!cssVar) throw new Error(`missing token ${name}`);
+  return cssVar;
+}
 
 describe("parseEmbedTheme", () => {
   it("parses all four params", () => {
@@ -67,6 +75,57 @@ describe("embedThemeToParams", () => {
       bg: "#ffffff",
     };
     expect(parseEmbedTheme(embedThemeToParams(theme))).toEqual(theme);
+  });
+});
+
+describe("applyEmbedTheme", () => {
+  beforeEach(() => {
+    document.getElementById("cng-embed-theme-fonts")?.remove();
+    document.getElementById("cng-embed-theme-style")?.remove();
+  });
+
+  it("injects a Google Fonts link and a :root override style", () => {
+    applyEmbedTheme({
+      bodyFont: "Libre Baskerville",
+      headingFont: "Archivo",
+      accent: "#2f6f4f",
+      bg: "#f0ede8",
+    });
+
+    const link = document.getElementById(
+      "cng-embed-theme-fonts"
+    ) as HTMLLinkElement;
+    expect(link.href).toContain("family=Libre+Baskerville");
+    expect(link.href).toContain("family=Archivo");
+
+    const style = document.getElementById("cng-embed-theme-style")!;
+    expect(style.textContent).toContain(
+      `${tokenVar("fonts.body")}: "Libre Baskerville"`
+    );
+    expect(style.textContent).toContain(
+      `${tokenVar("fonts.heading")}: "Archivo"`
+    );
+    expect(style.textContent).toContain(
+      `${tokenVar("colors.brand.orange")}: #2f6f4f`
+    );
+    expect(style.textContent).toContain(
+      `${tokenVar("colors.brand.orangeHover")}: #2f6f4f`
+    );
+    expect(style.textContent).toContain(`${tokenVar("colors.bg")}: #f0ede8`);
+  });
+
+  it("skips the fonts link when no fonts are set and is idempotent", () => {
+    applyEmbedTheme({ accent: "#112233" });
+    applyEmbedTheme({ accent: "#112233" });
+
+    expect(document.getElementById("cng-embed-theme-fonts")).toBeNull();
+    expect(document.querySelectorAll("#cng-embed-theme-style")).toHaveLength(1);
+  });
+
+  it("does nothing for an empty theme", () => {
+    applyEmbedTheme({});
+    expect(document.getElementById("cng-embed-theme-style")).toBeNull();
+    expect(document.getElementById("cng-embed-theme-fonts")).toBeNull();
   });
 });
 

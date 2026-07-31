@@ -1,3 +1,5 @@
+import { system } from "../../theme";
+
 export interface EmbedTheme {
   bodyFont?: string;
   headingFont?: string;
@@ -44,4 +46,61 @@ export function buildGoogleFontsUrl(families: string[]): string | null {
     (f) => `family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;700`
   );
   return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
+}
+
+const FONTS_LINK_ID = "cng-embed-theme-fonts";
+const STYLE_ID = "cng-embed-theme-style";
+
+function tokenVar(name: string): string {
+  const cssVar = system.tokens.getByName(name)?.extensions.cssVar?.var;
+  if (!cssVar) throw new Error(`Unknown theme token: ${name}`);
+  return cssVar;
+}
+
+export function applyEmbedTheme(
+  theme: EmbedTheme,
+  doc: Document = document
+): void {
+  const fontsUrl = buildGoogleFontsUrl(
+    [theme.bodyFont, theme.headingFont].filter((f): f is string => Boolean(f))
+  );
+  if (fontsUrl && !doc.getElementById(FONTS_LINK_ID)) {
+    const link = doc.createElement("link");
+    link.id = FONTS_LINK_ID;
+    link.rel = "stylesheet";
+    link.href = fontsUrl;
+    link.onerror = () => {
+      // Families without static 400/700 weights 400 the css2 request;
+      // retry without the weight spec so the face still loads.
+      link.onerror = null;
+      link.href = fontsUrl.replace(/:wght@400;700/g, "");
+    };
+    doc.head.appendChild(link);
+  }
+
+  const rules: string[] = [];
+  if (theme.bodyFont) {
+    rules.push(`${tokenVar("fonts.body")}: "${theme.bodyFont}", sans-serif;`);
+  }
+  if (theme.headingFont) {
+    rules.push(
+      `${tokenVar("fonts.heading")}: "${theme.headingFont}", sans-serif;`
+    );
+  }
+  if (theme.accent) {
+    rules.push(`${tokenVar("colors.brand.orange")}: ${theme.accent};`);
+    rules.push(`${tokenVar("colors.brand.orangeHover")}: ${theme.accent};`);
+  }
+  if (theme.bg) {
+    rules.push(`${tokenVar("colors.bg")}: ${theme.bg};`);
+  }
+  if (rules.length === 0) return;
+
+  let style = doc.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  if (!style) {
+    style = doc.createElement("style");
+    style.id = STYLE_ID;
+    doc.head.appendChild(style);
+  }
+  style.textContent = `:root {\n  ${rules.join("\n  ")}\n}`;
 }

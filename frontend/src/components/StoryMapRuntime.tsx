@@ -3,6 +3,7 @@ import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
 import type { MapRef } from "react-map-gl/maplibre";
+import type { TripsLayer } from "@deck.gl/geo-layers";
 import { UnifiedMap } from "./UnifiedMap";
 import { MapChapter } from "./MapChapter";
 import { FlyoverBlock } from "./FlyoverBlock";
@@ -179,6 +180,11 @@ function OverlayLegend({
   );
 }
 
+type NonEmptyScrollytellingChapters = [
+  ScrollytellingChapter,
+  ...ScrollytellingChapter[],
+];
+
 function ScrollytellingBlock({
   chapters,
   startIndex,
@@ -187,7 +193,7 @@ function ScrollytellingBlock({
   onChapterClick,
   registerBridge,
 }: {
-  chapters: ScrollytellingChapter[];
+  chapters: NonEmptyScrollytellingChapters;
   startIndex: number;
   datasetMap: Map<string, Dataset | null>;
   connectionMap?: Map<string, Connection>;
@@ -293,8 +299,6 @@ function ScrollytellingBlock({
     const chapter = chapters[activeIndex];
     if (!chapter) return;
 
-    setBasemap(chapter.map_state.basemap);
-
     setTransitionDuration(chapterTransitionDuration(chapter.transition));
 
     setCamera({
@@ -374,23 +378,23 @@ function ScrollytellingBlock({
     setTripsTime(beatTime(tMin, tMax, activeIndex, chapters.length));
   }, [hasTrajectory, tMin, tMax, activeIndex, chapters.length]);
 
-  const tripsContext = useMemo(() => {
+  const tripsSourceContext = useMemo(() => {
     if (!hasTrajectory) return undefined;
     const timeByDatasetId = new Map<string, number>();
     for (const ds of trajDatasets) {
-      if (ds) timeByDatasetId.set(ds.id, tripsTime);
+      if (ds) timeByDatasetId.set(ds.id, 0);
     }
     return { tracksByDatasetId, timeByDatasetId };
-  }, [hasTrajectory, trajDatasets, tracksByDatasetId, tripsTime]);
+  }, [hasTrajectory, trajDatasets, tracksByDatasetId]);
 
-  const { layers: chapterLayers, renderMetadata } = useMemo(
+  const { layers: sourceChapterLayers, renderMetadata } = useMemo(
     () =>
       buildLayersForChapter(
         chapters[activeIndex],
         datasetMap,
         connectionMap,
         zarrNodeMap,
-        tripsContext
+        tripsSourceContext
       ),
     [
       datasetMap,
@@ -398,9 +402,27 @@ function ScrollytellingBlock({
       activeIndex,
       chapters,
       zarrNodeMap,
-      tripsContext,
+      tripsSourceContext,
     ]
   );
+
+  const activeTrajectoryDatasetId =
+    activeChapter &&
+    datasetMap.get(activeChapter.layer_config.dataset_id)?.dataset_type ===
+      "trajectory"
+      ? activeChapter.layer_config.dataset_id
+      : null;
+  const trajectoryLayerId = activeTrajectoryDatasetId
+    ? `trips-story-${activeTrajectoryDatasetId}`
+    : null;
+  const chapterLayers = useMemo(() => {
+    if (!trajectoryLayerId) return sourceChapterLayers;
+    return sourceChapterLayers.map((layer) =>
+      layer.id === trajectoryLayerId
+        ? (layer as TripsLayer).clone({ currentTime: tripsTime })
+        : layer
+    );
+  }, [sourceChapterLayers, trajectoryLayerId, tripsTime]);
 
   const activeLayerId =
     activeChapter?.layer_config?.connection_id ??
@@ -545,8 +567,17 @@ function ScrollytellingBlock({
   );
   const atomicScene = useAtomicStoryScene(targetScene);
   const visibleScene = atomicScene.payload;
-  visibleChapterRef.current = visibleScene.chapter ?? chapters[0];
   const layers = atomicScene.layers;
+
+  useEffect(() => {
+    visibleChapterRef.current = visibleScene.chapter ?? chapters[0];
+  }, [visibleScene.chapter, chapters]);
+
+  useEffect(() => {
+    if (visibleScene.chapter) {
+      setBasemap(visibleScene.chapter.map_state.basemap);
+    }
+  }, [visibleScene.chapter]);
 
   const handleAfterRender = useCallback(() => {
     atomicScene.onAfterRender();
@@ -569,10 +600,12 @@ function ScrollytellingBlock({
             basemap={basemap}
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
-            terrain={activeChapter?.map_state.terrain}
-            globe={activeChapter?.map_state.globe}
-            buildings={activeChapter?.map_state.buildings}
-            allowTerrain={chapterAllowsTerrain(activeChapter?.layer_config)}
+            terrain={visibleScene.chapter?.map_state.terrain}
+            globe={visibleScene.chapter?.map_state.globe}
+            buildings={visibleScene.chapter?.map_state.buildings}
+            allowTerrain={chapterAllowsTerrain(
+              visibleScene.chapter?.layer_config
+            )}
             interactive={false}
             copcItem={visibleScene.copcItem}
             copcColorMode={visibleScene.copcColorMode}
@@ -816,9 +849,11 @@ export function StoryMapRuntime({
     );
   }
 
+  if (block.chapters.length === 0) return null;
+
   return (
     <ScrollytellingBlock
-      chapters={block.chapters}
+      chapters={block.chapters as NonEmptyScrollytellingChapters}
       startIndex={block.startIndex}
       datasetMap={datasetMap}
       connectionMap={connectionMap}

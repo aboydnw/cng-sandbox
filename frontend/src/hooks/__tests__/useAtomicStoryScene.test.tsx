@@ -7,7 +7,16 @@ interface FakeLayer extends Layer {
   ready: boolean;
 }
 
-function fakeLayer(id: string, ready = false, opacity = 1): FakeLayer {
+interface CloneTracker {
+  count: number;
+}
+
+function fakeLayer(
+  id: string,
+  ready = false,
+  opacity = 1,
+  tracker: CloneTracker = { count: 0 }
+): FakeLayer {
   const layer = {
     id,
     ready,
@@ -16,16 +25,20 @@ function fakeLayer(id: string, ready = false, opacity = 1): FakeLayer {
       return this.ready;
     },
     clone(next: { id: string; opacity: number }) {
-      return fakeLayer(next.id, this.ready, next.opacity);
+      tracker.count += 1;
+      return fakeLayer(next.id, this.ready, next.opacity, tracker);
     },
   };
   return layer as unknown as FakeLayer;
 }
 
-function scene(key: string, layer: FakeLayer): StoryScene<{ chapter: string }> {
+function scene(
+  key: string,
+  layer: FakeLayer | FakeLayer[]
+): StoryScene<{ chapter: string }> {
   return {
     key,
-    layers: [layer],
+    layers: Array.isArray(layer) ? layer : [layer],
     payload: { chapter: key },
   };
 }
@@ -96,5 +109,24 @@ describe("useAtomicStoryScene", () => {
     expect(result.current.payload.chapter).toBe("C");
     expect(result.current.layers).toHaveLength(1);
     expect(result.current.layers[0].id).toContain("vector-c");
+  });
+
+  it("reuses unchanged prepared layers during same-scene animation updates", () => {
+    const tripsTracker = { count: 0 };
+    const overlayTracker = { count: 0 };
+    const trips = fakeLayer("trips", true, 1, tripsTracker);
+    const overlay = fakeLayer("overlay", true, 1, overlayTracker);
+    const { rerender } = renderHook(({ value }) => useAtomicStoryScene(value), {
+      initialProps: { value: scene("A", [trips, overlay]) },
+    });
+
+    expect(tripsTracker.count).toBe(1);
+    expect(overlayTracker.count).toBe(1);
+
+    const nextTripsFrame = fakeLayer("trips", true, 1, tripsTracker);
+    rerender({ value: scene("A", [nextTripsFrame, overlay]) });
+
+    expect(tripsTracker.count).toBe(2);
+    expect(overlayTracker.count).toBe(1);
   });
 });

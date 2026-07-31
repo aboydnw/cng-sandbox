@@ -9,6 +9,8 @@ export interface StoryScene<Payload> {
 
 interface PreparedStoryScene<Payload> extends StoryScene<Payload> {
   generation: number;
+  sourceLayers: Layer[];
+  hidden: boolean;
 }
 
 interface AtomicSceneState<Payload> {
@@ -16,17 +18,15 @@ interface AtomicSceneState<Payload> {
   pending: PreparedStoryScene<Payload> | null;
 }
 
-function cloneSceneLayers(
-  layers: Layer[],
+function cloneSceneLayer(
+  layer: Layer,
   generation: number,
   hidden: boolean
-): Layer[] {
-  return layers.map((layer) =>
-    layer.clone({
-      id: `${layer.id}--story-scene-${generation}`,
-      opacity: hidden ? 0 : layer.props.opacity,
-    })
-  );
+): Layer {
+  return layer.clone({
+    id: `${layer.id}--story-scene-${generation}`,
+    opacity: hidden ? 0 : layer.props.opacity,
+  });
 }
 
 function prepareScene<Payload>(
@@ -37,13 +37,45 @@ function prepareScene<Payload>(
   return {
     ...scene,
     generation,
-    layers: cloneSceneLayers(scene.layers, generation, hidden),
+    sourceLayers: scene.layers,
+    hidden,
+    layers: scene.layers.map((layer) =>
+      cloneSceneLayer(layer, generation, hidden)
+    ),
+  };
+}
+
+function refreshPreparedScene<Payload>(
+  current: PreparedStoryScene<Payload>,
+  scene: StoryScene<Payload>,
+  hidden: boolean
+): PreparedStoryScene<Payload> {
+  const currentBySourceId = new Map(
+    current.sourceLayers.map((source, index) => [
+      source.id,
+      { source, prepared: current.layers[index] },
+    ])
+  );
+
+  return {
+    ...scene,
+    generation: current.generation,
+    sourceLayers: scene.layers,
+    hidden,
+    layers: scene.layers.map((source) => {
+      const previous = currentBySourceId.get(source.id);
+      if (previous?.source === source && current.hidden === hidden) {
+        return previous.prepared;
+      }
+      return cloneSceneLayer(source, current.generation, hidden);
+    }),
   };
 }
 
 function pendingSceneIsReady<Payload>(
   scene: PreparedStoryScene<Payload>
 ): boolean {
+  // Empty or fully hidden scenes intentionally commit without waiting.
   return scene.layers.every((layer) => layer.isLoaded);
 }
 
@@ -93,14 +125,14 @@ export function useAtomicStoryScene<Payload>(scene: StoryScene<Payload>): {
       if (current.pending?.key !== scene.key) return current;
       return {
         ...current,
-        pending: prepareScene(scene, current.pending.generation, true),
+        pending: refreshPreparedScene(current.pending, scene, true),
       };
     });
   }, [pendingKey, scene]);
 
   const visibleScene = useMemo(() => {
     if (scene.key !== state.committed.key) return state.committed;
-    return prepareScene(scene, state.committed.generation, false);
+    return refreshPreparedScene(state.committed, scene, false);
   }, [scene, state.committed]);
 
   const onAfterRender = useCallback(() => {
@@ -112,7 +144,7 @@ export function useAtomicStoryScene<Payload>(scene: StoryScene<Payload>): {
       if (latest.key !== pending.key) return current;
 
       return {
-        committed: prepareScene(latest, pending.generation, false),
+        committed: refreshPreparedScene(pending, latest, false),
         pending: null,
       };
     });

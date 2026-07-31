@@ -27,6 +27,7 @@ import {
   registerCogConnection,
 } from "../lib/connections";
 import { pickRenderPath } from "../lib/geoparquet/pickRenderPath";
+import { CREATE_MAP_INTENT } from "../lib/creationIntents";
 import type { UrlDetectionResult } from "../hooks/useUrlDetection";
 import type { Connection } from "../types";
 
@@ -347,9 +348,9 @@ export default function UploadPage() {
         >
           <PathCard
             icon={<FolderOpen size={36} />}
-            title="Create a map"
+            title={CREATE_MAP_INTENT.label}
             description="Upload a file or connect to a cloud source"
-            ctaLabel="Add data"
+            ctaLabel="Upload or connect data"
             onClick={handleVisualizeCardClick}
             expanded={visualizeCardExpanded}
             faded={false}

@@ -20,6 +20,7 @@ import type { Dataset, Connection } from "../types";
 import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { cameraFromBounds } from "../lib/layers";
 import { toaster } from "../lib/toaster";
+import { CREATE_STORY_INTENT } from "../lib/creationIntents";
 
 interface CopcStyle {
   colorMode: CopcColorMode;
@@ -241,7 +242,7 @@ export function SaveAsStoryChapter({
               cursor="pointer"
               _hover={{ bg: "brand.bgSubtle" }}
             >
-              + New story from this
+              {CREATE_STORY_INTENT.label} from this
             </Menu.Item>
             {stories.length > 0 && (
               <Menu.Separator borderColor="brand.border" my={1} />

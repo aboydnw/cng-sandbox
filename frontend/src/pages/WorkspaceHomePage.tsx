@@ -17,6 +17,7 @@ import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
+import { CREATE_MAP_INTENT, CREATE_STORY_INTENT } from "../lib/creationIntents";
 
 function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
   items: T[]
@@ -115,10 +116,14 @@ export default function WorkspaceHomePage() {
           actions={
             <>
               <Button asChild size="sm" variant="outline">
-                <Link to={workspacePath("/quick-map")}>Add data</Link>
+                <Link to={workspacePath(CREATE_MAP_INTENT.path)}>
+                  {CREATE_MAP_INTENT.label}
+                </Link>
               </Button>
               <Button asChild size="sm">
-                <Link to={workspacePath("/story/new")}>New story</Link>
+                <Link to={workspacePath(CREATE_STORY_INTENT.path)}>
+                  {CREATE_STORY_INTENT.label}
+                </Link>
               </Button>
             </>
           }
@@ -132,7 +137,8 @@ export default function WorkspaceHomePage() {
               Start your first map or story
             </Heading>
             <Text fontSize="sm" color="gray.500" mb={6}>
-              Add your own data, or open an example story and make it yours.
+              Create a map with your own data, or open an example story and make
+              it yours.
             </Text>
             {exampleStories.length === 0 ? (
               <Text fontSize="sm" color="gray.500">
@@ -164,8 +170,6 @@ export default function WorkspaceHomePage() {
               title="Recent stories"
               viewAllLabel="View all stories"
               viewAllHref={workspacePath("/stories")}
-              actionLabel="New story"
-              actionHref={workspacePath("/story/new")}
               emptyText="No stories yet."
             >
               {recentStories.map((s) => (
@@ -184,8 +188,6 @@ export default function WorkspaceHomePage() {
               title="Recent data"
               viewAllLabel="View all data"
               viewAllHref={workspacePath("/data")}
-              actionLabel="Quick map"
-              actionHref={workspacePath("/quick-map")}
               emptyText="No datasets yet."
             >
               {recentDatasets.map((d) => (
@@ -244,8 +246,6 @@ interface SectionProps {
   title: string;
   viewAllLabel: string;
   viewAllHref: string;
-  actionLabel: string;
-  actionHref: string;
   emptyText: string;
   children: React.ReactNode;
 }
@@ -254,8 +254,6 @@ function Section({
   title,
   viewAllLabel,
   viewAllHref,
-  actionLabel,
-  actionHref,
   emptyText,
   children,
 }: SectionProps) {
@@ -268,16 +266,6 @@ function Section({
         <Heading size="md" color="gray.700">
           {title}
         </Heading>
-        <Link to={actionHref}>
-          <Button
-            size="sm"
-            bg="brand.orange"
-            color="white"
-            _hover={{ bg: "brand.orangeHover" }}
-          >
-            {actionLabel}
-          </Button>
-        </Link>
       </Flex>
       {hasChildren ? (
         <Box>{children}</Box>

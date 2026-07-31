@@ -27,6 +27,7 @@ import { StatePanel } from "../components/ui/StatePanel";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { CREATE_MAP_INTENT } from "../lib/creationIntents";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -130,12 +131,12 @@ export default function DataPage() {
       <Box as="main" id="main-content" maxW="960px" mx="auto" py={8} px={4}>
         <PageHeader
           title="Data"
-          description="Open uploaded files and connected cloud sources, or add data for a new map."
+          description="Open uploaded files and connected cloud sources, or create a map from new data."
           actions={
             <>
               <ExampleDataToggle onChanged={reload} />
-              <Link to={workspacePath("/quick-map")}>
-                <Button size="sm">Add data</Button>
+              <Link to={workspacePath(CREATE_MAP_INTENT.path)}>
+                <Button size="sm">{CREATE_MAP_INTENT.label}</Button>
               </Link>
             </>
           }
@@ -173,7 +174,9 @@ export default function DataPage() {
                   description="Upload a file or connect cloud data to create your first map."
                   action={
                     <Button asChild size="sm">
-                      <Link to={workspacePath("/quick-map")}>Add data</Link>
+                      <Link to={workspacePath(CREATE_MAP_INTENT.path)}>
+                        {CREATE_MAP_INTENT.label}
+                      </Link>
                     </Button>
                   }
                 />

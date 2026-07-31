@@ -189,6 +189,30 @@ describe("WorkspaceHomePage", () => {
     ).toHaveAttribute("href", "/w/test-workspace/data");
   });
 
+  it("shows each primary creation action once", async () => {
+    mockListStories.mockResolvedValue([
+      {
+        id: "s-seed",
+        title: "Seed story",
+        chapters: [],
+        is_example: false,
+      },
+    ]);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+    renderHome();
+
+    expect(
+      await screen.findAllByRole("link", { name: "Create story" })
+    ).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: "Create map" })).toHaveLength(1);
+    expect(
+      screen.queryByRole("link", { name: /quick map|add data|new story/i })
+    ).not.toBeInTheDocument();
+  });
+
   it("shows example story clone cards when the workspace is empty", async () => {
     mockListStories.mockResolvedValue([
       {

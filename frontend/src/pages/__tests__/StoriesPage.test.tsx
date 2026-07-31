@@ -84,15 +84,15 @@ import {
 import type { Story } from "../../lib/story/types";
 
 describe("StoriesPage layout", () => {
-  it("renders a 'Quick map' link in the header pointing to /quick-map", async () => {
+  it("renders a 'Create map' link in the header pointing to /quick-map", async () => {
     renderStoriesPage();
-    const link = await screen.findByRole("link", { name: /quick map/i });
+    const link = await screen.findByRole("link", { name: /create map/i });
     expect(link.getAttribute("href")).toBe("/w/test-workspace/quick-map");
   });
 
-  it("renders a 'New story' link in the header pointing to /story/new", async () => {
+  it("renders a 'Create story' link in the header pointing to /story/new", async () => {
     renderStoriesPage();
-    const link = await screen.findByRole("link", { name: /new story/i });
+    const link = await screen.findByRole("link", { name: /create story/i });
     expect(link.getAttribute("href")).toBe("/w/test-workspace/story/new");
   });
 });

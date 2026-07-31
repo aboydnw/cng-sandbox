@@ -3,6 +3,7 @@ import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
 import { CloudArrowUp, File, X } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
 import { formatBytes } from "../utils/format";
+import { CREATE_MAP_INTENT } from "../lib/creationIntents";
 
 const ALLOWED_EXTENSIONS = [
   ".tif",
@@ -310,7 +311,7 @@ export function FileUploader({
               setSelectedFiles([]);
             }}
           >
-            Create map
+            {CREATE_MAP_INTENT.label}
           </Button>
         </Flex>
       )}

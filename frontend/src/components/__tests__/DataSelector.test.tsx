@@ -81,8 +81,25 @@ describe("DataSelector", () => {
       />
     );
     fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByText("Upload new file"));
+    fireEvent.click(screen.getByText("Upload data"));
     expect(onUpload).toHaveBeenCalled();
+  });
+
+  it("calls onAddConnectionClick from dropdown", () => {
+    const onConnect = vi.fn();
+    renderWithChakra(
+      <DataSelector
+        items={DATASETS}
+        activeId="d1"
+        activeSource="dataset"
+        onSelect={vi.fn()}
+        onUploadClick={vi.fn()}
+        onAddConnectionClick={onConnect}
+      />
+    );
+    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByText("Connect data"));
+    expect(onConnect).toHaveBeenCalled();
   });
 
   it("labels trajectory and point-cloud datasets distinctly", () => {

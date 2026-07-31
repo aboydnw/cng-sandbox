@@ -12,6 +12,7 @@ import { StatePanel } from "../components/ui/StatePanel";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { CREATE_MAP_INTENT, CREATE_STORY_INTENT } from "../lib/creationIntents";
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
@@ -82,18 +83,18 @@ export default function StoriesPage() {
           description="Build and publish narratives that combine maps, data, images, charts, and video."
           actions={
             <>
-              <Link to={workspacePath("/quick-map")}>
+              <Link to={workspacePath(CREATE_MAP_INTENT.path)}>
                 <Button
                   size="sm"
                   variant="outline"
                   borderColor="brand.border"
                   color="brand.brown"
                 >
-                  Quick map
+                  {CREATE_MAP_INTENT.label}
                 </Button>
               </Link>
-              <Link to={workspacePath("/story/new")}>
-                <Button size="sm">New story</Button>
+              <Link to={workspacePath(CREATE_STORY_INTENT.path)}>
+                <Button size="sm">{CREATE_STORY_INTENT.label}</Button>
               </Link>
             </>
           }
@@ -112,10 +113,12 @@ export default function StoriesPage() {
         ) : userStories.length === 0 ? (
           <StatePanel
             title="No stories yet"
-            description="Create a story to combine maps, narrative, charts, images, and video."
+            description={CREATE_STORY_INTENT.description}
             action={
               <Button asChild size="sm">
-                <Link to={workspacePath("/story/new")}>Create a story</Link>
+                <Link to={workspacePath(CREATE_STORY_INTENT.path)}>
+                  {CREATE_STORY_INTENT.label}
+                </Link>
               </Button>
             }
           />

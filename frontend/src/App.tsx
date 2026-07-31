@@ -1,25 +1,42 @@
+import { lazy, Suspense } from "react";
+import { Flex } from "@chakra-ui/react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import {
   WorkspaceProvider,
   WorkspaceRedirect,
   useWorkspace,
 } from "./hooks/useWorkspace";
-import UploadPage from "./pages/UploadPage";
-import MapPage from "./pages/MapPage";
-import ExpiredPage from "./pages/ExpiredPage";
-import DataPage from "./pages/DataPage";
-import StoriesPage from "./pages/StoriesPage";
-import WorkspaceHomePage from "./pages/WorkspaceHomePage";
-import StoryReaderPage from "./pages/StoryReaderPage";
-import StoryEditorPage from "./pages/StoryEditorPage";
-import StoryEmbedPage from "./pages/StoryEmbedPage";
-import AboutPage from "./pages/AboutPage";
-import DiscoverPage from "./pages/DiscoverPage";
-import DiscoverDatasetPage from "./pages/DiscoverDatasetPage";
-import LandingPage from "./pages/LandingPage";
 import { Toaster } from "./components/ui/toaster";
 import { toaster } from "./lib/toaster";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { BrandSpinner } from "./components/ui/BrandSpinner";
+
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const DataPage = lazy(() => import("./pages/DataPage"));
+const DiscoverDatasetPage = lazy(() => import("./pages/DiscoverDatasetPage"));
+const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
+const ExpiredPage = lazy(() => import("./pages/ExpiredPage"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const MapPage = lazy(() => import("./pages/MapPage"));
+const StoriesPage = lazy(() => import("./pages/StoriesPage"));
+const StoryEditorPage = lazy(() => import("./pages/StoryEditorPage"));
+const StoryEmbedPage = lazy(() => import("./pages/StoryEmbedPage"));
+const StoryReaderPage = lazy(() => import("./pages/StoryReaderPage"));
+const UploadPage = lazy(() => import("./pages/UploadPage"));
+const WorkspaceHomePage = lazy(() => import("./pages/WorkspaceHomePage"));
+
+function RouteLoadingFallback() {
+  return (
+    <Flex
+      minH="100vh"
+      align="center"
+      justify="center"
+      aria-label="Loading page"
+    >
+      <BrandSpinner size={32} />
+    </Flex>
+  );
+}
 
 function StoryReaderRedirect() {
   const { id } = useParams<{ id: string }>();
@@ -64,16 +81,18 @@ export default function App() {
   return (
     <>
       <ErrorBoundary>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
-          <Route path="/map/connection/:id" element={<MapPage shared />} />
-          <Route path="/map/:id" element={<MapPage shared />} />
-          <Route path="/story/:id" element={<StoryReaderPage />} />
-          <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
-          <Route path="*" element={<WorkspaceRedirect />} />
-        </Routes>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
+            <Route path="/map/connection/:id" element={<MapPage shared />} />
+            <Route path="/map/:id" element={<MapPage shared />} />
+            <Route path="/story/:id" element={<StoryReaderPage />} />
+            <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
+            <Route path="*" element={<WorkspaceRedirect />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
       <Toaster toaster={toaster} />
     </>

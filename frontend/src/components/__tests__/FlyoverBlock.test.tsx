@@ -14,8 +14,13 @@ vi.mock("../UnifiedMap", () => ({
   UnifiedMap: (props: any) => {
     capturedProps = props;
     useEffect(() => {
+      const instance = { getMap: () => fakeMap };
+      if (typeof props.mapRef === "function") {
+        props.mapRef(instance);
+        return () => props.mapRef(null);
+      }
       if (props.mapRef && typeof props.mapRef === "object") {
-        props.mapRef.current = { getMap: () => fakeMap };
+        props.mapRef.current = instance;
       }
     }, [props]);
     return <div data-testid="unified-map" />;

@@ -1,0 +1,40 @@
+{
+  "tolerancePercent": 5,
+  "baselines": {
+    "bootstrap": {
+      "entry": "index.html",
+      "rawBytes": 589532,
+      "gzipBytes": 177830
+    },
+    "workspace": {
+      "entry": "src/pages/WorkspaceHomePage.tsx",
+      "rawBytes": 237560,
+      "gzipBytes": 88831
+    },
+    "storyReader": {
+      "entry": "src/pages/StoryReaderPage.tsx",
+      "rawBytes": 1548680,
+      "gzipBytes": 453752
+    },
+    "storyEditor": {
+      "entry": "src/pages/StoryEditorPage.tsx",
+      "rawBytes": 2499943,
+      "gzipBytes": 731890
+    },
+    "mapViewer": {
+      "entry": "src/pages/MapPage.tsx",
+      "rawBytes": 2852122,
+      "gzipBytes": 827340
+    },
+    "storyMapRuntime": {
+      "entry": "src/components/StoryMapRuntime.tsx",
+      "rawBytes": 3340283,
+      "gzipBytes": 937506
+    },
+    "largestSynchronousAsset": {
+      "entry": "assets/echarts-D0s6Fs3T.js",
+      "rawBytes": 1125977,
+      "gzipBytes": 370954
+    }
+  }
+}

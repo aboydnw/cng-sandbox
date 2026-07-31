@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Box, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
@@ -12,6 +12,7 @@ import { useFlyoverScroll } from "../lib/story/flyover/useScrollProgress";
 import { flyoverEntryMapState } from "../lib/story/types";
 import type { FlyoverChapter } from "../lib/story/types";
 import type { Connection, Dataset } from "../types";
+import { markStoryPerformance } from "../lib/story/performance";
 
 const noop = () => {};
 
@@ -43,6 +44,11 @@ export function FlyoverBlock({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapHandle | null>(null);
   const [progress, setProgress] = useState(0);
+  const firstDataFrameRef = useRef(false);
+  const handleMapRef = useCallback((instance: MapHandle | null) => {
+    mapRef.current = instance;
+    if (instance) markStoryPerformance("story-map-engine-ready");
+  }, []);
 
   const entry = useMemo(() => flyoverEntryMapState(chapter), [chapter]);
   const entryCamera = useMemo(
@@ -60,6 +66,12 @@ export function FlyoverBlock({
     () => buildLayersForChapter(chapter, datasetMap, connectionMap),
     [chapter, datasetMap, connectionMap]
   );
+
+  const handleAfterRender = useCallback(() => {
+    if (layers.length === 0 || firstDataFrameRef.current) return;
+    firstDataFrameRef.current = true;
+    markStoryPerformance("story-first-data-frame");
+  }, [layers.length]);
 
   const count = chapter.keyframes.length;
 
@@ -115,7 +127,8 @@ export function FlyoverBlock({
           interactive={false}
           scrubbing
           fadeDuration={0}
-          mapRef={mapRef}
+          mapRef={handleMapRef}
+          onAfterRender={handleAfterRender}
         />
 
         {/* Intro card: title + narrative, visible around the start */}

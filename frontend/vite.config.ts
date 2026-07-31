@@ -17,6 +17,7 @@ export default defineConfig(
     },
     build: {
       target: "esnext",
+      manifest: true,
     },
     server: {
       host: true,

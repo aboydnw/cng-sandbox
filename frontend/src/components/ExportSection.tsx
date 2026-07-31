@@ -104,6 +104,7 @@ export function ExportSection({
             import.meta.env.VITE_VIEWER_ORIGIN ?? window.location.origin
           }
           storyId={story.id}
+          storyTitle={story.title}
           configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
         />
       </Box>

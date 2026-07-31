@@ -53,21 +53,21 @@ function renderApp(route: string) {
   );
 }
 
-test("/map/:id renders MapPage with shared=true", () => {
+test("/map/:id renders MapPage with shared=true", async () => {
   renderApp("/map/test-dataset-id");
-  const el = screen.getByTestId("map-page");
+  const el = await screen.findByTestId("map-page");
   expect(el).toHaveAttribute("data-shared", "true");
 });
 
-test("/map/connection/:id renders MapPage with shared=true", () => {
+test("/map/connection/:id renders MapPage with shared=true", async () => {
   renderApp("/map/connection/test-conn-id");
-  const el = screen.getByTestId("map-page");
+  const el = await screen.findByTestId("map-page");
   expect(el).toHaveAttribute("data-shared", "true");
 });
 
-test("/story/:id renders StoryReaderPage", () => {
+test("/story/:id renders StoryReaderPage", async () => {
   renderApp("/story/test-story-id");
-  expect(screen.getByTestId("story-reader")).toBeInTheDocument();
+  expect(await screen.findByTestId("story-reader")).toBeInTheDocument();
 });
 
 vi.mock("../pages/LandingPage", () => ({
@@ -86,29 +86,29 @@ vi.mock("../hooks/useWorkspace", async (importOriginal) => {
   };
 });
 
-test("/ renders LandingPage (no auto-redirect to a workspace)", () => {
+test("/ renders LandingPage (no auto-redirect to a workspace)", async () => {
   renderApp("/");
-  expect(screen.getByTestId("landing-page")).toBeInTheDocument();
+  expect(await screen.findByTestId("landing-page")).toBeInTheDocument();
 });
 
-test("/about renders the public AboutPage without a workspace", () => {
+test("/about renders the public AboutPage without a workspace", async () => {
   renderApp("/about");
-  expect(screen.getByTestId("about-page")).toBeInTheDocument();
+  expect(await screen.findByTestId("about-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/ renders the WorkspaceHomePage", () => {
+test("/w/:workspaceId/ renders the WorkspaceHomePage", async () => {
   renderApp("/w/abc12345/");
-  expect(screen.getByTestId("workspace-home-page")).toBeInTheDocument();
+  expect(await screen.findByTestId("workspace-home-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/quick-map renders the workspace UploadPage", () => {
+test("/w/:workspaceId/quick-map renders the workspace UploadPage", async () => {
   renderApp("/w/abc12345/quick-map");
-  expect(screen.getByTestId("upload-page")).toBeInTheDocument();
+  expect(await screen.findByTestId("upload-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/stories renders the StoriesPage", () => {
+test("/w/:workspaceId/stories renders the StoriesPage", async () => {
   renderApp("/w/abc12345/stories");
-  expect(screen.getByTestId("stories-page")).toBeInTheDocument();
+  expect(await screen.findByTestId("stories-page")).toBeInTheDocument();
 });
 
 test("unknown public path falls through to WorkspaceRedirect", () => {

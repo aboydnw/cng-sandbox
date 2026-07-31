@@ -8,7 +8,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import {
   X as XIcon,
   ArrowCounterClockwise,
@@ -25,13 +25,6 @@ import { UnifiedMap } from "../components/UnifiedMap";
 import { ChapterList } from "../components/ChapterList";
 import { NarrativeEditor } from "../components/NarrativeEditor";
 import { OverlayLayersEditor } from "../components/OverlayLayersEditor";
-import { OverlayPicker } from "../components/OverlayPicker";
-import { FlyoverKeyframePanel } from "../components/flyover/FlyoverKeyframePanel";
-import { VideoChapterEditor } from "../components/editor/VideoChapterEditor";
-import { UploadModal } from "../components/UploadModal";
-import { ConnectionModal } from "../components/ConnectionModal";
-import { PublishDialog } from "../components/PublishDialog";
-import { ExportDialog } from "../components/ExportDialog";
 import { Header } from "../components/Header";
 import { SaveStatus } from "../components/SaveStatus";
 import { RenderModeIndicator } from "../components/RenderModeIndicator";
@@ -41,11 +34,67 @@ import {
   DEFAULT_MAP_STATE,
 } from "../lib/story";
 import { chapterAllowsTerrain } from "../lib/story/terrainPolicy";
-import { ChapterPreview } from "../components/editor/ChapterPreview";
-import { ImageChapterEditor } from "../components/editor/ImageChapterEditor";
-import { ChartChapterEditor } from "../components/editor/ChartChapterEditor";
 import { StatePanel } from "../components/ui/StatePanel";
 import { BrandSpinner } from "../components/ui/BrandSpinner";
+
+const ChapterPreview = lazy(() =>
+  import("../components/editor/ChapterPreview").then((module) => ({
+    default: module.ChapterPreview,
+  }))
+);
+const ChartChapterEditor = lazy(() =>
+  import("../components/editor/ChartChapterEditor").then((module) => ({
+    default: module.ChartChapterEditor,
+  }))
+);
+const ConnectionModal = lazy(() =>
+  import("../components/ConnectionModal").then((module) => ({
+    default: module.ConnectionModal,
+  }))
+);
+const ExportDialog = lazy(() =>
+  import("../components/ExportDialog").then((module) => ({
+    default: module.ExportDialog,
+  }))
+);
+const FlyoverKeyframePanel = lazy(() =>
+  import("../components/flyover/FlyoverKeyframePanel").then((module) => ({
+    default: module.FlyoverKeyframePanel,
+  }))
+);
+const ImageChapterEditor = lazy(() =>
+  import("../components/editor/ImageChapterEditor").then((module) => ({
+    default: module.ImageChapterEditor,
+  }))
+);
+const OverlayPicker = lazy(() =>
+  import("../components/OverlayPicker").then((module) => ({
+    default: module.OverlayPicker,
+  }))
+);
+const PublishDialog = lazy(() =>
+  import("../components/PublishDialog").then((module) => ({
+    default: module.PublishDialog,
+  }))
+);
+const UploadModal = lazy(() =>
+  import("../components/UploadModal").then((module) => ({
+    default: module.UploadModal,
+  }))
+);
+const VideoChapterEditor = lazy(() =>
+  import("../components/editor/VideoChapterEditor").then((module) => ({
+    default: module.VideoChapterEditor,
+  }))
+);
+
+function EditorPanelFallback() {
+  return (
+    <Flex minH="160px" align="center" justify="center" color="fg.muted">
+      <BrandSpinner size={20} />
+    </Flex>
+  );
+}
 
 function TooltipCard({
   text,
@@ -556,10 +605,12 @@ export default function StoryEditorPage() {
             }}
           >
             {activeChapter && (
-              <ChapterPreview
-                chapter={activeChapter}
-                onChange={updateChapter}
-              />
+              <Suspense fallback={<EditorPanelFallback />}>
+                <ChapterPreview
+                  chapter={activeChapter}
+                  onChange={updateChapter}
+                />
+              </Suspense>
             )}
           </Box>
         )}
@@ -587,129 +638,144 @@ export default function StoryEditorPage() {
               onDismiss={() => dismiss("narrative")}
             />
           )}
-          {activeChapter && activeChapter.type === "chart" ? (
-            <ChartChapterEditor
-              chapter={activeChapter}
-              onChange={updateChapter}
-              onChapterTypeChange={updateChapterType}
-            />
-          ) : activeChapter && activeChapter.type === "image" ? (
-            <ImageChapterEditor
-              chapter={activeChapter}
-              onChange={updateChapter}
-              onChapterTypeChange={updateChapterType}
-            />
-          ) : activeChapter && activeChapter.type === "video" ? (
-            <VideoChapterEditor
-              chapter={activeChapter}
-              onChange={(next) => updateChapter(next)}
-              onChapterTypeChange={updateChapterType}
-            />
-          ) : activeChapter ? (
-            <>
-              <NarrativeEditor
-                chapterType={activeChapter.type}
+          <Suspense fallback={<EditorPanelFallback />}>
+            {activeChapter && activeChapter.type === "chart" ? (
+              <ChartChapterEditor
+                chapter={activeChapter}
+                onChange={updateChapter}
                 onChapterTypeChange={updateChapterType}
-                title={activeChapter.title}
-                narrative={activeChapter.narrative}
-                onTitleChange={updateChapterTitle}
-                onNarrativeChange={updateChapterNarrative}
-                layerConfig={
-                  "layer_config" in activeChapter && activeChapter.layer_config
-                    ? activeChapter.layer_config
-                    : DEFAULT_LAYER_CONFIG
-                }
-                onLayerConfigChange={updateChapterLayerConfig}
-                datasetType={activeDataset?.dataset_type ?? "raster"}
-                datasets={allDatasets}
-                connections={allConnections}
-                onUploadClick={() => setUploadModalOpen(true)}
-                onAddConnectionClick={() => setConnectionModalOpen(true)}
-                overlayPosition={
-                  activeChapter.type === "scrollytelling"
-                    ? (activeChapter.overlay_position ?? "left")
-                    : "left"
-                }
-                onOverlayPositionChange={updateChapterOverlayPosition}
-                temporalTimesteps={activeDatasetTimesteps}
-                mapState={
-                  "map_state" in activeChapter
-                    ? activeChapter.map_state
-                    : DEFAULT_MAP_STATE
-                }
-                onMapStateChange={updateChapterMapState}
               />
-              {isMapBoundChapter(activeChapter) && (
-                <>
-                  <OverlayLayersEditor
-                    overlays={activeChapter.overlays ?? []}
-                    datasets={allDatasets}
-                    connections={allConnections}
-                    onChange={updateChapterOverlays}
-                    onAddClick={() => setOverlayPickerOpen(true)}
-                  />
-                  <OverlayPicker
-                    open={overlayPickerOpen}
-                    datasets={allDatasets.filter(
-                      (d) => d.dataset_type === "vector"
+            ) : activeChapter && activeChapter.type === "image" ? (
+              <ImageChapterEditor
+                chapter={activeChapter}
+                onChange={updateChapter}
+                onChapterTypeChange={updateChapterType}
+              />
+            ) : activeChapter && activeChapter.type === "video" ? (
+              <VideoChapterEditor
+                chapter={activeChapter}
+                onChange={(next) => updateChapter(next)}
+                onChapterTypeChange={updateChapterType}
+              />
+            ) : activeChapter ? (
+              <>
+                <NarrativeEditor
+                  chapterType={activeChapter.type}
+                  onChapterTypeChange={updateChapterType}
+                  title={activeChapter.title}
+                  narrative={activeChapter.narrative}
+                  onTitleChange={updateChapterTitle}
+                  onNarrativeChange={updateChapterNarrative}
+                  layerConfig={
+                    "layer_config" in activeChapter &&
+                    activeChapter.layer_config
+                      ? activeChapter.layer_config
+                      : DEFAULT_LAYER_CONFIG
+                  }
+                  onLayerConfigChange={updateChapterLayerConfig}
+                  datasetType={activeDataset?.dataset_type ?? "raster"}
+                  datasets={allDatasets}
+                  connections={allConnections}
+                  onUploadClick={() => setUploadModalOpen(true)}
+                  onAddConnectionClick={() => setConnectionModalOpen(true)}
+                  overlayPosition={
+                    activeChapter.type === "scrollytelling"
+                      ? (activeChapter.overlay_position ?? "left")
+                      : "left"
+                  }
+                  onOverlayPositionChange={updateChapterOverlayPosition}
+                  temporalTimesteps={activeDatasetTimesteps}
+                  mapState={
+                    "map_state" in activeChapter
+                      ? activeChapter.map_state
+                      : DEFAULT_MAP_STATE
+                  }
+                  onMapStateChange={updateChapterMapState}
+                />
+                {isMapBoundChapter(activeChapter) && (
+                  <>
+                    <OverlayLayersEditor
+                      overlays={activeChapter.overlays ?? []}
+                      datasets={allDatasets}
+                      connections={allConnections}
+                      onChange={updateChapterOverlays}
+                      onAddClick={() => setOverlayPickerOpen(true)}
+                    />
+                    {overlayPickerOpen && (
+                      <OverlayPicker
+                        open
+                        datasets={allDatasets.filter(
+                          (d) => d.dataset_type === "vector"
+                        )}
+                        connections={allConnections.filter(
+                          (c) =>
+                            (c.connection_type === "pmtiles" &&
+                              c.tile_type === "vector") ||
+                            c.connection_type === "xyz_vector"
+                        )}
+                        onClose={() => setOverlayPickerOpen(false)}
+                        onSelect={(overlay) => {
+                          updateChapterOverlays([
+                            ...(activeChapter.overlays ?? []),
+                            overlay,
+                          ]);
+                          setOverlayPickerOpen(false);
+                        }}
+                      />
                     )}
-                    connections={allConnections.filter(
-                      (c) =>
-                        (c.connection_type === "pmtiles" &&
-                          c.tile_type === "vector") ||
-                        c.connection_type === "xyz_vector"
-                    )}
-                    onClose={() => setOverlayPickerOpen(false)}
-                    onSelect={(overlay) => {
-                      updateChapterOverlays([
-                        ...(activeChapter.overlays ?? []),
-                        overlay,
-                      ]);
-                      setOverlayPickerOpen(false);
-                    }}
-                  />
-                </>
-              )}
-              {activeChapter.type === "flyover" && (
-                <Box px={4} pb={6}>
-                  <FlyoverKeyframePanel
-                    chapter={activeChapter}
-                    onChange={updateChapter}
-                    currentCamera={camera}
-                    onPreviewPose={previewFlyoverPose}
-                  />
-                </Box>
-              )}
-            </>
-          ) : (
-            <Flex h="100%" align="center" justify="center">
-              <Text color="gray.400">Select a chapter to edit</Text>
-            </Flex>
-          )}
+                  </>
+                )}
+                {activeChapter.type === "flyover" && (
+                  <Box px={4} pb={6}>
+                    <FlyoverKeyframePanel
+                      chapter={activeChapter}
+                      onChange={updateChapter}
+                      currentCamera={camera}
+                      onPreviewPose={previewFlyoverPose}
+                    />
+                  </Box>
+                )}
+              </>
+            ) : (
+              <Flex h="100%" align="center" justify="center">
+                <Text color="gray.400">Select a chapter to edit</Text>
+              </Flex>
+            )}
+          </Suspense>
         </Box>
       </Flex>
-      <UploadModal
-        open={uploadModalOpen}
-        onClose={() => setUploadModalOpen(false)}
-        onDatasetReady={handleDatasetReady}
-      />
-      <ConnectionModal
-        isOpen={connectionModalOpen}
-        onClose={() => setConnectionModalOpen(false)}
-        onCreated={handleConnectionCreated}
-      />
-      <PublishDialog
-        open={publishDialogOpen}
-        story={story}
-        shareUrl={`${window.location.origin}/story/${story.id}`}
-        onPublish={handlePublish}
-        onClose={() => setPublishDialogOpen(false)}
-      />
-      <ExportDialog
-        open={exportDialogOpen}
-        story={story}
-        onClose={() => setExportDialogOpen(false)}
-      />
+      <Suspense fallback={null}>
+        {uploadModalOpen && (
+          <UploadModal
+            open
+            onClose={() => setUploadModalOpen(false)}
+            onDatasetReady={handleDatasetReady}
+          />
+        )}
+        {connectionModalOpen && (
+          <ConnectionModal
+            isOpen
+            onClose={() => setConnectionModalOpen(false)}
+            onCreated={handleConnectionCreated}
+          />
+        )}
+        {publishDialogOpen && (
+          <PublishDialog
+            open
+            story={story}
+            shareUrl={`${window.location.origin}/story/${story.id}`}
+            onPublish={handlePublish}
+            onClose={() => setPublishDialogOpen(false)}
+          />
+        )}
+        {exportDialogOpen && (
+          <ExportDialog
+            open
+            story={story}
+            onClose={() => setExportDialogOpen(false)}
+          />
+        )}
+      </Suspense>
     </Box>
   );
 }

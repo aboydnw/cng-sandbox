@@ -3,6 +3,7 @@ import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
 import type { MapRef } from "react-map-gl/maplibre";
+import type { TripsLayer } from "@deck.gl/geo-layers";
 import { UnifiedMap } from "./UnifiedMap";
 import { MapChapter } from "./MapChapter";
 import { FlyoverBlock } from "./FlyoverBlock";
@@ -33,6 +34,8 @@ import {
   type MarkerHandle,
 } from "../lib/layers/highlightMarkers";
 import { markStoryPerformance } from "../lib/story/performance";
+import { useAtomicStoryScene } from "../hooks/useAtomicStoryScene";
+import { BrandSpinner } from "./ui/BrandSpinner";
 
 function resolveActiveLayers(
   chapter: ScrollytellingChapter | undefined,
@@ -177,6 +180,11 @@ function OverlayLegend({
   );
 }
 
+type NonEmptyScrollytellingChapters = [
+  ScrollytellingChapter,
+  ...ScrollytellingChapter[],
+];
+
 function ScrollytellingBlock({
   chapters,
   startIndex,
@@ -185,7 +193,7 @@ function ScrollytellingBlock({
   onChapterClick,
   registerBridge,
 }: {
-  chapters: ScrollytellingChapter[];
+  chapters: NonEmptyScrollytellingChapters;
   startIndex: number;
   datasetMap: Map<string, Dataset | null>;
   connectionMap?: Map<string, Connection>;
@@ -211,7 +219,7 @@ function ScrollytellingBlock({
   const stepsRef = useRef<HTMLDivElement>(null);
   const blockRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<ReturnType<typeof scrollama> | null>(null);
-  const activeIndexRef = useRef(0);
+  const visibleChapterRef = useRef(chapters[0]);
   const highlightTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const mapRef = useRef<MapRef | null>(null);
   const markerRegistry = useRef<Map<string, MarkerHandle>>(new Map());
@@ -230,10 +238,6 @@ function ScrollytellingBlock({
     registry.clear();
     setMapReady(instance != null);
   }, []);
-
-  useEffect(() => {
-    activeIndexRef.current = activeIndex;
-  }, [activeIndex]);
 
   useEffect(() => {
     const timeouts = highlightTimeouts.current;
@@ -294,8 +298,6 @@ function ScrollytellingBlock({
   useEffect(() => {
     const chapter = chapters[activeIndex];
     if (!chapter) return;
-
-    setBasemap(chapter.map_state.basemap);
 
     setTransitionDuration(chapterTransitionDuration(chapter.transition));
 
@@ -376,23 +378,23 @@ function ScrollytellingBlock({
     setTripsTime(beatTime(tMin, tMax, activeIndex, chapters.length));
   }, [hasTrajectory, tMin, tMax, activeIndex, chapters.length]);
 
-  const tripsContext = useMemo(() => {
+  const tripsSourceContext = useMemo(() => {
     if (!hasTrajectory) return undefined;
     const timeByDatasetId = new Map<string, number>();
     for (const ds of trajDatasets) {
-      if (ds) timeByDatasetId.set(ds.id, tripsTime);
+      if (ds) timeByDatasetId.set(ds.id, 0);
     }
     return { tracksByDatasetId, timeByDatasetId };
-  }, [hasTrajectory, trajDatasets, tracksByDatasetId, tripsTime]);
+  }, [hasTrajectory, trajDatasets, tracksByDatasetId]);
 
-  const { layers: chapterLayers, renderMetadata } = useMemo(
+  const { layers: sourceChapterLayers, renderMetadata } = useMemo(
     () =>
       buildLayersForChapter(
         chapters[activeIndex],
         datasetMap,
         connectionMap,
         zarrNodeMap,
-        tripsContext
+        tripsSourceContext
       ),
     [
       datasetMap,
@@ -400,9 +402,27 @@ function ScrollytellingBlock({
       activeIndex,
       chapters,
       zarrNodeMap,
-      tripsContext,
+      tripsSourceContext,
     ]
   );
+
+  const activeTrajectoryDatasetId =
+    activeChapter &&
+    datasetMap.get(activeChapter.layer_config.dataset_id)?.dataset_type ===
+      "trajectory"
+      ? activeChapter.layer_config.dataset_id
+      : null;
+  const trajectoryLayerId = activeTrajectoryDatasetId
+    ? `trips-story-${activeTrajectoryDatasetId}`
+    : null;
+  const chapterLayers = useMemo(() => {
+    if (!trajectoryLayerId) return sourceChapterLayers;
+    return sourceChapterLayers.map((layer) =>
+      layer.id === trajectoryLayerId
+        ? (layer as TripsLayer).clone({ currentTime: tripsTime })
+        : layer
+    );
+  }, [sourceChapterLayers, trajectoryLayerId, tripsTime]);
 
   const activeLayerId =
     activeChapter?.layer_config?.connection_id ??
@@ -411,16 +431,10 @@ function ScrollytellingBlock({
     ? layerVisibility[activeLayerId] === false
     : false;
 
-  const layers = useMemo(
+  const targetLayers = useMemo(
     () => (activeLayerHidden ? [] : chapterLayers),
     [activeLayerHidden, chapterLayers]
   );
-
-  const handleAfterRender = useCallback(() => {
-    if (layers.length === 0 || firstDataFrameRef.current) return;
-    firstDataFrameRef.current = true;
-    markStoryPerformance("story-first-data-frame");
-  }, [layers.length]);
 
   // Render agent highlights as maplibre Markers (not deck layers) so they
   // track terrain elevation and sit on elevated peaks instead of sinking to
@@ -486,7 +500,7 @@ function ScrollytellingBlock({
       },
       getActiveLayers: () =>
         resolveActiveLayers(
-          chapters[activeIndexRef.current],
+          visibleChapterRef.current,
           datasetMap,
           connectionMap,
           layerVisibilityRef.current
@@ -523,6 +537,55 @@ function ScrollytellingBlock({
     "elevation";
   const copcPointSize = activeChapter?.layer_config?.point_size ?? 2;
 
+  const targetScene = useMemo(
+    () => ({
+      key: `${activeChapter?.id ?? "missing"}:${activeLayerId ?? "none"}`,
+      layers: targetLayers,
+      payload: {
+        chapter: activeChapter,
+        dataset: activeDataset,
+        connection: activeConn,
+        hasConnection,
+        renderMetadata,
+        copcItem,
+        copcColorMode,
+        copcPointSize,
+      },
+    }),
+    [
+      activeChapter,
+      activeLayerId,
+      targetLayers,
+      activeDataset,
+      activeConn,
+      hasConnection,
+      renderMetadata,
+      copcItem,
+      copcColorMode,
+      copcPointSize,
+    ]
+  );
+  const atomicScene = useAtomicStoryScene(targetScene);
+  const visibleScene = atomicScene.payload;
+  const layers = atomicScene.layers;
+
+  useEffect(() => {
+    visibleChapterRef.current = visibleScene.chapter ?? chapters[0];
+  }, [visibleScene.chapter, chapters]);
+
+  useEffect(() => {
+    if (visibleScene.chapter) {
+      setBasemap(visibleScene.chapter.map_state.basemap);
+    }
+  }, [visibleScene.chapter]);
+
+  const handleAfterRender = useCallback(() => {
+    atomicScene.onAfterRender();
+    if (layers.length === 0 || firstDataFrameRef.current) return;
+    firstDataFrameRef.current = true;
+    markStoryPerformance("story-first-data-frame");
+  }, [atomicScene, layers.length]);
+
   return (
     <Box position="relative" ref={blockRef}>
       {/* Sticky map — stays fixed in viewport while steps scroll past */}
@@ -537,21 +600,24 @@ function ScrollytellingBlock({
             basemap={basemap}
             onBasemapChange={setBasemap}
             transitionDuration={transitionDuration}
-            terrain={activeChapter?.map_state.terrain}
-            globe={activeChapter?.map_state.globe}
-            buildings={activeChapter?.map_state.buildings}
-            allowTerrain={chapterAllowsTerrain(activeChapter?.layer_config)}
+            terrain={visibleScene.chapter?.map_state.terrain}
+            globe={visibleScene.chapter?.map_state.globe}
+            buildings={visibleScene.chapter?.map_state.buildings}
+            allowTerrain={chapterAllowsTerrain(
+              visibleScene.chapter?.layer_config
+            )}
             interactive={false}
-            copcItem={copcItem}
-            copcColorMode={copcColorMode}
-            copcPointSize={copcPointSize}
+            copcItem={visibleScene.copcItem}
+            copcColorMode={visibleScene.copcColorMode}
+            copcPointSize={visibleScene.copcPointSize}
           />
         )}
-        {renderMetadata && !(activeDataset === null && !hasConnection) && (
-          <Box position="absolute" top={3} right={3} zIndex={10}>
-            <RenderModeIndicator {...renderMetadata} />
-          </Box>
-        )}
+        {visibleScene.renderMetadata &&
+          !(visibleScene.dataset === null && !visibleScene.hasConnection) && (
+            <Box position="absolute" top={3} right={3} zIndex={10}>
+              <RenderModeIndicator {...visibleScene.renderMetadata} />
+            </Box>
+          )}
         {zarrError && (
           <Box
             position="absolute"
@@ -586,7 +652,7 @@ function ScrollytellingBlock({
             Couldn&apos;t load this trajectory: {tripsError}
           </Box>
         )}
-        {activeDataset === null && !hasConnection && (
+        {visibleScene.dataset === null && !visibleScene.hasConnection && (
           <Flex
             position="absolute"
             inset={0}
@@ -600,8 +666,32 @@ function ScrollytellingBlock({
             </Text>
           </Flex>
         )}
+        {atomicScene.transitioning && (
+          <Flex
+            position="absolute"
+            top={3}
+            left="50%"
+            transform="translateX(-50%)"
+            align="center"
+            gap={2}
+            bg="whiteAlpha.900"
+            border="1px solid"
+            borderColor="brand.border"
+            borderRadius="panel"
+            px={3}
+            py={2}
+            zIndex={10}
+            role="status"
+            pointerEvents="none"
+          >
+            <BrandSpinner size={18} />
+            <Text fontSize="xs" color="brand.brown" fontWeight={600}>
+              Preparing next chapter
+            </Text>
+          </Flex>
+        )}
         <OverlayLegend
-          chapter={activeChapter}
+          chapter={visibleScene.chapter}
           datasetMap={datasetMap}
           connectionMap={connectionMap}
         />
@@ -759,9 +849,11 @@ export function StoryMapRuntime({
     );
   }
 
+  if (block.chapters.length === 0) return null;
+
   return (
     <ScrollytellingBlock
-      chapters={block.chapters}
+      chapters={block.chapters as NonEmptyScrollytellingChapters}
       startIndex={block.startIndex}
       datasetMap={datasetMap}
       connectionMap={connectionMap}

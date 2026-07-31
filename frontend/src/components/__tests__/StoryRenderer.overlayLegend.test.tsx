@@ -22,7 +22,7 @@ vi.mock("scrollama", () => ({
   }),
 }));
 
-import { StoryRenderer } from "../StoryRenderer";
+import { StoryMapRuntime } from "../StoryMapRuntime";
 
 const primaryConn = {
   id: "conn-primary",
@@ -78,11 +78,15 @@ const story = {
 } as unknown as Story;
 
 describe("StoryRenderer overlay legend", () => {
-  it("renders visible overlay names in the reader legend", () => {
+  it("renders visible overlay names in the map runtime", () => {
     render(
       <ChakraProvider value={defaultSystem}>
-        <StoryRenderer
-          story={story}
+        <StoryMapRuntime
+          block={{
+            type: "scrollytelling",
+            chapters: [story.chapters[0] as never],
+            startIndex: 0,
+          }}
           datasetMap={new Map<string, Dataset | null>()}
           connectionMap={
             new Map([

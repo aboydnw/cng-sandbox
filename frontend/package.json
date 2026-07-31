@@ -8,6 +8,8 @@
     "dev": "vite",
     "build": "yarn build:viewer && tsc && vite build",
     "build:viewer": "vite build --config vite.viewer.config.ts",
+    "bundle:baseline": "node scripts/check-bundle-budgets.mjs --update-baseline",
+    "bundle:check": "node scripts/check-bundle-budgets.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

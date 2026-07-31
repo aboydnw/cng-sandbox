@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import { UnifiedMap } from "./UnifiedMap";
@@ -17,6 +17,8 @@ import { useTripsAnimation } from "../hooks/useTripsAnimation";
 import { TrajectoryControls } from "./TrajectoryControls";
 import { detectCadence } from "../utils/temporal";
 import { displayName } from "../utils/dataset";
+import { markStoryPerformance } from "../lib/story/performance";
+import type { MapRef } from "react-map-gl/maplibre";
 
 interface MapChapterProps {
   chapter: MapChapterType;
@@ -113,6 +115,16 @@ export function MapChapter({
     trips.currentTime,
   ]);
 
+  const firstDataFrameRef = useRef(false);
+  const handleMapRef = useCallback((instance: MapRef | null) => {
+    if (instance) markStoryPerformance("story-map-engine-ready");
+  }, []);
+  const handleAfterRender = useCallback(() => {
+    if (layers.length === 0 || firstDataFrameRef.current) return;
+    firstDataFrameRef.current = true;
+    markStoryPerformance("story-first-data-frame");
+  }, [layers.length]);
+
   const copcItem = useMemo(() => {
     if (connection?.connection_type === "copc")
       return connectionToMapItem(connection);
@@ -208,6 +220,8 @@ export function MapChapter({
         )}
         {dataset || connection ? (
           <UnifiedMap
+            mapRef={handleMapRef}
+            onAfterRender={handleAfterRender}
             camera={camera}
             onCameraChange={handleCameraChange}
             layers={layers}

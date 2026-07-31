@@ -61,7 +61,7 @@ describe("SaveAsStoryChapter", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens a menu with 'New story' and any of the user's own (non-example) stories", async () => {
+  it("opens a menu with 'Create story' and any of the user's own (non-example) stories", async () => {
     (listStoriesFromServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       { id: "u-1", title: "My draft", is_example: false, chapters: [] },
       { id: "ex-1", title: "Example", is_example: true, chapters: [] },
@@ -76,7 +76,7 @@ describe("SaveAsStoryChapter", () => {
     const user = userEvent.setup();
     await user.click(trigger);
     expect(
-      await screen.findByRole("menuitem", { name: /new story/i })
+      await screen.findByRole("menuitem", { name: /create story/i })
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("menuitem", { name: /my draft/i })
@@ -84,7 +84,7 @@ describe("SaveAsStoryChapter", () => {
     expect(screen.queryByRole("menuitem", { name: /example$/i })).toBeNull();
   });
 
-  it("creates a new story when 'New story' is clicked", async () => {
+  it("creates a story when 'Create story' is clicked", async () => {
     (createStoryOnServer as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       id: "new-id",
       chapters: [],
@@ -99,7 +99,7 @@ describe("SaveAsStoryChapter", () => {
     const user = userEvent.setup();
     await user.click(trigger);
     await user.click(
-      await screen.findByRole("menuitem", { name: /new story/i })
+      await screen.findByRole("menuitem", { name: /create story/i })
     );
     expect(createStoryOnServer).toHaveBeenCalled();
   });

@@ -17,6 +17,7 @@ import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
+import { CREATE_MAP_INTENT, CREATE_STORY_INTENT } from "../lib/creationIntents";
 
 function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
   items: T[]
@@ -115,10 +116,14 @@ export default function WorkspaceHomePage() {
           actions={
             <>
               <Button asChild size="sm" variant="outline">
-                <Link to={workspacePath("/quick-map")}>Add data</Link>
+                <Link to={workspacePath(CREATE_MAP_INTENT.path)}>
+                  {CREATE_MAP_INTENT.label}
+                </Link>
               </Button>
               <Button asChild size="sm">
-                <Link to={workspacePath("/story/new")}>New story</Link>
+                <Link to={workspacePath(CREATE_STORY_INTENT.path)}>
+                  {CREATE_STORY_INTENT.label}
+                </Link>
               </Button>
             </>
           }
@@ -132,7 +137,8 @@ export default function WorkspaceHomePage() {
               Start your first map or story
             </Heading>
             <Text fontSize="sm" color="gray.500" mb={6}>
-              Add your own data, or open an example story and make it yours.
+              Create a map with your own data, or open an example story and make
+              it yours.
             </Text>
             {exampleStories.length === 0 ? (
               <Text fontSize="sm" color="gray.500">

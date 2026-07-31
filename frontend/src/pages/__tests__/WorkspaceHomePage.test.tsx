@@ -205,11 +205,11 @@ describe("WorkspaceHomePage", () => {
     renderHome();
 
     expect(
-      await screen.findAllByRole("link", { name: "New story" })
+      await screen.findAllByRole("link", { name: "Create story" })
     ).toHaveLength(1);
-    expect(screen.getAllByRole("link", { name: "Add data" })).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: "Create map" })).toHaveLength(1);
     expect(
-      screen.queryByRole("link", { name: "Quick map" })
+      screen.queryByRole("link", { name: /quick map|add data|new story/i })
     ).not.toBeInTheDocument();
   });
 

@@ -141,9 +141,9 @@ function renderPage() {
 }
 
 describe("UploadPage", () => {
-  it("renders the Create a map path card", () => {
+  it("renders the Create map path card", () => {
     renderPage();
-    expect(screen.getByText("Create a map")).toBeTruthy();
+    expect(screen.getByText("Create map")).toBeTruthy();
   });
 
   it("no longer renders the 'Build a story' card (moved to Stories tab)", () => {
@@ -163,9 +163,9 @@ describe("UploadPage", () => {
     expect(screen.queryByText(/example datasets/i)).toBeNull();
   });
 
-  it("expanding Create a map reveals file uploader and URL input", () => {
+  it("expanding Create map reveals file uploader and URL input", () => {
     renderPage();
-    fireEvent.click(screen.getByText("Create a map"));
+    fireEvent.click(screen.getByText("Create map"));
     expect(screen.getByRole("textbox", { name: /url/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /continue/i })).toBeTruthy();
   });
@@ -173,7 +173,7 @@ describe("UploadPage", () => {
   it("routing a .parquet URL opens the GeoParquet preview modal inline", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByText("Create a map"));
+    await user.click(screen.getByText("Create map"));
     await user.type(
       screen.getByRole("textbox", { name: /url/i }),
       "https://example.com/data.parquet"

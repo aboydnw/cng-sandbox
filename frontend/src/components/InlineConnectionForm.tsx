@@ -13,6 +13,7 @@ import type { ProbeMetadata } from "../lib/connections";
 import { connectionsApi } from "../lib/api";
 import type { ConnectionType, Connection } from "../types";
 import { transition } from "../lib/interactionStyles";
+import { DATA_ENTRY_ACTIONS } from "../lib/creationIntents";
 
 const TYPE_LABELS: Record<ConnectionType, string> = {
   cog: "COG",
@@ -169,7 +170,7 @@ export function InlineConnectionForm({
       </Flex>
 
       <Text fontSize="md" fontWeight={600} mb={3} color="brand.brown">
-        Add Connection
+        {DATA_ENTRY_ACTIONS.connect}
       </Text>
 
       {/* URL input */}

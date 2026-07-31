@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { CaretDown, Upload, Plus } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
+import { DATA_ENTRY_ACTIONS } from "../lib/creationIntents";
 import type { MapItemSource } from "../types";
 
 export interface DataSelectorItem {
@@ -232,7 +233,7 @@ export function DataSelector({
               cursor="pointer"
             >
               <Upload size={12} />
-              <Text fontSize="sm">Upload new file</Text>
+              <Text fontSize="sm">{DATA_ENTRY_ACTIONS.upload}</Text>
             </Flex>
 
             <Box borderTop="1px solid" borderColor="brand.border" my={1} />
@@ -302,7 +303,7 @@ export function DataSelector({
               cursor="pointer"
             >
               <Plus size={12} />
-              <Text fontSize="sm">Add connection</Text>
+              <Text fontSize="sm">{DATA_ENTRY_ACTIONS.connect}</Text>
             </Flex>
           </Box>,
           document.body

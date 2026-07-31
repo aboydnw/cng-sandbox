@@ -24,6 +24,7 @@ import type {
   GeoZarrAttrs,
   ZarrConnectionConfig,
 } from "../types";
+import { DATA_ENTRY_ACTIONS } from "../lib/creationIntents";
 
 const REQUIRED_GEOZARR_KEYS = [
   "spatial:dimensions",
@@ -301,7 +302,7 @@ export function ConnectionModal({
         <Flex justify="space-between" align="center" mb={4}>
           <Flex align="center" gap={2}>
             <LinkIcon size={20} weight="bold" />
-            <Heading size="md">Add connection</Heading>
+            <Heading size="md">{DATA_ENTRY_ACTIONS.connect}</Heading>
           </Flex>
           <Box as="button" onClick={onClose} p={1} cursor="pointer">
             <XIcon size={18} />

@@ -93,6 +93,15 @@ function renderDataPage() {
   );
 }
 
+describe("DataPage creation action", () => {
+  it("links Create map to the existing map-creation workflow", async () => {
+    renderDataPage();
+
+    const link = await screen.findByRole("link", { name: "Create map" });
+    expect(link).toHaveAttribute("href", "/w/test-workspace/quick-map");
+  });
+});
+
 describe("DataPage example copy rows", () => {
   it("shows an Example badge on seeded example copies in the main table", async () => {
     renderDataPage();

@@ -2,6 +2,12 @@
 
 Implementation details and non-obvious behaviors in the frontend. Read this when working on map rendering, tile sources, client-side COG rendering, dialogs, analytics, or anything that touches `src/lib/layers/`, `src/components/PixelInspector.tsx`, `src/hooks/`, or the vector/raster map components.
 
+## Creation intents
+
+- **Top-level actions describe outcomes, not ingestion methods**: use `CREATE_MAP_INTENT` and `CREATE_STORY_INTENT` from `src/lib/creationIntents.ts` for workspace, data-library, and stories-page calls to action. The canonical labels are “Create map” and “Create story.” The map intent deliberately keeps `/quick-map` as its implementation route; route names are not user-facing vocabulary.
+- **Uploading and connecting remain contextual actions**: use `DATA_ENTRY_ACTIONS.upload` (“Upload data”) and `DATA_ENTRY_ACTIONS.connect` (“Connect data”) inside an authoring flow. Both are available from the story editor `DataSelector`, so starting with narrative never forces the user back through map creation.
+- **Do not duplicate primary creation actions within one page**: `WorkspaceHomePage` owns one header-level link for each creation intent. Recent-content sections only navigate to their full collections.
+
 ## Map compositing and camera
 
 - **MapLibre owns the camera; deck.gl composites on top as an overlay**: `UnifiedMap` (`src/components/UnifiedMap.tsx`) renders a `react-map-gl/maplibre` `<Map>` as the root. deck.gl layers are drawn by a `MapboxOverlay` (`@deck.gl/mapbox`) registered through `react-map-gl`'s `useControl` in overlaid mode (`interleaved: false` — the deck canvas sits on top with no shared depth buffer, matching the previous visual behavior). This inverts the earlier architecture, where a `@deck.gl/react` `DeckGL` was the root and MapLibre was a base layer. MapLibre now owns the camera and all pan/zoom/rotate/pitch interaction; deck.gl only renders.

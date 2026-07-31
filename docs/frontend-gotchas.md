@@ -146,3 +146,11 @@ Implementation details and non-obvious behaviors in the frontend. Read this when
 - **Snapshot capture bypasses reader hydration**: archival capture mounts `UnifiedMap` directly and remains deterministic; the progressive boundary applies to reader, embed, and portable-story paths that share `StoryRenderer`.
 - **Reader milestones are best-effort browser marks**: `src/lib/story/performance.ts` records prose-visible, runtime-requested/loaded, hydration-start, map-engine-ready, and first-data-frame once per page. Failures are swallowed by design and no private dataset metadata is attached.
 - **Bundle budgets use synchronous manifest closures**: `yarn bundle:check` reads `dist/.vite/manifest.json`, reports raw/gzip sizes for bootstrap, workspace, story reader/editor, map viewer, and optional story map runtime, and fails above the committed baseline plus 5%. Run `yarn bundle:baseline` only for an intentional, reviewed baseline change.
+
+## Atomic scrollytelling scene transitions
+
+- **`useAtomicStoryScene` owns the visible layer generation**: a chapter change keeps the committed scene visible and clones the next scene under IDs suffixed with a fresh generation. Pending layers mount at zero opacity so deck.gl can load tiles/resources without visually combining datasets.
+- **Commit is atomic, not a crossfade**: `UnifiedMap.onAfterRender` asks the coordinator whether every pending layer reports `isLoaded`. One state update then removes the previous generation and restores the prepared generation's authored opacity. There is no frame where both primary datasets are visible.
+- **Newer navigation invalidates older work**: A → B → C replaces B's pending generation before it can commit. Late async completion can only affect layers whose generation remains pending, preventing rapid scroll from restoring obsolete data.
+- **Visible metadata follows the committed scene**: the legend, render-mode indicator, unavailable-data state, and COPC props read the coordinator payload rather than the newest scroll step. Camera movement may begin immediately, but labels never claim the pending dataset is already visible.
+- **Same-chapter animation does not create transitions**: trajectory time and other layer-prop updates retain the committed generation ID. Only a different chapter/layer scene key stages a replacement.

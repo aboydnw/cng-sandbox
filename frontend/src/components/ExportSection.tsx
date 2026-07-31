@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Box, Button, Text } from "@chakra-ui/react";
 import { downloadStoryConfig } from "../lib/story/exportConfig";
 import { buildAndDownloadBundle } from "../lib/story/buildStaticBundle";
 import { EmbedSnippet } from "./EmbedSnippet";
+import { EmbedThemeControls } from "./EmbedThemeControls";
+import type { EmbedTheme } from "../lib/story/embedTheme";
 import type { Story } from "../lib/story";
 
 interface ExportSectionProps {
@@ -17,6 +20,8 @@ export function ExportSection({
   onInteractive,
   hideHeader = false,
 }: ExportSectionProps) {
+  const [embedTheme, setEmbedTheme] = useState<EmbedTheme>({});
+
   return (
     <Box mt={hideHeader ? 2 : 6}>
       {hideHeader ? null : (
@@ -99,14 +104,18 @@ export function ExportSection({
         </Text>
       </Box>
       <Box mt={4}>
-        <EmbedSnippet
-          viewerOrigin={
-            import.meta.env.VITE_VIEWER_ORIGIN ?? window.location.origin
-          }
-          storyId={story.id}
-          storyTitle={story.title}
-          configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
-        />
+        <EmbedThemeControls value={embedTheme} onChange={setEmbedTheme} />
+        <Box mt={3}>
+          <EmbedSnippet
+            viewerOrigin={
+              import.meta.env.VITE_VIEWER_ORIGIN ?? window.location.origin
+            }
+            storyId={story.id}
+            storyTitle={story.title}
+            configUrl={`${window.location.origin}/api/stories/${story.id}/export/config`}
+            theme={embedTheme}
+          />
+        </Box>
       </Box>
     </Box>
   );

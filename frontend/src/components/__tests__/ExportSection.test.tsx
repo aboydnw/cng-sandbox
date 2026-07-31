@@ -12,7 +12,12 @@ vi.mock("../../lib/story/exportConfig", () => ({
   downloadStoryConfig: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../EmbedSnippet", () => ({
-  EmbedSnippet: () => <div data-testid="embed-snippet" />,
+  EmbedSnippet: (props: { theme?: object }) => (
+    <div
+      data-testid="embed-snippet"
+      data-theme={JSON.stringify(props.theme ?? {})}
+    />
+  ),
 }));
 
 const baseStory = {
@@ -99,5 +104,15 @@ describe("ExportSection", () => {
       screen.getByRole("button", { name: /download interactive bundle/i })
     );
     expect(onInteractive).toHaveBeenCalled();
+  });
+
+  it("passes theme control values through to the embed snippet", () => {
+    renderSection();
+    fireEvent.change(screen.getByLabelText(/body font/i), {
+      target: { value: "Libre Baskerville" },
+    });
+    expect(
+      screen.getByTestId("embed-snippet").getAttribute("data-theme")
+    ).toContain('"bodyFont":"Libre Baskerville"');
   });
 });

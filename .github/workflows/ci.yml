@@ -42,7 +42,9 @@ jobs:
             https://github.com/mamba-org/micromamba-releases/releases/download/2.6.2-1/micromamba-linux-64 \
             --output bin/micromamba
           chmod +x bin/micromamba
-          ./bin/micromamba create -y -p "$HOME/pdal-env" -c conda-forge pdal=2.9.3
+          # PDAL 2.9.3 drops the CRS VLR from this project's COPC fixture even
+          # with writers.copc.forward=all. Keep the last known-good release.
+          ./bin/micromamba create -y -p "$HOME/pdal-env" -c conda-forge pdal=2.9.2
           # Symlink only the pdal binary onto PATH — adding the whole env bin
           # would put conda's python ahead of the setup-python interpreter and
           # shadow pytest/the ingestion deps. (RPATH resolves pdal's libs.)

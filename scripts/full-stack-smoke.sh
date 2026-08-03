@@ -30,10 +30,19 @@ PY
     sleep 10
 done
 
-curl --fail --silent --show-error http://localhost:5185/ >/dev/null
-curl --fail --silent --show-error http://localhost:5185/api/health >/dev/null
-curl --fail --silent --show-error http://localhost:5185/cog/healthz >/dev/null
-curl --fail --silent --show-error http://localhost:5185/raster/healthz >/dev/null
-curl --fail --silent --show-error http://localhost:5185/vector/ >/dev/null
+probe() {
+    local url="$1"
+    curl --fail --silent --show-error \
+        --retry 12 --retry-all-errors --retry-delay 5 \
+        "$url" >/dev/null
+}
+
+# The frontend has no Compose healthcheck, so its container can be running a
+# few seconds before Vite and its proxies begin accepting connections.
+probe http://localhost:5185/
+probe http://localhost:5185/api/health
+probe http://localhost:5185/cog/healthz
+probe http://localhost:5185/raster/healthz
+probe http://localhost:5185/vector/
 
 echo "Full stack and all browser-facing proxy routes are healthy"

@@ -10,7 +10,7 @@ uv run pytest -v
 
 ## API docs
 
-OpenAPI docs are auto-generated at `/api/docs` when the stack is running — visit [http://localhost:5185/api/docs](http://localhost:5185/api/docs).
+OpenAPI docs are auto-generated at `/api/docs` when the stack is running — visit [http://localhost:5185/api/docs](http://localhost:5185/api/docs) if the frontend dev server is up (`docker compose --profile dev up -d`), or [http://localhost:8086/api/docs](http://localhost:8086/api/docs) to reach the ingestion container directly.
 
 ## Key directories
 

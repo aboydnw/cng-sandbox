@@ -35,7 +35,12 @@ describe("apply3D", () => {
     });
     expect(map.addSource).toHaveBeenCalledWith(
       "cng-terrain-dem",
-      expect.objectContaining({ type: "raster-dem", encoding: "terrarium" })
+      expect.objectContaining({
+        type: "raster-dem",
+        encoding: "terrarium",
+        tiles: ["https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"],
+        tileSize: 512,
+      })
     );
     expect(map.setTerrain).toHaveBeenCalledWith(
       expect.objectContaining({ source: "cng-terrain-dem", exaggeration: 1.5 })

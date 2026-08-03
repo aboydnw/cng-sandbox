@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { CaretDown, Upload, Plus } from "@phosphor-icons/react";
+import { CaretDown, Upload, Plus, WarningCircle } from "@phosphor-icons/react";
 import { transition } from "../lib/interactionStyles";
 import { DATA_ENTRY_ACTIONS } from "../lib/creationIntents";
 import type { MapItemSource } from "../types";
@@ -47,6 +47,9 @@ interface DataSelectorProps {
   items: DataSelectorItem[];
   activeId: string;
   activeSource: MapItemSource;
+  status?: "loading" | "ready" | "error";
+  error?: string | null;
+  onRetry?: () => void;
   onSelect: (id: string, source: MapItemSource) => void;
   onUploadClick: () => void;
   onAddConnectionClick: () => void;
@@ -56,6 +59,9 @@ export function DataSelector({
   items,
   activeId,
   activeSource,
+  status = "ready",
+  error,
+  onRetry,
   onSelect,
   onUploadClick,
   onAddConnectionClick,
@@ -112,7 +118,9 @@ export function DataSelector({
   const activeItem = items.find(
     (i) => i.id === activeId && i.source === activeSource
   );
-  const activeName = activeItem?.name ?? "Loading...";
+  const activeName =
+    activeItem?.name ??
+    (status === "loading" ? "Loading data…" : "Dataset unavailable");
 
   return (
     <Box ref={containerRef}>
@@ -136,7 +144,13 @@ export function DataSelector({
           w="8px"
           h="8px"
           borderRadius="sm"
-          bg={activeItem ? dotColor(activeItem) : "gray.500"}
+          bg={
+            activeItem
+              ? dotColor(activeItem)
+              : status === "error"
+                ? "red.500"
+                : "gray.500"
+          }
           flexShrink={0}
         />
         <Text fontSize="sm" fontWeight={500} flex={1} textAlign="left" truncate>
@@ -165,6 +179,45 @@ export function DataSelector({
             py={1}
             boxShadow="lg"
           >
+            {status === "error" && (
+              <Box
+                px={3}
+                py={2}
+                borderBottom="1px solid"
+                borderColor="brand.border"
+              >
+                <Flex align="start" gap={2} color="red.700">
+                  <WarningCircle
+                    size={16}
+                    style={{ marginTop: 2, flexShrink: 0 }}
+                  />
+                  <Box>
+                    <Text fontSize="sm" fontWeight={600}>
+                      Some data couldn’t load
+                    </Text>
+                    {error && <Text fontSize="xs">{error}</Text>}
+                    {onRetry && (
+                      <Box
+                        as="button"
+                        mt={1}
+                        fontSize="xs"
+                        fontWeight={600}
+                        color="brand.orange"
+                        onClick={onRetry}
+                      >
+                        Try again
+                      </Box>
+                    )}
+                  </Box>
+                </Flex>
+              </Box>
+            )}
+            {!activeItem && status !== "loading" && (
+              <Text px={3} py={2} fontSize="sm" color="gray.600">
+                The data referenced by this view is unavailable. Choose a
+                replacement below.
+              </Text>
+            )}
             <Text
               px={3}
               py={1}

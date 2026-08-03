@@ -7,6 +7,13 @@ Implementation details and non-obvious behaviors in the frontend. Read this when
 - **Top-level actions describe outcomes, not ingestion methods**: use `CREATE_MAP_INTENT` and `CREATE_STORY_INTENT` from `src/lib/creationIntents.ts` for workspace, data-library, and stories-page calls to action. The canonical labels are “Create map” and “Create story.” The map intent deliberately keeps `/quick-map` as its implementation route; route names are not user-facing vocabulary.
 - **Uploading and connecting remain contextual actions**: use `DATA_ENTRY_ACTIONS.upload` (“Upload data”) and `DATA_ENTRY_ACTIONS.connect` (“Connect data”) inside an authoring flow. Both are available from the story editor `DataSelector`, so starting with narrative never forces the user back through map creation.
 - **Do not duplicate primary creation actions within one page**: `WorkspaceHomePage` owns one header-level link for each creation intent. Recent-content sections only navigate to their full collections.
+- **Creation routes delay persistence until the first real action**: `/quick-map` opens with its upload/connect surface already expanded. `/story/new` renders `StorySetupPage`; it creates the server-side story only after the author chooses Map-led, Media, or Blank. Preserve `?dataset=<id>` when linking into story setup so Map-led can inherit the dataset colormap and initial bounds.
+
+## Workspace resource states
+
+- **Workspace collections share explicit request state**: `useWorkspaceDatasets`, `useWorkspaceConnections`, and `useWorkspaceStories` expose `loading | ready | empty | error`, retain previously loaded data during refresh, and provide `retry`. Consumers must not infer loading from a missing ID or convert request failures into empty arrays.
+- **Partial success remains usable**: datasets and connections load independently. `DataSelector`, Data, Workspace Home, and the story editor keep successful results visible while showing a retryable error for the failed resource.
+- **A missing active reference is not loading**: once requests settle, `DataSelector` labels an unresolved active ID as “Dataset unavailable” and asks the author to choose a replacement.
 
 ## Map compositing and camera
 

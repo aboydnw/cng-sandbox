@@ -1,34 +1,7 @@
 import { Flex, Text } from "@chakra-ui/react";
-import {
-  Path,
-  Article,
-  MapTrifold,
-  Image,
-  VideoCamera,
-  ChartLine,
-  PaperPlaneTilt,
-} from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { useState } from "react";
 import type { ChapterType } from "../lib/story";
-import {
-  CHAPTER_TYPE_LABELS,
-  CHAPTER_TYPE_DESCRIPTIONS,
-} from "../lib/story/labels";
-
-interface ChapterTypeOption {
-  type: ChapterType;
-  icon: ReactNode;
-}
-
-const CHAPTER_TYPE_OPTIONS: ChapterTypeOption[] = [
-  { type: "scrollytelling", icon: <Path size={16} /> },
-  { type: "map", icon: <MapTrifold size={16} /> },
-  { type: "prose", icon: <Article size={16} /> },
-  { type: "image", icon: <Image size={16} /> },
-  { type: "video", icon: <VideoCamera size={16} /> },
-  { type: "chart", icon: <ChartLine size={16} /> },
-  { type: "flyover", icon: <PaperPlaneTilt size={16} /> },
-];
+import { CHAPTER_TYPE_REGISTRY } from "../lib/story/chapterRegistry";
 
 interface ChapterTypePickerProps {
   value: ChapterType;
@@ -36,9 +9,15 @@ interface ChapterTypePickerProps {
 }
 
 export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
+  const current = CHAPTER_TYPE_REGISTRY.find((item) => item.type === value);
+  const [showMore, setShowMore] = useState(current?.prominence === "secondary");
+  const options = CHAPTER_TYPE_REGISTRY.filter(
+    (item) => showMore || item.prominence === "primary"
+  );
+
   return (
     <Flex gap={1} flexWrap="wrap" role="group" aria-label="Chapter type">
-      {CHAPTER_TYPE_OPTIONS.map(({ type, icon }) => (
+      {options.map(({ type, icon: Icon, label, description }) => (
         <Flex
           key={type}
           as="button"
@@ -53,24 +32,36 @@ export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
           fontWeight={value === type ? 600 : 500}
           onClick={() => onChange(type)}
           aria-pressed={value === type}
-          aria-label={`${CHAPTER_TYPE_LABELS[type]}: ${CHAPTER_TYPE_DESCRIPTIONS[type]}`}
+          aria-label={`${label}: ${description}`}
           _hover={{
             bg: value === type ? "brand.bgSubtle" : "brand.bgSubtle",
             color: value === type ? "brand.orange" : "brand.brown",
           }}
           _active={{ transform: "scale(0.98)" }}
-          title={CHAPTER_TYPE_DESCRIPTIONS[type]}
+          title={description}
           transition="all 0.15s"
         >
-          {icon}
+          <Icon size={16} />
           <Text fontSize="12px" lineHeight={1}>
-            {CHAPTER_TYPE_LABELS[type]}
+            {label}
           </Text>
         </Flex>
       ))}
+      <Flex
+        as="button"
+        align="center"
+        px={3}
+        py={1.5}
+        borderRadius="6px"
+        color="gray.600"
+        fontWeight={500}
+        onClick={() => setShowMore((visible) => !visible)}
+        _hover={{ bg: "brand.bgSubtle", color: "brand.brown" }}
+      >
+        <Text fontSize="12px" lineHeight={1}>
+          {showMore ? "Fewer chapter types" : "More chapter types"}
+        </Text>
+      </Flex>
     </Flex>
   );
 }
-
-export type { ChapterTypeOption };
-export { CHAPTER_TYPE_OPTIONS };

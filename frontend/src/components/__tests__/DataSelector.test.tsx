@@ -122,7 +122,7 @@ describe("DataSelector", () => {
     expect(screen.getByText("Point cloud")).toBeTruthy();
   });
 
-  it("shows Loading... when activeId is not in items", () => {
+  it("shows an unavailable state when the active reference is missing", () => {
     renderWithChakra(
       <DataSelector
         items={DATASETS}
@@ -133,6 +133,43 @@ describe("DataSelector", () => {
         onAddConnectionClick={vi.fn()}
       />
     );
-    expect(screen.getByText("Loading...")).toBeTruthy();
+    expect(screen.getByText("Dataset unavailable")).toBeTruthy();
+  });
+
+  it("only shows loading while resources are actually loading", () => {
+    renderWithChakra(
+      <DataSelector
+        items={[]}
+        activeId="d1"
+        activeSource="dataset"
+        status="loading"
+        onSelect={vi.fn()}
+        onUploadClick={vi.fn()}
+        onAddConnectionClick={vi.fn()}
+      />
+    );
+    expect(screen.getByText("Loading data…")).toBeTruthy();
+  });
+
+  it("surfaces partial load errors while preserving available items", () => {
+    const onRetry = vi.fn();
+    renderWithChakra(
+      <DataSelector
+        items={DATASETS}
+        activeId="d1"
+        activeSource="dataset"
+        status="error"
+        error="Connections failed"
+        onRetry={onRetry}
+        onSelect={vi.fn()}
+        onUploadClick={vi.fn()}
+        onAddConnectionClick={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole("button"));
+    expect(screen.getByText("Some data couldn’t load")).toBeTruthy();
+    expect(screen.getAllByText("temperature.tif").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByText("Try again"));
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });

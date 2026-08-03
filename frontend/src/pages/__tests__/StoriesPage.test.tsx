@@ -152,7 +152,7 @@ describe("StoriesPage deletion failures", () => {
     );
     renderStoriesPage();
 
-    const row = (await screen.findByText("Story to keep")).closest("tr");
+    const row = (await screen.findByText("Story to keep")).closest("article");
     fireEvent.click(
       within(row as HTMLElement).getByRole("button", { name: /delete/i })
     );

@@ -14,6 +14,7 @@ import type { CopcColorMode } from "../lib/layers/copcLayer";
 import { DataSelector } from "./DataSelector";
 import type { DataSelectorItem } from "./DataSelector";
 import { MarkdownToolbar } from "./MarkdownToolbar";
+import { AdvancedSettingsDisclosure } from "./AdvancedSettingsDisclosure";
 
 interface NarrativeEditorProps {
   chapterType: ChapterType;
@@ -27,6 +28,9 @@ interface NarrativeEditorProps {
   datasetType: "raster" | "vector" | "pointcloud" | "trajectory";
   datasets: Dataset[];
   connections?: Connection[];
+  dataStatus?: "loading" | "ready" | "error";
+  dataError?: string | null;
+  onDataRetry?: () => void;
   onUploadClick?: () => void;
   onAddConnectionClick?: () => void;
   overlayPosition: "left" | "right";
@@ -48,6 +52,9 @@ export function NarrativeEditor({
   datasetType,
   datasets,
   connections,
+  dataStatus,
+  dataError,
+  onDataRetry,
   onUploadClick,
   onAddConnectionClick,
   overlayPosition,
@@ -164,7 +171,7 @@ export function NarrativeEditor({
       )}
 
       {showMapControls && (
-        <Box mt={4}>
+        <AdvancedSettingsDisclosure title="Map environment">
           <Text
             fontSize="xs"
             fontWeight={600}
@@ -270,7 +277,7 @@ export function NarrativeEditor({
               style={{ accentColor: "#CF3F02", cursor: "pointer" }}
             />
           </Flex>
-        </Box>
+        </AdvancedSettingsDisclosure>
       )}
 
       {/* 3. Dataset selector */}
@@ -290,6 +297,9 @@ export function NarrativeEditor({
             items={dataSelectorItems}
             activeId={activeDataId}
             activeSource={activeSource}
+            status={dataStatus}
+            error={dataError}
+            onRetry={onDataRetry}
             onSelect={handleDataSelect}
             onUploadClick={onUploadClick ?? (() => {})}
             onAddConnectionClick={onAddConnectionClick ?? (() => {})}
@@ -374,7 +384,7 @@ export function NarrativeEditor({
 
       {/* 7. Style section */}
       {showMapControls && (
-        <Box>
+        <AdvancedSettingsDisclosure title="Map appearance">
           <Text
             fontSize="12px"
             color="gray.500"
@@ -554,7 +564,7 @@ export function NarrativeEditor({
               />
             </Box>
           </Flex>
-        </Box>
+        </AdvancedSettingsDisclosure>
       )}
     </Flex>
   );

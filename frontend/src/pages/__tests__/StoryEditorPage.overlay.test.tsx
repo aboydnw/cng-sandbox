@@ -61,6 +61,18 @@ vi.mock("../../hooks/useStoryEditor", () => ({
     mapContainerRef: { current: null },
     allDatasets: [],
     allConnections: [],
+    datasetsResource: {
+      status: "ready",
+      data: [],
+      error: null,
+      retry: vi.fn(),
+    },
+    connectionsResource: {
+      status: "ready",
+      data: [],
+      error: null,
+      retry: vi.fn(),
+    },
     uploadModalOpen: false,
     saveState: "idle",
     layers: [],

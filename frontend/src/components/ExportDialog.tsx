@@ -62,7 +62,7 @@ export function ExportDialog({ open, onClose, story }: ExportDialogProps) {
         <Portal>
           <DialogBackdrop />
           <DialogPositioner>
-            <DialogContent shadow="lg">
+            <DialogContent bg="bg.raised" borderRadius="panel" shadow="lg">
               <DialogHeader>
                 <DialogTitle>
                   Export &ldquo;{story.title || "Untitled story"}&rdquo;

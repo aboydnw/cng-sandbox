@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Badge, Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { ExpiryBadge } from "../components/ExpiryBadge";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { listStoriesFromServer, deleteStoryFromServer } from "../lib/story/api";
 import { timeAgo } from "../utils/format";
@@ -20,7 +19,9 @@ import {
 } from "../components/ui/ResourceCollection";
 import { ResourceThumbnail } from "../components/ui/ResourceThumbnail";
 
-const STORY_COLUMNS = "minmax(0, 1fr) 100px 100px 100px 140px 80px";
+// Expiry is intentionally hidden until the product has a retention policy.
+// Restore the column alongside that policy so the UI never implies a deadline.
+const STORY_COLUMNS = "minmax(0, 1fr) 100px 100px 100px 80px";
 
 function storyThumbnailUrl(story: Story): string | null {
   const imageChapter = story.chapters.find(
@@ -142,17 +143,20 @@ export default function StoriesPage() {
         ) : (
           <ResourceCollection
             columns={STORY_COLUMNS}
-            headers={["Name", "Status", "Chapters", "Updated", "Expires", ""]}
+            headers={["Name", "Status", "Chapters", "Updated", ""]}
           >
             {userStories.map((story) => (
               <ResourceCollectionRow key={story.id} columns={STORY_COLUMNS}>
                 <ResourceCollectionCell label="Name" primary>
-                  <Flex align="center" gap={2}>
+                  <Flex align="center" gap={2} minW={0}>
                     <ResourceThumbnail
                       src={storyThumbnailUrl(story)}
                       alt={story.title}
                     />
-                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
+                    <Link
+                      to={workspacePath(`/story/${story.id}/edit`)}
+                      style={{ minWidth: 0, flex: 1 }}
+                    >
                       <Text
                         color="brand.orange"
                         _hover={{ textDecoration: "underline" }}
@@ -164,7 +168,12 @@ export default function StoriesPage() {
                       </Text>
                     </Link>
                     {story.is_example_copy && (
-                      <Badge size="sm" bg="brand.bgSubtle" color="brand.brown">
+                      <Badge
+                        size="sm"
+                        bg="brand.bgSubtle"
+                        color="brand.brown"
+                        flexShrink={0}
+                      >
                         Example
                       </Badge>
                     )}
@@ -189,15 +198,6 @@ export default function StoriesPage() {
                   <Text fontSize="sm" color="gray.600">
                     {story.updated_at ? timeAgo(story.updated_at) : "—"}
                   </Text>
-                </ResourceCollectionCell>
-                <ResourceCollectionCell label="Expires">
-                  {story.expires_at ? (
-                    <ExpiryBadge expiresAt={story.expires_at} />
-                  ) : (
-                    <Text fontSize="sm" color="gray.500">
-                      —
-                    </Text>
-                  )}
                 </ResourceCollectionCell>
                 <ResourceCollectionCell label="Actions">
                   <Button

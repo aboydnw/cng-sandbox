@@ -119,7 +119,7 @@ export function ShareDialog({
       <Portal>
         <DialogBackdrop />
         <DialogPositioner>
-          <DialogContent shadow="lg">
+          <DialogContent bg="bg.raised" borderRadius="panel" shadow="lg">
             <DialogHeader>
               <DialogTitle>
                 {showSharedView ? "Public link" : "Share publicly"}

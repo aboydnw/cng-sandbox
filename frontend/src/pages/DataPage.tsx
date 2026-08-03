@@ -1,14 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Badge,
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Table,
-  Text,
-} from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
@@ -16,7 +8,7 @@ import { ExampleDataToggle } from "../components/ExampleDataToggle";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
 import { workspaceFetch, connectionsApi } from "../lib/api";
-import type { Dataset, Connection } from "../types";
+import type { Dataset } from "../types";
 import { timeAgo } from "../utils/format";
 import {
   datasetToLibraryItem,
@@ -28,6 +20,18 @@ import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { CREATE_MAP_INTENT } from "../lib/creationIntents";
+import {
+  useWorkspaceConnections,
+  useWorkspaceDatasets,
+} from "../hooks/useWorkspaceLibrary";
+import {
+  ResourceCollection,
+  ResourceCollectionCell,
+  ResourceCollectionRow,
+} from "../components/ui/ResourceCollection";
+import { ResourceThumbnail } from "../components/ui/ResourceThumbnail";
+
+const DATA_COLUMNS = "minmax(0, 1fr) 90px 200px 100px 140px 80px";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -35,95 +39,69 @@ interface DatasetWithStoryCount extends Dataset {
 
 export default function DataPage() {
   const { workspacePath } = useWorkspace();
-  const [datasets, setDatasets] = useState<DatasetWithStoryCount[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [datasetsLoading, setDatasetsLoading] = useState(true);
-  const [connectionsLoading, setConnectionsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const datasetsResource = useWorkspaceDatasets();
+  const connectionsResource = useWorkspaceConnections();
+  const datasets = datasetsResource.data as DatasetWithStoryCount[];
+  const connections = connectionsResource.data;
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<LibraryItem | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const loadRequestIdRef = useRef(0);
-
   const reload = useCallback(() => {
-    const requestId = ++loadRequestIdRef.current;
-    const isCurrent = () => requestId === loadRequestIdRef.current;
+    datasetsResource.retry();
+    connectionsResource.retry();
+  }, [datasetsResource.retry, connectionsResource.retry]);
 
-    setError(null);
-    setDatasetsLoading(true);
-    setConnectionsLoading(true);
-
-    workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        if (isCurrent()) setDatasets(data);
-      })
-      .catch((err) => {
-        if (isCurrent()) setError((err as Error).message);
-      })
-      .finally(() => {
-        if (isCurrent()) setDatasetsLoading(false);
-      });
-
-    connectionsApi
-      .list()
-      .then((data) => {
-        if (isCurrent()) setConnections(data);
-      })
-      .catch((err) => {
-        if (isCurrent()) setError((err as Error).message);
-      })
-      .finally(() => {
-        if (isCurrent()) setConnectionsLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    reload();
-    return () => {
-      loadRequestIdRef.current += 1;
-    };
-  }, [reload]);
-
-  const handleDelete = useCallback(async (item: LibraryItem) => {
-    setDeleteError(null);
-    if (item.raw.kind === "dataset") {
-      const ds = item.raw.dataset as DatasetWithStoryCount;
-      setDeletingId(item.id);
-      try {
-        const resp = await workspaceFetch(
-          `${config.apiBase}/api/datasets/${ds.id}`,
-          { method: "DELETE" }
-        );
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        setDatasets((prev) => prev.filter((d) => d.id !== ds.id));
-        setPendingDelete(null);
-      } catch {
-        setDeleteError(
-          "Couldn’t delete this data. Check your connection and try again."
-        );
-      } finally {
-        setDeletingId(null);
+  const handleDelete = useCallback(
+    async (item: LibraryItem) => {
+      setDeleteError(null);
+      if (item.raw.kind === "dataset") {
+        const ds = item.raw.dataset as DatasetWithStoryCount;
+        setDeletingId(item.id);
+        try {
+          const resp = await workspaceFetch(
+            `${config.apiBase}/api/datasets/${ds.id}`,
+            { method: "DELETE" }
+          );
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          datasetsResource.retry();
+          setPendingDelete(null);
+        } catch {
+          setDeleteError(
+            "Couldn’t delete this data. Check your connection and try again."
+          );
+        } finally {
+          setDeletingId(null);
+        }
+      } else {
+        const conn = item.raw.connection;
+        setDeletingId(item.id);
+        try {
+          await connectionsApi.delete(conn.id);
+          connectionsResource.retry();
+          setPendingDelete(null);
+        } catch {
+          setDeleteError(
+            "Couldn’t delete this connection. Check your connection and try again."
+          );
+        } finally {
+          setDeletingId(null);
+        }
       }
-    } else {
-      const conn = item.raw.connection;
-      setDeletingId(item.id);
-      try {
-        await connectionsApi.delete(conn.id);
-        setConnections((prev) => prev.filter((c) => c.id !== conn.id));
-        setPendingDelete(null);
-      } catch {
-        setDeleteError(
-          "Couldn’t delete this connection. Check your connection and try again."
-        );
-      } finally {
-        setDeletingId(null);
-      }
-    }
-  }, []);
+    },
+    [datasetsResource.retry, connectionsResource.retry]
+  );
+
+  const userItems: LibraryItem[] = [
+    ...datasets.filter((d) => !d.is_example).map(datasetToLibraryItem),
+    ...connections.filter((c) => !c.is_example).map(connectionToLibraryItem),
+  ].sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1));
+  const loading =
+    userItems.length === 0 &&
+    (datasetsResource.status === "loading" ||
+      connectionsResource.status === "loading");
+  const resourceError = [datasetsResource.error, connectionsResource.error]
+    .filter(Boolean)
+    .join("; ");
 
   return (
     <Flex direction="column" minH="100vh" bg="bg">
@@ -146,27 +124,26 @@ export default function DataPage() {
           Your data
         </Heading>
 
-        {datasetsLoading || connectionsLoading ? (
-          <CollectionSkeleton rows={4} />
-        ) : error ? (
-          <StatePanel
-            tone="danger"
-            title="Couldn’t load your data library"
-            description={error}
-            actionLabel="Try again"
-            onAction={reload}
-          />
-        ) : (
-          (() => {
-            const userItems: LibraryItem[] = [
-              ...datasets
-                .filter((d) => !d.is_example)
-                .map(datasetToLibraryItem),
-              ...connections
-                .filter((c) => !c.is_example)
-                .map(connectionToLibraryItem),
-            ].sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1));
+        {resourceError && (
+          <Box mb={4}>
+            <StatePanel
+              tone="danger"
+              title={
+                userItems.length === 0
+                  ? "Couldn’t load your data library"
+                  : "Some data couldn’t load"
+              }
+              description={resourceError}
+              actionLabel="Try again"
+              onAction={reload}
+            />
+          </Box>
+        )}
 
+        {loading ? (
+          <CollectionSkeleton rows={4} />
+        ) : resourceError && userItems.length === 0 ? null : (
+          (() => {
             if (userItems.length === 0) {
               return (
                 <StatePanel
@@ -184,118 +161,111 @@ export default function DataPage() {
             }
 
             return (
-              <Box overflowX="auto" pb={2}>
-                <Table.Root size="sm" tableLayout="fixed">
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.ColumnHeader>Name</Table.ColumnHeader>
-                      <Table.ColumnHeader w="90px">Type</Table.ColumnHeader>
-                      <Table.ColumnHeader w="200px">Source</Table.ColumnHeader>
-                      <Table.ColumnHeader w="100px">Added</Table.ColumnHeader>
-                      <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
-                      <Table.ColumnHeader w="80px" />
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {userItems.map((item) => (
-                      <Table.Row key={`${item.kind}-${item.id}`}>
-                        <Table.Cell>
-                          <Flex align="center" gap={2}>
-                            <Link to={workspacePath(item.detailHref)}>
-                              <Text
-                                color="brand.orange"
-                                _hover={{ textDecoration: "underline" }}
-                                fontWeight={500}
-                                truncate
-                                title={item.name}
-                              >
-                                {item.name}
-                              </Text>
-                            </Link>
-                            {item.isExampleCopy && (
-                              <Badge
-                                size="sm"
-                                bg="brand.bgSubtle"
-                                color="brand.brown"
-                              >
-                                Example
-                              </Badge>
-                            )}
-                          </Flex>
-                        </Table.Cell>
-                        <Table.Cell>
+              <ResourceCollection
+                columns={DATA_COLUMNS}
+                headers={["Name", "Type", "Source", "Added", "Expires", ""]}
+              >
+                {userItems.map((item) => (
+                  <ResourceCollectionRow
+                    key={`${item.kind}-${item.id}`}
+                    columns={DATA_COLUMNS}
+                  >
+                    <ResourceCollectionCell label="Name" primary>
+                      <Flex align="center" gap={2}>
+                        <ResourceThumbnail alt={item.name} kind={item.type} />
+                        <Link to={workspacePath(item.detailHref)}>
                           <Text
-                            fontSize="xs"
-                            fontWeight={600}
-                            textTransform="uppercase"
-                            color={
-                              item.type === "raster" ? "purple.600" : "teal.600"
-                            }
+                            color="brand.orange"
+                            _hover={{ textDecoration: "underline" }}
+                            fontWeight={500}
+                            truncate
+                            title={item.name}
                           >
-                            {item.type}
+                            {item.name}
                           </Text>
-                        </Table.Cell>
-                        <Table.Cell>
-                          {item.source.href ? (
-                            <a
-                              href={item.source.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={item.source.label}
-                              style={{
-                                color: "var(--chakra-colors-gray-500)",
-                                fontSize: 13,
-                              }}
-                            >
-                              <Text
-                                fontSize="sm"
-                                color="gray.500"
-                                truncate
-                                title={item.source.label}
-                              >
-                                {item.source.label}
-                              </Text>
-                            </a>
-                          ) : (
-                            <Text fontSize="sm" color="gray.500">
-                              {item.source.label}
-                            </Text>
-                          )}
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Text fontSize="sm" color="gray.600">
-                            {item.addedAt ? timeAgo(item.addedAt) : "—"}
-                          </Text>
-                        </Table.Cell>
-                        <Table.Cell>
-                          {item.expiresAt ? (
-                            <ExpiryBadge expiresAt={item.expiresAt} />
-                          ) : (
-                            <Text fontSize="sm" color="gray.500">
-                              —
-                            </Text>
-                          )}
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="status.danger.fg"
-                            _hover={{ bg: "status.danger.subtle" }}
-                            loading={deletingId === item.id}
-                            onClick={() => {
-                              setDeleteError(null);
-                              setPendingDelete(item);
-                            }}
+                        </Link>
+                        {item.isExampleCopy && (
+                          <Badge
+                            size="sm"
+                            bg="brand.bgSubtle"
+                            color="brand.brown"
                           >
-                            Delete
-                          </Button>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table.Root>
-              </Box>
+                            Example
+                          </Badge>
+                        )}
+                      </Flex>
+                    </ResourceCollectionCell>
+                    <ResourceCollectionCell label="Type">
+                      <Text
+                        fontSize="xs"
+                        fontWeight={600}
+                        textTransform="uppercase"
+                        color={
+                          item.type === "raster" ? "purple.600" : "teal.600"
+                        }
+                      >
+                        {item.type}
+                      </Text>
+                    </ResourceCollectionCell>
+                    <ResourceCollectionCell label="Source">
+                      {item.source.href ? (
+                        <a
+                          href={item.source.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={item.source.label}
+                          style={{
+                            color: "var(--chakra-colors-gray-500)",
+                            fontSize: 13,
+                          }}
+                        >
+                          <Text
+                            fontSize="sm"
+                            color="gray.500"
+                            truncate
+                            title={item.source.label}
+                          >
+                            {item.source.label}
+                          </Text>
+                        </a>
+                      ) : (
+                        <Text fontSize="sm" color="gray.500">
+                          {item.source.label}
+                        </Text>
+                      )}
+                    </ResourceCollectionCell>
+                    <ResourceCollectionCell label="Added">
+                      <Text fontSize="sm" color="gray.600">
+                        {item.addedAt ? timeAgo(item.addedAt) : "—"}
+                      </Text>
+                    </ResourceCollectionCell>
+                    <ResourceCollectionCell label="Expires">
+                      {item.expiresAt ? (
+                        <ExpiryBadge expiresAt={item.expiresAt} />
+                      ) : (
+                        <Text fontSize="sm" color="gray.500">
+                          —
+                        </Text>
+                      )}
+                    </ResourceCollectionCell>
+                    <ResourceCollectionCell label="Actions">
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        color="status.danger.fg"
+                        _hover={{ bg: "status.danger.subtle" }}
+                        loading={deletingId === item.id}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setPendingDelete(item);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </ResourceCollectionCell>
+                  </ResourceCollectionRow>
+                ))}
+              </ResourceCollection>
             );
           })()
         )}

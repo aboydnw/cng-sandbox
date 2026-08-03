@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { StoryRenderer } from "../components/StoryRenderer";
 import { BugReportLink } from "../components/BugReportLink";
@@ -8,6 +8,7 @@ import { useChatConfig } from "../lib/chat/useChatConfig";
 import type { AgentBridge } from "../lib/chat/types";
 import type { Story } from "../lib/story";
 import type { Connection, Dataset } from "../types";
+import { StoryProgress } from "../components/StoryProgress";
 
 interface StoryReaderInnerProps {
   story: Story;
@@ -27,9 +28,35 @@ export function StoryReaderInner({
   chatEligible = false,
 }: StoryReaderInnerProps) {
   const agentBridgeRef = useRef<AgentBridge | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
   const { enabled: chatEnabled } = useChatConfig();
   const showChat = chatEligible && chatEnabled;
+
+  const updateReadingProgress = useCallback(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const remaining = element.scrollHeight - element.clientHeight;
+    setReadingProgress(remaining <= 0 ? 1 : element.scrollTop / remaining);
+  }, []);
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    updateReadingProgress();
+
+    const observer = new ResizeObserver(updateReadingProgress);
+    observer.observe(element);
+    if (element.firstElementChild) {
+      observer.observe(element.firstElementChild);
+    }
+    window.addEventListener("resize", updateReadingProgress);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateReadingProgress);
+    };
+  }, [story, updateReadingProgress]);
 
   return (
     <Box h="100vh" display="flex" flexDirection="column">
@@ -55,7 +82,14 @@ export function StoryReaderInner({
         </Flex>
       )}
 
-      <Box flex={1} overflowY="auto">
+      <StoryProgress progress={readingProgress} />
+
+      <Box
+        ref={scrollRef}
+        flex={1}
+        overflowY="auto"
+        onScroll={updateReadingProgress}
+      >
         <StoryRenderer
           story={story}
           datasetMap={datasetMap}

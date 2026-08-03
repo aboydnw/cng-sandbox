@@ -103,14 +103,14 @@ describe("DataPage creation action", () => {
 });
 
 describe("DataPage example copy rows", () => {
-  it("shows an Example badge on seeded example copies in the main table", async () => {
+  it("shows an Example badge on seeded example copies in the collection", async () => {
     renderDataPage();
 
     await waitFor(() => {
       expect(screen.getByText("Example Zarr")).toBeInTheDocument();
     });
 
-    const exampleRow = screen.getByText("Example Zarr").closest("tr");
+    const exampleRow = screen.getByText("Example Zarr").closest("article");
     expect(exampleRow).not.toBeNull();
     expect(
       within(exampleRow as HTMLElement).getByText("Example", { exact: true })
@@ -124,7 +124,7 @@ describe("DataPage example copy rows", () => {
       expect(screen.getByText("User Zarr")).toBeInTheDocument();
     });
 
-    const userRow = screen.getByText("User Zarr").closest("tr");
+    const userRow = screen.getByText("User Zarr").closest("article");
     expect(userRow).not.toBeNull();
     const deleteButton = userRow!.querySelector("button");
     expect(deleteButton?.textContent).toMatch(/delete/i);
@@ -141,7 +141,7 @@ describe("DataPage fetch failures", () => {
     renderDataPage();
 
     expect(
-      await screen.findByText(/couldn’t load your data library/i)
+      await screen.findByText(/some data couldn’t load/i)
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/nothing in your data library yet/i)
@@ -170,7 +170,7 @@ describe("DataPage deletion failures", () => {
     );
     renderDataPage();
 
-    const userRow = (await screen.findByText("User Zarr")).closest("tr");
+    const userRow = (await screen.findByText("User Zarr")).closest("article");
     fireEvent.click(
       within(userRow as HTMLElement).getByRole("button", { name: /delete/i })
     );

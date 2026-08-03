@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 import { ArrowRight } from "@phosphor-icons/react";
@@ -6,18 +6,19 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExampleStoryCard } from "../components/ExampleStoryCard";
 import { useWorkspace } from "../hooks/useWorkspace";
-import { forkStoryOnServer, listStoriesFromServer } from "../lib/story/api";
-import { workspaceFetch } from "../lib/api";
+import { forkStoryOnServer } from "../lib/story/api";
 import { toaster } from "../lib/toaster";
 import { inferDataType } from "../lib/story/dataType";
-import { config } from "../config";
 import type { Story } from "../lib/story/types";
-import type { Dataset } from "../types";
 import { displayName } from "../utils/dataset";
 import { timeAgo } from "../utils/format";
 import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
 import { CREATE_MAP_INTENT, CREATE_STORY_INTENT } from "../lib/creationIntents";
+import {
+  useWorkspaceDatasets,
+  useWorkspaceStories,
+} from "../hooks/useWorkspaceLibrary";
 
 function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
   items: T[]
@@ -31,50 +32,35 @@ function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
 
 export default function WorkspaceHomePage() {
   const { workspacePath } = useWorkspace();
-  const [stories, setStories] = useState<Story[] | null>(null);
-  const [datasets, setDatasets] = useState<Dataset[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    listStoriesFromServer()
-      .then((data) => {
-        if (!cancelled) setStories(data);
-      })
-      .catch(() => {
-        if (!cancelled) setStories([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    workspaceFetch(`${config.apiBase}/api/datasets`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: Dataset[]) => {
-        if (!cancelled) setDatasets(data);
-      })
-      .catch(() => {
-        if (!cancelled) setDatasets([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const storiesResource = useWorkspaceStories();
+  const datasetsResource = useWorkspaceDatasets();
+  const stories = storiesResource.data;
+  const datasets = datasetsResource.data;
 
   const navigate = useNavigate();
   const [cloningId, setCloningId] = useState<string | null>(null);
   const cloneInFlightRef = useRef(false);
 
-  const userStories = (stories ?? []).filter((s) => !s.is_example);
-  const exampleStories = (stories ?? []).filter((s) => s.is_example);
-  const userDatasets = (datasets ?? []).filter((d) => !d.is_example);
+  const userStories = stories.filter((s) => !s.is_example);
+  const exampleStories = stories.filter((s) => s.is_example);
+  const userDatasets = datasets.filter((d) => !d.is_example);
   const recentStories = sortByUpdated(userStories).slice(0, 3);
   const recentDatasets = sortByUpdated(userDatasets).slice(0, 3);
-  const loading = stories === null || datasets === null;
+  const loading =
+    stories.length === 0 &&
+    datasets.length === 0 &&
+    (storiesResource.status === "loading" ||
+      datasetsResource.status === "loading");
+  const resourceError = [storiesResource.error, datasetsResource.error]
+    .filter(Boolean)
+    .join("; ");
+  const allUnavailable =
+    storiesResource.status === "error" && datasetsResource.status === "error";
   const isEmpty =
-    !loading && userStories.length === 0 && userDatasets.length === 0;
+    !loading &&
+    !resourceError &&
+    userStories.length === 0 &&
+    userDatasets.length === 0;
 
   const handleCloneExample = useCallback(
     async (story: Story) => {
@@ -129,9 +115,42 @@ export default function WorkspaceHomePage() {
           }
         />
 
+        {resourceError && (
+          <Flex
+            role="alert"
+            mb={6}
+            p={4}
+            gap={4}
+            align={{ base: "stretch", sm: "center" }}
+            direction={{ base: "column", sm: "row" }}
+            bg="status.danger.subtle"
+            color="status.danger.fg"
+            borderRadius="md"
+          >
+            <Box flex="1">
+              <Text fontWeight={600}>
+                {allUnavailable
+                  ? "Couldn’t load your workspace"
+                  : "Some workspace content couldn’t load"}
+              </Text>
+              <Text fontSize="sm">{resourceError}</Text>
+            </Box>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                storiesResource.retry();
+                datasetsResource.retry();
+              }}
+            >
+              Try again
+            </Button>
+          </Flex>
+        )}
+
         {loading ? (
           <CollectionSkeleton rows={4} />
-        ) : isEmpty ? (
+        ) : allUnavailable ? null : isEmpty ? (
           <Box>
             <Heading textStyle="sectionTitle" color="fg" mb={2}>
               Start your first map or story

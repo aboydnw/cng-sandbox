@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useWorkspace } from "./useWorkspace";
 import { useSaveStatus } from "./useSaveStatus";
+import {
+  useWorkspaceConnections,
+  useWorkspaceDatasets,
+} from "./useWorkspaceLibrary";
 import {
   type CameraState,
   DEFAULT_CAMERA,
@@ -16,7 +20,6 @@ import {
   type MapState,
   type ChapterRenderMetadata,
   DEFAULT_LAYER_CONFIG,
-  createStory,
   createChapter,
   createScrollytellingChapter,
   createMapChapter,
@@ -27,7 +30,6 @@ import {
   createFlyoverChapter,
   isMapBoundChapter,
   flyoverEntryMapState,
-  createStoryOnServer,
   getStoryFromServer,
   saveStoryToServer,
   migrateStory,
@@ -38,15 +40,12 @@ import { captureKeyframe } from "../lib/story/flyover/keyframes";
 import { captureCameraToChapter } from "../lib/story/cameraCapture";
 import type { Connection, Dataset } from "../types";
 import { config } from "../config";
-import { workspaceFetch, connectionsApi } from "../lib/api";
+import { workspaceFetch } from "../lib/api";
 import { toaster } from "../lib/toaster";
 
 export function useStoryEditor() {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
-  const datasetIdParam = searchParams.get("dataset");
 
   const [story, setStory] = useState<Story | null>(null);
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -63,29 +62,13 @@ export function useStoryEditor() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoCaptureRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [allDatasets, setAllDatasets] = useState<Dataset[]>([]);
-  const [allConnections, setAllConnections] = useState<Connection[]>([]);
+  const datasetsResource = useWorkspaceDatasets();
+  const connectionsResource = useWorkspaceConnections();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { saveState, markSaving, markSaved, markError } = useSaveStatus();
 
-  useEffect(() => {
-    async function fetchAllDatasets() {
-      try {
-        const resp = await workspaceFetch(`${config.apiBase}/api/datasets`);
-        if (resp.ok) setAllDatasets(await resp.json());
-      } catch {
-        // ignore fetch errors
-      }
-    }
-    fetchAllDatasets();
-  }, []);
-
-  useEffect(() => {
-    connectionsApi
-      .list()
-      .then(setAllConnections)
-      .catch(() => {});
-  }, []);
+  const allDatasets = datasetsResource.data;
+  const allConnections = connectionsResource.data;
 
   // Load existing story
   useEffect(() => {
@@ -113,53 +96,6 @@ export function useStoryEditor() {
     }
     loadStory();
   }, [id]);
-
-  // Create new story if this is /story/new
-  useEffect(() => {
-    if (id || story) return;
-    async function createNew() {
-      try {
-        let fetchedDataset: Dataset | null = null;
-        if (datasetIdParam) {
-          const resp = await workspaceFetch(
-            `${config.apiBase}/api/datasets/${datasetIdParam}`
-          );
-          if (resp.ok) {
-            fetchedDataset = await resp.json();
-            setDataset(fetchedDataset);
-          }
-        }
-        const draft = createStory(datasetIdParam, {
-          preferredColormap: fetchedDataset?.preferred_colormap ?? null,
-          preferredColormapReversed:
-            fetchedDataset?.preferred_colormap_reversed ?? null,
-        });
-        if (fetchedDataset?.bounds) {
-          const cam = cameraFromBounds(fetchedDataset.bounds);
-          const firstChapter = draft.chapters[0];
-          if (firstChapter && isMapBoundChapter(firstChapter)) {
-            firstChapter.map_state = {
-              center: [cam.longitude, cam.latitude],
-              zoom: cam.zoom,
-              bearing: 0,
-              pitch: 0,
-              basemap: "streets",
-            };
-          }
-          setCamera(cam);
-        }
-        const saved = await createStoryOnServer(draft);
-        setStory(saved);
-        setActiveChapterId(saved.chapters[0]?.id ?? "");
-        navigate(workspacePath(`/story/${saved.id}/edit`), { replace: true });
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to create story");
-      } finally {
-        setLoading(false);
-      }
-    }
-    createNew();
-  }, [id, story, datasetIdParam, navigate, workspacePath]);
 
   // Fetch primary dataset for existing stories
   useEffect(() => {
@@ -569,9 +505,7 @@ export function useStoryEditor() {
       );
       if (!resp.ok) return;
       const ds: Dataset = await resp.json();
-      setAllDatasets((prev) =>
-        prev.some((d) => d.id === ds.id) ? prev : [...prev, ds]
-      );
+      datasetsResource.retry();
       if (activeChapterId) {
         const baseConfig =
           activeChapter && isMapBoundChapter(activeChapter)
@@ -652,6 +586,8 @@ export function useStoryEditor() {
     mapContainerRef,
     allDatasets,
     allConnections,
+    datasetsResource,
+    connectionsResource,
     uploadModalOpen,
     saveState,
     layers,
@@ -679,7 +615,6 @@ export function useStoryEditor() {
     setBasemap,
     setPublishDialogOpen,
     setUploadModalOpen,
-    handleConnectionCreated: (conn: Connection) =>
-      setAllConnections((prev) => [conn, ...prev]),
+    handleConnectionCreated: (_conn: Connection) => connectionsResource.retry(),
   };
 }

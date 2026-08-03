@@ -153,6 +153,8 @@ export default function StoryEditorPage() {
     mapContainerRef,
     allDatasets,
     allConnections,
+    datasetsResource,
+    connectionsResource,
     uploadModalOpen,
     saveState,
     layers,
@@ -676,6 +678,24 @@ export default function StoryEditorPage() {
                   datasetType={activeDataset?.dataset_type ?? "raster"}
                   datasets={allDatasets}
                   connections={allConnections}
+                  dataStatus={
+                    datasetsResource.status === "loading" ||
+                    connectionsResource.status === "loading"
+                      ? "loading"
+                      : datasetsResource.status === "error" ||
+                          connectionsResource.status === "error"
+                        ? "error"
+                        : "ready"
+                  }
+                  dataError={
+                    [datasetsResource.error, connectionsResource.error]
+                      .filter(Boolean)
+                      .join("; ") || null
+                  }
+                  onDataRetry={() => {
+                    datasetsResource.retry();
+                    connectionsResource.retry();
+                  }}
                   onUploadClick={() => setUploadModalOpen(true)}
                   onAddConnectionClick={() => setConnectionModalOpen(true)}
                   overlayPosition={

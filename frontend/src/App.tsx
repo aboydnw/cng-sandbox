@@ -22,6 +22,7 @@ const StoriesPage = lazy(() => import("./pages/StoriesPage"));
 const StoryEditorPage = lazy(() => import("./pages/StoryEditorPage"));
 const StoryEmbedPage = lazy(() => import("./pages/StoryEmbedPage"));
 const StoryReaderPage = lazy(() => import("./pages/StoryReaderPage"));
+const StorySetupPage = lazy(() => import("./pages/StorySetupPage"));
 const UploadPage = lazy(() => import("./pages/UploadPage"));
 const WorkspaceHomePage = lazy(() => import("./pages/WorkspaceHomePage"));
 
@@ -66,7 +67,7 @@ function WorkspaceRoutes() {
         <Route path="/data" element={<DataPage />} />
         <Route path="/library" element={<LibraryRedirect />} />
         <Route path="/datasets" element={<DatasetsRedirect />} />
-        <Route path="/story/new" element={<StoryEditorPage />} />
+        <Route path="/story/new" element={<StorySetupPage />} />
         <Route path="/story/:id" element={<StoryReaderRedirect />} />
         <Route path="/story/:id/edit" element={<StoryEditorPage />} />
         <Route path="/about" element={<AboutPage />} />

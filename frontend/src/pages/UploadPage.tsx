@@ -57,7 +57,7 @@ export default function UploadPage() {
     name: "",
     size: "",
   });
-  const [mode, setMode] = useState<PageMode>("initial");
+  const [mode, setMode] = useState<PageMode>("upload-idle");
   const [reportOpen, setReportOpen] = useState(false);
   const [xyzPickerUrl, setXyzPickerUrl] = useState<string | null>(null);
   const [parquetPreviewUrl, setParquetPreviewUrl] = useState<string | null>(
@@ -273,10 +273,6 @@ export default function UploadPage() {
     setMode("upload-idle");
   }, []);
 
-  const handleCollapse = useCallback(() => {
-    setMode("initial");
-  }, []);
-
   const inlineContent = (
     <>
       {(mode === "uploading" || mode === "error") && (
@@ -354,7 +350,6 @@ export default function UploadPage() {
             onClick={handleVisualizeCardClick}
             expanded={visualizeCardExpanded}
             faded={false}
-            onCollapse={mode === "upload-idle" ? handleCollapse : undefined}
           >
             <Text mb={4} fontSize="sm" color="fg.muted" lineHeight="1.6">
               Upload a local file to convert it, or add a URL to connect cloud

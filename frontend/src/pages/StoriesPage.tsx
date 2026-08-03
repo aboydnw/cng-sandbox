@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ExpiryBadge } from "../components/ExpiryBadge";
@@ -13,6 +13,23 @@ import { CollectionSkeleton } from "../components/ui/CollectionSkeleton";
 import { PageHeader } from "../components/PageHeader";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { CREATE_MAP_INTENT, CREATE_STORY_INTENT } from "../lib/creationIntents";
+import {
+  ResourceCollection,
+  ResourceCollectionCell,
+  ResourceCollectionRow,
+} from "../components/ui/ResourceCollection";
+import { ResourceThumbnail } from "../components/ui/ResourceThumbnail";
+
+const STORY_COLUMNS = "minmax(0, 1fr) 100px 100px 100px 140px 80px";
+
+function storyThumbnailUrl(story: Story): string | null {
+  const imageChapter = story.chapters.find(
+    (chapter) => chapter.type === "image"
+  );
+  return imageChapter?.type === "image"
+    ? imageChapter.image.thumbnail_url || imageChapter.image.url
+    : null;
+}
 
 export default function StoriesPage() {
   const { workspacePath } = useWorkspace();
@@ -123,94 +140,83 @@ export default function StoriesPage() {
             }
           />
         ) : (
-          <Box overflowX="auto" pb={2}>
-            <Table.Root size="sm" tableLayout="fixed">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader>Name</Table.ColumnHeader>
-                  <Table.ColumnHeader w="100px">Status</Table.ColumnHeader>
-                  <Table.ColumnHeader w="100px">Chapters</Table.ColumnHeader>
-                  <Table.ColumnHeader w="100px">Updated</Table.ColumnHeader>
-                  <Table.ColumnHeader w="140px">Expires</Table.ColumnHeader>
-                  <Table.ColumnHeader w="80px" />
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {userStories.map((story) => (
-                  <Table.Row key={story.id}>
-                    <Table.Cell>
-                      <Flex align="center" gap={2}>
-                        <Link to={workspacePath(`/story/${story.id}/edit`)}>
-                          <Text
-                            color="brand.orange"
-                            _hover={{ textDecoration: "underline" }}
-                            fontWeight={500}
-                            truncate
-                            title={story.title}
-                          >
-                            {story.title}
-                          </Text>
-                        </Link>
-                        {story.is_example_copy && (
-                          <Badge
-                            size="sm"
-                            bg="brand.bgSubtle"
-                            color="brand.brown"
-                          >
-                            Example
-                          </Badge>
-                        )}
-                      </Flex>
-                    </Table.Cell>
-                    <Table.Cell>
+          <ResourceCollection
+            columns={STORY_COLUMNS}
+            headers={["Name", "Status", "Chapters", "Updated", "Expires", ""]}
+          >
+            {userStories.map((story) => (
+              <ResourceCollectionRow key={story.id} columns={STORY_COLUMNS}>
+                <ResourceCollectionCell label="Name" primary>
+                  <Flex align="center" gap={2}>
+                    <ResourceThumbnail
+                      src={storyThumbnailUrl(story)}
+                      alt={story.title}
+                    />
+                    <Link to={workspacePath(`/story/${story.id}/edit`)}>
                       <Text
-                        fontSize="xs"
-                        fontWeight={600}
-                        textTransform="uppercase"
-                        color={story.published ? "green.600" : "gray.500"}
+                        color="brand.orange"
+                        _hover={{ textDecoration: "underline" }}
+                        fontWeight={500}
+                        truncate
+                        title={story.title}
                       >
-                        {story.published ? "Published" : "Draft"}
+                        {story.title}
                       </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm" color="gray.600">
-                        {story.chapters.length}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text fontSize="sm" color="gray.600">
-                        {story.updated_at ? timeAgo(story.updated_at) : "—"}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      {story.expires_at ? (
-                        <ExpiryBadge expiresAt={story.expires_at} />
-                      ) : (
-                        <Text fontSize="sm" color="gray.500">
-                          —
-                        </Text>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        color="status.danger.fg"
-                        _hover={{ bg: "status.danger.subtle" }}
-                        loading={deletingId === story.id}
-                        onClick={() => {
-                          setDeleteError(null);
-                          setPendingDelete(story);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Root>
-          </Box>
+                    </Link>
+                    {story.is_example_copy && (
+                      <Badge size="sm" bg="brand.bgSubtle" color="brand.brown">
+                        Example
+                      </Badge>
+                    )}
+                  </Flex>
+                </ResourceCollectionCell>
+                <ResourceCollectionCell label="Status">
+                  <Text
+                    fontSize="xs"
+                    fontWeight={600}
+                    textTransform="uppercase"
+                    color={story.published ? "green.600" : "gray.500"}
+                  >
+                    {story.published ? "Published" : "Draft"}
+                  </Text>
+                </ResourceCollectionCell>
+                <ResourceCollectionCell label="Chapters">
+                  <Text fontSize="sm" color="gray.600">
+                    {story.chapters.length}
+                  </Text>
+                </ResourceCollectionCell>
+                <ResourceCollectionCell label="Updated">
+                  <Text fontSize="sm" color="gray.600">
+                    {story.updated_at ? timeAgo(story.updated_at) : "—"}
+                  </Text>
+                </ResourceCollectionCell>
+                <ResourceCollectionCell label="Expires">
+                  {story.expires_at ? (
+                    <ExpiryBadge expiresAt={story.expires_at} />
+                  ) : (
+                    <Text fontSize="sm" color="gray.500">
+                      —
+                    </Text>
+                  )}
+                </ResourceCollectionCell>
+                <ResourceCollectionCell label="Actions">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="status.danger.fg"
+                    _hover={{ bg: "status.danger.subtle" }}
+                    loading={deletingId === story.id}
+                    onClick={() => {
+                      setDeleteError(null);
+                      setPendingDelete(story);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </ResourceCollectionCell>
+              </ResourceCollectionRow>
+            ))}
+          </ResourceCollection>
         )}
       </Box>
       <ConfirmDialog

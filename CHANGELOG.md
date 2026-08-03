@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.0](https://github.com/aboydnw/cng-sandbox/compare/v2.14.0...v2.15.0) (2026-08-03)
+
+
+### Features
+
+* improve workspace authoring UX ([#607](https://github.com/aboydnw/cng-sandbox/issues/607)) ([61b218f](https://github.com/aboydnw/cng-sandbox/commit/61b218f64abe44ef894da2a5e668e6436b8d1bfc))
+
 ## [2.14.0](https://github.com/aboydnw/cng-sandbox/compare/v2.13.0...v2.14.0) (2026-08-03)
 
 

@@ -5,20 +5,31 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+concurrency:
+  group: uptime-monitor
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:
   health-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       issues: write
     steps:
       - name: Check site health
         id: health
         run: |
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 \
-            "https://storytelling.developmentseed.org/api/health" || echo "000")
+          HTTP_STATUS=000
+          for attempt in 1 2 3; do
+            HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+              --max-time 20 \
+              "https://storytelling.developmentseed.org/api/health") || HTTP_STATUS=000
+            [ "$HTTP_STATUS" = "200" ] && break
+            echo "Health check attempt $attempt/3 returned HTTP $HTTP_STATUS"
+            [ "$attempt" = "3" ] || sleep 10
+          done
           echo "status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
           if [ "$HTTP_STATUS" = "200" ]; then
             echo "Site is healthy (HTTP $HTTP_STATUS)"
@@ -50,15 +61,14 @@ jobs:
           BODY="${BODY}\ndocker compose --profile prod ps"
           BODY="${BODY}\ndocker compose --profile prod logs --tail 50"
           BODY="${BODY}\n\`\`\`"
-          BODY="${BODY}\n\nIf services are down, restart:"
+          BODY="${BODY}\n\nIf services are down, pull the published images and restart:"
           BODY="${BODY}\n\n\`\`\`bash"
-          BODY="${BODY}\ndocker compose --profile prod up -d --build"
+          BODY="${BODY}\ndocker compose --profile prod pull"
+          BODY="${BODY}\ndocker compose --profile prod up -d"
           BODY="${BODY}\n\`\`\`"
 
           if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" \
-              --repo "${{ github.repository }}" \
-              --body "Still down as of $(date -u '+%Y-%m-%d %H:%M UTC'). HTTP status: ${HTTP_STATUS}"
+            echo "Incident #$EXISTING remains open; no duplicate notification needed."
           else
             printf '%b' "$BODY" | gh issue create \
               --repo "${{ github.repository }}" \

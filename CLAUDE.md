@@ -205,7 +205,7 @@ Worktrees live in `.worktrees/` (already gitignored).
    ```bash
    git worktree add .worktrees/<branch-name> -b <branch-name>
    ```
-2. **Open PR**: Push from the worktree and create the PR.
+2. **Open PR**: Push from the worktree and create the PR as **ready for review**. Do not create draft PRs unless the user explicitly asks for a draft.
 3. **Monitor PR**: The monitoring loop runs in the main session (read-only `gh` commands, no isolation needed).
 4. **Fix review feedback**: When the monitoring loop detects feedback that needs code changes, spawn a subagent that works in the **existing worktree** — not a new one. Pass the worktree path so the subagent can `cd` into it, make fixes, commit, and push.
 5. **Post-merge cleanup**: After the PR is squash-merged, clean up from the main session:

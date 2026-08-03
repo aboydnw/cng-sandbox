@@ -1,0 +1,46 @@
+name: Full-stack smoke test
+
+on:
+  pull_request:
+    paths:
+      - "docker-compose.yml"
+      - "frontend/**"
+      - "ingestion/**"
+      - "scripts/full-stack-smoke.sh"
+      - ".github/workflows/full-stack-smoke.yml"
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: full-stack-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Configure isolated test environment
+        run: cp .env.example .env
+
+      - name: Build and start the stack
+        run: docker compose -p cng-smoke up -d --build
+
+      - name: Verify services and proxy routes
+        run: scripts/full-stack-smoke.sh
+
+      - name: Show service logs after failure
+        if: failure()
+        run: docker compose -p cng-smoke logs --no-color --tail 200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose -p cng-smoke down -v

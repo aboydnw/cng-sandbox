@@ -57,8 +57,8 @@ This is what the `release-please` workflow runs over SSH after a release PR is m
 
 ## Notes
 
-- `docker compose up` (without `--profile prod`) still runs local dev without Caddy
-- Caddy serves the static bundle from the `frontend_dist` volume, which the `prod`-profile `frontend-build` service populates from the released image. The Vite dev `frontend` service carries no profile, so `--profile prod up -d` starts it too — but nothing routes to it in prod. It bind-mounts the VM's `./frontend` checkout over `/app`, so its dev server reflects whatever is on disk, not the released bundle. Don't use it to sanity-check a deploy; verify against the public URL
+- `docker compose --profile dev up` (without `--profile prod`) still runs local dev without Caddy
+- Caddy serves the static bundle from the `frontend_dist` volume, which the `prod`-profile `frontend-build` service populates from the released image. The Vite dev `frontend` service sits behind the `dev` profile, so `--profile prod up -d` does not start it on the VM. That is deliberate: it bind-mounts `./frontend` over `/app`, so if it were running its dev server would reflect whatever is on the VM's disk rather than the released bundle. Verify a deploy against the public URL, never against port 5185
 - Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 - During the brief restart window when ingestion or the tilers cycle, Caddy's `handle_errors 502 503` block serves a small self-refreshing "Deploying…" page (meta-refresh every 15s) so users don't see a raw 502/503. The same handler is wired up for both the main host and the `viewer.<domain>` subdomain

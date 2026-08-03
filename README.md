@@ -21,9 +21,12 @@ Currently can be found at [storytelling.developmentseed.org](https://storytellin
 You need [Docker](https://docs.docker.com/get-docker/) installed and a [Cloudflare R2](https://developers.cloudflare.com/r2/) bucket with API credentials.
 
 ```bash
-cp .env.example .env          # create local config — fill in R2 credentials
-docker compose up -d --build   # start all services
+cp .env.example .env                          # create local config — fill in R2 credentials
+docker compose --profile dev up -d --build    # start all services
 ```
+
+`--profile dev` is what brings up the frontend dev server; without it the backend
+services start but nothing listens on 5185.
 
 Open [http://localhost:5185](http://localhost:5185) in your browser.
 
@@ -42,8 +45,8 @@ Want to run your own instance and drive it from an AI client (Claude Desktop or 
 ## Stopping
 
 ```bash
-docker compose down       # stop containers (data is preserved)
-docker compose down -v    # stop and wipe all data
+docker compose --profile dev down       # stop containers (data is preserved)
+docker compose --profile dev down -v    # stop and wipe all data
 ```
 
 ## Architecture
@@ -132,7 +135,8 @@ All browser traffic goes through port 5185 — the frontend proxies API and tile
 
 | Problem | Solution |
 |---------|----------|
-| Containers won't start | `docker compose down -v && docker compose up -d --build` |
+| Containers won't start | `docker compose --profile dev down -v && docker compose --profile dev up -d --build` |
+| Nothing on port 5185 | The frontend is behind the `dev` profile — start with `--profile dev` |
 | Upload stuck at "Ingesting" | Check tiler logs: `docker compose logs raster-tiler` |
 | Vector tiles return 404 | tipg refreshes its catalog every 5 seconds — wait briefly after upload |
 | Map shows wrong location | Clear browser cache; old tile URLs may be cached |

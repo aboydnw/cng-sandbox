@@ -153,7 +153,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 ## Troubleshooting
 
 ### "Connection refused" on localhost:8086
-Verify sandbox stack is running: `docker compose ps`. If not, start it: `docker compose up -d`.
+Verify sandbox stack is running: `docker compose --profile dev ps`. If not, start it: `docker compose --profile dev up -d`.
 
 ### "Unknown colormap" validation error
 List valid colormaps via the `cng://colormaps` resource and pick one.

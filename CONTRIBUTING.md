@@ -26,8 +26,11 @@
 3. Start the stack:
 
    ```bash
-   docker compose up -d --build
+   docker compose --profile dev up -d --build
    ```
+
+   The `dev` profile adds the Vite dev server; production runs the same file
+   without it and serves the built bundle through Caddy instead.
 
 4. Verify at [http://localhost:5185](http://localhost:5185).
 

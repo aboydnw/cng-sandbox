@@ -77,6 +77,23 @@ docker compose -f docker-compose.yml up -d <service>
 
 Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tiler`, `ingestion`, `frontend`
 
+Note that `build` alone is not enough — a running container keeps using the image
+it started with, so it must be recreated with `up -d` to pick up a new build.
+
+**The `frontend` service is the exception.** It bind-mounts `./frontend` over `/app`,
+so source edits are live: Vite HMR picks them up with no rebuild and no restart.
+Two cases still need action:
+
+- **Dependency changes** (`package.json` / `yarn.lock`): the installed `node_modules`
+  lives in an anonymous volume that survives `up -d`, so it goes stale. Rebuild and
+  drop the volume:
+  ```bash
+  docker compose -f docker-compose.yml rm -sfv frontend
+  docker compose -f docker-compose.yml up -d --build frontend
+  ```
+- **Vite server config** (`vite.config.ts` proxy targets, compose `environment:`):
+  restart the container; the dev server reads these only at boot.
+
 ## Production Deployment
 
 Deployed to Hetzner via the `prod` Docker Compose profile, with Caddy providing HTTPS. The whole site is public (no basic-auth gate). Full deploy steps, CSP rules, and tile caching are in [docs/production-deployment.md](docs/production-deployment.md) — read before any prod change.

@@ -9,7 +9,11 @@ ARG VITE_VIEWER_ORIGIN
 ENV VITE_VIEWER_ORIGIN=$VITE_VIEWER_ORIGIN
 RUN yarn build
 
-# --- Dev: hot-reloading Vite dev server for local development ---
+# --- Dev: hot-reloading Vite dev server for local development.
+# The compose `frontend` service bind-mounts ./frontend over /app, so the COPY
+# steps below are a fallback that keeps this image runnable on its own. Source
+# edits reach the running container through the mount, not through a rebuild;
+# the installed node_modules is preserved by an anonymous volume. ---
 FROM node:20 AS dev
 WORKDIR /app
 RUN corepack enable

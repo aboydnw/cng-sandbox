@@ -19,7 +19,6 @@ import {
   useWorkspaceDatasets,
   useWorkspaceStories,
 } from "../hooks/useWorkspaceLibrary";
-import { StatePanel } from "../components/ui/StatePanel";
 
 function sortByUpdated<T extends { updated_at?: string; created_at?: string }>(
   items: T[]
@@ -117,22 +116,36 @@ export default function WorkspaceHomePage() {
         />
 
         {resourceError && (
-          <Box mb={6}>
-            <StatePanel
-              tone="danger"
-              title={
-                allUnavailable
+          <Flex
+            role="alert"
+            mb={6}
+            p={4}
+            gap={4}
+            align={{ base: "stretch", sm: "center" }}
+            direction={{ base: "column", sm: "row" }}
+            bg="status.danger.subtle"
+            color="status.danger.fg"
+            borderRadius="md"
+          >
+            <Box flex="1">
+              <Text fontWeight={600}>
+                {allUnavailable
                   ? "Couldn’t load your workspace"
-                  : "Some workspace content couldn’t load"
-              }
-              description={resourceError}
-              actionLabel="Try again"
-              onAction={() => {
+                  : "Some workspace content couldn’t load"}
+              </Text>
+              <Text fontSize="sm">{resourceError}</Text>
+            </Box>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
                 storiesResource.retry();
                 datasetsResource.retry();
               }}
-            />
-          </Box>
+            >
+              Try again
+            </Button>
+          </Flex>
         )}
 
         {loading ? (

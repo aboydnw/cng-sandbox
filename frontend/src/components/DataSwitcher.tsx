@@ -28,14 +28,14 @@ export function DataSwitcher({
   const { workspacePath } = useWorkspace();
   const datasets = useWorkspaceDatasets();
   const connections = useWorkspaceConnections();
+  const retryDatasets = datasets.retry;
+  const retryConnections = connections.retry;
 
   useEffect(() => {
     if (refreshKey === 0) return;
-    datasets.retry();
-    connections.retry();
-    // refreshKey deliberately invalidates both independent resources.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]);
+    retryDatasets();
+    retryConnections();
+  }, [refreshKey, retryDatasets, retryConnections]);
 
   const items = useMemo<DataSelectorItem[]>(
     () => [
@@ -89,8 +89,8 @@ export function DataSwitcher({
       status={isInitialLoading ? "loading" : failures ? "error" : "ready"}
       error={failures || null}
       onRetry={() => {
-        datasets.retry();
-        connections.retry();
+        retryDatasets();
+        retryConnections();
       }}
       onSelect={handleSelect}
       onUploadClick={onUploadClick}

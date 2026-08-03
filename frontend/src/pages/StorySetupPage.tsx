@@ -52,8 +52,22 @@ export default function StorySetupPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { workspacePath } = useWorkspace();
+  const requestedDatasetLoading =
+    Boolean(datasetId) && !dataset && datasets.status === "loading";
+  const requestedDatasetError =
+    Boolean(datasetId) && !dataset && datasets.status === "error";
+  const requestedDatasetMissing =
+    Boolean(datasetId) &&
+    !dataset &&
+    (datasets.status === "ready" || datasets.status === "empty");
+  const requestedDatasetUnavailable =
+    requestedDatasetLoading || requestedDatasetError || requestedDatasetMissing;
 
   async function chooseTemplate(template: StoryTemplate) {
+    if (template === "map" && datasetId && !dataset) {
+      setError("The selected dataset is not available yet.");
+      return;
+    }
     setCreating(template);
     setError(null);
     try {
@@ -119,9 +133,35 @@ export default function StorySetupPage() {
           description={
             dataset
               ? `Choose how to begin with ${displayName(dataset)}.`
-              : "Choose a starting point. You can add any chapter type later."
+              : requestedDatasetLoading
+                ? "Loading the selected dataset before you begin."
+                : requestedDatasetError
+                  ? "We couldn’t load the selected dataset. Retry it or choose a story that doesn’t start with a map."
+                  : requestedDatasetMissing
+                    ? "The selected dataset is unavailable. Choose another starting point."
+                    : "Choose a starting point. You can add any chapter type later."
           }
         />
+        {requestedDatasetError && (
+          <Flex
+            role="alert"
+            align="center"
+            justify="space-between"
+            gap={3}
+            mb={5}
+            p={3}
+            bg="status.danger.subtle"
+            color="status.danger.fg"
+            borderRadius="md"
+          >
+            <Text fontSize="sm">
+              {datasets.error ?? "Couldn’t load the selected dataset"}
+            </Text>
+            <Button size="xs" variant="outline" onClick={datasets.retry}>
+              Try again
+            </Button>
+          </Flex>
+        )}
         <Box
           display="grid"
           gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
@@ -129,7 +169,9 @@ export default function StorySetupPage() {
         >
           {templates.map((template) => {
             const Icon = template.icon;
-            const recommended = datasetId && template.id === "map";
+            const recommended = Boolean(datasetId && template.id === "map");
+            const mapBlocked =
+              template.id === "map" && requestedDatasetUnavailable;
             return (
               <Flex
                 key={template.id}
@@ -166,12 +208,18 @@ export default function StorySetupPage() {
                   size="sm"
                   variant={recommended ? "solid" : "outline"}
                   loading={creating === template.id}
-                  disabled={creating !== null}
+                  disabled={creating !== null || mapBlocked}
                   onClick={() => void chooseTemplate(template.id)}
                 >
-                  {recommended
-                    ? "Start with this map"
-                    : `Choose ${template.title}`}
+                  {requestedDatasetLoading && template.id === "map"
+                    ? "Loading selected dataset…"
+                    : requestedDatasetError && template.id === "map"
+                      ? "Dataset couldn’t load"
+                      : requestedDatasetMissing && template.id === "map"
+                        ? "Dataset unavailable"
+                        : recommended
+                          ? "Start with this map"
+                          : `Choose ${template.title}`}
                 </Button>
               </Flex>
             );

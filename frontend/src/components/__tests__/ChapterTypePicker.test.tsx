@@ -28,4 +28,26 @@ describe("ChapterTypePicker", () => {
       "true"
     );
   });
+
+  it("keeps a specialized type visible after the value changes", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <ChakraProvider value={system}>
+        <ChapterTypePicker value="map" onChange={onChange} />
+      </ChakraProvider>
+    );
+
+    expect(screen.queryByRole("button", { name: /3D flyover/i })).toBeNull();
+
+    rerender(
+      <ChakraProvider value={system}>
+        <ChapterTypePicker value="flyover" onChange={onChange} />
+      </ChakraProvider>
+    );
+
+    expect(screen.getByRole("button", { name: /3D flyover/i })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+  });
 });

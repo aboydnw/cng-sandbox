@@ -9,10 +9,9 @@ interface ChapterTypePickerProps {
 }
 
 export function ChapterTypePicker({ value, onChange }: ChapterTypePickerProps) {
-  const current = CHAPTER_TYPE_REGISTRY.find((item) => item.type === value);
-  const [showMore, setShowMore] = useState(current?.prominence === "secondary");
+  const [showMore, setShowMore] = useState(false);
   const options = CHAPTER_TYPE_REGISTRY.filter(
-    (item) => showMore || item.prominence === "primary"
+    (item) => showMore || item.prominence === "primary" || item.type === value
   );
 
   return (

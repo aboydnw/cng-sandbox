@@ -7,6 +7,7 @@ import StorySetupPage from "../StorySetupPage";
 import { createStoryOnServer } from "../../lib/story";
 
 const navigate = vi.fn();
+const useWorkspaceDatasetsMock = vi.hoisted(() => vi.fn());
 
 vi.mock("react-router-dom", async () => {
   const actual =
@@ -22,12 +23,7 @@ vi.mock("../../hooks/useWorkspace", () => ({
 }));
 
 vi.mock("../../hooks/useWorkspaceLibrary", () => ({
-  useWorkspaceDatasets: () => ({
-    status: "ready",
-    data: [],
-    error: null,
-    retry: vi.fn(),
-  }),
+  useWorkspaceDatasets: useWorkspaceDatasetsMock,
 }));
 
 vi.mock("../../lib/story", async () => {
@@ -41,10 +37,10 @@ vi.mock("../../lib/story", async () => {
   };
 });
 
-function renderPage() {
+function renderPage(entry = "/story/new") {
   return render(
     <ChakraProvider value={system}>
-      <MemoryRouter initialEntries={["/story/new"]}>
+      <MemoryRouter initialEntries={[entry]}>
         <StorySetupPage />
       </MemoryRouter>
     </ChakraProvider>
@@ -54,6 +50,12 @@ function renderPage() {
 describe("StorySetupPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useWorkspaceDatasetsMock.mockReturnValue({
+      status: "ready",
+      data: [],
+      error: null,
+      retry: vi.fn(),
+    });
   });
 
   it("does not persist a story before a template is chosen", () => {
@@ -83,5 +85,46 @@ describe("StorySetupPage", () => {
     await waitFor(() => expect(createStoryOnServer).toHaveBeenCalledOnce());
     const created = vi.mocked(createStoryOnServer).mock.calls[0][0];
     expect(created.chapters[0].type).toBe("map");
+  });
+
+  it("waits for a requested dataset before enabling map creation", () => {
+    useWorkspaceDatasetsMock.mockReturnValue({
+      status: "loading",
+      data: [],
+      error: null,
+      retry: vi.fn(),
+    });
+    renderPage("/story/new?dataset=dataset-1");
+
+    expect(
+      screen.getByRole("button", { name: "Loading selected dataset…" })
+    ).toBeDisabled();
+    expect(createStoryOnServer).not.toHaveBeenCalled();
+  });
+
+  it("offers retry when a requested dataset fails to load", () => {
+    const retry = vi.fn();
+    useWorkspaceDatasetsMock.mockReturnValue({
+      status: "error",
+      data: [],
+      error: "HTTP 503",
+      retry,
+    });
+    renderPage("/story/new?dataset=dataset-1");
+
+    expect(
+      screen.getByRole("button", { name: "Dataset couldn’t load" })
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(retry).toHaveBeenCalledOnce();
+    expect(createStoryOnServer).not.toHaveBeenCalled();
+  });
+
+  it("does not create a story for a settled missing dataset", () => {
+    renderPage("/story/new?dataset=missing");
+    expect(
+      screen.getByRole("button", { name: "Dataset unavailable" })
+    ).toBeDisabled();
+    expect(createStoryOnServer).not.toHaveBeenCalled();
   });
 });

@@ -262,7 +262,9 @@ scripts/worktree-stack.sh logs ingestion  # Tail a service's logs
 
 The worktree stack gets its own containers, network, and database volume (via the `-p` project name). Use `down` (not just `stop`) when done to free resources — it removes volumes too.
 
-For **frontend-only changes**, you can skip Docker entirely and just run `cd frontend && npx vite dev --port 5285` — this uses the prod backend services through the Vite proxy.
+The stack's `frontend` container bind-mounts `./frontend` relative to the compose file, and `worktree-stack.sh` points compose at the **worktree's** `docker-compose.yml`. So the running dev server serves the worktree's source, and edits hot-reload without a rebuild — see [Rebuild a single service](#rebuild-a-single-service) for the two cases that still need action.
+
+For **frontend-only changes**, you can also skip Docker entirely and just run `cd frontend && npx vite dev --port 5285` — this uses the prod backend services through the Vite proxy.
 
 ## Skill Feedback Loop
 

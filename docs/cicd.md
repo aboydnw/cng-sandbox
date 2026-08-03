@@ -4,7 +4,11 @@ Read this when touching GitHub Actions workflows, debugging release-please, revi
 
 ## Pull Requests
 
-All changes go through PRs. Branch protection requires `backend`, `frontend`, `docker-build`, and `conventional-commits` CI jobs to pass before merge. PR titles must follow conventional commit format — this is enforced by the `conventional-commits` workflow.
+All changes go through PRs. The core PR checks are `backend`, `frontend`, `archive-runtime`, `actions-security`, `proxy-parity`, `docker-build`, and `conventional-commits`. Branch protection should require those core checks. PR titles must follow conventional commit format — this is enforced by the `conventional-commits` workflow. The path-filtered `test` MCP matrix and `smoke` full-stack check should not be configured as universally required checks because they do not appear on unrelated PRs.
+
+CI cancels superseded runs on the same PR. Python ingestion dependencies are installed from the committed `uv.lock`; the editable local `geo-conversions` toolkit is added to that locked environment. Ruff covers Python linting and formatting, ESLint/Prettier/TypeScript cover frontend source, and zizmor audits workflow security. Tool and action versions used in CI are pinned so runs do not change underneath an existing commit.
+
+The Claude agent workflow is owner-only. Its invocation guard currently allows the GitHub login `aboydnw`; add another explicit login to the guard before another maintainer is allowed to invoke the write-capable agent.
 
 ## Releases
 
@@ -34,6 +38,16 @@ gh workflow run publish-mcp.yml -f target=testpypi
 The `release-please` workflow has three jobs that run in order: `release-please` (manages the Release PR), `build-and-push` (builds and pushes images to GHCR), and `deploy` (SSHes to the Hetzner VM and runs `docker compose --profile prod pull && up -d`). Because the VM pulls pre-built images instead of building locally, deploys take ~30-60s instead of several minutes and use far less VM CPU/RAM.
 
 Caddy uses the upstream `caddy:2` image directly (no custom Dockerfile). During the brief restart window when ingestion or the tilers cycle, Caddy's `handle_errors 502 503` block serves a self-refreshing maintenance page (`Caddyfile`) so users see "Deploying…" instead of a raw error.
+
+## Full-stack smoke test
+
+`.github/workflows/full-stack-smoke.yml` builds the non-production Docker Compose stack with isolated CI resources, waits for all seven services to become healthy, and probes the frontend plus the browser-facing `/api`, `/cog`, `/raster`, and `/vector` proxy routes. It runs on relevant pull requests, every Monday, and on manual dispatch. Failure logs are captured before the stack and its volumes are removed.
+
+This is intentionally an HTTP and service-wiring smoke test rather than a Playwright suite. It exercises the actual container topology without adding browser binaries for checks that do not require browser interaction. Add Playwright separately when critical user journeys need DOM or WebGL assertions.
+
+## Uptime incidents
+
+The uptime workflow probes the public health endpoint every five minutes and retries three times before declaring an outage. It opens at most one incident issue, leaves an existing incident untouched while the outage continues, and comments once when service recovers before closing the issue. Its recovery instructions use the published GHCR images (`docker compose pull` followed by `up -d`); production is not rebuilt in place.
 
 ### SSH host-key verification
 

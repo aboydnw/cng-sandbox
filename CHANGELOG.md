@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.0](https://github.com/aboydnw/cng-sandbox/compare/v2.13.0...v2.14.0) (2026-08-03)
+
+
+### Features
+
+* embed theming and full-viewport snippet ([#605](https://github.com/aboydnw/cng-sandbox/issues/605)) ([a6e37e0](https://github.com/aboydnw/cng-sandbox/commit/a6e37e0b1ef82f6991412e53ed96248e818b5437))
+
 ## [2.13.0](https://github.com/aboydnw/cng-sandbox/compare/v2.12.0...v2.13.0) (2026-07-31)
 
 

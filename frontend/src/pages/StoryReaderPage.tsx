@@ -12,6 +12,7 @@ import {
   isMapBoundChapter,
 } from "../lib/story";
 import { loadPortableConfig } from "../lib/story/loadPortableConfig";
+import { parseEmbedTheme, applyEmbedTheme } from "../lib/story/embedTheme";
 import { cngRcToStory } from "../lib/story/cngRcAdapter";
 import type { Story } from "../lib/story";
 import type { Connection, Dataset } from "../types";
@@ -41,6 +42,12 @@ export default function StoryReaderPage({
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!embed) return;
+    const theme = parseEmbedTheme(searchParams);
+    if (theme) applyEmbedTheme(theme);
+  }, [embed, searchParams]);
 
   useEffect(() => {
     if (configParam) {

@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Box, Button, Flex, Text, Textarea } from "@chakra-ui/react";
 import { CheckCircle, Copy } from "@phosphor-icons/react";
+import type { EmbedTheme } from "../lib/story/embedTheme";
+import { embedThemeToParams } from "../lib/story/embedTheme";
 
 export interface EmbedSnippetProps {
   viewerOrigin: string;
   storyId: string;
+  storyTitle: string;
   configUrl: string;
-  width?: string;
-  height?: string;
+  theme?: EmbedTheme;
 }
 
 // The snippet must point at the /story/:id/embed route, which is the only
@@ -24,14 +26,22 @@ export interface EmbedSnippetProps {
 export function EmbedSnippet({
   viewerOrigin,
   storyId,
+  storyTitle,
   configUrl,
-  width = "100%",
-  height = "600",
+  theme,
 }: EmbedSnippetProps) {
   const [copied, setCopied] = useState(false);
 
-  const src = `${viewerOrigin}/story/${storyId}/embed?config=${encodeURIComponent(configUrl)}`;
-  const snippet = `<iframe src="${src}" width="${width}" height="${height}" frameborder="0" allowfullscreen></iframe>`;
+  const query = new URLSearchParams({ config: configUrl });
+  for (const [key, value] of embedThemeToParams(theme ?? {})) {
+    query.set(key, value);
+  }
+  const src = `${viewerOrigin}/story/${storyId}/embed?${query.toString()}`;
+  const safeTitle = storyTitle.replace(/"/g, "&quot;");
+  // height:100vh makes the iframe the story's scrollport, which the sticky
+  // chapter map requires; the height attribute is the fallback when a CMS
+  // strips inline styles.
+  const snippet = `<iframe src="${src}" style="width:100%;height:100vh;min-height:500px;border:0" height="700" title="${safeTitle}" loading="lazy" allowfullscreen></iframe>`;
 
   async function handleCopy() {
     try {
@@ -80,7 +90,9 @@ export function EmbedSnippet({
         </Button>
       </Flex>
       <Text fontSize="xs" color="fg.muted" mt={2}>
-        Paste this into your site to embed the story.
+        Paste this into your site to embed the story. On WordPress, use a
+        full-width (alignfull) Custom HTML block — an Editor or Admin role is
+        required, since WordPress strips iframes for lower roles.
       </Text>
     </Box>
   );

@@ -4,6 +4,7 @@ import {
   embedThemeToParams,
   buildGoogleFontsUrl,
   applyEmbedTheme,
+  EMBED_THEME_VARS,
 } from "../embedTheme";
 import { system } from "../../../theme";
 
@@ -12,6 +13,18 @@ function tokenVar(name: string): string {
   if (!cssVar) throw new Error(`missing token ${name}`);
   return cssVar;
 }
+
+describe("EMBED_THEME_VARS", () => {
+  it("matches the CSS variables Chakra generates for each token", () => {
+    expect(EMBED_THEME_VARS).toEqual({
+      bodyFont: tokenVar("fonts.body"),
+      headingFont: tokenVar("fonts.heading"),
+      accent: tokenVar("colors.brand.orange"),
+      accentHover: tokenVar("colors.brand.orangeHover"),
+      bg: tokenVar("colors.bg"),
+    });
+  });
+});
 
 describe("parseEmbedTheme", () => {
   it("parses all four params", () => {

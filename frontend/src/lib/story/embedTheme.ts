@@ -1,5 +1,3 @@
-import { system } from "../../theme";
-
 export interface EmbedTheme {
   bodyFont?: string;
   headingFont?: string;
@@ -51,11 +49,17 @@ export function buildGoogleFontsUrl(families: string[]): string | null {
 const FONTS_LINK_ID = "cng-embed-theme-fonts";
 const STYLE_ID = "cng-embed-theme-style";
 
-function tokenVar(name: string): string {
-  const cssVar = system.tokens.getByName(name)?.extensions.cssVar?.var;
-  if (!cssVar) throw new Error(`Unknown theme token: ${name}`);
-  return cssVar;
-}
+// Written out rather than derived from `system.tokens` at runtime: importing
+// the Chakra theme here would pull the whole theme chunk (~217 kB) into the
+// story reader's synchronous bundle closure and blow its budget. The unit test
+// asserts these stay in sync with the token dictionary.
+export const EMBED_THEME_VARS = {
+  bodyFont: "--chakra-fonts-body",
+  headingFont: "--chakra-fonts-heading",
+  accent: "--chakra-colors-brand-orange",
+  accentHover: "--chakra-colors-brand-orange-hover",
+  bg: "--chakra-colors-bg",
+} as const;
 
 export function applyEmbedTheme(
   theme: EmbedTheme,
@@ -80,19 +84,21 @@ export function applyEmbedTheme(
 
   const rules: string[] = [];
   if (theme.bodyFont) {
-    rules.push(`${tokenVar("fonts.body")}: "${theme.bodyFont}", sans-serif;`);
+    rules.push(
+      `${EMBED_THEME_VARS.bodyFont}: "${theme.bodyFont}", sans-serif;`
+    );
   }
   if (theme.headingFont) {
     rules.push(
-      `${tokenVar("fonts.heading")}: "${theme.headingFont}", sans-serif;`
+      `${EMBED_THEME_VARS.headingFont}: "${theme.headingFont}", sans-serif;`
     );
   }
   if (theme.accent) {
-    rules.push(`${tokenVar("colors.brand.orange")}: ${theme.accent};`);
-    rules.push(`${tokenVar("colors.brand.orangeHover")}: ${theme.accent};`);
+    rules.push(`${EMBED_THEME_VARS.accent}: ${theme.accent};`);
+    rules.push(`${EMBED_THEME_VARS.accentHover}: ${theme.accent};`);
   }
   if (theme.bg) {
-    rules.push(`${tokenVar("colors.bg")}: ${theme.bg};`);
+    rules.push(`${EMBED_THEME_VARS.bg}: ${theme.bg};`);
   }
   if (rules.length === 0) return;
 

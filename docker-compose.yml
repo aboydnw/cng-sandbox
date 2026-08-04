@@ -191,6 +191,13 @@ services:
     build:
       context: frontend
       target: dev
+    # The Vite dev server is for local and worktree stacks only. Production
+    # serves the built bundle from frontend-build via the frontend_dist volume
+    # (see the caddy service), so this container must not start under --profile
+    # prod: it would bind-mount the deployed checkout and hold its memory limit
+    # while nothing routes to it.
+    profiles:
+      - dev
     restart: unless-stopped
     deploy:
       resources:
@@ -198,6 +205,9 @@ services:
           memory: 2G
     ports:
       - "${FRONTEND_PORT:-5185}:5185"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       VITE_API_BASE: ""
       VITE_RASTER_TILER_URL: ""

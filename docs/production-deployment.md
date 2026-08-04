@@ -48,6 +48,16 @@ docker compose --profile prod pull && docker compose --profile prod up -d
 
 This is what the `release-please` workflow runs over SSH after a release PR is merged. The `ingestion` and `frontend-build` images are published to `ghcr.io/aboydnw/cng-sandbox/*` by the `build-and-push` job before the deploy step runs. Caddy uses the upstream `caddy:2` image directly, so it's pulled from Docker Hub.
 
+### One-time migration: remove the legacy `frontend` container
+
+The `frontend` dev service used to run on the VM (it carried no profile). Now that it's gated behind `dev`, `--profile prod up -d` no longer manages that container — but it does not stop it either, and `restart: unless-stopped` brings it back after a daemon restart, holding port 5185 and up to 2G. `--remove-orphans` will not clean it up, because the service is still defined in the Compose file; only profile-less services count as orphans.
+
+Run once on the VM, before or after the first deploy that includes the profile change:
+
+```bash
+docker compose --profile dev rm -sfv frontend
+```
+
 ## Verify
 
 - Visit `https://storytelling.developmentseed.org/` in an incognito window — should load the landing page directly with no password prompt. Hard-refresh and verify favicon, fonts, and logo all load (no 401s in DevTools network tab)
@@ -57,7 +67,8 @@ This is what the `release-please` workflow runs over SSH after a release PR is m
 
 ## Notes
 
-- `docker compose up` (without `--profile prod`) still runs local dev without Caddy
+- `docker compose --profile dev up` (without `--profile prod`) still runs local dev without Caddy
+- Caddy serves the static bundle from the `frontend_dist` volume, which the `prod`-profile `frontend-build` service populates from the released image. The Vite dev `frontend` service sits behind the `dev` profile, so `--profile prod up -d` does not start it on the VM. That is deliberate: it bind-mounts `./frontend` over `/app`, so if it were running its dev server would reflect whatever is on the VM's disk rather than the released bundle. Verify a deploy against the public URL, never against port 5185
 - Backend service ports (8081-8086) are accessible on localhost via SSH tunnel but blocked externally by the Hetzner firewall
 - The `caddy_data` volume persists TLS certificates — don't delete it or you'll hit Let's Encrypt rate limits
 - During the brief restart window when ingestion or the tilers cycle, Caddy's `handle_errors 502 503` block serves a small self-refreshing "Deploying…" page (meta-refresh every 15s) so users don't see a raw 502/503. The same handler is wired up for both the main host and the `viewer.<domain>` subdomain

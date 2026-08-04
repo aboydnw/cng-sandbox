@@ -32,15 +32,15 @@ jobs:
         run: cp .env.example .env
 
       - name: Build and start the stack
-        run: docker compose -p cng-smoke up -d --build
+        run: docker compose --profile dev -p cng-smoke up -d --build
 
       - name: Verify services and proxy routes
         run: scripts/full-stack-smoke.sh
 
       - name: Show service logs after failure
         if: failure()
-        run: docker compose -p cng-smoke logs --no-color --tail 200
+        run: docker compose --profile dev -p cng-smoke logs --no-color --tail 200
 
       - name: Stop the stack
         if: always()
-        run: docker compose -p cng-smoke down -v
+        run: docker compose --profile dev -p cng-smoke down -v

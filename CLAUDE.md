@@ -53,20 +53,29 @@ After pushing a branch and opening a PR for a significant feature or fix, write 
 
 ```bash
 # Start all services
-docker compose -f docker-compose.yml up -d --build
+docker compose -f docker-compose.yml --profile dev up -d --build
 
 # Verify all containers are healthy
-docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml --profile dev ps
 ```
 
 The frontend is available at `http://localhost:5185`.
 
+`--profile dev` is required for the `frontend` service (the Vite dev server).
+It is profile-gated so it never starts on the prod host, where Caddy serves the
+built bundle out of `frontend_dist` instead. Omit the flag and the backend comes
+up fine but nothing listens on 5185.
+
 ### Stop the stack
 
 ```bash
-docker compose -f docker-compose.yml down        # Stop containers
-docker compose -f docker-compose.yml down -v     # Stop and delete volumes (wipes data)
+docker compose -f docker-compose.yml --profile dev down        # Stop containers
+docker compose -f docker-compose.yml --profile dev down -v     # Stop and delete volumes (wipes data)
 ```
+
+`down` needs `--profile dev` too. Without it Compose tears down the backend but
+silently leaves the `frontend` container running, and the network then fails to
+remove with "resource is still in use".
 
 ### Rebuild a single service
 
@@ -76,6 +85,31 @@ docker compose -f docker-compose.yml up -d <service>
 ```
 
 Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tiler`, `ingestion`, `frontend`
+
+Naming a service on the command line enables its profiles automatically, so the
+`frontend` commands below need no `--profile dev`.
+
+Note that `build` alone is not enough — a running container keeps using the image
+it started with, so it must be recreated with `up -d` to pick up a new build.
+
+**The `frontend` service is the exception.** It bind-mounts `./frontend` over `/app`,
+so source edits are live: Vite HMR picks them up with no rebuild and no restart.
+Two cases still need action:
+
+- **Dependency changes** — `package.json`, `yarn.lock`, or `.yarnrc.yml`, i.e. any
+  input the Dockerfile copies before `yarn install`. The installed `node_modules`
+  lives in an anonymous volume that survives `up -d`, so it goes stale. Rebuild and
+  drop the volume:
+  ```bash
+  docker compose -f docker-compose.yml rm -sfv frontend
+  docker compose -f docker-compose.yml up -d --build frontend
+  ```
+- **Compose `environment:` changes** (`API_PROXY_TARGET`, `RASTER_TILER_PROXY_TARGET`, …):
+  `docker compose restart` does **not** pick these up — it restarts the same container
+  with the environment it was created with. Use `up -d frontend` instead; Compose sees
+  the changed config and recreates the container. `--force-recreate` is not needed.
+- **`vite.config.ts` changes**: restart the container — the dev server reads its own
+  config only at boot.
 
 ## Production Deployment
 
@@ -245,7 +279,9 @@ scripts/worktree-stack.sh logs ingestion  # Tail a service's logs
 
 The worktree stack gets its own containers, network, and database volume (via the `-p` project name). Use `down` (not just `stop`) when done to free resources — it removes volumes too.
 
-For **frontend-only changes**, you can skip Docker entirely and just run `cd frontend && npx vite dev --port 5285` — this uses the prod backend services through the Vite proxy.
+The stack's `frontend` container bind-mounts `./frontend` relative to the compose file, and `worktree-stack.sh` points compose at the **worktree's** `docker-compose.yml`. So the running dev server serves the worktree's source, and edits hot-reload without a rebuild — see [Rebuild a single service](#rebuild-a-single-service) for the two cases that still need action.
+
+For **frontend-only changes**, you can also skip Docker entirely and just run `cd frontend && npx vite dev --port 5285` — this uses the prod backend services through the Vite proxy.
 
 ## Skill Feedback Loop
 

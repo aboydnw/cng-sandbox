@@ -21,17 +21,24 @@ const fakeMap = {
   addLayer: vi.fn(),
   removeLayer: vi.fn(),
 };
+let latestMapProps: {
+  onMove?: (event: { viewState: typeof cameraA }) => void;
+} = {};
 
 vi.mock("react-map-gl/maplibre", () => ({
   Map: forwardRef(function MockMap(
-    { children }: { children?: React.ReactNode },
+    props: {
+      children?: React.ReactNode;
+      onMove?: (event: { viewState: typeof cameraA }) => void;
+    },
     ref: React.Ref<unknown>
   ) {
+    latestMapProps = props;
     useEffect(() => {
       const instance = { getMap: () => fakeMap };
       if (typeof ref === "function") ref(instance);
     }, [ref]);
-    return <div data-testid="mock-map">{children}</div>;
+    return <div data-testid="mock-map">{props.children}</div>;
   }),
   useControl: () => ({ setProps: vi.fn() }),
   useMap: () => ({ current: null }),
@@ -69,6 +76,27 @@ beforeEach(() => {
 });
 
 describe("UnifiedMap camera-echo guard", () => {
+  it("does not replay a user camera update back through jumpTo", () => {
+    const onCameraChange = vi.fn();
+    const { rerender } = renderMap({ onCameraChange });
+    fakeMap.jumpTo.mockClear();
+
+    latestMapProps.onMove?.({ viewState: cameraB });
+    expect(onCameraChange).toHaveBeenCalledWith(cameraB);
+    rerender(
+      <UnifiedMap
+        camera={cameraB}
+        onCameraChange={onCameraChange}
+        layers={[]}
+        basemap="streets"
+        onBasemapChange={vi.fn()}
+        interactive={false}
+      />
+    );
+
+    expect(fakeMap.jumpTo).not.toHaveBeenCalled();
+  });
+
   it("echoes camera prop changes via jumpTo when not scrubbing", () => {
     const { rerender } = renderMap({});
     fakeMap.jumpTo.mockClear();

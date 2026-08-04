@@ -1,6 +1,6 @@
 """Integration tests — require Docker Compose running (eoAPI + R2).
 
-Run with: cd sandbox && docker compose up -d
+Run with: docker compose --profile dev up -d   (from the repo root)
 Then: cd ingestion && python -m pytest tests/test_integration.py -v -s
 """
 
@@ -21,7 +21,7 @@ def _is_docker_running():
 
 pytestmark = pytest.mark.skipif(
     not _is_docker_running(),
-    reason="Docker Compose services not running (start with: cd sandbox && docker compose up -d)",
+    reason="Docker Compose services not running (start with: docker compose --profile dev up -d)",
 )
 
 

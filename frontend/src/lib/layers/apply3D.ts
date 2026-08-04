@@ -1,6 +1,7 @@
 import {
   TERRAIN_DEM_URL,
   TERRAIN_DEM_ATTRIBUTION,
+  TERRAIN_DEM_TILE_SIZE,
   BUILDINGS_SOURCE_URL,
 } from "../../components/MapShell";
 import type { TerrainState } from "../story/types";
@@ -41,7 +42,7 @@ export function apply3D(map: MapLike, opts: Apply3DOptions): void {
         type: "raster-dem",
         tiles: [TERRAIN_DEM_URL],
         encoding: "terrarium",
-        tileSize: 256,
+        tileSize: TERRAIN_DEM_TILE_SIZE,
         maxzoom: 13,
         attribution: TERRAIN_DEM_ATTRIBUTION,
       });

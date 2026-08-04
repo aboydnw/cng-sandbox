@@ -1,17 +1,37 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { ChakraProvider } from "@chakra-ui/react";
+import { beforeEach, expect, test, vi } from "vitest";
 import { WorkspaceProvider, useOptionalWorkspace } from "../useWorkspace";
+import { system } from "../../theme";
+
+const getExampleState = vi.fn();
+const seedExampleData = vi.fn();
+
+vi.mock("../../lib/examples/api", () => ({
+  getExampleState: (...args: unknown[]) => getExampleState(...args),
+  seedExampleData: (...args: unknown[]) => seedExampleData(...args),
+}));
+
+beforeEach(() => {
+  getExampleState.mockReset();
+  seedExampleData.mockReset();
+  getExampleState.mockResolvedValue({ state: "seeded" });
+  seedExampleData.mockResolvedValue({ state: "seeded", story_id_map: {} });
+});
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <MemoryRouter initialEntries={["/w/testws/map/123"]}>
-      <Routes>
-        <Route
-          path="/w/:workspaceId/*"
-          element={<WorkspaceProvider>{children}</WorkspaceProvider>}
-        />
-      </Routes>
-    </MemoryRouter>
+    <ChakraProvider value={system}>
+      <MemoryRouter initialEntries={["/w/testws/map/123"]}>
+        <Routes>
+          <Route
+            path="/w/:workspaceId/*"
+            element={<WorkspaceProvider>{children}</WorkspaceProvider>}
+          />
+        </Routes>
+      </MemoryRouter>
+    </ChakraProvider>
   );
 }
 
@@ -19,10 +39,28 @@ function bareWrapper({ children }: { children: React.ReactNode }) {
   return <MemoryRouter initialEntries={["/"]}>{children}</MemoryRouter>;
 }
 
-test("useOptionalWorkspace returns context inside WorkspaceProvider", () => {
+test("useOptionalWorkspace returns context inside WorkspaceProvider", async () => {
   const { result } = renderHook(() => useOptionalWorkspace(), { wrapper });
-  expect(result.current).not.toBeNull();
+  await waitFor(() => expect(result.current).not.toBeNull());
   expect(result.current!.workspaceId).toBe("testws");
+});
+
+test("seeds examples before mounting a previously untouched workspace", async () => {
+  getExampleState.mockResolvedValueOnce({ state: "none" });
+
+  const { result } = renderHook(() => useOptionalWorkspace(), { wrapper });
+
+  await waitFor(() => expect(result.current).not.toBeNull());
+  await waitFor(() => expect(seedExampleData).toHaveBeenCalledWith("testws"));
+});
+
+test("preserves a workspace whose examples were explicitly removed", async () => {
+  getExampleState.mockResolvedValueOnce({ state: "removed" });
+
+  const { result } = renderHook(() => useOptionalWorkspace(), { wrapper });
+
+  await waitFor(() => expect(result.current).not.toBeNull());
+  expect(seedExampleData).not.toHaveBeenCalled();
 });
 
 test("useOptionalWorkspace returns null outside WorkspaceProvider", () => {

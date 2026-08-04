@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { Badge, Box, Flex, Heading, Text } from "@chakra-ui/react";
 import Markdown from "react-markdown";
 import scrollama from "scrollama";
 import type { MapRef } from "react-map-gl/maplibre";
@@ -748,6 +748,18 @@ function ScrollytellingBlock({
               >
                 Chapter {startIndex + i + 1}
               </Text>
+              {!chapter.layer_config.dataset_id &&
+                !chapter.layer_config.connection_id && (
+                  <Badge
+                    mb={3}
+                    size="sm"
+                    variant="subtle"
+                    bg="brand.bgSubtle"
+                    color="brand.brown"
+                  >
+                    Scene setting · Basemap and 3D terrain
+                  </Badge>
+                )}
               <Heading size="md" mb={3} color="gray.800">
                 {chapter.title}
               </Heading>

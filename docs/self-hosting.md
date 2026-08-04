@@ -29,12 +29,19 @@ Set the R2 variables in `.env`: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
 ## 2. Start the stack
 
 ```bash
-docker compose -f docker-compose.yml up -d --build
-docker compose -f docker-compose.yml ps   # all services healthy
+docker compose -f docker-compose.yml --profile dev up -d --build
+docker compose -f docker-compose.yml --profile dev ps   # all services healthy
 ```
 
 The app is at <http://localhost:5185> and the ingestion API at
 <http://localhost:8086>.
+
+`--profile dev` is required: the `frontend` service (the Vite dev server that
+serves the app on 5185 and proxies `/api`, `/cog`, `/raster`, and `/vector`) is
+profile-gated so it never starts on a production host. Without the flag the
+backend comes up fine but nothing listens on 5185. Use it when stopping too —
+`docker compose -f docker-compose.yml --profile dev down` — otherwise the
+frontend container is left running and the network fails to remove.
 
 ## 3. Install the MCP server
 

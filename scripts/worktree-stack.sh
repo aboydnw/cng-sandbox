@@ -73,7 +73,9 @@ export FRONTEND_PORT=5285
 # `latest` image on the shared Docker daemon.
 export IMAGE_TAG="wt-${SANITIZED}"
 
-COMPOSE_CMD=(docker compose -f "$REPO_ROOT/docker-compose.yml" -p "$PROJECT")
+# The frontend dev server sits behind the `dev` profile so it never starts on
+# the prod host; worktree stacks always want it.
+COMPOSE_CMD=(docker compose -f "$REPO_ROOT/docker-compose.yml" -p "$PROJECT" --profile dev)
 
 case "$ACTION" in
     up)

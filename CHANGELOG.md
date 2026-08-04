@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.16.0](https://github.com/aboydnw/cng-sandbox/compare/v2.15.0...v2.16.0) (2026-08-04)
+
+
+### Features
+
+* **frontend:** establish maintainable design system ([#614](https://github.com/aboydnw/cng-sandbox/issues/614)) ([aa2f1d9](https://github.com/aboydnw/cng-sandbox/commit/aa2f1d9839b46c6566b3daa8106533281431b92c))
+
+
+### Bug Fixes
+
+* **frontend:** bind-mount source into dev container so edits are live ([#610](https://github.com/aboydnw/cng-sandbox/issues/610)) ([a982b4b](https://github.com/aboydnw/cng-sandbox/commit/a982b4ba2403af8d395753a22da558755e358db8))
+* story empty state ([#612](https://github.com/aboydnw/cng-sandbox/issues/612)) ([c6143eb](https://github.com/aboydnw/cng-sandbox/commit/c6143ebb5d662d8bf248f1e40c70ed63352c1dfe))
+
 ## [2.15.0](https://github.com/aboydnw/cng-sandbox/compare/v2.14.0...v2.15.0) (2026-08-03)
 
 

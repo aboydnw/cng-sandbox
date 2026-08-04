@@ -96,15 +96,20 @@ it started with, so it must be recreated with `up -d` to pick up a new build.
 so source edits are live: Vite HMR picks them up with no rebuild and no restart.
 Two cases still need action:
 
-- **Dependency changes** (`package.json` / `yarn.lock`): the installed `node_modules`
+- **Dependency changes** — `package.json`, `yarn.lock`, or `.yarnrc.yml`, i.e. any
+  input the Dockerfile copies before `yarn install`. The installed `node_modules`
   lives in an anonymous volume that survives `up -d`, so it goes stale. Rebuild and
   drop the volume:
   ```bash
   docker compose -f docker-compose.yml rm -sfv frontend
   docker compose -f docker-compose.yml up -d --build frontend
   ```
-- **Vite server config** (`vite.config.ts` proxy targets, compose `environment:`):
-  restart the container; the dev server reads these only at boot.
+- **Compose `environment:` changes** (`API_PROXY_TARGET`, `RASTER_TILER_PROXY_TARGET`, …):
+  `docker compose restart` does **not** pick these up — it restarts the same container
+  with the environment it was created with. Use `up -d frontend` instead; Compose sees
+  the changed config and recreates the container. `--force-recreate` is not needed.
+- **`vite.config.ts` changes**: restart the container — the dev server reads its own
+  config only at boot.
 
 ## Production Deployment
 

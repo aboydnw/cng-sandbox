@@ -165,6 +165,13 @@ services:
       CHECK_DISK_FREE_SPACE: "FALSE"
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_REPO: ${GITHUB_REPO:-}
+      CHAT_ENABLED: ${CHAT_ENABLED:-false}
+      ANTHROPIC_API_KEY_CHAT: ${ANTHROPIC_API_KEY_CHAT:-}
+      CHAT_MODEL: ${CHAT_MODEL:-claude-haiku-4-5}
+      CHAT_DAILY_TOKEN_BUDGET: ${CHAT_DAILY_TOKEN_BUDGET:-2000000}
+      CHAT_MAX_TOKENS: ${CHAT_MAX_TOKENS:-1024}
+      CHAT_RATE_LIMIT: ${CHAT_RATE_LIMIT:-10/minute}
+      CHAT_MAX_TURNS: ${CHAT_MAX_TURNS:-20}
     depends_on:
       database:
         condition: service_healthy

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useEffect } from "react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { system } from "../../theme";
 import { createFlyoverChapter } from "../../lib/story/types";
@@ -113,5 +113,10 @@ describe("FlyoverBlock", () => {
     const { container } = renderBlock();
     const outer = container.firstElementChild as HTMLElement;
     expect(outer.style.height).toBe("200vh"); // 1 × 2 keyframes
+  });
+
+  it("labels the distinct flyover scroll interaction", () => {
+    renderBlock();
+    expect(screen.getByText(/3d flyover · scroll to steer/i)).toBeVisible();
   });
 });

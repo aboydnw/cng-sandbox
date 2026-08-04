@@ -27,9 +27,10 @@ export const BASEMAPS: Record<string, string | StyleSpecification> = {
   imagery: ESRI_WORLD_IMAGERY,
 };
 
-// Mapterhorn hosted terrain-RGB (terrarium encoding). Single constant so
-// self-hosting the source.coop PMTiles is a one-line config swap.
-export const TERRAIN_DEM_URL = "https://tiles.mapterhorn.com/{z}/{x}/{y}.png";
+// Mapterhorn hosted terrain-RGB (terrarium encoding). The public endpoint
+// serves 512px WebP tiles; requesting the former PNG path returns 404.
+export const TERRAIN_DEM_URL = "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp";
+export const TERRAIN_DEM_TILE_SIZE = 512;
 export const TERRAIN_DEM_ATTRIBUTION = "Mapterhorn";
 // OpenFreeMap vector tiles carry render_height / render_min_height on the
 // `building` source-layer for fill-extrusion.

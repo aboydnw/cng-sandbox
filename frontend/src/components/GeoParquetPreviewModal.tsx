@@ -122,7 +122,13 @@ export function GeoParquetPreviewModal({
       <Portal>
         <DialogBackdrop />
         <DialogPositioner>
-          <DialogContent shadow="lg" maxH="80vh" overflowY="auto">
+          <DialogContent
+            bg="bg.raised"
+            borderRadius="panel"
+            shadow="lg"
+            maxH="80vh"
+            overflowY="auto"
+          >
             <DialogHeader>
               <DialogTitle>Preview: {filename}</DialogTitle>
               <DialogCloseTrigger asChild>

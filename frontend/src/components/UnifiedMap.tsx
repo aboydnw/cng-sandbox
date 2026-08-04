@@ -177,6 +177,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   const overlayHandleRef = useRef<DeckOverlayHandle | null>(null);
   const programmaticRef = useRef(false);
   const scrubbingRef = useRef(false);
+  const userCameraRef = useRef<CameraState | null>(null);
   scrubbingRef.current = scrubbing ?? false;
 
   useImperativeHandle(ref, () => ({
@@ -201,6 +202,19 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
   // echoing the (frozen) camera prop would fight it at 60fps.
   useEffect(() => {
     if (scrubbing) return;
+    const userCamera = userCameraRef.current;
+    if (
+      !transitionDuration &&
+      userCamera &&
+      Math.abs(userCamera.longitude - camera.longitude) < 1e-7 &&
+      Math.abs(userCamera.latitude - camera.latitude) < 1e-7 &&
+      Math.abs(userCamera.zoom - camera.zoom) < 1e-7 &&
+      Math.abs(userCamera.bearing - camera.bearing) < 1e-7 &&
+      Math.abs(userCamera.pitch - camera.pitch) < 1e-7
+    ) {
+      userCameraRef.current = null;
+      return;
+    }
     const map = localMapRef.current?.getMap();
     if (!map) return;
     const { method, options } = resolveCameraCommand(
@@ -242,13 +256,15 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
     }) => {
       if (programmaticRef.current || scrubbingRef.current) return;
       const vs = e.viewState;
-      onCameraChange({
+      const nextCamera = {
         longitude: vs.longitude,
         latitude: vs.latitude,
         zoom: vs.zoom,
         bearing: vs.bearing ?? 0,
         pitch: vs.pitch ?? 0,
-      });
+      };
+      userCameraRef.current = nextCamera;
+      onCameraChange(nextCamera);
     },
     [onCameraChange]
   );
@@ -305,6 +321,7 @@ export const UnifiedMap = forwardRef<any, UnifiedMapProps>(function UnifiedMap(
           borderWidth="1px"
           borderColor="border.subtle"
           shadow="md"
+          zIndex={20}
           p={1}
           maxW="calc(100% - 24px)"
           overflowX="auto"

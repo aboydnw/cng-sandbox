@@ -102,4 +102,36 @@ describe("StoryRenderer overlay legend", () => {
     expect(screen.getByText(/sea surface temperature/i)).toBeInTheDocument();
     expect(screen.getByText(/admin boundaries/i)).toBeInTheDocument();
   });
+
+  it("labels a scrollytelling chapter without a data layer as scene setting", () => {
+    const sceneChapter = {
+      ...story.chapters[0],
+      id: "scene-setting",
+      layer_config: {
+        dataset_id: "",
+        colormap: "viridis",
+        opacity: 1,
+        basemap: "streets",
+      },
+    };
+
+    render(
+      <ChakraProvider value={defaultSystem}>
+        <StoryMapRuntime
+          block={{
+            type: "scrollytelling",
+            chapters: [sceneChapter as never],
+            startIndex: 0,
+          }}
+          datasetMap={new Map<string, Dataset | null>()}
+          connectionMap={new Map()}
+        />
+      </ChakraProvider>
+    );
+
+    expect(
+      screen.getByText(/scene setting · basemap and 3d terrain/i)
+    ).toBeVisible();
+    expect(screen.queryByText(/data no longer available/i)).toBeNull();
+  });
 });

@@ -47,7 +47,7 @@ export function ExportProgress({
       <Portal>
         <DialogBackdrop />
         <DialogPositioner>
-          <DialogContent shadow="lg">
+          <DialogContent bg="bg.raised" borderRadius="panel" shadow="lg">
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
             </DialogHeader>

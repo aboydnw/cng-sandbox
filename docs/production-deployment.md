@@ -48,6 +48,16 @@ docker compose --profile prod pull && docker compose --profile prod up -d
 
 This is what the `release-please` workflow runs over SSH after a release PR is merged. The `ingestion` and `frontend-build` images are published to `ghcr.io/aboydnw/cng-sandbox/*` by the `build-and-push` job before the deploy step runs. Caddy uses the upstream `caddy:2` image directly, so it's pulled from Docker Hub.
 
+### One-time migration: remove the legacy `frontend` container
+
+The `frontend` dev service used to run on the VM (it carried no profile). Now that it's gated behind `dev`, `--profile prod up -d` no longer manages that container — but it does not stop it either, and `restart: unless-stopped` brings it back after a daemon restart, holding port 5185 and up to 2G. `--remove-orphans` will not clean it up, because the service is still defined in the Compose file; only profile-less services count as orphans.
+
+Run once on the VM, before or after the first deploy that includes the profile change:
+
+```bash
+docker compose --profile dev rm -sfv frontend
+```
+
 ## Verify
 
 - Visit `https://storytelling.developmentseed.org/` in an incognito window — should load the landing page directly with no password prompt. Hard-refresh and verify favicon, fonts, and logo all load (no 401s in DevTools network tab)

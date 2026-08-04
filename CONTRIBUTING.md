@@ -29,8 +29,9 @@
    docker compose --profile dev up -d --build
    ```
 
-   The `dev` profile adds the Vite dev server; production runs the same file
-   without it and serves the built bundle through Caddy instead.
+   The `dev` profile adds the Vite dev server. Production uses the same file with
+   `--profile prod` instead, which starts `frontend-build` and `caddy` to serve the
+   built bundle. The two profiles are separate — neither implies the other.
 
 4. Verify at [http://localhost:5185](http://localhost:5185).
 

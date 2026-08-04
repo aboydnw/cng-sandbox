@@ -21,10 +21,10 @@ export function ResourceCollection({
         px={3}
         py={2}
         borderBottom="1px solid"
-        borderColor="brand.border"
+        borderColor="border"
       >
         {headers.map((header, index) => (
-          <Text key={index} fontSize="xs" fontWeight={600} color="gray.600">
+          <Text key={index} textStyle="label" color="fg.muted">
             {header}
           </Text>
         ))}
@@ -52,10 +52,10 @@ export function ResourceCollectionRow({
       gap={{ base: 3, md: 3 }}
       alignItems={{ md: "center" }}
       p={{ base: 4, md: 3 }}
-      bg="white"
+      bg="bg.raised"
       border="1px solid"
-      borderColor="brand.border"
-      borderRadius={{ base: "lg", md: 0 }}
+      borderColor="border"
+      borderRadius={{ base: "panel", md: 0 }}
       borderTopWidth={{ md: 0 }}
     >
       {children}
@@ -85,9 +85,8 @@ export function ResourceCollectionCell({
       {!primary && (
         <Text
           display={{ base: "block", md: "none" }}
-          fontSize="xs"
-          fontWeight={600}
-          color="gray.500"
+          textStyle="label"
+          color="fg.muted"
         >
           {label}
         </Text>

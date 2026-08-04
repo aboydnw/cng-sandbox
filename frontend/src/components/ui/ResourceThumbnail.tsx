@@ -41,8 +41,8 @@ export function ResourceThumbnail({
       h="44px"
       align="center"
       justify="center"
-      bg="brand.bgSubtle"
-      color="brand.orange"
+      bg="bg.emphasized"
+      color="action.primary"
       borderRadius="md"
       flexShrink={0}
     >

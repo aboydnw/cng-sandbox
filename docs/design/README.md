@@ -18,6 +18,10 @@ the same pull request when a change establishes or replaces a lasting rule.
   exist in the React application.
 - [Patterns](patterns.md) documents recurring product interactions and states
   that involve several components.
+- [Frontend design audit](audit.md) classifies current inconsistencies,
+  intentional exceptions, and consolidation priorities.
+- [Design decisions](decisions/) record scoped choices that future contributors
+  should neither spread nor remove accidentally.
 - [Frontend gotchas](../frontend-gotchas.md) records implementation constraints
   for maps, stories, Chakra UI, exports, and other complex frontend behavior.
 - [Design polish guide](../design-polish/README.md) preserves the detailed visual

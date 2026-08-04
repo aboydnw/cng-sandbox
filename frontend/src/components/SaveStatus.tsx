@@ -10,13 +10,17 @@ const STATUS_MAP: Record<
   idle: null,
   saving: {
     label: "Saving...",
-    color: "gray.500",
+    color: "fg.muted",
     icon: <BrandSpinner size={12} />,
   },
-  saved: { label: "Saved", color: "green.600", icon: <Check size={12} /> },
+  saved: {
+    label: "Saved",
+    color: "status.success.fg",
+    icon: <Check size={12} />,
+  },
   error: {
     label: "Save failed",
-    color: "red.500",
+    color: "status.danger.fg",
     icon: <Warning size={12} />,
   },
 };

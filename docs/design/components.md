@@ -26,7 +26,8 @@ composition, or a meaningful set of supported states.
 
 ### Chakra Button
 
-**Status:** Established through the central recipe  
+**Status:** Established through the central recipe
+
 **Source:** `frontend/src/theme.ts`
 
 The central button recipe supplies consistent sizes, focus, disabled, hover,
@@ -47,7 +48,8 @@ target; it is not currently a general button recipe variant.
 
 ### Chakra Input
 
-**Status:** Established through the central recipe  
+**Status:** Established through the central recipe
+
 **Source:** `frontend/src/theme.ts`
 
 Variants are `outline`, `subtle`, and `flushed`. The recipe establishes height,
@@ -59,7 +61,8 @@ error by border color alone.
 
 ### PageHeader
 
-**Status:** Established  
+**Status:** Established
+
 **Source:** `frontend/src/components/PageHeader.tsx`
 
 Provides a responsive page title, description, and optional action group. The
@@ -72,7 +75,8 @@ understandable when they wrap below the heading on narrow screens.
 
 ### StatePanel
 
-**Status:** Established  
+**Status:** Established
+
 **Source:** `frontend/src/components/ui/StatePanel.tsx`
 
 Communicates a bounded neutral, information, success, warning, or danger state.
@@ -89,7 +93,8 @@ belongs in a toast, or long multi-step content.
 
 ### ConfirmDialog
 
-**Status:** Established for destructive confirmation  
+**Status:** Established for destructive confirmation
+
 **Source:** `frontend/src/components/ui/ConfirmDialog.tsx`
 
 Provides an alert dialog with title, description, cancel and destructive
@@ -103,7 +108,8 @@ choice.
 
 ### ResourceCollection family
 
-**Status:** Provisional  
+**Status:** Established
+
 **Source:** `frontend/src/components/ui/ResourceCollection.tsx`
 
 `ResourceCollection`, `ResourceCollectionRow`, and `ResourceCollectionCell`
@@ -114,13 +120,13 @@ Use the family for repeated work objects that benefit from comparison across
 consistent metadata fields. Use a card or preview pattern when imagery or
 individual browsing is more important than comparison.
 
-The family currently contains some direct palette and surface values. Treat its
-composition as reusable, but do not copy its local colors as system guidance;
-they are candidates for the next audit and consolidation phase.
+The family uses semantic surface, border, and text roles. Preserve the labelled
+small-screen cells when adapting its visual presentation.
 
 ### ResourceThumbnail
 
-**Status:** Provisional  
+**Status:** Provisional
+
 **Source:** `frontend/src/components/ui/ResourceThumbnail.tsx`
 
 Displays the visual identity of a dataset, story, or similar work object. Prefer
@@ -130,7 +136,8 @@ mark it decorative when adjacent text communicates the same content.
 
 ### CollectionSkeleton
 
-**Status:** Established for collection loading  
+**Status:** Established for collection loading
+
 **Source:** `frontend/src/components/ui/CollectionSkeleton.tsx`
 
 Reserves the shape of a loading resource collection. Use it only where its rows
@@ -139,7 +146,8 @@ layout creates avoidable reflow and misleading expectations.
 
 ### BrandSpinner
 
-**Status:** Established for compact indeterminate work  
+**Status:** Established for compact indeterminate work
+
 **Source:** `frontend/src/components/ui/BrandSpinner.tsx`
 
 Use for short, localized operations when the final layout cannot be represented
@@ -151,7 +159,8 @@ can report real stages; use the progress pattern instead.
 
 ### Toaster
 
-**Status:** Established infrastructure  
+**Status:** Established infrastructure
+
 **Sources:** `frontend/src/lib/toaster.ts`,
 `frontend/src/components/ui/toaster.tsx`
 

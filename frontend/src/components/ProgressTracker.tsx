@@ -63,11 +63,15 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
         justify="center"
         w={size}
         h={size}
-        bg="brand.success"
+        bg="status.success.fg"
         borderRadius="full"
         flexShrink={0}
       >
-        <Check size={14} weight="bold" color="white" />
+        <Check
+          size={14}
+          weight="bold"
+          color="var(--chakra-colors-action-on-primary)"
+        />
       </Flex>
     );
   }
@@ -91,7 +95,11 @@ function StageIcon({ status }: { status: StageInfo["status"] }) {
         borderRadius="full"
         flexShrink={0}
       >
-        <X size={14} weight="bold" color="white" />
+        <X
+          size={14}
+          weight="bold"
+          color="var(--chakra-colors-action-on-primary)"
+        />
       </Flex>
     );
   }
@@ -147,10 +155,10 @@ export function ProgressTracker({
           ? `Processing: ${activeStageName}`
           : "Processing status"}
       </Text>
-      <Text color="brand.brown" fontSize="18px" fontWeight={700} mb={1}>
+      <Text color="fg" fontSize="18px" fontWeight={700} mb={1}>
         Processing {filename}
       </Text>
-      <Text color="brand.textSecondary" fontSize="13px" mb={10}>
+      <Text color="fg.muted" fontSize="13px" mb={10}>
         {fileSize} · You can leave this page and return from Data later.
       </Text>
 
@@ -168,12 +176,12 @@ export function ProgressTracker({
               <Text
                 color={
                   stage.status === "active"
-                    ? "brand.orange"
+                    ? "action.primary"
                     : stage.status === "error"
-                      ? "red.500"
+                      ? "status.danger.fg"
                       : stage.status === "done"
-                        ? "brand.brown"
-                        : "#bbb"
+                        ? "fg"
+                        : "fg.disabled"
                 }
                 fontSize="14px"
                 fontWeight={
@@ -189,7 +197,7 @@ export function ProgressTracker({
                   (stage.progress || elapsed > 0))) && (
                 <Text
                   color={
-                    stage.status === "error" ? "red.500" : "brand.textSecondary"
+                    stage.status === "error" ? "status.danger.fg" : "fg.muted"
                   }
                   fontSize="12px"
                 >
@@ -210,7 +218,11 @@ export function ProgressTracker({
                 top="32px"
                 w="2px"
                 h="20px"
-                bg={stage.status === "done" ? "brand.success" : "#ddd"}
+                bg={
+                  stage.status === "done"
+                    ? "status.success.fg"
+                    : "border.emphasized"
+                }
               />
             )}
           </Flex>
@@ -218,28 +230,11 @@ export function ProgressTracker({
       </Box>
       {onRetry && stages.some((s) => s.status === "error") && (
         <Flex gap={3} mt={6}>
-          <Button
-            size="sm"
-            bg="brand.orange"
-            color="white"
-            fontWeight={600}
-            borderRadius="4px"
-            _hover={{ bg: "brand.orangeHover" }}
-            onClick={onRetry}
-          >
+          <Button size="sm" onClick={onRetry}>
             Try again
           </Button>
           {onReport && (
-            <Button
-              size="sm"
-              variant="outline"
-              borderColor="brand.border"
-              color="brand.textSecondary"
-              fontWeight={600}
-              borderRadius="4px"
-              _hover={{ color: "brand.brown" }}
-              onClick={onReport}
-            >
+            <Button size="sm" variant="outline" onClick={onReport}>
               Report this issue
             </Button>
           )}

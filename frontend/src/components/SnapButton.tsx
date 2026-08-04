@@ -14,13 +14,16 @@ export function SnapButton({ onSnap, isCapturing, error }: SnapButtonProps) {
       aria-label="Save map as PNG"
       title="Save map as PNG"
       size="sm"
-      bg={error ? "red.500" : "white"}
-      color={error ? "white" : "brand.brown"}
+      bg={error ? "status.danger.fg" : "bg.raised"}
+      color={error ? "action.onPrimary" : "fg"}
       borderRadius="control"
       borderWidth="1px"
       borderColor={error ? "status.danger.fg" : "border.subtle"}
       shadow="md"
-      _hover={{ bg: error ? "red.500" : "brand.bgSubtle" }}
+      _hover={{
+        bg: error ? "status.danger.hover" : "bg.subtle",
+        borderColor: error ? "status.danger.hover" : "border.emphasized",
+      }}
       onClick={onSnap}
       disabled={isCapturing}
     >

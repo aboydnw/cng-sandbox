@@ -55,7 +55,7 @@ jobs:
       - name: Install frontend deps
         run: cd frontend && corepack enable && yarn install --immutable
 
-      - uses: anthropics/claude-code-action@56fa348258fbcb1aeb8d3954d5799b5991098481 # v1
+      - uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |

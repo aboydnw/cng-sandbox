@@ -15,6 +15,8 @@
     "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.{ts,tsx,css}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,css}'",
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build",
     "postinstall": "mkdir -p public && test -f node_modules/gif.js/dist/gif.worker.js && cp node_modules/gif.js/dist/gif.worker.js public/gif.worker.js || true"
   },
   "dependencies": {
@@ -64,6 +66,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@storybook/addon-a11y": "^10.5.6",
+    "@storybook/addon-docs": "^10.5.6",
+    "@storybook/react-vite": "^10.5.6",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
@@ -78,6 +83,7 @@
     "jsdom": "^29.1.0",
     "prettier": "^3.9.4",
     "riffrec": "^2.1.1",
+    "storybook": "^10.5.6",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.2",

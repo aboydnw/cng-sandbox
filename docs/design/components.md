@@ -7,6 +7,8 @@ rules outside the original screen.
 
 Component source lives primarily in `frontend/src/components/ui/`; established
 cross-feature components may live directly under `frontend/src/components/`.
+Implemented examples and supported states live in `frontend/src/stories/` and
+can be browsed locally with `yarn storybook` from `frontend/`.
 
 ## Choosing the right level
 

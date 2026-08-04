@@ -49,6 +49,8 @@ The implementation entry points are:
 - [`frontend/src/components/`](../../frontend/src/components/) — feature and
   cross-feature components
 - [`frontend/src/pages/`](../../frontend/src/pages/) — route-level composition
+- [`frontend/src/stories/`](../../frontend/src/stories/) — the local Storybook
+  catalogue of implemented foundations, components, and states
 
 Read `docs/frontend-gotchas.md` before changing anything under `frontend/src/`,
 as required by the repository instructions.
@@ -125,6 +127,5 @@ Design and frontend reviews should ask:
 - Does the experience remain usable at narrow widths and with reduced motion?
 - Is a new system-level decision documented?
 
-This documentation is the current collaboration surface. A component workshop
-may be added later to make the implemented contracts browsable; it should
-reflect these rules rather than become a separate source of truth.
+Run `yarn storybook` from `frontend/` to browse the implemented contracts. The
+catalogue reflects these rules and is not a separate source of truth.

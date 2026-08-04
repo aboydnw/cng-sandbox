@@ -1,5 +1,9 @@
 # Design polish guide
 
+> This directory preserves the detailed July 2026 assessment and implementation
+> plan. For the canonical description of the current production design system,
+> start with [`docs/design/`](../design/README.md).
+
 This guide is the shared reference for making CNG Sandbox feel deliberate,
 complete, and recognizably geospatial without changing its underlying product
 behavior. It translates the July 2026 UX assessment into a visual direction,

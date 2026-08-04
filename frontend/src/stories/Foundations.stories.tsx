@@ -40,7 +40,13 @@ export const Colors: Story = {
           <Box
             key={token}
             bg={token}
-            color={token.startsWith("status.") ? "fg" : undefined}
+            color={
+              token === "fg"
+                ? "bg.raised"
+                : token.startsWith("status.")
+                  ? "fg"
+                  : undefined
+            }
             border="1px solid"
             borderColor="border"
             borderRadius="panel"

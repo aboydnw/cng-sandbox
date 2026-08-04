@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Badge, Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { ExpiryBadge } from "../components/ExpiryBadge";
 import { ExampleDataToggle } from "../components/ExampleDataToggle";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { config } from "../config";
@@ -31,7 +30,9 @@ import {
 } from "../components/ui/ResourceCollection";
 import { ResourceThumbnail } from "../components/ui/ResourceThumbnail";
 
-const DATA_COLUMNS = "minmax(0, 1fr) 90px 200px 100px 140px 80px";
+// Expiry is intentionally hidden until the product has a retention policy.
+// Restore the column alongside that policy so the UI never implies a deadline.
+const DATA_COLUMNS = "minmax(0, 1fr) 90px minmax(0, 220px) 100px 80px";
 
 interface DatasetWithStoryCount extends Dataset {
   story_count?: number;
@@ -163,7 +164,7 @@ export default function DataPage() {
             return (
               <ResourceCollection
                 columns={DATA_COLUMNS}
-                headers={["Name", "Type", "Source", "Added", "Expires", ""]}
+                headers={["Name", "Type", "Source", "Added", ""]}
               >
                 {userItems.map((item) => (
                   <ResourceCollectionRow
@@ -171,9 +172,12 @@ export default function DataPage() {
                     columns={DATA_COLUMNS}
                   >
                     <ResourceCollectionCell label="Name" primary>
-                      <Flex align="center" gap={2}>
+                      <Flex align="center" gap={2} minW={0}>
                         <ResourceThumbnail alt={item.name} kind={item.type} />
-                        <Link to={workspacePath(item.detailHref)}>
+                        <Link
+                          to={workspacePath(item.detailHref)}
+                          style={{ minWidth: 0, flex: 1 }}
+                        >
                           <Text
                             color="brand.orange"
                             _hover={{ textDecoration: "underline" }}
@@ -189,6 +193,7 @@ export default function DataPage() {
                             size="sm"
                             bg="brand.bgSubtle"
                             color="brand.brown"
+                            flexShrink={0}
                           >
                             Example
                           </Badge>
@@ -238,15 +243,6 @@ export default function DataPage() {
                       <Text fontSize="sm" color="gray.600">
                         {item.addedAt ? timeAgo(item.addedAt) : "—"}
                       </Text>
-                    </ResourceCollectionCell>
-                    <ResourceCollectionCell label="Expires">
-                      {item.expiresAt ? (
-                        <ExpiryBadge expiresAt={item.expiresAt} />
-                      ) : (
-                        <Text fontSize="sm" color="gray.500">
-                          —
-                        </Text>
-                      )}
                     </ResourceCollectionCell>
                     <ResourceCollectionCell label="Actions">
                       <Button

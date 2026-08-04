@@ -33,7 +33,14 @@ export function ConfirmDialog({
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content maxW="440px" borderRadius="panel">
+          <Dialog.Content
+            maxW="440px"
+            bg="bg.raised"
+            border="1px solid"
+            borderColor="brand.border"
+            borderRadius="panel"
+            shadow="lg"
+          >
             <Dialog.Header>
               <Dialog.Title>{title}</Dialog.Title>
             </Dialog.Header>

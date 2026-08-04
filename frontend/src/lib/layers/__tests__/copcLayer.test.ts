@@ -45,10 +45,10 @@ describe("buildCopcControl", () => {
     );
   });
 
-  it("defaults the point budget to 5,000,000", () => {
+  it("defaults the point budget to 2,000,000", () => {
     buildCopcControl({ url: "u" });
     expect(ctorSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ streamingPointBudget: 5_000_000 })
+      expect.objectContaining({ streamingPointBudget: 2_000_000 })
     );
   });
 

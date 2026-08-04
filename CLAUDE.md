@@ -53,20 +53,29 @@ After pushing a branch and opening a PR for a significant feature or fix, write 
 
 ```bash
 # Start all services
-docker compose -f docker-compose.yml up -d --build
+docker compose -f docker-compose.yml --profile dev up -d --build
 
 # Verify all containers are healthy
-docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml --profile dev ps
 ```
 
 The frontend is available at `http://localhost:5185`.
 
+`--profile dev` is required for the `frontend` service (the Vite dev server).
+It is profile-gated so it never starts on the prod host, where Caddy serves the
+built bundle out of `frontend_dist` instead. Omit the flag and the backend comes
+up fine but nothing listens on 5185.
+
 ### Stop the stack
 
 ```bash
-docker compose -f docker-compose.yml down        # Stop containers
-docker compose -f docker-compose.yml down -v     # Stop and delete volumes (wipes data)
+docker compose -f docker-compose.yml --profile dev down        # Stop containers
+docker compose -f docker-compose.yml --profile dev down -v     # Stop and delete volumes (wipes data)
 ```
+
+`down` needs `--profile dev` too. Without it Compose tears down the backend but
+silently leaves the `frontend` container running, and the network then fails to
+remove with "resource is still in use".
 
 ### Rebuild a single service
 
@@ -76,6 +85,9 @@ docker compose -f docker-compose.yml up -d <service>
 ```
 
 Service names: `database`, `stac-api`, `raster-tiler`, `vector-tiler`, `cog-tiler`, `ingestion`, `frontend`
+
+Naming a service on the command line enables its profiles automatically, so the
+`frontend` commands below need no `--profile dev`.
 
 Note that `build` alone is not enough — a running container keeps using the image
 it started with, so it must be recreated with `up -d` to pick up a new build.

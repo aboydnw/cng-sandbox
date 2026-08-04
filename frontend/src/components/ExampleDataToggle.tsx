@@ -121,7 +121,13 @@ export function ExampleDataToggle({ onChanged }: ExampleDataToggleProps) {
         <Portal>
           <DialogBackdrop />
           <DialogPositioner>
-            <DialogContent>
+            <DialogContent
+              bg="bg.raised"
+              border="1px solid"
+              borderColor="brand.border"
+              borderRadius="panel"
+              shadow="lg"
+            >
               <DialogHeader>
                 <DialogTitle>Remove example data?</DialogTitle>
               </DialogHeader>

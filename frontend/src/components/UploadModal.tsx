@@ -73,7 +73,7 @@ export function UploadModal({
       <Portal>
         <DialogBackdrop />
         <DialogPositioner>
-          <DialogContent shadow="lg">
+          <DialogContent bg="bg.raised" borderRadius="panel" shadow="lg">
             <DialogHeader>
               <DialogTitle>Add a dataset</DialogTitle>
               <DialogCloseTrigger asChild>

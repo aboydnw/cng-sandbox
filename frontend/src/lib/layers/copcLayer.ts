@@ -20,7 +20,9 @@ export interface CopcControlHandle {
   destroy: () => void;
 }
 
-export const DEFAULT_COPC_POINT_BUDGET = 5_000_000;
+// Keep enough detail for dense scenes without letting point-cloud refinement
+// monopolize the main thread while the reader is dragging the map.
+export const DEFAULT_COPC_POINT_BUDGET = 2_000_000;
 
 /**
  * CSS class applied to the plugin's built-in control panel so the app can hide

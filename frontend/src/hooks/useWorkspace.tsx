@@ -1,13 +1,15 @@
 import {
   createContext,
+  Fragment,
   useContext,
   useEffect,
   useMemo,
+  useState,
   type ReactNode,
 } from "react";
 import { useParams, Navigate, useLocation } from "react-router-dom";
 import { setWorkspaceId } from "../lib/api";
-import { seedExampleData } from "../lib/examples/api";
+import { getExampleState, seedExampleData } from "../lib/examples/api";
 
 export const WORKSPACE_STORAGE_KEY = "myWorkspaceId";
 const STORAGE_KEY = WORKSPACE_STORAGE_KEY;
@@ -21,18 +23,11 @@ export function generateWorkspaceId(): string {
   return id;
 }
 
-// Ids freshly minted by this app that still need their example data seeded.
-// Populated during render (side-effect-free) and drained by an effect in
-// WorkspaceProvider, so the POST fires exactly once and only for workspaces we
-// created — never for shared or returning workspaces opened via a direct URL.
-const pendingSeedIds = new Set<string>();
-
 function getOrCreateHomeWorkspaceId(): string {
   const existing = localStorage.getItem(STORAGE_KEY);
   if (existing) return existing;
   const newId = generateWorkspaceId();
   localStorage.setItem(STORAGE_KEY, newId);
-  pendingSeedIds.add(newId);
   return newId;
 }
 
@@ -47,6 +42,7 @@ const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const activeId = workspaceId!;
+  const [examplesRevision, setExamplesRevision] = useState(0);
 
   // Set workspace ID synchronously so child useEffect hooks (e.g. LibraryPage
   // data fetches) can read it on the first render cycle. A useEffect here would
@@ -60,9 +56,27 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [activeId]);
 
   useEffect(() => {
-    if (!pendingSeedIds.has(activeId)) return;
-    pendingSeedIds.delete(activeId);
-    void seedExampleData(activeId).catch(() => {});
+    let cancelled = false;
+
+    // Workspace URLs are shareable and may be opened before this browser ever
+    // minted the id. Seed every untouched workspace once, while respecting an
+    // explicit "removed" state so examples never reappear against user intent.
+    getExampleState(activeId)
+      .then(async (state) => {
+        if (state.state !== "none") return;
+        await seedExampleData(activeId);
+        // Resource views may have completed their first GET while examples
+        // were being cloned. Remount once so they immediately read the copies.
+        if (!cancelled) setExamplesRevision((revision) => revision + 1);
+      })
+      .catch(() => {
+        // Example setup is best-effort; a temporary failure must not prevent
+        // users from reaching their own workspace content.
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeId]);
 
   const value = useMemo(
@@ -76,7 +90,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <WorkspaceContext.Provider value={value}>
-      {children}
+      <Fragment key={`${activeId}-${examplesRevision}`}>{children}</Fragment>
     </WorkspaceContext.Provider>
   );
 }

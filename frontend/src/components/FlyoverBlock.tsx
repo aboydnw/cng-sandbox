@@ -131,6 +131,25 @@ export function FlyoverBlock({
           onAfterRender={handleAfterRender}
         />
 
+        <Text
+          position="absolute"
+          top={5}
+          right={5}
+          px={3}
+          py={1.5}
+          borderRadius="full"
+          bg="rgba(255, 255, 255, 0.88)"
+          backdropFilter="blur(12px)"
+          border="1px solid"
+          borderColor="brand.border"
+          color="brand.brown"
+          fontSize="xs"
+          fontWeight={600}
+          pointerEvents="none"
+        >
+          3D flyover · Scroll to steer
+        </Text>
+
         {/* Intro card: title + narrative, visible around the start */}
         {(chapter.title || chapter.narrative) && (
           <Box

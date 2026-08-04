@@ -15,7 +15,7 @@ const buildCopcControl = vi.fn((_opts: unknown) => ({
 
 vi.mock("../../lib/layers/copcLayer", () => ({
   buildCopcControl: (opts: unknown) => buildCopcControl(opts),
-  DEFAULT_COPC_POINT_BUDGET: 5_000_000,
+  DEFAULT_COPC_POINT_BUDGET: 2_000_000,
 }));
 
 import { useCopcLayer } from "../useCopcLayer";

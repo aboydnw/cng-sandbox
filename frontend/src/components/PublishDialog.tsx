@@ -110,7 +110,13 @@ export function PublishDialog({
         <Portal>
           <DialogBackdrop />
           <DialogPositioner>
-            <DialogContent shadow="lg">
+            <DialogContent
+              bg="bg.raised"
+              border="1px solid"
+              borderColor="brand.border"
+              borderRadius="panel"
+              shadow="lg"
+            >
               <DialogHeader>
                 <DialogTitle>
                   {published ? "Story published" : "Publish story"}

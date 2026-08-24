@@ -353,8 +353,6 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
     finally:
         session.close()
 
-    report_unreachable_static_seeds()
-
 
 # Seeds whose URL is a single static artifact we publish ourselves, rather than
 # a remote store discovered at runtime. These are the ones that can silently rot

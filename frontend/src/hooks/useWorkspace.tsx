@@ -75,7 +75,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         // swallowing it silently makes a failed seed look identical to a
         // genuinely empty workspace, which is indistinguishable to the user
         // and invisible in a bug report.
-        console.error("Example data setup failed for this workspace", err);
+        console.error("Example data setup failed", {
+          workspaceId: activeId,
+          error: err,
+        });
       });
 
     return () => {

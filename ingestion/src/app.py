@@ -191,12 +191,22 @@ async def _seed_example_connections(app: FastAPI) -> None:
     """Seed curated example connections on startup. Idempotent + best-effort."""
     import asyncio
 
-    from src.services.example_connections import seed_example_connections
+    from src.services.example_connections import (
+        report_unreachable_static_seeds,
+        seed_example_connections,
+    )
 
     try:
         await asyncio.to_thread(seed_example_connections, app.state.db_session_factory)
     except Exception:
         logger.exception("Example connection seeding failed")
+
+    # Probed here rather than inside the seeding function so the seed stays a
+    # pure database operation that unit tests can call without network access.
+    try:
+        await asyncio.to_thread(report_unreachable_static_seeds)
+    except Exception:
+        logger.exception("Example connection artifact check failed")
 
 
 async def _cleanup_expired(app):

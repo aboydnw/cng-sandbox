@@ -148,14 +148,13 @@ describe("captureChapterMap", () => {
     // map/deck ref lifecycle ourselves.
     expect(rootMocks).toHaveLength(1);
     const tree = rootMocks[0].render.mock.calls[0][0] as {
-      ref?: unknown;
       props: {
         mapRef?: (ref: unknown) => void;
         ref?: (ref: unknown) => void;
         onAfterRender?: () => void;
       };
     };
-    const deckRef = (tree.ref ?? tree.props.ref) as (ref: unknown) => void;
+    const deckRef = tree.props.ref!;
     const mapRef = tree.props.mapRef!;
     const onAfterRender = tree.props.onAfterRender!;
 
@@ -227,14 +226,13 @@ describe("captureChapterMap", () => {
 
     expect(rootMocks).toHaveLength(1);
     const tree = rootMocks[0].render.mock.calls[0][0] as {
-      ref?: unknown;
       props: {
         mapRef: (ref: unknown) => void;
         ref?: (ref: unknown) => void;
         onAfterRender: () => void;
       };
     };
-    const deckRef = (tree.ref ?? tree.props.ref) as (ref: unknown) => void;
+    const deckRef = tree.props.ref!;
     const { mapRef, onAfterRender } = tree.props;
 
     const idle: { fire: (() => void) | null } = { fire: null };
@@ -291,14 +289,13 @@ describe("captureChapterMap", () => {
 
     expect(rootMocks).toHaveLength(1);
     const tree = rootMocks[0].render.mock.calls[0][0] as {
-      ref?: unknown;
       props: {
         mapRef: (ref: unknown) => void;
         ref?: (ref: unknown) => void;
         onAfterRender: () => void;
       };
     };
-    const deckRef = (tree.ref ?? tree.props.ref) as (ref: unknown) => void;
+    const deckRef = tree.props.ref!;
     const { mapRef, onAfterRender } = tree.props;
 
     const basemapCanvas = document.createElement("canvas");

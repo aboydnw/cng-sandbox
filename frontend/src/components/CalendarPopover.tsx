@@ -184,14 +184,14 @@ export function CalendarPopover({
             borderColor="brand.border"
             p={2}
             css={{
-              ".rdp-day_selected": {
+              "& .rdp-selected .rdp-day_button": {
                 backgroundColor: "var(--chakra-colors-brand-orange)",
                 color: "white",
               },
-              ".rdp-day_disabled": {
+              "& .rdp-disabled": {
                 color: "#ccc",
               },
-              ".rdp-day:not(.rdp-day_disabled):hover": {
+              "& .rdp-day:not(.rdp-disabled) .rdp-day_button:hover": {
                 backgroundColor: "brand.bgSubtle",
               },
             }}

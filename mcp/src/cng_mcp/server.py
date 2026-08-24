@@ -7,6 +7,7 @@ import os
 from typing import Any
 
 from mcp.server import Server
+from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, Resource, TextContent
 from pydantic import AnyUrl
@@ -374,15 +375,17 @@ def create_server(sandbox_api_url: str, workspace_id: str | None = None) -> Serv
         return RESOURCE_DEFINITIONS
 
     @server.read_resource()
-    async def handle_read_resource(uri: AnyUrl) -> str:
+    async def handle_read_resource(uri: AnyUrl) -> list[ReadResourceContents]:
         uri_str = str(uri).rstrip("/")
         if uri_str == "cng://datasets":
-            return await list_datasets_resource(client)
-        if uri_str == "cng://story-templates":
-            return await list_story_templates_resource()
-        if uri_str == "cng://colormaps":
-            return await list_colormaps_resource()
-        raise ValueError(f"Unknown resource: {uri}")
+            content = await list_datasets_resource(client)
+        elif uri_str == "cng://story-templates":
+            content = await list_story_templates_resource()
+        elif uri_str == "cng://colormaps":
+            content = await list_colormaps_resource()
+        else:
+            raise ValueError(f"Unknown resource: {uri}")
+        return [ReadResourceContents(content=content, mime_type="text/markdown")]
 
     return server
 

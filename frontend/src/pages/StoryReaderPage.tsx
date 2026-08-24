@@ -172,11 +172,15 @@ export default function StoryReaderPage({
           {error}
         </Text>
         <Link to={workspacePath("/")}>
-          <Text color="brand.orange" fontWeight={600}>
-            <Flex align="center" gap={1.5}>
-              <ArrowLeft size={14} /> Back to sandbox
-            </Flex>
-          </Text>
+          <Flex
+            as="span"
+            align="center"
+            gap={1.5}
+            color="brand.orange"
+            fontWeight={600}
+          >
+            <ArrowLeft size={14} /> Back to sandbox
+          </Flex>
         </Link>
       </Flex>
     );

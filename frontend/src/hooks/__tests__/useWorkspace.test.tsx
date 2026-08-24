@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { WorkspaceProvider, useOptionalWorkspace } from "../useWorkspace";
 import { system } from "../../theme";
 
@@ -18,6 +18,10 @@ beforeEach(() => {
   seedExampleData.mockReset();
   getExampleState.mockResolvedValue({ state: "seeded" });
   seedExampleData.mockResolvedValue({ state: "seeded", story_id_map: {} });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -71,10 +75,13 @@ test("reports a failed example seed instead of swallowing it", async () => {
   const { result } = renderHook(() => useOptionalWorkspace(), { wrapper });
 
   await waitFor(() => expect(result.current).not.toBeNull());
-  await waitFor(() => expect(consoleError).toHaveBeenCalled());
+  await waitFor(() =>
+    expect(consoleError).toHaveBeenCalledWith("Example data setup failed", {
+      workspaceId: "testws",
+      error: expect.any(Error),
+    })
+  );
   expect(result.current!.workspaceId).toBe("testws");
-
-  consoleError.mockRestore();
 });
 
 test("useOptionalWorkspace returns null outside WorkspaceProvider", () => {

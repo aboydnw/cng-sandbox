@@ -201,8 +201,10 @@ async def _seed_example_connections(app: FastAPI) -> None:
     except Exception:
         logger.exception("Example connection seeding failed")
 
-    # Probed here rather than inside the seeding function so the seed stays a
-    # pure database operation that unit tests can call without network access.
+    # Runs as its own step rather than inside the seed. The seed's remote work
+    # (the zarr time-axis probe) happens only when a row is inserted, so on an
+    # existing deploy it never runs and a rotted artifact stays invisible. This
+    # sweep has to check every static seed on every boot, regardless.
     try:
         await asyncio.to_thread(report_unreachable_static_seeds)
     except Exception:

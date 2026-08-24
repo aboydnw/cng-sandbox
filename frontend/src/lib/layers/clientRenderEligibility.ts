@@ -77,6 +77,16 @@ export function evaluateClientRenderEligibility(
     };
   }
 
+  if (item.bandCount !== null && item.bandCount > 1) {
+    return {
+      canRender: false,
+      renderPath: null,
+      sizeBytes: null,
+      cap: null,
+      reason: "Multi-band COG requires server-side rendering",
+    };
+  }
+
   const sizeBytes =
     item.dataset?.converted_file_size ?? item.connection?.file_size ?? null;
 

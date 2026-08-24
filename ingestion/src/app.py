@@ -147,13 +147,21 @@ async def _seed_stories(app: FastAPI) -> None:
     # is still waiting on. Without the titles a stalled seed is indistinguishable
     # from a healthy one until someone diffs the database by hand.
     missing = set(canonical_titles)
+    had_seeding_errors = False
     attempts = 0
     max_attempts = STORY_SEED_MAX_ATTEMPTS
     while attempts < max_attempts:
         attempts += 1
+        attempt_failed = False
         try:
             seed_example_stories(app.state.db_session_factory)
             relink_dead_chapter_dataset_ids(app.state.db_session_factory)
+        except Exception:
+            attempt_failed = True
+            had_seeding_errors = True
+            logger.exception("Example story seeding attempt failed")
+
+        try:
             session = app.state.db_session_factory()
             try:
                 seeded = {
@@ -165,10 +173,12 @@ async def _seed_stories(app: FastAPI) -> None:
             finally:
                 session.close()
             missing = canonical_titles - seeded
-            if not missing:
+            if not missing and not attempt_failed:
                 return
         except Exception:
-            logger.exception("Example story seeding attempt failed")
+            attempt_failed = True
+            had_seeding_errors = True
+            logger.exception("Could not inspect example story seeding progress")
         await asyncio.sleep(STORY_SEED_INTERVAL_SECONDS)
         if attempts % 60 == 0:
             logger.warning(
@@ -177,13 +187,23 @@ async def _seed_stories(app: FastAPI) -> None:
                 attempts,
                 ", ".join(sorted(missing)),
             )
+    if had_seeding_errors:
+        diagnosis = (
+            "Seeding errors occurred; check the preceding exception logs before "
+            "attributing the remaining gaps solely to unavailable datasets."
+        )
+    else:
+        diagnosis = (
+            "Their datasets never became available — check the preceding warnings "
+            "for skipped example datasets (a pre-built artifact missing from object "
+            "storage is the usual cause)."
+        )
     logger.error(
         "Giving up on example story seeding after %d attempts; "
-        "these canonical stories never seeded: %s. Their datasets never became "
-        "available — check the preceding warnings for skipped example datasets "
-        "(a pre-built artifact missing from object storage is the usual cause).",
+        "canonical stories still missing: %s. %s",
         max_attempts,
-        ", ".join(sorted(missing)),
+        ", ".join(sorted(missing)) or "none",
+        diagnosis,
     )
 
 

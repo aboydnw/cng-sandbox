@@ -352,3 +352,62 @@ def seed_example_connections(db_session_factory: sessionmaker) -> None:
                 logger.exception("Failed to register example connection: %s", seed.name)
     finally:
         session.close()
+
+    report_unreachable_static_seeds()
+
+
+# Seeds whose URL is a single static artifact we publish ourselves, rather than
+# a remote store discovered at runtime. These are the ones that can silently rot
+# when an object is never uploaded or is later removed from the bucket.
+_STATIC_SEED_TYPES = frozenset({"pmtiles", "copc"})
+
+
+def report_unreachable_static_seeds(
+    *, timeout: float = 10.0, client: httpx.Client | None = None
+) -> list[str]:
+    """Log an error for every static example artifact that no longer resolves.
+
+    Returns the names of the unreachable seeds.
+
+    A dead artifact is invisible from the database alone: the connection row
+    seeds fine and reads as healthy, and the 404 only surfaces in the browser
+    when a reader scrolls to a story chapter that draws the layer. Checking here
+    puts the failure in the startup log where it can be noticed and fixed.
+
+    Purely diagnostic — rows are still seeded either way, because a story
+    chapter that references a missing connection is no better than one that
+    references a broken URL. Never raises; a probe failure must not take down
+    startup.
+    """
+    seeds = [s for s in EXAMPLE_CONNECTIONS if s.connection_type in _STATIC_SEED_TYPES]
+    if not seeds:
+        return []
+
+    unreachable: list[str] = []
+    owns_client = client is None
+    client = client or httpx.Client(timeout=timeout, follow_redirects=True)
+    try:
+        for seed in seeds:
+            try:
+                resp = client.head(seed.url)
+                if resp.status_code >= 400:
+                    unreachable.append(seed.name)
+                    logger.error(
+                        "example connection artifact is unreachable: %s -> HTTP %d "
+                        "for %s. Stories that overlay this layer will fail to draw "
+                        "until the artifact is re-published.",
+                        seed.name,
+                        resp.status_code,
+                        seed.url,
+                    )
+            except Exception:
+                unreachable.append(seed.name)
+                logger.exception(
+                    "could not verify example connection artifact: %s (%s)",
+                    seed.name,
+                    seed.url,
+                )
+    finally:
+        if owns_client:
+            client.close()
+    return unreachable

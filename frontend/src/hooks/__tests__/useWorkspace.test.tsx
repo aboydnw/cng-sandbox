@@ -63,6 +63,20 @@ test("preserves a workspace whose examples were explicitly removed", async () =>
   expect(seedExampleData).not.toHaveBeenCalled();
 });
 
+test("reports a failed example seed instead of swallowing it", async () => {
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+  getExampleState.mockResolvedValueOnce({ state: "none" });
+  seedExampleData.mockRejectedValueOnce(new Error("HTTP 500"));
+
+  const { result } = renderHook(() => useOptionalWorkspace(), { wrapper });
+
+  await waitFor(() => expect(result.current).not.toBeNull());
+  await waitFor(() => expect(consoleError).toHaveBeenCalled());
+  expect(result.current!.workspaceId).toBe("testws");
+
+  consoleError.mockRestore();
+});
+
 test("useOptionalWorkspace returns null outside WorkspaceProvider", () => {
   const { result } = renderHook(() => useOptionalWorkspace(), {
     wrapper: bareWrapper,

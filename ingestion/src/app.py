@@ -27,6 +27,11 @@ from src.state import jobs, scan_store, scan_store_lock
 
 logger = logging.getLogger(__name__)
 
+# Story seeding polls until every canonical story's datasets are available.
+# Module-level so tests can shrink the budget instead of waiting out the retries.
+STORY_SEED_MAX_ATTEMPTS = 2880  # ~24h at one attempt per 30s
+STORY_SEED_INTERVAL_SECONDS = 30
+
 SCAN_TTL = timedelta(minutes=30)
 TERMINAL_JOB_TTL = timedelta(hours=1)
 
@@ -138,8 +143,12 @@ async def _seed_stories(app: FastAPI) -> None:
     )
 
     canonical_titles = {s.title for s in ALL_STORIES}
+    # Named in every progress log so an operator can tell which product a story
+    # is still waiting on. Without the titles a stalled seed is indistinguishable
+    # from a healthy one until someone diffs the database by hand.
+    missing = set(canonical_titles)
     attempts = 0
-    max_attempts = 2880  # ~24h at one attempt per 30s
+    max_attempts = STORY_SEED_MAX_ATTEMPTS
     while attempts < max_attempts:
         attempts += 1
         try:
@@ -155,19 +164,26 @@ async def _seed_stories(app: FastAPI) -> None:
                 }
             finally:
                 session.close()
-            if canonical_titles.issubset(seeded):
+            missing = canonical_titles - seeded
+            if not missing:
                 return
         except Exception:
             logger.exception("Example story seeding attempt failed")
-        await asyncio.sleep(30)
+        await asyncio.sleep(STORY_SEED_INTERVAL_SECONDS)
         if attempts % 60 == 0:
             logger.warning(
-                "Example story seeding still incomplete after %d attempts", attempts
+                "Example story seeding still incomplete after %d attempts; "
+                "still missing: %s",
+                attempts,
+                ", ".join(sorted(missing)),
             )
     logger.error(
         "Giving up on example story seeding after %d attempts; "
-        "some canonical stories never seeded",
+        "these canonical stories never seeded: %s. Their datasets never became "
+        "available — check the preceding warnings for skipped example datasets "
+        "(a pre-built artifact missing from object storage is the usual cause).",
         max_attempts,
+        ", ".join(sorted(missing)),
     )
 
 

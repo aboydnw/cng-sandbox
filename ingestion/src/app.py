@@ -27,6 +27,11 @@ from src.state import jobs, scan_store, scan_store_lock
 
 logger = logging.getLogger(__name__)
 
+# Story seeding polls until every canonical story's datasets are available.
+# Module-level so tests can shrink the budget instead of waiting out the retries.
+STORY_SEED_MAX_ATTEMPTS = 2880  # ~24h at one attempt per 30s
+STORY_SEED_INTERVAL_SECONDS = 30
+
 SCAN_TTL = timedelta(minutes=30)
 TERMINAL_JOB_TTL = timedelta(hours=1)
 
@@ -138,13 +143,25 @@ async def _seed_stories(app: FastAPI) -> None:
     )
 
     canonical_titles = {s.title for s in ALL_STORIES}
+    # Named in every progress log so an operator can tell which product a story
+    # is still waiting on. Without the titles a stalled seed is indistinguishable
+    # from a healthy one until someone diffs the database by hand.
+    missing = set(canonical_titles)
+    had_seeding_errors = False
     attempts = 0
-    max_attempts = 2880  # ~24h at one attempt per 30s
+    max_attempts = STORY_SEED_MAX_ATTEMPTS
     while attempts < max_attempts:
         attempts += 1
+        attempt_failed = False
         try:
             seed_example_stories(app.state.db_session_factory)
             relink_dead_chapter_dataset_ids(app.state.db_session_factory)
+        except Exception:
+            attempt_failed = True
+            had_seeding_errors = True
+            logger.exception("Example story seeding attempt failed")
+
+        try:
             session = app.state.db_session_factory()
             try:
                 seeded = {
@@ -155,19 +172,38 @@ async def _seed_stories(app: FastAPI) -> None:
                 }
             finally:
                 session.close()
-            if canonical_titles.issubset(seeded):
+            missing = canonical_titles - seeded
+            if not missing and not attempt_failed:
                 return
         except Exception:
-            logger.exception("Example story seeding attempt failed")
-        await asyncio.sleep(30)
+            attempt_failed = True
+            had_seeding_errors = True
+            logger.exception("Could not inspect example story seeding progress")
+        await asyncio.sleep(STORY_SEED_INTERVAL_SECONDS)
         if attempts % 60 == 0:
             logger.warning(
-                "Example story seeding still incomplete after %d attempts", attempts
+                "Example story seeding still incomplete after %d attempts; "
+                "still missing: %s",
+                attempts,
+                ", ".join(sorted(missing)),
             )
+    if had_seeding_errors:
+        diagnosis = (
+            "Seeding errors occurred; check the preceding exception logs before "
+            "attributing the remaining gaps solely to unavailable datasets."
+        )
+    else:
+        diagnosis = (
+            "Their datasets never became available — check the preceding warnings "
+            "for skipped example datasets (a pre-built artifact missing from object "
+            "storage is the usual cause)."
+        )
     logger.error(
         "Giving up on example story seeding after %d attempts; "
-        "some canonical stories never seeded",
+        "canonical stories still missing: %s. %s",
         max_attempts,
+        ", ".join(sorted(missing)) or "none",
+        diagnosis,
     )
 
 
@@ -175,12 +211,24 @@ async def _seed_example_connections(app: FastAPI) -> None:
     """Seed curated example connections on startup. Idempotent + best-effort."""
     import asyncio
 
-    from src.services.example_connections import seed_example_connections
+    from src.services.example_connections import (
+        report_unreachable_static_seeds,
+        seed_example_connections,
+    )
 
     try:
         await asyncio.to_thread(seed_example_connections, app.state.db_session_factory)
     except Exception:
         logger.exception("Example connection seeding failed")
+
+    # Runs as its own step rather than inside the seed. The seed's remote work
+    # (the zarr time-axis probe) happens only when a row is inserted, so on an
+    # existing deploy it never runs and a rotted artifact stays invisible. This
+    # sweep has to check every static seed on every boot, regardless.
+    try:
+        await asyncio.to_thread(report_unreachable_static_seeds)
+    except Exception:
+        logger.exception("Example connection artifact check failed")
 
 
 async def _cleanup_expired(app):

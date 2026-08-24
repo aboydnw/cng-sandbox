@@ -132,7 +132,7 @@ wheels = [
 
 [[package]]
 name = "cngstorytelling-mcp"
-version = "2.9.0"
+version = "2.15.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },

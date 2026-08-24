@@ -4,14 +4,8 @@ export const sharedConfig: UserConfig = {
   worker: {
     format: "es",
   },
-  esbuild: {
-    target: "esnext",
-  },
   optimizeDeps: {
     exclude: ["@duckdb/duckdb-wasm"],
-    esbuildOptions: {
-      target: "esnext",
-    },
   },
   resolve: {
     preserveSymlinks: true,

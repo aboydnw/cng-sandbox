@@ -93,6 +93,7 @@ async def test_read_resource_story_templates(sandbox_api_url):
 
 
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("error::DeprecationWarning")
 async def test_read_resource_colormaps(sandbox_api_url):
     server = create_server(sandbox_api_url=sandbox_api_url)
 

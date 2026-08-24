@@ -99,6 +99,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.clearAllMocks();
 });
 
@@ -148,6 +149,9 @@ describe("StoryReaderPage portable embed", () => {
   });
 
   it("shows a friendly error when config load fails", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     vi.mocked(loadPortableConfig).mockRejectedValueOnce(new Error("403"));
 
     renderAt(
@@ -158,5 +162,6 @@ describe("StoryReaderPage portable embed", () => {
     await waitFor(() => {
       expect(screen.getByText(/couldn't load this story/i)).toBeTruthy();
     });
+    expect(consoleError).not.toHaveBeenCalled();
   });
 });

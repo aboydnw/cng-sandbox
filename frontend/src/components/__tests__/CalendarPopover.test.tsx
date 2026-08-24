@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { system } from "../../theme";
 import { CalendarPopover } from "../CalendarPopover";
 import type { Timestep } from "../../types";
@@ -14,6 +14,10 @@ const TIMESTEPS: Timestep[] = [
 function renderWithChakra(ui: React.ReactElement) {
   return render(<ChakraProvider value={system}>{ui}</ChakraProvider>);
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("CalendarPopover", () => {
   it("renders the current date label", () => {
@@ -41,6 +45,9 @@ describe("CalendarPopover", () => {
   });
 
   it("opens the calendar popover when the calendar button is clicked", () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     renderWithChakra(
       <CalendarPopover
         timesteps={TIMESTEPS}
@@ -51,6 +58,7 @@ describe("CalendarPopover", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /open calendar/i }));
     expect(screen.getByText("January 2024")).toBeTruthy();
+    expect(consoleError).not.toHaveBeenCalled();
   });
 
   it("shows time picker for sub-daily data when a date has multiple times", () => {

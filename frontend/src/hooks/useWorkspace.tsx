@@ -69,9 +69,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         // were being cloned. Remount once so they immediately read the copies.
         if (!cancelled) setExamplesRevision((revision) => revision + 1);
       })
-      .catch(() => {
+      .catch((err) => {
         // Example setup is best-effort; a temporary failure must not prevent
-        // users from reaching their own workspace content.
+        // users from reaching their own workspace content. Report it anyway —
+        // swallowing it silently makes a failed seed look identical to a
+        // genuinely empty workspace, which is indistinguishable to the user
+        // and invisible in a bug report.
+        console.error("Example data setup failed", {
+          workspaceId: activeId,
+          error: err,
+        });
       });
 
     return () => {

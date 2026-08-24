@@ -506,3 +506,77 @@ def test_admin_boundary_seeds_present():
     for seed in admin:
         assert seed.url.endswith(".pmtiles")
         assert seed.name
+
+
+class _StubResponse:
+    def __init__(self, status_code: int):
+        self.status_code = status_code
+
+
+class _StubClient:
+    def __init__(self, statuses: dict[str, int]):
+        self.statuses = statuses
+        self.requested: list[str] = []
+
+    def head(self, url: str):
+        self.requested.append(url)
+        if url not in self.statuses:
+            raise RuntimeError(f"unexpected url: {url}")
+        return _StubResponse(self.statuses[url])
+
+
+def _static_seed_urls():
+    from src.services.example_connections import (
+        _STATIC_SEED_TYPES,
+        EXAMPLE_CONNECTIONS,
+    )
+
+    return [
+        s.url for s in EXAMPLE_CONNECTIONS if s.connection_type in _STATIC_SEED_TYPES
+    ]
+
+
+def test_reachable_static_seeds_report_nothing():
+    from src.services.example_connections import report_unreachable_static_seeds
+
+    client = _StubClient({url: 200 for url in _static_seed_urls()})
+
+    assert report_unreachable_static_seeds(client=client) == []
+    assert client.requested == _static_seed_urls()
+
+
+def test_missing_static_artifact_is_reported(caplog):
+    from src.services.example_connections import (
+        _STATIC_SEED_TYPES,
+        EXAMPLE_CONNECTIONS,
+        report_unreachable_static_seeds,
+    )
+
+    urls = _static_seed_urls()
+    if not urls:
+        pytest.skip("no static example connection seeds defined")
+    dead = urls[0]
+    dead_name = next(
+        s.name
+        for s in EXAMPLE_CONNECTIONS
+        if s.connection_type in _STATIC_SEED_TYPES and s.url == dead
+    )
+    client = _StubClient({url: (404 if url == dead else 200) for url in urls})
+
+    with caplog.at_level("ERROR"):
+        unreachable = report_unreachable_static_seeds(client=client)
+
+    assert unreachable == [dead_name]
+    assert dead in caplog.text
+
+
+def test_probe_errors_do_not_propagate():
+    from src.services.example_connections import report_unreachable_static_seeds
+
+    urls = _static_seed_urls()
+    if not urls:
+        pytest.skip("no static example connection seeds defined")
+
+    client = _StubClient({})
+
+    assert len(report_unreachable_static_seeds(client=client)) == len(urls)

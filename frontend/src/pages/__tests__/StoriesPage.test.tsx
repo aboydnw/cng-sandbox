@@ -68,7 +68,6 @@ describe("Workspace routing", () => {
       })
     ).toBeInTheDocument();
   });
-
 });
 
 import {

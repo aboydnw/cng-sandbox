@@ -1,5 +1,5 @@
 # --- Builder: produces optimized static assets in /app/dist ---
-FROM node:20 AS builder
+FROM node:25 AS builder
 WORKDIR /app
 RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
@@ -14,7 +14,7 @@ RUN yarn build
 # steps below are a fallback that keeps this image runnable on its own. Source
 # edits reach the running container through the mount, not through a rebuild;
 # the installed node_modules is preserved by an anonymous volume. ---
-FROM node:20 AS dev
+FROM node:25 AS dev
 WORKDIR /app
 RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./

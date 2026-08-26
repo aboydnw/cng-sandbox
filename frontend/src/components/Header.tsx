@@ -2,11 +2,13 @@ import { Box, Flex, Menu, Portal, Text } from "@chakra-ui/react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useState, useCallback, useEffect } from "react";
-import { CaretDown, Check } from "@phosphor-icons/react";
+import { ArrowSquareOut, CaretDown, Check } from "@phosphor-icons/react";
 import {
   useOptionalWorkspace,
   WORKSPACE_STORAGE_KEY,
 } from "../hooks/useWorkspace";
+
+const EARTH_STORIES_URL = "https://github.com/aboydnw/earth-stories";
 
 interface HeaderProps {
   children?: ReactNode;
@@ -113,6 +115,30 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
           </Flex>
         </Flex>
         <Flex align="center" gap={2} minW={0}>
+          {workspace && (
+            <Box
+              asChild
+              color="fg.muted"
+              fontSize="sm"
+              fontWeight={500}
+              textDecoration="none"
+              _hover={{ color: "brand.brown" }}
+            >
+              <a
+                href={EARTH_STORIES_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Earth Stories on GitHub (opens in a new tab)"
+              >
+                <Flex align="center" gap={1}>
+                  <Text display={{ base: "none", md: "block" }}>
+                    Earth Stories
+                  </Text>
+                  <ArrowSquareOut size={14} aria-hidden="true" />
+                </Flex>
+              </a>
+            </Box>
+          )}
           {children && (
             <Flex gap={2} align="center" minW={0} justify="flex-end">
               {children}

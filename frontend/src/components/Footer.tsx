@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { GithubLogo } from "@phosphor-icons/react";
 import { useOptionalWorkspace } from "../hooks/useWorkspace";
 
-const GITHUB_URL = "https://github.com/aboydnw/cng-sandbox";
+const EARTH_STORIES_URL = "https://github.com/aboydnw/earth-stories";
+const CNG_GITHUB_URL = "https://github.com/aboydnw/cng-sandbox";
 const CONTACT_URL = "https://developmentseed.org/contact/";
 const DS_URL = "https://developmentseed.org/";
 
@@ -55,7 +56,7 @@ export function Footer() {
             About
           </Link>
           <a
-            href={GITHUB_URL}
+            href={EARTH_STORIES_URL}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -64,10 +65,25 @@ export function Footer() {
               alignItems: "center",
               gap: 4,
             }}
-            aria-label="GitHub repository"
+            aria-label="Earth Stories on GitHub"
           >
             <GithubLogo size={16} weight="duotone" />
-            GitHub
+            Earth Stories
+          </a>
+          <a
+            href={CNG_GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              ...linkStyle,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            aria-label="CNG Sandbox on GitHub"
+          >
+            <GithubLogo size={16} weight="duotone" />
+            CNG Sandbox
           </a>
           <a
             href={CONTACT_URL}

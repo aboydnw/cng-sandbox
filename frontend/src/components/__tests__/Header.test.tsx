@@ -94,6 +94,13 @@ describe("Header (public, no workspace)", () => {
     const home = links.find((el) => el.getAttribute("href") === "/");
     expect(home).toBeTruthy();
   });
+
+  it("keeps the public marketing header focused", () => {
+    renderPublic();
+    expect(
+      screen.queryByRole("link", { name: /earth stories on github/i })
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("Header nav order", () => {
@@ -107,9 +114,18 @@ describe("Header nav order", () => {
 });
 
 describe("Header utility links", () => {
-  it("does not render a GitHub link in the header", () => {
+  it("links workspace users to Earth Stories", () => {
     renderWithProviders(<Header />);
-    expect(screen.queryByRole("link", { name: /github/i })).toBeNull();
+    const link = screen.getByRole("link", {
+      name: /earth stories on github/i,
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://github.com/aboydnw/earth-stories"
+    );
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
+    expect(link.getAttribute("rel")).toContain("noreferrer");
   });
 
   it("does not render a Contact link in the header", () => {

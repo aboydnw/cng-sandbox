@@ -26,14 +26,27 @@ function renderFooter() {
 }
 
 describe("Footer", () => {
-  it("links to the GitHub repo", () => {
+  it("links to Earth Stories and CNG Sandbox as distinct repositories", () => {
     renderFooter();
-    const link = screen.getByRole("link", { name: /github/i });
-    expect(link.getAttribute("href")).toBe(
+    const earthStories = screen.getByRole("link", {
+      name: /earth stories on github/i,
+    });
+    const cngSandbox = screen.getByRole("link", {
+      name: /cng sandbox on github/i,
+    });
+    expect(earthStories).toHaveAttribute(
+      "href",
+      "https://github.com/aboydnw/earth-stories"
+    );
+    expect(cngSandbox).toHaveAttribute(
+      "href",
       "https://github.com/aboydnw/cng-sandbox"
     );
-    expect(link.getAttribute("target")).toBe("_blank");
-    expect(link.getAttribute("rel")).toContain("noopener");
+    for (const link of [earthStories, cngSandbox]) {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link.getAttribute("rel")).toContain("noopener");
+      expect(link.getAttribute("rel")).toContain("noreferrer");
+    }
   });
 
   it("links to the workspace-scoped About page", () => {

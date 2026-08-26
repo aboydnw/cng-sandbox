@@ -30,7 +30,6 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
 
   const homeHref = workspace ? workspace.workspacePath("/") : "/";
   const dataHref = workspace ? workspace.workspacePath("/data") : null;
-  const storiesHref = workspace ? workspace.workspacePath("/stories") : null;
   const aboutHref = workspace ? workspace.workspacePath("/about") : "/about";
 
   const copyWorkspaceUrl = useCallback(() => {
@@ -109,7 +108,6 @@ export function Header({ children, showWorkspace = true }: HeaderProps) {
             align="stretch"
             gap={1}
           >
-            {storiesHref && <NavItem to={storiesHref}>Stories</NavItem>}
             {dataHref && <NavItem to={dataHref}>Data</NavItem>}
             <NavItem to={aboutHref}>About</NavItem>
           </Flex>

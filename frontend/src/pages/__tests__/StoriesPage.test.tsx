@@ -68,13 +68,6 @@ describe("Workspace routing", () => {
       })
     ).toBeInTheDocument();
   });
-
-  it("renders StoriesPage at /w/:id/stories", async () => {
-    renderApp("/w/test-workspace/stories");
-    expect(
-      await screen.findByRole("heading", { name: /^stories$/i })
-    ).toBeInTheDocument();
-  });
 });
 
 import {

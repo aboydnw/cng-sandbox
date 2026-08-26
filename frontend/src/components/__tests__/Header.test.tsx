@@ -33,18 +33,16 @@ describe("Header", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders Data, Stories, and About nav links", () => {
+  it("renders Data and About without a Stories nav link", () => {
     renderWithProviders(<Header />);
     expect(screen.getByRole("link", { name: /^data$/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /^stories$/i })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^stories$/i })).toBeNull();
     expect(screen.getByRole("link", { name: /about/i })).toBeInTheDocument();
   });
 
   it("marks the current navigation item", () => {
-    renderWithProviders(<Header />, "/w/test-workspace/stories");
-    expect(screen.getByRole("link", { name: /^stories$/i })).toHaveAttribute(
+    renderWithProviders(<Header />, "/w/test-workspace/data");
+    expect(screen.getByRole("link", { name: /^data$/i })).toHaveAttribute(
       "aria-current",
       "page"
     );
@@ -100,16 +98,6 @@ describe("Header (public, no workspace)", () => {
     expect(
       screen.queryByRole("link", { name: /earth stories on github/i })
     ).not.toBeInTheDocument();
-  });
-});
-
-describe("Header nav order", () => {
-  it("renders Stories before Data in the nav", () => {
-    renderWithProviders(<Header />);
-    const stories = screen.getByRole("link", { name: /^stories$/i });
-    const data = screen.getByRole("link", { name: /^data$/i });
-    const cmp = stories.compareDocumentPosition(data);
-    expect(cmp & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

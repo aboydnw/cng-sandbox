@@ -100,6 +100,17 @@ describe("AboutPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/no SLA/i)).toBeInTheDocument();
     expect(screen.getByText(/no production support/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /cloud-native geospatial data conversion and exploration/i
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/geospatial storytelling, built by Development Seed/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /^earth stories$/i })
+    ).toHaveAttribute("href", "https://github.com/aboydnw/earth-stories");
   });
 
   it("renders the 'How to engage further' section", () => {

@@ -8,10 +8,6 @@ vi.mock("../DataSwitcher", () => ({
   DataSwitcher: () => <div data-testid="data-switcher" />,
 }));
 
-vi.mock("../SaveAsStoryChapter", () => ({
-  SaveAsStoryChapter: () => <div>Save as story chapter</div>,
-}));
-
 vi.mock("../RasterSidebarControls", () => ({
   RasterSidebarControls: () => <div data-testid="raster-controls" />,
 }));
@@ -108,14 +104,25 @@ function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
-test("normal mode shows story CTA", () => {
+test("normal mode links safely to Earth Stories", () => {
   renderWithProviders(<MapSidePanel {...defaultProps} />);
-  expect(screen.getByText(/save as story chapter/i)).toBeInTheDocument();
+  const link = screen.getByRole("link", {
+    name: /explore earth stories on github/i,
+  });
+  expect(link).toHaveAttribute(
+    "href",
+    "https://github.com/aboydnw/earth-stories"
+  );
+  expect(link).toHaveAttribute("target", "_blank");
+  expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  expect(screen.queryByText(/save as story chapter/i)).not.toBeInTheDocument();
 });
 
-test("shared mode hides story CTA", () => {
+test("shared mode hides the Earth Stories CTA", () => {
   renderWithProviders(<MapSidePanel {...defaultProps} shared />);
-  expect(screen.queryByText(/save as story chapter/i)).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: /explore earth stories on github/i })
+  ).not.toBeInTheDocument();
 });
 
 test("normal mode shows DataSwitcher", () => {

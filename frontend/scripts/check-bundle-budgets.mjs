@@ -17,10 +17,7 @@ const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const targets = {
   bootstrap: "index.html",
   workspace: "src/pages/WorkspaceHomePage.tsx",
-  storyReader: "src/pages/StoryReaderPage.tsx",
-  storyEditor: "src/pages/StoryEditorPage.tsx",
   mapViewer: "src/pages/MapPage.tsx",
-  storyMapRuntime: "src/components/StoryMapRuntime.tsx",
 };
 
 function collectFiles(entryKey) {

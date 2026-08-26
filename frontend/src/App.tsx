@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Flex } from "@chakra-ui/react";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import {
   WorkspaceProvider,
   WorkspaceRedirect,
@@ -18,11 +18,6 @@ const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
 const ExpiredPage = lazy(() => import("./pages/ExpiredPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const MapPage = lazy(() => import("./pages/MapPage"));
-const StoriesPage = lazy(() => import("./pages/StoriesPage"));
-const StoryEditorPage = lazy(() => import("./pages/StoryEditorPage"));
-const StoryEmbedPage = lazy(() => import("./pages/StoryEmbedPage"));
-const StoryReaderPage = lazy(() => import("./pages/StoryReaderPage"));
-const StorySetupPage = lazy(() => import("./pages/StorySetupPage"));
 const UploadPage = lazy(() => import("./pages/UploadPage"));
 const WorkspaceHomePage = lazy(() => import("./pages/WorkspaceHomePage"));
 
@@ -37,11 +32,6 @@ function RouteLoadingFallback() {
       <BrandSpinner size={32} />
     </Flex>
   );
-}
-
-function StoryReaderRedirect() {
-  const { id } = useParams<{ id: string }>();
-  return <Navigate to={`/story/${id}`} replace />;
 }
 
 function DatasetsRedirect() {
@@ -59,7 +49,6 @@ function WorkspaceRoutes() {
     <WorkspaceProvider>
       <Routes>
         <Route path="/" element={<WorkspaceHomePage />} />
-        <Route path="/stories" element={<StoriesPage />} />
         <Route path="/quick-map" element={<UploadPage />} />
         <Route path="/map/:id" element={<MapPage />} />
         <Route path="/map/connection/:id" element={<MapPage />} />
@@ -67,9 +56,6 @@ function WorkspaceRoutes() {
         <Route path="/data" element={<DataPage />} />
         <Route path="/library" element={<LibraryRedirect />} />
         <Route path="/datasets" element={<DatasetsRedirect />} />
-        <Route path="/story/new" element={<StorySetupPage />} />
-        <Route path="/story/:id" element={<StoryReaderRedirect />} />
-        <Route path="/story/:id/edit" element={<StoryEditorPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/discover/:org/:name" element={<DiscoverDatasetPage />} />
@@ -86,10 +72,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/story/:id/embed" element={<StoryEmbedPage />} />
             <Route path="/map/connection/:id" element={<MapPage shared />} />
             <Route path="/map/:id" element={<MapPage shared />} />
-            <Route path="/story/:id" element={<StoryReaderPage />} />
             <Route path="/w/:workspaceId/*" element={<WorkspaceRoutes />} />
             <Route path="*" element={<WorkspaceRedirect />} />
           </Routes>

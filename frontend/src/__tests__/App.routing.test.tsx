@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import App from "../App";
@@ -83,11 +83,6 @@ test("/map/connection/:id renders MapPage with shared=true", async () => {
   expect(el).toHaveAttribute("data-shared", "true");
 });
 
-test("/story/:id renders StoryReaderPage", async () => {
-  renderApp("/story/test-story-id");
-  expect(await screen.findByTestId("story-reader")).toBeInTheDocument();
-});
-
 vi.mock("../pages/LandingPage", () => ({
   default: () => <div data-testid="landing-page" />,
 }));
@@ -124,11 +119,6 @@ test("/w/:workspaceId/quick-map renders the workspace UploadPage", async () => {
   expect(await screen.findByTestId("upload-page")).toBeInTheDocument();
 });
 
-test("/w/:workspaceId/stories renders the StoriesPage", async () => {
-  renderApp("/w/abc12345/stories");
-  expect(await screen.findByTestId("stories-page")).toBeInTheDocument();
-});
-
 test("unknown public path falls through to WorkspaceRedirect", () => {
   renderApp("/data");
   expect(screen.getByTestId("workspace-redirect")).toBeInTheDocument();
@@ -137,19 +127,14 @@ test("unknown public path falls through to WorkspaceRedirect", () => {
 it.each([
   ["/", "landing-page"],
   ["/about", "about-page"],
-  ["/story/story-1/embed", "story-embed"],
   ["/map/connection/connection-1", "map-page"],
   ["/map/dataset-1", "map-page"],
-  ["/story/story-1", "story-reader"],
   ["/w/workspace-1/", "workspace-home-page"],
-  ["/w/workspace-1/stories", "stories-page"],
   ["/w/workspace-1/quick-map", "upload-page"],
   ["/w/workspace-1/map/dataset-1", "map-page"],
   ["/w/workspace-1/map/connection/connection-1", "map-page"],
   ["/w/workspace-1/expired/dataset-1", "expired-page"],
   ["/w/workspace-1/data", "data-page"],
-  ["/w/workspace-1/story/new", "story-setup-page"],
-  ["/w/workspace-1/story/story-1/edit", "story-editor"],
   ["/w/workspace-1/about", "about-page"],
   ["/w/workspace-1/discover", "discover-page"],
   ["/w/workspace-1/discover/org/name", "discover-dataset-page"],
@@ -161,9 +146,33 @@ it.each([
 it.each([
   ["/w/workspace-1/library", "/w/workspace-1/data", "data-page"],
   ["/w/workspace-1/datasets", "/w/workspace-1/data", "data-page"],
-  ["/w/workspace-1/story/story-1", "/story/story-1", "story-reader"],
 ])("preserves redirect from %s", async (from, to, testId) => {
   renderApp(from);
   expect(await screen.findByTestId(testId)).toBeInTheDocument();
   expect(screen.getByTestId("location")).toHaveTextContent(to);
+});
+
+it.each(["/story/story-1", "/story/story-1/embed"])(
+  "retires public story route %s to the existing public fallback",
+  async (route) => {
+    renderApp(route);
+    expect(await screen.findByTestId("workspace-redirect")).toBeInTheDocument();
+  }
+);
+
+it.each([
+  "/w/workspace-1/stories",
+  "/w/workspace-1/story/new",
+  "/w/workspace-1/story/story-1",
+  "/w/workspace-1/story/story-1/edit",
+])("does not register retired workspace story route %s", async (route) => {
+  renderApp(route);
+  await waitFor(() => {
+    expect(screen.queryByLabelText("Loading page")).not.toBeInTheDocument();
+  });
+  expect(screen.queryByTestId("stories-page")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("story-setup-page")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("story-reader")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("story-editor")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("story-embed")).not.toBeInTheDocument();
 });

@@ -156,9 +156,7 @@ it.each(["/story/story-1", "/story/story-1/embed"])(
   "retires public story route %s to the existing public fallback",
   async (route) => {
     renderApp(route);
-    expect(
-      await screen.findByTestId("workspace-redirect")
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("workspace-redirect")).toBeInTheDocument();
   }
 );
 

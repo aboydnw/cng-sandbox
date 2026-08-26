@@ -29,11 +29,7 @@ export function EarthStoriesCta() {
         _hover={{ textDecoration: "underline" }}
         _focusVisible={{ outline: "2px solid", outlineColor: "brand.orange" }}
       >
-        <a
-          href={EARTH_STORIES_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href={EARTH_STORIES_URL} target="_blank" rel="noopener noreferrer">
           <Flex as="span" align="center" gap={1}>
             Explore Earth Stories on GitHub
             <ArrowSquareOut size={15} aria-hidden="true" />

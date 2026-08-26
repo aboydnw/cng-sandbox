@@ -28,8 +28,7 @@ export default function WorkspaceHomePage() {
   const userDatasets = datasetsResource.data.filter((d) => !d.is_example);
   const recentDatasets = sortByUpdated(userDatasets).slice(0, 3);
   const loading =
-    datasetsResource.data.length === 0 &&
-    datasetsResource.status === "loading";
+    datasetsResource.data.length === 0 && datasetsResource.status === "loading";
   const resourceError = datasetsResource.error;
   const allUnavailable = datasetsResource.status === "error";
   const isEmpty = !loading && !resourceError && userDatasets.length === 0;
@@ -75,7 +74,11 @@ export default function WorkspaceHomePage() {
               <Text fontWeight={600}>Couldn’t load your workspace</Text>
               <Text fontSize="sm">{resourceError}</Text>
             </Box>
-            <Button size="sm" variant="outline" onClick={datasetsResource.retry}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={datasetsResource.retry}
+            >
               Try again
             </Button>
           </Flex>
@@ -89,8 +92,7 @@ export default function WorkspaceHomePage() {
               Start your first map
             </Heading>
             <Text fontSize="sm" color="gray.500">
-              Upload a file or connect cloud-native data to explore it on a
-              map.
+              Upload a file or connect cloud-native data to explore it on a map.
             </Text>
           </Box>
         ) : (
@@ -137,7 +139,9 @@ function Section({
   emptyText,
   children,
 }: SectionProps) {
-  const hasChildren = Array.isArray(children) ? children.length > 0 : !!children;
+  const hasChildren = Array.isArray(children)
+    ? children.length > 0
+    : !!children;
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={3}>

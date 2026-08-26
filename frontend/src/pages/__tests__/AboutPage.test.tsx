@@ -101,7 +101,9 @@ describe("AboutPage", () => {
     expect(screen.getByText(/no SLA/i)).toBeInTheDocument();
     expect(screen.getByText(/no production support/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/cloud-native geospatial data conversion and exploration/i)
+      screen.getByText(
+        /cloud-native geospatial data conversion and exploration/i
+      )
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/geospatial storytelling, built by Development Seed/i)

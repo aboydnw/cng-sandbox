@@ -1,24 +1,39 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   MemoryRouter,
-  Routes,
   Route,
-  useParams,
+  Routes,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { system } from "../../theme";
+import { seedExampleData } from "../../lib/examples/api";
 import LandingPage from "../LandingPage";
 
-vi.mock("../../lib/story/api", () => ({
-  listExampleStoriesFromServer: vi.fn().mockResolvedValue([]),
-}));
+vi.mock("../../hooks/useWorkspace", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../hooks/useWorkspace")>();
+  return {
+    ...actual,
+    generateWorkspaceId: vi.fn(() => "generated123"),
+  };
+});
+
+vi.mock("../../lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../lib/api")>();
+  return { ...actual, setWorkspaceId: vi.fn() };
+});
 
 vi.mock("../../lib/examples/api", () => ({
   seedExampleData: vi
     .fn()
     .mockResolvedValue({ state: "seeded", story_id_map: {} }),
+}));
+
+vi.mock("../../lib/story/api", () => ({
+  listExampleStoriesFromServer: vi.fn().mockResolvedValue([]),
 }));
 
 function WorkspaceTarget() {
@@ -34,7 +49,7 @@ function WorkspaceTarget() {
   );
 }
 
-function renderLanding(initialEntry: string = "/") {
+function renderLanding(initialEntry = "/") {
   return render(
     <ChakraProvider value={system}>
       <MemoryRouter initialEntries={[initialEntry]}>
@@ -51,215 +66,117 @@ describe("LandingPage", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-  });
-
-  it("renders the open-source demo eyebrow and pitch headline", () => {
-    renderLanding();
-    expect(
-      screen.getByText(/open-source demo · by development seed/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /tell stories with cloud-native/i })
-    ).toBeInTheDocument();
-  });
-
-  it("shows a retryable terminal state when examples fail to load", async () => {
-    const { listExampleStoriesFromServer } =
-      await import("../../lib/story/api");
-    (
-      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
-    ).mockRejectedValueOnce(new Error("HTTP 500"));
-    renderLanding();
-    expect(
-      await screen.findByText(/couldn’t load example stories/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /try again/i })
-    ).toBeInTheDocument();
-  });
-
-  it("renders the 'not a hosted product' framing", () => {
-    renderLanding();
-    expect(screen.getByText(/not a hosted product/i)).toBeInTheDocument();
-  });
-
-  it("renders two equal CTAs — Start a story and View on GitHub", () => {
-    renderLanding();
-    expect(
-      screen.getByRole("button", { name: /start a story/i })
-    ).toBeInTheDocument();
-    const githubCta = screen.getByRole("link", { name: /view on github/i });
-    expect(githubCta.getAttribute("href")).toBe(
-      "https://github.com/aboydnw/cng-sandbox"
-    );
-  });
-
-  it("'Start a story' creates a workspace and navigates to it", async () => {
-    renderLanding();
-    fireEvent.click(screen.getByRole("button", { name: /start a story/i }));
-    expect(await screen.findByTestId("workspace-target")).toBeInTheDocument();
-  });
-
-  it("'Start a story' navigates straight to the story editor", async () => {
-    renderLanding();
-    const button = await screen.findByRole("button", {
-      name: /start a story/i,
-    });
-    fireEvent.click(button);
-    await waitFor(() => {
-      expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
-    });
-    expect(screen.getByTestId("workspace-target")).toHaveAttribute(
-      "data-rest",
-      "/story/new"
-    );
-  });
-
-  it("clicking an example card seeds a workspace and opens the cloned story", async () => {
-    const { listExampleStoriesFromServer } =
-      await import("../../lib/story/api");
-    const { seedExampleData } = await import("../../lib/examples/api");
-    (
-      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
-      {
-        id: "example-1",
-        title: "Example Flood Story",
-        description: null,
-        chapters: [{ id: "c1" }, { id: "c2" }],
-        is_example: true,
-        published: true,
-        dataset_id: null,
-        dataset_ids: [],
-        updated_at: "2026-05-12T00:00:00Z",
-      },
-    ]);
-    (seedExampleData as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      state: "seeded",
-      story_id_map: { "example-1": "clone-1" },
-    });
-    renderLanding();
-    const card = await screen.findByRole("button", {
-      name: /example flood story/i,
-    });
-    fireEvent.click(card);
-    await waitFor(() => {
-      expect(seedExampleData).toHaveBeenCalled();
-    });
-    await waitFor(() => {
-      expect(screen.getByTestId("workspace-target")).toHaveAttribute(
-        "data-rest",
-        "/story/clone-1/edit"
-      );
-    });
-  });
-
-  it("falls back to the workspace root when the clone id is missing", async () => {
-    const { listExampleStoriesFromServer } =
-      await import("../../lib/story/api");
-    const { seedExampleData } = await import("../../lib/examples/api");
-    (
-      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
-      {
-        id: "example-1",
-        title: "Example Flood Story",
-        description: null,
-        chapters: [{ id: "c1" }],
-        is_example: true,
-        published: true,
-        dataset_id: null,
-        dataset_ids: [],
-        updated_at: "2026-05-12T00:00:00Z",
-      },
-    ]);
-    (seedExampleData as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    vi.mocked(seedExampleData).mockResolvedValue({
       state: "seeded",
       story_id_map: {},
     });
-    renderLanding();
-    fireEvent.click(
-      await screen.findByRole("button", { name: /example flood story/i })
-    );
-    await waitFor(() => {
-      expect(screen.getByTestId("workspace-target")).toHaveAttribute(
-        "data-rest",
-        "/"
-      );
-    });
   });
 
-  it("renders example story cards fetched from the public endpoint", async () => {
-    const { listExampleStoriesFromServer } =
-      await import("../../lib/story/api");
-    (
-      listExampleStoriesFromServer as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
-      {
-        id: "ex-1",
-        title: "IMERG precipitation",
-        chapters: [],
-        is_example: true,
-        published: true,
-        dataset_id: null,
-        dataset_ids: [],
-        description: null,
-      },
-    ]);
-    renderLanding();
-    await waitFor(() => {
-      expect(screen.getByText(/imerg precipitation/i)).toBeInTheDocument();
-    });
-  });
-
-  it("renders the footer band with Contact and GitHub blocks", () => {
+  it("presents Earth Stories and the two product paths", () => {
     renderLanding();
     expect(
-      screen.getByText(/want to build this for real/i)
+      screen.getByRole("heading", { name: /earth stories/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/all code on github/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /explore earth stories/i })
+    ).toHaveAttribute("href", "https://github.com/aboydnw/earth-stories");
+    expect(
+      screen.getByRole("button", { name: /open the data sandbox/i })
+    ).toBeInTheDocument();
   });
 
-  it("auto-redirects to a stored workspace when one exists in localStorage", () => {
+  it("opens Earth Stories safely in a new tab", () => {
+    renderLanding();
+    const link = screen.getByRole("link", { name: /explore earth stories/i });
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toContain("noopener");
+    expect(link.getAttribute("rel")).toContain("noreferrer");
+  });
+
+  it("always shows the homepage when a workspace is stored", () => {
     localStorage.setItem("myWorkspaceId", "stored123");
     renderLanding();
-    const target = screen.getByTestId("workspace-target");
-    expect(target).toHaveAttribute("data-workspace-id", "stored123");
+    expect(
+      screen.getByRole("heading", { name: /earth stories/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("workspace-target")).not.toBeInTheDocument();
   });
 
-  it("does not auto-redirect when ?switch=1 is set, even if a workspace is stored", () => {
+  it("opens the stored workspace only after the sandbox CTA is selected", async () => {
     localStorage.setItem("myWorkspaceId", "stored123");
-    renderLanding("/?switch=1");
-    expect(screen.queryByTestId("workspace-target")).toBeNull();
+    renderLanding();
+    fireEvent.click(
+      screen.getByRole("button", { name: /open the data sandbox/i })
+    );
+    expect(await screen.findByTestId("workspace-target")).toHaveAttribute(
+      "data-workspace-id",
+      "stored123"
+    );
+    expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+      "data-rest",
+      "/"
+    );
   });
 
-  it("navigates to an existing workspace when the user submits an ID", () => {
+  it("creates and seeds a workspace before opening the sandbox root", async () => {
     renderLanding();
-    const input = screen.getByLabelText(/workspace ID/i);
-    fireEvent.change(input, { target: { value: "abc12345" } });
-    const goBtn = screen.getByRole("button", { name: /open|go|enter/i });
-    fireEvent.click(goBtn);
-    expect(screen.getByTestId("workspace-target")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /open the data sandbox/i })
+    );
+    await waitFor(() => {
+      expect(seedExampleData).toHaveBeenCalledWith("generated123");
+    });
+    expect(await screen.findByTestId("workspace-target")).toHaveAttribute(
+      "data-workspace-id",
+      "generated123"
+    );
+    expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+      "data-rest",
+      "/"
+    );
   });
 
-  it("trims whitespace from the entered workspace ID", () => {
+  it("opens the sandbox root when example seeding fails", async () => {
+    vi.mocked(seedExampleData).mockRejectedValueOnce(new Error("HTTP 500"));
     renderLanding();
-    const input = screen.getByLabelText(/workspace ID/i);
-    fireEvent.change(input, { target: { value: "  abc12345  " } });
-    const goBtn = screen.getByRole("button", { name: /open|go|enter/i });
-    fireEvent.click(goBtn);
+    fireEvent.click(
+      screen.getByRole("button", { name: /open the data sandbox/i })
+    );
+    expect(await screen.findByTestId("workspace-target")).toHaveAttribute(
+      "data-rest",
+      "/"
+    );
+  });
+
+  it("navigates to a known workspace when the user submits an ID", () => {
+    renderLanding();
+    fireEvent.change(screen.getByLabelText(/workspace ID/i), {
+      target: { value: "abc12345" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^open$/i }));
     expect(screen.getByTestId("workspace-target")).toHaveAttribute(
       "data-workspace-id",
       "abc12345"
     );
   });
 
-  it("does not navigate when the entered workspace ID is empty", () => {
+  it("trims whitespace from a submitted workspace ID", () => {
     renderLanding();
-    const input = screen.getByLabelText(/workspace ID/i);
-    fireEvent.change(input, { target: { value: "   " } });
-    const goBtn = screen.getByRole("button", { name: /open|go|enter/i });
-    fireEvent.click(goBtn);
-    expect(screen.queryByTestId("workspace-target")).toBeNull();
+    fireEvent.change(screen.getByLabelText(/workspace ID/i), {
+      target: { value: "  abc12345  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^open$/i }));
+    expect(screen.getByTestId("workspace-target")).toHaveAttribute(
+      "data-workspace-id",
+      "abc12345"
+    );
+  });
+
+  it("does not navigate when the workspace ID is empty", () => {
+    renderLanding();
+    const button = screen.getByRole("button", { name: /^open$/i });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(screen.queryByTestId("workspace-target")).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import App from "../App";
 
@@ -35,19 +35,37 @@ vi.mock("../pages/WorkspaceHomePage", () => ({
   default: () => <div data-testid="workspace-home-page" />,
 }));
 
-vi.mock("../pages/LibraryPage", () => ({
-  default: () => <div data-testid="library-page" />,
+vi.mock("../pages/DataPage", () => ({
+  default: () => <div data-testid="data-page" />,
+}));
+
+vi.mock("../pages/DiscoverPage", () => ({
+  default: () => <div data-testid="discover-page" />,
+}));
+
+vi.mock("../pages/DiscoverDatasetPage", () => ({
+  default: () => <div data-testid="discover-dataset-page" />,
+}));
+
+vi.mock("../pages/StorySetupPage", () => ({
+  default: () => <div data-testid="story-setup-page" />,
 }));
 
 vi.mock("../pages/ExpiredPage", () => ({
   default: () => <div data-testid="expired-page" />,
 }));
 
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{location.pathname}</output>;
+}
+
 function renderApp(route: string) {
   return render(
     <ChakraProvider value={defaultSystem}>
       <MemoryRouter initialEntries={[route]}>
         <App />
+        <LocationProbe />
       </MemoryRouter>
     </ChakraProvider>
   );
@@ -114,4 +132,38 @@ test("/w/:workspaceId/stories renders the StoriesPage", async () => {
 test("unknown public path falls through to WorkspaceRedirect", () => {
   renderApp("/data");
   expect(screen.getByTestId("workspace-redirect")).toBeInTheDocument();
+});
+
+it.each([
+  ["/", "landing-page"],
+  ["/about", "about-page"],
+  ["/story/story-1/embed", "story-embed"],
+  ["/map/connection/connection-1", "map-page"],
+  ["/map/dataset-1", "map-page"],
+  ["/story/story-1", "story-reader"],
+  ["/w/workspace-1/", "workspace-home-page"],
+  ["/w/workspace-1/stories", "stories-page"],
+  ["/w/workspace-1/quick-map", "upload-page"],
+  ["/w/workspace-1/map/dataset-1", "map-page"],
+  ["/w/workspace-1/map/connection/connection-1", "map-page"],
+  ["/w/workspace-1/expired/dataset-1", "expired-page"],
+  ["/w/workspace-1/data", "data-page"],
+  ["/w/workspace-1/story/new", "story-setup-page"],
+  ["/w/workspace-1/story/story-1/edit", "story-editor"],
+  ["/w/workspace-1/about", "about-page"],
+  ["/w/workspace-1/discover", "discover-page"],
+  ["/w/workspace-1/discover/org/name", "discover-dataset-page"],
+])("preserves %s", async (route, testId) => {
+  renderApp(route);
+  expect(await screen.findByTestId(testId)).toBeInTheDocument();
+});
+
+it.each([
+  ["/w/workspace-1/library", "/w/workspace-1/data", "data-page"],
+  ["/w/workspace-1/datasets", "/w/workspace-1/data", "data-page"],
+  ["/w/workspace-1/story/story-1", "/story/story-1", "story-reader"],
+])("preserves redirect from %s", async (from, to, testId) => {
+  renderApp(from);
+  expect(await screen.findByTestId(testId)).toBeInTheDocument();
+  expect(screen.getByTestId("location")).toHaveTextContent(to);
 });

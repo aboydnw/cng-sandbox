@@ -166,8 +166,14 @@ export default function LandingPage() {
                 key={title}
                 py={8}
                 px={{ base: 0, md: 7 }}
-                borderTop={{ base: index === 0 ? "none" : "1px solid", md: "none" }}
-                borderLeft={{ base: "none", md: index === 0 ? "none" : "1px solid" }}
+                borderTop={{
+                  base: index === 0 ? "none" : "1px solid",
+                  md: "none",
+                }}
+                borderLeft={{
+                  base: "none",
+                  md: index === 0 ? "none" : "1px solid",
+                }}
                 borderColor="brand.border"
               >
                 <Icon size={24} color="var(--chakra-colors-brand-orange)" />

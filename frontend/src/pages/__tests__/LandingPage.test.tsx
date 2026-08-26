@@ -13,9 +13,8 @@ import { seedExampleData } from "../../lib/examples/api";
 import LandingPage from "../LandingPage";
 
 vi.mock("../../hooks/useWorkspace", async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import("../../hooks/useWorkspace")
-  >();
+  const actual =
+    await importOriginal<typeof import("../../hooks/useWorkspace")>();
   return {
     ...actual,
     generateWorkspaceId: vi.fn(() => "generated123"),

@@ -1,7 +1,7 @@
 # Earth Stories Marketing Gateway Design
 
-**Status:** Draft for review  
-**Date:** 2026-08-26  
+**Status:** Draft for review
+**Date:** 2026-08-26
 **Repository:** CNG Sandbox
 
 ## Purpose
@@ -214,4 +214,3 @@ No backend, archive-runtime, or full Docker-stack test is required because this 
 - Producing or distributing Earth Stories desktop installers.
 - Changing the production domain or infrastructure.
 - Redesigning workspace, data, map, story, discovery, reader, editor, or embed pages.
-

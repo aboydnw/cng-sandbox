@@ -521,4 +521,3 @@ git commit -m "fix: polish Earth Stories marketing gateway"
 ```
 
 If no corrections were required, do not create an empty commit.
-

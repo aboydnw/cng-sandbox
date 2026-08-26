@@ -13,7 +13,7 @@ import { InlineUpload } from "./InlineUpload";
 import { InlineConnectionForm } from "./InlineConnectionForm";
 import { ConversionSummaryCard } from "./ConversionSummaryCard";
 import { ConnectionInfoCard } from "./ConnectionInfoCard";
-import { SaveAsStoryChapter } from "./SaveAsStoryChapter";
+import { EarthStoriesCta } from "./EarthStoriesCta";
 import { EditableDatasetTitle } from "./EditableDatasetTitle";
 import { CopcControls } from "./CopcControls";
 import type { Table } from "apache-arrow";
@@ -68,7 +68,7 @@ interface MapSidePanelProps {
   canMarkCategorical: boolean;
   canMarkContinuous: boolean;
   onDatasetUpdated: () => void;
-  // Point cloud (COPC) style — persisted into a saved story chapter
+  // Point cloud (COPC) style
   copcColorMode?: CopcColorMode;
   onCopcColorModeChange?: (mode: CopcColorMode) => void;
   copcPointSize?: number;
@@ -306,18 +306,10 @@ export function MapSidePanel({
         </Box>
       )}
 
-      {/* Story CTA — available for both datasets and connections */}
+      {/* Storytelling lives in the separate Earth Stories project. */}
       {!shared && (
         <Box mt={4}>
-          <SaveAsStoryChapter
-            dataset={ds}
-            connection={item.connection}
-            copcStyle={
-              copcColorMode != null && copcPointSize != null
-                ? { colorMode: copcColorMode, pointSize: copcPointSize }
-                : undefined
-            }
-          />
+          <EarthStoriesCta />
         </Box>
       )}
     </Box>

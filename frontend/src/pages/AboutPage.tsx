@@ -154,11 +154,24 @@ export default function AboutPage() {
             What this is — and what it isn&apos;t
           </Heading>
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
-            CNG Sandbox is an open-source demo of cloud-native geospatial
-            storytelling, built by Development Seed. It exists to show
-            what&apos;s possible when you wire COGs, GeoParquet, Zarr, and STAC
-            together with a modern web stack — not to be the platform you run
-            your team on.
+            CNG Sandbox is an open-source cloud-native geospatial data
+            conversion and exploration sandbox built by Development Seed. It
+            exists to show what&apos;s possible when you wire COGs, GeoParquet,
+            Zarr, and STAC together with a modern web stack — not to be the
+            platform you run your team on. To build narrative experiences with
+            maps, text, charts, images, and video, explore{" "}
+            <a
+              href="https://github.com/aboydnw/earth-stories"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "var(--chakra-colors-brand-orange)",
+                fontWeight: 600,
+              }}
+            >
+              Earth Stories
+            </a>
+            .
           </Text>
           <Text color="gray.700" fontSize="sm" lineHeight="tall" mb={3}>
             Concretely: no SLA, no production support, no account or auth

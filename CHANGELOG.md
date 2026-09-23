@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.0](https://github.com/aboydnw/cng-sandbox/compare/v2.16.0...v2.17.0) (2026-08-26)
+
+
+### Features
+
+* present Earth Stories from storytelling homepage ([#624](https://github.com/aboydnw/cng-sandbox/issues/624)) ([fd4845c](https://github.com/aboydnw/cng-sandbox/commit/fd4845ce656f09fc8063ae0c418201ec35ac2383))
+
 ## [2.16.0](https://github.com/aboydnw/cng-sandbox/compare/v2.15.0...v2.16.0) (2026-08-24)
 
 
